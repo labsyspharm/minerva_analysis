@@ -1,9 +1,10 @@
 import React from 'react';
+import OpenSeadragonComponent from "./OpenSeadragonComponent";
 
 function App() {
-  return (
-    <p>My Token = {window.token}</p>
-  )
+    return (
+        <OpenSeadragonComponent/>
+    )
 }
 
 export default App;
