@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import './index.css'
 
 import OpenSeadragon from 'openseadragon';  // OpenSeadragon on global scope
 // import ScriptTag from 'react-script-tag';
@@ -19,21 +20,12 @@ export default class OpenSeadragonComponent extends Component {
                     Height: "10200"
                 }
             }
-        }
+        };
         this.state = {
             options: {
                 id: "viewer",
-                prefixUrl: '//openseadragon/images/',
-                tileSources: {
-                    Image: {
-                        xmlns: 'http://schemas.microsoft.com/deepzoom/2009',
-                        Format: 'jpg',
-                        Overlap: '1',
-                        Size: {Height: '7441', Width: '10555'},
-                        TileSize: '256',
-                        Url: 'http://dartmouthhas.org/files/theme/walkermapimagesoutput/dzc_output_images/map%202_files/'
-                    }
-                }
+                prefixUrl: "//openseadragon.github.io/openseadragon/images/",
+                tileSources: image
             },
         };
     }
@@ -53,9 +45,7 @@ export default class OpenSeadragonComponent extends Component {
 
     render() {
         return (
-            <div id={this.state.options.id}
-                 width={'800px' || this.props.width}
-                 height={'600px' || this.props.height}>
+            <div id={this.state.options.id}>
             </div>
         );
     }
