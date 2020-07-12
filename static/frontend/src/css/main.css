@@ -1,0 +1,32 @@
+body {
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+#openseadragon1 {
+    width: 800px;
+    height: 600px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+}
+
+#loadinginfo {
+    position: absolute;
+    left: 50%;
+    top: 40%;
+    display: none;
+    text-align: center;
+}
+
+#loader {
+    border: 5px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 5px solid #3498db;
+    width: 100px;
+    height: 100px;
+    -webkit-animation: spin 2s linear infinite; /* Safari */
+    animation: spin 2s linear infinite;
+    position: absolute;
+    left: 50%;
+    top: 20%;
+    display: none;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack",
+    "watch": "webpack --watch"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bootstrap": "^4.5.0",
+    "buffer": "^5.6.0",
+    "css-loader": "^3.6.0",
+    "d3": "^5.16.0",
+    "expose-loader": "^1.0.0",
+    "jquery": "^3.5.1",
+    "lodash": "^4.17.19",
+    "pngjs": "^5.0.0",
+    "popper.js": "^1.16.1",
+    "style-loader": "^1.2.1",
+    "webpack": "^4.43.0"
+  },
+  "devDependencies": {
+    "webpack-cli": "^3.3.12"
+  }
+}
