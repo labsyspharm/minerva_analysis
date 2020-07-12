@@ -1,32 +1,53 @@
 import React, {Component} from 'react';
 import './index.css'
-
-import OpenSeadragon from 'openseadragon';  // OpenSeadragon on global scope
-// import ScriptTag from 'react-script-tag';
+import '../public/openseadragon-bin-2.4.0/OpenSeadragonLoader.js'
+import '../public/openseadragon-bin-2.4.0/viaWebGL'
+import '../public/openseadragon-bin-2.4.0/openSeadragonGL'
+import '../public/openseadragon-bin-2.4.0/openseadragon-svg-overlay'
+import '../public/openseadragon-bin-2.4.0/openseadragon-filtering'
+import '../public/openseadragon-bin-2.4.0/canvas-overlay-hd'
+import '../public/openseadragon-bin-2.4.0/openseadragonrgb'
 
 
 export default class OpenSeadragonComponent extends Component {
     constructor(props) {
         super(props);
-        const image = {
+        var tileSource = {
             Image: {
                 xmlns: "http://schemas.microsoft.com/deepzoom/2008",
-                Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
+                Url: "http://openseadragon.github.io/example-images/highsmith/highsmith_files/",
                 Format: "jpg",
                 Overlap: "2",
                 TileSize: "256",
                 Size: {
-                    Width: "13920",
-                    Height: "10200"
+                    Height: "9221",
+                    Width: "7026"
                 }
             }
         };
         this.state = {
             options: {
                 id: "viewer",
-                prefixUrl: "//openseadragon.github.io/openseadragon/images/",
-                tileSources: image
-            },
+                prefixUrl: "https://cdn.jsdelivr.net/npm/openseadragon/build/openseadragon/images/",
+                tileSources: [{
+                    tileSource: {
+                        Image: {
+                            xmlns: "http://schemas.microsoft.com/deepzoom/2008",
+                            Url: "http://openseadragon.github.io/example-images/highsmith/highsmith_files/",
+                            Format: "jpg",
+                            Overlap: "2",
+                            TileSize: "256",
+                            Size: {
+                                Height: "9221",
+                                Width: "7026"
+                            }
+                        }
+                    },
+                    width: 2,
+                    y: 0.5,
+                    x: 0.5
+                }]
+            }
         };
     }
 
@@ -40,7 +61,17 @@ export default class OpenSeadragonComponent extends Component {
 
     initialiseWidgets() {
         // eslint-disable-next-line no-undef
-        this.viewer = OpenSeadragon(this.state.options);
+        this.viewer = global.OpenSeadragon(this.state.options);
+        const overlay = new global.OpenSeadragon.CanvasOverlayHd(this.viewer, {
+            onRedraw: function (opts) {
+                const context = opts.context;
+                context.fillStyle = "#a6cee3";
+                context.beginPath();
+                context.arc(150, 150, 150, 0, Math.PI * 2, true);
+                context.fill();
+            }
+        });
+
     }
 
     render() {
