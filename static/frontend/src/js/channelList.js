@@ -11,21 +11,21 @@ class ChannelList {
 
 
         //  create a color picker
-        this.rainbow = rainbow();
-        this.colorTransferHandle = null;
-        d3.select(document.body)//add it to body
-            .call(this.rainbow
-                .on('save', (color, x) => {
-                    let data = this.colorTransferHandle.datum();
-                    let packet = {
-                        name: data.parent.name,  // cell name :  string
-                        type: data.type,         // left, right :  string
-                        color,     // parse using d3.rgb(color) : https://github.com/d3/d3-color#rgb
-                    };
-                    this.eventHandler.trigger(ChannelList.events.COLOR_TRANSFER_CHANGE, packet);
-                    this.colorTransferHandle.style('fill', color);
-                })
-                .on('close', () => this.colorTransferHandle = null));
+        // this.rainbow = rainbow();
+        // this.colorTransferHandle = null;
+        // d3.select(document.body)//add it to body
+        //     .call(this.rainbow
+        //         .on('save', (color, x) => {
+        //             let data = this.colorTransferHandle.datum();
+        //             let packet = {
+        //                 name: data.parent.name,  // cell name :  string
+        //                 type: data.type,         // left, right :  string
+        //                 color,     // parse using d3.rgb(color) : https://github.com/d3/d3-color#rgb
+        //             };
+        //             this.eventHandler.trigger(ChannelList.events.COLOR_TRANSFER_CHANGE, packet);
+        //             this.colorTransferHandle.style('fill', color);
+        //         })
+        //         .on('close', () => this.colorTransferHandle = null));
 
         this.container = d3.select("#channel_list");
 
