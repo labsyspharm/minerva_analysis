@@ -82,7 +82,7 @@ class ImageViewer {
 
         that.viewer = OpenSeadragon({
             id: "openseadragon",
-            prefixUrl: "/static/openseadragon-bin-2.4.0/images/",
+            prefixUrl: "/static/frontend/external_js/openseadragon-bin-2.4.0/images/",
             maxZoomPixelRatio: 15,
             defaultZoomLevel: 1.2,
             loadTilesWithAjax: true,

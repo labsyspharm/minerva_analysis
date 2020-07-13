@@ -5,33 +5,18 @@
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const database = flaskVariables.database;
 
-//GENERAL EVENTS
-events = {
-    editingModeChanged: 'editingModeChanged',
-};
 
 //VIEWS
 let seaDragonViewer;
-var distViewer;
-var dataFilter;
-var config;
-var imgSrcIndex = 0; // channel id
-var dataSrcIndex = 0; // dataset id
-var idCount = 0;
-var k = 3;
-var imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
+let distViewer;
+let dataFilter;
+let dataSrcIndex = 0; // dataset id
+let idCount = 0;
+let k = 3;
+let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
 
-//OPTIONS
-var option_selection = 'cell selection';
-
-//DEBUG MODE
-var debugImageViewer = false; //jojo debug
-
-// init image viewer debugging UI
-if (debugImageViewer) {
-    initColorPickers();
-    initRangeSlider();
-}
+//Disable right clicking on element
+document.getElementById("openseadragon").addEventListener('contextmenu', event => event.preventDefault());
 
 function convertNumbers(row) {
     var r = {};
@@ -72,7 +57,6 @@ function init(conf, data) {
     console.log('initialize system');
 
     config = conf;
-
     //channel information
     for (var idx = 0; idx < config["imageData"].length; idx = idx + 1) {
         imageChannels[config["imageData"][idx].fullname] = idx;
@@ -80,8 +64,7 @@ function init(conf, data) {
     //INIT DATA FILTER
     dataFilter = new DataFilter(config, data, imageChannels);
     dataFilter.wrangleData(dataFilter.getData());
-    //RIDGE PLOT (not ready, hence outcommented)
-    distViewer = new DistributionViewer(config, dataFilter, eventHandler);
+    distViewer = new ChannelList(config, dataFilter, eventHandler);
     distViewer.init(dataFilter.getData());
 
 
@@ -96,13 +79,13 @@ function init(conf, data) {
 const actionColorTransferChange = (d) => {
 
     //map to full name
-    d.name = this.dataFilter.getFullChannelName(d.name);
+    d.name = dataFilter.getFullChannelName(d.name);
 
     d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
     d3.select('body').style('cursor', 'default');
 }
-eventHandler.bind(DistributionViewer.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
+eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
 //feature color map changed in ridge plot
 const actionRenderingModeChange = (d) => {
@@ -116,14 +99,14 @@ const actionChannelsToRenderChange = (d) => {
     d3.select('body').style('cursor', 'progress');
 
     //map to full name
-    d.name = this.dataFilter.getFullChannelName(d.name);
+    d.name = dataFilter.getFullChannelName(d.name);
 
     //send to image viewer
     seaDragonViewer.updateActiveChannels(d.name, d.selections, d.status);
 
     d3.select('body').style('cursor', 'default');
 }
-eventHandler.bind(DistributionViewer.events.CHANNELS_CHANGE, actionChannelsToRenderChange);
+eventHandler.bind(ChannelList.events.CHANNELS_CHANGE, actionChannelsToRenderChange);
 
 //image region or single cell selection (may needs to be combined with other selection events)
 const actionImageClickedMultiSel = (d) => {

@@ -1,16 +1,13 @@
-class DistributionViewer {
+class ChannelList {
 
 
     constructor(config, dataFilter, eventHandler) {
         this.config = config;
         this.eventHandler = eventHandler;
         this.dataFilter = dataFilter;
-        this.brushmove = null;
-        this.brushend = null;
         this.selections = [];
         this.maxSelections = 4;
         this.ranges = {};
-        this.selectionOpacity = 1;
 
 
         //  create a color picker
@@ -25,7 +22,7 @@ class DistributionViewer {
                         type: data.type,         // left, right :  string
                         color,     // parse using d3.rgb(color) : https://github.com/d3/d3-color#rgb
                     };
-                    this.eventHandler.trigger(DistributionViewer.events.COLOR_TRANSFER_CHANGE, packet);
+                    this.eventHandler.trigger(ChannelList.events.COLOR_TRANSFER_CHANGE, packet);
                     this.colorTransferHandle.style('fill', color);
                 })
                 .on('close', () => this.colorTransferHandle = null));
@@ -34,14 +31,8 @@ class DistributionViewer {
 
     }
 
-    selectChannel(status, name) {
+    selectChannel(name) {
         this.selections.push(name);
-        this.container.selectAll('.color-transfer')
-            .filter(d => d.parent.name == name)
-            .attr('display', null)
-            .attr('transform', (d, i) => {
-                return `translate(${this.ranges[name].pixelRange[i]},${0})`
-            });
     }
 
     init(data) {
@@ -77,20 +68,40 @@ class DistributionViewer {
         var that = this;
         let columns = Object.keys(data[0]).filter(key =>
             that.dataFilter.isImageFeature(key));
-
-
+        this.visData = columns;
     }
 
     draw() {
         let rect = document.getElementById('channel_list_wrapper').getBoundingClientRect();
-        //  console.log('rect', rect);
+        let channel_list = document.getElementById("channel_list");
+        let list = document.createElement("ul");
+        list.classList.add("list-group")
+        channel_list.appendChild(list)
+        _.each(this.visData, column => {
+            let listItem = document.createElement("li");
+            listItem.textContent = column;
+            listItem.classList.add("list-group-item");
+            listItem.addEventListener("click", () => {
+                let name = event.target.textContent;
+                this.selectChannel(name);
+                let status = !event.target.classList.contains("active");
+                if (status) {
+                    event.target.classList.add("active");
+                } else {
+                    event.target.classList.remove("active")
+                }
+                let packet = {selections: this.selections, name, status};
+                console.log('channels_change', packet);
+                this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
+            })
+            list.appendChild(listItem);
+        });
     }
-
 
 }
 
 //static vars
-DistributionViewer.events = {
+ChannelList.events = {
     BRUSH_MOVE: "BRUSH_MOVE",
     BRUSH_END: "BRUSH_END",
     COLOR_TRANSFER_CHANGE_MOVE: "COLOR_TRANSFER_CHANGE_MOVE",
