@@ -54,12 +54,9 @@ function convertNumbers(row) {
 
 
 //LOAD DATA
-
-
 console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
 d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
-    updateProgress(true);
     console.log('loading data');
     this.config = config;
     d3.csv(config[database]["featureData"][dataSrcIndex]["src"], convertNumbers).then(function (data) {
@@ -83,8 +80,6 @@ function init(conf, data) {
     //INIT DATA FILTER
     dataFilter = new DataFilter(config, data, imageChannels);
     dataFilter.wrangleData(dataFilter.getData());
-
-    updateProgress(false);
     //RIDGE PLOT (not ready, hence outcommented)
     distViewer = new DistributionViewer(config, dataFilter, eventHandler);
     distViewer.init(dataFilter.getData());
@@ -94,29 +89,6 @@ function init(conf, data) {
     seaDragonViewer = new ImageViewer(config, dataFilter, eventHandler);
     seaDragonViewer.init();
 
-}
-
-
-//spinner wheel for whole gui
-function updateProgress(loading) {
-    //do sth.
-    if (loading) {
-        document.getElementById('loader').style.display = "block";
-        document.getElementById('loadinginfo').style.display = "block";
-    } else {
-        document.getElementById('loader').style.display = "none";
-        document.getElementById('loadinginfo').style.display = "block";
-    }
-}
-
-//spinner wheel for projection gui
-function updateProjectionProgress(loading) {
-    //do sth.
-    if (loading) {
-        document.getElementById('projection_loader').style.display = "block";
-    } else {
-        document.getElementById('projection_loader').style.display = "none";
-    }
 }
 
 
@@ -148,7 +120,33 @@ const actionChannelsToRenderChange = (d) => {
 
     //send to image viewer
     seaDragonViewer.updateActiveChannels(d.name, d.selections, d.status);
-    
+
     d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(DistributionViewer.events.CHANNELS_CHANGE, actionChannelsToRenderChange);
+
+//image region or single cell selection (may needs to be combined with other selection events)
+const actionImageClickedMultiSel = (d) => {
+    console.log('actionImageClick3edMultSel');
+    d3.select('body').style('cursor', 'progress');
+    // add newly clicked item to selection
+
+    console.log('add to selection');
+    if (!Array.isArray(d.selectedItem)) {
+        dataFilter.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
+    } else {
+        console.log(d.selectedItem.length);
+        dataFilter.addAllToCurrentSelection(d.selectedItem);
+    }
+    distViewer.highlights(Array.from(dataFilter.getCurrentSelection()));
+    updateSeaDragonSelection();
+    d3.select('body').style('cursor', 'default');
+}
+eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
+
+//current fast solution for seadragon updates
+function updateSeaDragonSelection() {
+    var arr = Array.from(dataFilter.getCurrentSelection())
+    var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
+    seaDragonViewer.updateSelection(selectionHashMap);
+}

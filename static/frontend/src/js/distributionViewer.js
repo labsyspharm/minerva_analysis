@@ -12,60 +12,6 @@ class DistributionViewer {
         this.ranges = {};
         this.selectionOpacity = 1;
 
-        this.ridgeplot = ridgeplot()
-            .on('brushmove', (dataRange, pixelRange, data, programBrush, allDataRanges) => {
-                // dataRange: selection range in data space
-                // pixelRange: selection range in pixel space
-                // data.name: cell name
-                // programBrush: programmatically setting the zoom on initialization
-                // console.log('programBrush', programBrush);
-                let packet = {dataRange, pixelRange, data, programBrush, allDataRanges};
-                this.updateColorMarkers(pixelRange, data);
-                if (!programBrush) {
-                    this.eventHandler.trigger(DistributionViewer.events.BRUSH_MOVE, packet);
-                }
-            })
-            .on('brushend', (dataRange, pixelRange, data, programBrush, allDataRanges) => {
-                let packet = {dataRange, pixelRange, data, programBrush, allDataRanges};
-                // console.log('allDataRanges', allDataRanges);
-                this.updateColorMarkers(pixelRange, data);
-                this.ranges[data.name] = {pixelRange, dataRange};//save ranges
-                if (!programBrush) {
-                    this.eventHandler.trigger(DistributionViewer.events.BRUSH_END, packet);
-                }
-            })
-            .on('selectrow', (name, status) => {
-                if (status && this.selections.length == this.maxSelections) {
-                    d3.event.target.checked = false;
-                    d3.event.target.__selected = false;
-                    d3.select(d3.event.target)
-                        .attr('font-weight', 'normal')
-                        .attr('fill', '#9e9e9e');
-                    return;
-                }
-                ;
-                if (status) {
-                    this.selectChannel(status, name);
-                    // this.selections.push(name);
-                    // this.container.selectAll('.color-transfer')
-                    // 	.filter(d=>d.parent.name==name)
-                    // 	.attr('display', null)
-                    // 	.attr('transform', (d,i)=>{
-                    // 		return `translate(${this.ranges[name].pixelRange[i]},${0})`});
-                } else {
-                    this.selections = this.selections.filter(d => d != name);
-                    this.container.selectAll('.color-transfer')
-                        .filter(d => d.parent.name == name).attr('display', 'none');
-                }
-                // selections: list of feature names
-                // name: current target feature
-                // status: current target feature's check status
-                let packet = {selections: this.selections, name, status};
-                console.log('channels_change', packet);
-                this.eventHandler.trigger(DistributionViewer.events.CHANNELS_CHANGE, packet);
-            })
-        window.addEventListener("resize", _.throttle(this.draw.bind(this), 500), false);
-
         //  create a color picker
         this.rainbow = rainbow();
         this.colorTransferHandle = null;
@@ -83,7 +29,7 @@ class DistributionViewer {
                 })
                 .on('close', () => this.colorTransferHandle = null));
 
-        this.container = d3.select("#ridge_plot");
+        this.container = d3.select("#channel_list");
 
     }
 
@@ -127,18 +73,8 @@ class DistributionViewer {
             };
         });
 
-        //console.timeEnd();  Timmer 'default' does not exist error
-        //filter  first 100 for highlighting  (should be done differently by shuffling, etc.)
-        // var count=0;
-        // cells = cells.filter(function(d,i){
-        //     count++
-        //      return (count<100 || count % 100 == 0);
-        //  });
 
-        this.ridgeplot.highlights(cells);
-        console.log('end highlight cell selection');
-        //error: randomSample is not a function (other lib version?)
-        //this.ridgeplot.highlights(_.sampleSize(cells, 100));
+
         this.draw();
     }
 
@@ -200,7 +136,7 @@ class DistributionViewer {
 
     draw() {
         console.log('ridgePlot: draw');
-        let rect = document.getElementById('ridge_plot_wrapper').getBoundingClientRect();
+        let rect = document.getElementById('channel_list_wrapper').getBoundingClientRect();
         //  console.log('rect', rect);
         this.container.datum(this.visdata)
             .call(this.ridgeplot

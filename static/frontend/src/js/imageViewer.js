@@ -81,7 +81,7 @@ class ImageViewer {
         // ==================
 
         that.viewer = OpenSeadragon({
-            id: "openseadragon1",
+            id: "openseadragon",
             prefixUrl: "/static/openseadragon-bin-2.4.0/images/",
             maxZoomPixelRatio: 15,
             defaultZoomLevel: 1.2,
@@ -92,14 +92,6 @@ class ImageViewer {
             //debugMode:  true,
         });
 
-
-        // ==============
-        // event handling - part 1
-        // ==============
-
-        // this needs to be done before filter init, otherwise the event handler of the filter will be called before this one (which stores tile in cache)
-
-        // add/remove recently loaded/unloaded tile to local cache
         that.viewer.addHandler('tile-loaded', this.tileLoaded);
         that.viewer.addHandler('tile-unloaded', this.tileUnloaded);
 
@@ -151,94 +143,41 @@ class ImageViewer {
             },
         });
 
-
-        // key press
-        this.viewer.addHandler('canvas-key', function (event) {
-            if (event.originalEvent.type === 'keydown') {
-                if (event.originalEvent.key === '1') {
-                    that.eventHandler.trigger(ImageViewer.events.renderingMode, 'show-subset');
-                }
-                if (event.originalEvent.key === '2') {
-                    that.eventHandler.trigger(ImageViewer.events.renderingMode, 'show-selection');
-                }
-            }
-
-        });
-
         // on mouse click
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
 
             // right click
             if (event.button === 2) {
+                // The canvas-click event gives us a position in web coordinates.
+                var webPoint = event.position;
+                // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+                var viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                // Convert from viewport coordinates to image coordinates.
 
-                // cell (multi) selection
-                if (option_selection == "cell selection") {
+                var imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+                //var imagePoint = that.viewer.viewport.viewportToImageCoordinates(viewportPoint);
 
-                    // The canvas-click event gives us a position in web coordinates.
-                    var webPoint = event.position;
-                    // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                    var viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-                    // Convert from viewport coordinates to image coordinates.
+                // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
+                // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
+                //
 
-                    var imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-                    //var imagePoint = that.viewer.viewport.viewportToImageCoordinates(viewportPoint);
-
-                    // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
-                    // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
-                    //
-
-                    var selectedItem = that.dataFilter.getQuadTree().find(imagePoint.x, imagePoint.y, 100);
-                    if (selectedItem != null && selectedItem != undefined) {
-                        // check if user is doing multi-selection or not
-                        var clearPriors = true;
-                        if (event.originalEvent.ctrlKey) {
-                            clearPriors = false;
-                        }
-
-                        // trigger event
-                        that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-                            selectedItem,
-                            clearPriors
-                        });
-
+                var selectedItem = that.dataFilter.getQuadTree().find(imagePoint.x, imagePoint.y, 100);
+                if (selectedItem != null && selectedItem != undefined) {
+                    // check if user is doing multi-selection or not
+                    var clearPriors = true;
+                    if (event.originalEvent.ctrlKey) {
+                        clearPriors = false;
                     }
+
+                    // trigger event
+                    that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+                        selectedItem,
+                        clearPriors
+                    });
+
+
                 }
 
-
-                // polygon (region) selection
-                if (option_selection == "polygon selection") {
-                    var webPoint = event.position;
-                    // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                    var viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-                    // Convert from viewport coordinates to image coordinates.
-                    var imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-                    //var imagePoint = that.viewer.viewport.viewportToImageCoordinates(viewportPoint);
-
-                    // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
-                    $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
-
-                    that.selectionPolygonToDraw.push({x: imagePoint.x, y: imagePoint.y});
-
-                    if (that.selectionPolygonToDraw.length > 2) {
-                        var circle = makeCircle(that.selectionPolygonToDraw);
-                        var point = {x: circle.x, y: circle.y};
-                        var queryResult = that.dataFilter.filterFromPointInRadius(point, circle.r);
-                        var selectedItem = [];
-                        queryResult.forEach(function (d) {
-                            if (mathHelper.isPointInPoly(that.selectionPolygonToDraw,
-                                {
-                                    x: d[that.config["featureData"][dataSrcIndex]["xCoordinate"]],
-                                    y: d[that.config["featureData"][dataSrcIndex]["yCoordinate"]]
-                                })) {
-                                selectedItem.push(d);
-                            }
-                        })
-
-                        // check if user is doing multi-selection or not
-                        var clearPriors = false;
-                        seaDragonViewer.viewer.forceRedraw();
-                    }
-                }
             }
         });
 

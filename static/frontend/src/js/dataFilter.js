@@ -172,6 +172,7 @@ class DataFilter {
     clearCurrentSelection() {
         this.currentSelection.clear();
     }
+
     //TREE STRUCTURE FOR HIERARCHICAL DATA MANAGEMENT
 
     //init the tree with all the data as root
@@ -194,6 +195,45 @@ class DataFilter {
         toNode.addChild(nodeToAdd);
         return nodeToAdd;
     }
+
+    addToCurrentSelection(item, allowDelete, clearPriors) {
+
+        // delete item on second click
+        if (allowDelete && this.currentSelection.has(item)) {
+            this.currentSelection.delete(item);
+            if (clearPriors) {
+                this.currentSelection.clear();
+            }
+
+            console.log('current selection size:', this.currentSelection.size);
+            if (this.currentSelection.size > 0) {
+                console.log('id: ', this.currentSelection.values().next().value.id);
+            }
+            return;
+        }
+
+        // clear previous items
+        if (clearPriors) {
+            this.currentSelection.clear();
+        }
+
+        // add new item
+        this.currentSelection.add(item);
+
+        console.log('current selection size:', this.currentSelection.size);
+        if (this.currentSelection.size > 0) {
+            console.log('id: ', this.currentSelection.values().next().value.id);
+        }
+    }
+
+
+    addAllToCurrentSelection(items, allowDelete, clearPriors) {
+        console.log("update current selection")
+        var that = this;
+        that.currentSelection = new Set(items);
+        console.log("update current selection done")
+    }
+
 
     //the ACTIVE NODE contains the dataset that is currently used in the system
 

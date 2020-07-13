@@ -14,6 +14,8 @@ window.Buffer = Buffer;
 import 'popper.js'
 import 'jquery'
 import 'bootstrap'
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 import 'pngjs'
 import * as d3 from 'd3';
 import 'lodash'

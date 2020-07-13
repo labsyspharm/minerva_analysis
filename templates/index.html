@@ -13,12 +13,17 @@
     <link rel="stylesheet" href="../static/frontend/src/css/main.css">
     <script src="../static/frontend/src/js/passVariablesToFrontend.js" type="text/javascript"></script>
     <script type="text/javascript">
-        flaskVariables = passVariablesToFrontend({{data|tojson}})
+        <!--@formatter:off-->
+            flaskVariables = passVariablesToFrontend({{data|tojson}});
+        <!--@formatter:on-->
     </script>
     <script src="../static/frontend/dist/vendor_bundle.js"></script>
     <script src="../static/frontend/src/js/TreeModel.js"></script>
     <script src="../static/frontend/src/js/utils.js"></script>
     <script src="../static/frontend/src/js/ridgeplot.js"></script>
+    <script src="../static/frontend/src/js/colorScheme.js"></script>
+
+
     <script src="../static/frontend/src/js/rainbow.js"></script>
     <script src="../static/frontend/src/js/dataFilter.js"></script>
     <script src="../static/frontend/src/js/distributionViewer.js"></script>
@@ -27,22 +32,16 @@
 </head>
 <body>
 <title>Neighborhood Viewer</title>
-<div id="loader"></div>
-<div id="loadinginfo">loading data..</div>
-<h1>Viewing {{ data.database }}!</h1>
+<h1>Viewing {{ data.database }}</h1>
 <div class="container">
     <div class="row">
-        <div class="col-md-8" id="seaDragonWindow"> <!-- jojo debug <div class="col-md-10" id="increaseWidth"> -->
-            <div class="box">
-                <div id="openseadragon1" style="height: -webkit-calc(100% - 20px);"
-                     oncontextmenu="return false;"></div>
-            </div>
+        <div class="col-sm-2" id="channel_list_wrapper">
+            <div id="channel_list"></div>
         </div>
-        <div class="col-md-2 reduceWidth" id="nothing">
-            <div class="box" id="ridge_plot_wrapper">
-                <div id="ridge_plot"></div>
-            </div>
+        <div class="col-sm-8">
+            <div id="openseadragon"></div>
         </div>
+
     </div>
 </div>
 <script src="../static/frontend/src/js/main.js"></script>

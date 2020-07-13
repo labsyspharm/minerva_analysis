@@ -65,15 +65,6 @@
 					.attr("class", "picker-group")
 					.style("display", "flex");
 
-			
-	            // blackElm = container.append('div')
-	            //     .attr('class', 'black')
-	            //     .style('width', `${1.2*barThickness}px`)
-	            //     .style('height', `${1.2*barThickness}px`)
-	            //     .style('margin-left', '10px')
-	            //     .style('background-color', 'black')
-	            //     .style('border-radius', '50%')
-				//     .on('click',reset);
 
 				// saturation and luminance picker
 				let slPickerGroup = pickerGroup.append('div')
