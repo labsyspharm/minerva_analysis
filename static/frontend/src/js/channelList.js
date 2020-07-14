@@ -37,42 +37,8 @@ class ChannelList {
 
     init(data) {
         this.wrangle(data);
-        this.draw();
-    }
-
-    render(data) {
-        this.wrangle(data);
-    }
-
-    highlights(cells) {
-        var that = this;
-        console.log('highlight cell selection');
-        cells = _.sampleSize(cells, 100);
-        //console.time('highlight data wrangling');  Timmer 'default' does not exist error
-        cells = cells.map(cell => {
-            return {
-                color: colorScheme.retrieveClassColor(cell['cluster']),
-                values: Object.keys(cell)
-                    .filter(key =>
-                        that.dataFilter.isImageFeature(key))
-                    .map(key => {
-                        return {name: key, value: cell[key]};
-                    })
-            };
-        });
-        this.draw();
-    }
-
-
-    wrangle(data) {
-        var that = this;
-        let columns = Object.keys(data[0]).filter(key =>
-            that.dataFilter.isImageFeature(key));
-        this.visData = columns;
-    }
-
-    draw() {
-        let rect = document.getElementById('channel_list_wrapper').getBoundingClientRect();
+        // Hide the Loader
+        document.getElementById('channel_list_loader').style.display = "none";
         let channel_list = document.getElementById("channel_list");
         let list = document.createElement("ul");
         list.classList.add("list-group")
@@ -96,6 +62,37 @@ class ChannelList {
             })
             list.appendChild(listItem);
         });
+
+    }
+
+    render(data) {
+        this.wrangle(data);
+    }
+
+    highlights(cells) {
+        var that = this;
+        console.log('highlight cell selection');
+        cells = _.sampleSize(cells, 100);
+        //console.time('highlight data wrangling');  Timmer 'default' does not exist error
+        cells = cells.map(cell => {
+            return {
+                color: colorScheme.retrieveClassColor(cell['cluster']),
+                values: Object.keys(cell)
+                    .filter(key =>
+                        that.dataFilter.isImageFeature(key))
+                    .map(key => {
+                        return {name: key, value: cell[key]};
+                    })
+            };
+        });
+    }
+
+
+    wrangle(data) {
+        var that = this;
+        let columns = Object.keys(data[0]).filter(key =>
+            that.dataFilter.isImageFeature(key));
+        this.visData = columns;
     }
 
 }

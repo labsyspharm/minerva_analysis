@@ -75,14 +75,14 @@ class ImageViewer {
         console.log('[seaDragonViewer::init]');
 
         var that = this;
-
+        //Hide Loader
+        document.getElementById('openseadragon_loader').style.display = "none";
         // ==================
         // init openseadragon
         // ==================
-
         that.viewer = OpenSeadragon({
             id: "openseadragon",
-            prefixUrl: "/static/frontend/external_js/openseadragon-bin-2.4.0/images/",
+            prefixUrl: "/static/frontend/external_js/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
             defaultZoomLevel: 1.2,
             loadTilesWithAjax: true,

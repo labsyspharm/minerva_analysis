@@ -2,7 +2,12 @@ const webpack = require('webpack')
 
 module.exports = {
     mode: 'development',
-    entry: './src/js/vendor.js',
+    entry: {
+        vendor: './src/js/vendor.js'
+    },
+    output: {
+        filename: '[name]_bundle.js'
+    },
     module: {
         rules: [
             {
@@ -20,9 +25,5 @@ module.exports = {
                 ]
             }
         ],
-    },
-    output: {
-        filename: 'vendor_bundle.js'
-    },
-    plugins: [new webpack.IgnorePlugin(/^openseadragon$/)]
+    }
 };

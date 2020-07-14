@@ -2,6 +2,40 @@ body {
     font-family: 'Source Sans Pro', sans-serif;
 }
 
+/*LOADING SPINNER SECTION*/
+.lds-circle {
+    display: inline-block;
+    transform: translateZ(1px);
+}
+
+.lds-circle > div {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    margin: 8px;
+    border-radius: 50%;
+    background: #000000;
+    animation: lds-circle 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+@keyframes lds-circle {
+    0%, 100% {
+        animation-timing-function: cubic-bezier(0.5, 0, 1, 0.5);
+    }
+    0% {
+        transform: rotateY(0deg);
+    }
+    50% {
+        transform: rotateY(1800deg);
+        animation-timing-function: cubic-bezier(0, 0.5, 0.5, 1);
+    }
+    100% {
+        transform: rotateY(3600deg);
+    }
+}
+
+/*END OF LOADING SPINNER SECTION*/
+
 #openseadragon {
     width: 800px;
     height: 600px;
@@ -11,15 +45,19 @@ body {
 
 #channel_list {
     width: 100%;
-    max-height: 600px;
+    height: 600px;
     font-size: 6pt;
-    overflow-y: scroll;
+    overflow-y: auto;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 
 }
 
 #channel_list .list-group-item {
     padding: .25rem 0.5rem;
+}
+
+#channel_list .list-group {
+    border-radius: 0rem;
 }
 
 nav {

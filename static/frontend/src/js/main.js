@@ -39,12 +39,17 @@ function convertNumbers(row) {
 
 
 //LOAD DATA
+let time = performance.now()
 console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
 d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
     console.log('loading data');
     this.config = config;
     d3.csv(config[database]["featureData"][dataSrcIndex]["src"], convertNumbers).then(function (data) {
+        console.log(`Time:${performance.now() - time}`)
+        time = performance.now();
         console.log('data loading finished');
         init(config[database], data);
     });
@@ -53,7 +58,8 @@ d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
 
 // init all views (datatable, seadragon viewer,...)
 function init(conf, data) {
-
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
     console.log('initialize system');
 
     config = conf;
@@ -62,15 +68,29 @@ function init(conf, data) {
         imageChannels[config["imageData"][idx].fullname] = idx;
     }
     //INIT DATA FILTER
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
     dataFilter = new DataFilter(config, data, imageChannels);
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
     dataFilter.wrangleData(dataFilter.getData());
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
     distViewer = new ChannelList(config, dataFilter, eventHandler);
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
     distViewer.init(dataFilter.getData());
 
 
     //IMAGE VIEWER
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
     seaDragonViewer = new ImageViewer(config, dataFilter, eventHandler);
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
     seaDragonViewer.init();
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
 
 }
 
