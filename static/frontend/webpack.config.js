@@ -18,6 +18,13 @@ module.exports = {
                 },
             },
             {
+                test: require.resolve('d3'),
+                loader: 'expose-loader',
+                options: {
+                    exposes: ['d3'],
+                },
+            },
+            {
                 test: /\.css$/,
                 use: [
                     'style-loader',

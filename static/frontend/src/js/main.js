@@ -25,12 +25,7 @@ function convertNumbers(row) {
         r['id'] = '' + parseInt(row[config[database]["featureData"]['id']] - 1);
     }
     for (var k in row) {
-        //convert from string to number and denormalize, if needed.
-        // if (config[database]["featureData"][dataSrcIndex]["normalization"] == "exp"){
-        //     r[k] = Math.exp(+row[k]);
-        // }else{
         r[k] = +row[k];
-        // }
     }
     r['cluster'] = '-';
     idCount++;
