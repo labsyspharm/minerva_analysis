@@ -3,34 +3,67 @@ body {
 }
 
 /*LOADING SPINNER SECTION*/
-.lds-circle {
+.lds-ellipsis {
     display: inline-block;
-    transform: translateZ(1px);
-}
-
-.lds-circle > div {
-    display: inline-block;
+    position: relative;
     width: 32px;
     height: 32px;
-    margin: 8px;
-    border-radius: 50%;
-    background: #000000;
-    animation: lds-circle 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
 }
 
-@keyframes lds-circle {
-    0%, 100% {
-        animation-timing-function: cubic-bezier(0.5, 0, 1, 0.5);
-    }
+.lds-ellipsis div {
+    position: absolute;
+    top: 33px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #000000;
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+
+.lds-ellipsis div:nth-child(1) {
+    left: 8px;
+    animation: lds-ellipsis1 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(2) {
+    left: 8px;
+    animation: lds-ellipsis2 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(3) {
+    left: 32px;
+    animation: lds-ellipsis2 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(4) {
+    left: 56px;
+    animation: lds-ellipsis3 0.6s infinite;
+}
+
+@keyframes lds-ellipsis1 {
     0% {
-        transform: rotateY(0deg);
-    }
-    50% {
-        transform: rotateY(1800deg);
-        animation-timing-function: cubic-bezier(0, 0.5, 0.5, 1);
+        transform: scale(0);
     }
     100% {
-        transform: rotateY(3600deg);
+        transform: scale(1);
+    }
+}
+
+@keyframes lds-ellipsis3 {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(0);
+    }
+}
+
+@keyframes lds-ellipsis2 {
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(24px, 0);
     }
 }
 
@@ -48,6 +81,7 @@ body {
     height: 600px;
     font-size: 6pt;
     overflow-y: auto;
+    overflow-x: hidden;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 
 }
@@ -58,6 +92,10 @@ body {
 
 #channel_list .list-group {
     border-radius: 0rem;
+}
+
+#openseadragon_loader, #channel_list_loader {
+    margin-left: 35px;
 }
 
 nav {
