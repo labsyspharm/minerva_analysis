@@ -6,8 +6,8 @@ body {
 .lds-ellipsis {
     display: inline-block;
     position: relative;
-    width: 32px;
-    height: 32px;
+    width: 20px;
+    height: 20px;
 }
 
 .lds-ellipsis div {
@@ -88,6 +88,12 @@ body {
 
 #channel_list .list-group-item {
     padding: .25rem 0.5rem;
+    border: 0;
+}
+
+#channel_list .active {
+    background-color: #888888;
+    border-color: #888888;
 }
 
 #channel_list .list-group {
@@ -95,7 +101,7 @@ body {
 }
 
 #openseadragon_loader, #channel_list_loader {
-    margin-left: 35px;
+    margin-left: 33px;
 }
 
 nav {
