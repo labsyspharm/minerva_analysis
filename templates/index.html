@@ -34,16 +34,27 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item dropdown">
-
-        <span class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown"
-              aria-haspopup="true" aria-expanded="false">
-          Data Sources
-        </span>
+                <span class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  Data Sources
+                </span>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     {% for database in data.databases %}
-                    <a class="dropdown-item" href="/{{database}}">{{database}}</a>
+                    <div class="container">
+                        <div class="row justify-content-between">
+                            <div class="col-4">
+                                <a class href="/{{database}}">{{database}}</a>
+                            </div>
+                            <div class="col-4">
+                                <a href="/edit_config/{{database}}"><span class="fas fa-pencil-alt"></span></a>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/upload_page">Upload</a>
             </li>
         </ul>
     </div>
