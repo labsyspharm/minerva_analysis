@@ -92,8 +92,8 @@ body {
 }
 
 #channel_list .active {
-    background-color: #888888;
-    border-color: #888888;
+    background-color: #bfbcbc;
+    border-color: #bfbcbc;
 }
 
 #channel_list .list-group {
@@ -105,6 +105,10 @@ body {
 }
 
 nav {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+}
+
+.channel-col {
+    margin: 0;
 }
 

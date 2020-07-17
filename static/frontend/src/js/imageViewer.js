@@ -599,7 +599,7 @@ class ImageViewer {
         var rgb1 = seaDragonViewer.channelTF[channelIdx].start_color;
         var rgb2 = seaDragonViewer.channelTF[channelIdx].end_color;
 
-        if (type == "left") {
+        if (type == "black") {
             rgb1 = color;
         } else {
             rgb2 = color;
