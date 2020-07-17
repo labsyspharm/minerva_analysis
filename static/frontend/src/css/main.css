@@ -112,3 +112,10 @@ nav {
     margin: 0;
 }
 
+.selected-channels-header {
+    font-size: 0.6rem;
+}
+
+.bold-selections-header * {
+    font-weight: bold;
+}

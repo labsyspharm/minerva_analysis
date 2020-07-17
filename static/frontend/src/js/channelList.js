@@ -117,17 +117,29 @@ class ChannelList {
                 }
                 let parent = event.target.closest(".list-group-item");
                 let name = parent.querySelector('.channel-name').textContent;
-                this.selectChannel(name);
                 let status = !parent.classList.contains("active");
                 if (status) {
+                    //Don't add channel is the max are selected
+                    if (_.size(this.selections) >= this.maxSelections) {
+                        return;
+                    }
                     parent.classList.add("active");
                     svgCol.style.display = "block";
+                    this.selectChannel(name);
                 } else {
+                    this.selections = _.remove(this.selections, name);
                     parent.classList.remove("active")
                     svgCol.style.display = "none";
                 }
+                let selectionsHeaderDiv = document.getElementById("selected-channels-header-div");
+                if (_.size(this.selections) >= this.maxSelections) {
+                    selectionsHeaderDiv.classList.add('bold-selections-header');
+                } else {
+                    selectionsHeaderDiv.classList.remove('bold-selections-header');
+                }
                 let packet = {selections: this.selections, name, status};
                 console.log('channels_change', packet);
+                document.getElementById("num-selected-channels").textContent = _.size(this.selections);
                 this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
             })
             list.appendChild(listItemParentDiv);
