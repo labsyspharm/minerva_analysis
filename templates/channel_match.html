@@ -20,14 +20,12 @@
                 </span>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     {% for database in data.databases %}
-                    <div class="container">
-                        <div class="row justify-content-between">
-                            <div class="col-4">
-                                <a class href="/{{database}}">{{database}}</a>
-                            </div>
-                            <div class="col-4">
-                                <a href="/edit_config/{{database}}"><span class="fas fa-pencil-alt"></span></a>
-                            </div>
+                    <div class="row justify-content-between">
+                        <div class="col-4 navbar-datasource">
+                            <a class href="/{{database}}">{{database}}</a>
+                        </div>
+                        <div class="col-4 navbar-datasource-edit-button">
+                            <a href="/edit_config/{{database}}"><span class="fas fa-pencil-alt"></span></a>
                         </div>
                     </div>
                     {% endfor %}

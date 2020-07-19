@@ -332,3 +332,11 @@ label {
 .channel-match-title {
     padding-left: 0;
 }
+
+.navbar-datasource {
+    margin: 0px 10px;
+}
+
+.fa-pencil-alt {
+    color: black;
+}
