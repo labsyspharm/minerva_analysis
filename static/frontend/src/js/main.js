@@ -148,3 +148,43 @@ function updateSeaDragonSelection() {
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     seaDragonViewer.updateSelection(selectionHashMap);
 }
+
+function findCellById(cellId) {
+    let intCelId = _.toInteger(cellId);
+    let cell = dataFilter.getData()[intCelId];
+    if (cell.CellId != intCelId) {
+        console.log("Indices do not match IDs, falling back on manual find")
+        cell = _.find(dataFilter.getData(), elem => {
+            return elem.CellId == intCelId;
+        });
+    }
+    console.log("Final Found Cell", cellId, cell.CellId);
+    return cell;
+}
+
+function displayCell(cell) {
+    let xCoordinate = config.featureData[0].xCoordinate;
+    let yCoordinate = config.featureData[0].yCoordinate;
+    let viewport = {
+        'x': cell[xCoordinate] - 200,
+        'y': cell[yCoordinate] - 200,
+        'width': 400,
+        'height': 400
+    }
+    seaDragonViewer.actionFocus(viewport);
+    dataFilter.addToCurrentSelection(cell, true, true);
+    updateSeaDragonSelection();
+}
+
+function displayNeighborhood(cellId, neighborhoodIds) {
+    let cell = findCellById(cellId);
+    displayCell(cell);
+    let neighbors = _.map(neighborhoodIds, elem => {
+        return findCellById(elem)
+    });
+    _.each(neighbors, neighbor => {
+        dataFilter.addToCurrentSelection(neighbor, true, false);
+    });
+    updateSeaDragonSelection();
+}
+
