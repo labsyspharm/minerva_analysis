@@ -103,7 +103,10 @@ def edit_config_with_config_name(config_name):
             # Special handling for label channel
             if i == 0:
                 data['labelName'] = channelName
-                csvHeaders.insert(0, header)
+                if data['idField']:
+                    csvHeaders.insert(1, header)
+                else:
+                    csvHeaders.insert(0, header)
             else:
                 channelFileNames.append(channelName)
                 csvHeaders.append(header)

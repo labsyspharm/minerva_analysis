@@ -11,20 +11,6 @@ module.exports = {
     module: {
         rules: [
             {
-                test: require.resolve('jquery'),
-                loader: 'expose-loader',
-                options: {
-                    exposes: ['$', 'jQuery'],
-                },
-            },
-            {
-                test: require.resolve('d3'),
-                loader: 'expose-loader',
-                options: {
-                    exposes: ['d3'],
-                },
-            },
-            {
                 test: /\.css$/,
                 use: [
                     'style-loader',

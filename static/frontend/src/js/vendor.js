@@ -11,8 +11,9 @@ import 'jquery-form'
 import '@fortawesome/fontawesome-free/js/all'
 import Sortable from 'sortablejs';
 import Mark from 'mark.js'
+import $ from 'jquery'
 
-
+window.$ = $;
 window.d3 = d3;
 window.PNG = PNG;
 window.Buffer = Buffer;

@@ -222,6 +222,8 @@ nav {
     position: absolute;
     right: 10px;
     top: 9px;
+    height: 13px;
+    width: 13px;
 }
 
 #channel-match-container .edit-config {
@@ -325,4 +327,8 @@ label {
 
 #save-col {
     padding-top: 7pt;
+}
+
+.channel-match-title {
+    padding-left: 0;
 }

@@ -13,7 +13,7 @@ function channelMatch(data) {
     let channelFiles = _.get(data, 'channelFileNames', [])
     _.each(channelFiles, (channel, i) => {
         if (i === 0 && idField && channel == 'ID') {
-            leftList.innerHTML += `<div class="list-group-item tinted destination optional">${channel} (Optional)<i class="fa fa-times remove" aria-hidden="true"></i> </div>`
+            leftList.innerHTML += `<div class="list-group-item tinted destination optional">${channel} (Optional)<span class="fa fa-times remove" aria-hidden="true"></span></div>`
         } else {
             leftList.innerHTML += `<div class="list-group-item tinted destination">${channel}</div>`
         }
@@ -42,7 +42,7 @@ function channelMatch(data) {
                     <label for="name${i}"   class="col-auto col-form-label">Display Name&nbsp;</label>
                     <span class="form-control shortname col-3" id="name${i}">${displayName}</span>
                     <label for="normalize${i}"   class="col-form-label col-sm-auto normalize-label">Normalize&nbsp;</label>
-                    <input type="checkbox" class="normalize-checkbox col-sm-auto form-control " id="normalize${i}" name="normalize${i}">
+                    <input type="checkbox" class="normalize-checkbox col-sm-auto" id="normalize${i}" name="normalize${i}">
                 </div>   
             </div>`
 
@@ -199,7 +199,6 @@ function submitForm() {
             channelData.channelFileNames = _.tail(channelData.channelFileNames);
         }
     }
-    document.getElementById('loader').style.display = "block";
     $.ajax("/save_config", {
         data: JSON.stringify(postData),
         contentType: "application/json",

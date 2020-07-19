@@ -10,9 +10,9 @@ let ajaxForm = $('form').ajaxForm({
 
 function displayPercentage(totalPercentage, currentTask) {
     if (totalPercentage == 0) {
-        document.getElementById("progress").style.display = "none";
+        $('.progress-bar-label').css('display', 'none');
     } else {
-        document.getElementById("progress").style.display = "block";
+        $('.progress-bar-label').css('display', 'block');
     }
     $('.progress-bar').css('width', totalPercentage + '%').attr('aria-valuenow', totalPercentage);
     $("#progress-bar-percentage").text(totalPercentage + '%');
@@ -43,7 +43,6 @@ $('#upload_button').on('click', function () {
         displayPercentage(combinedPercentage, data.currentTask);
         if (combinedPercentage >= 100) {
             displayHeader("Upload and Conversion Complete", false);
-            displayDataSources();
             source.close();
         }
     }
