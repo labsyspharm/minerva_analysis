@@ -68,7 +68,6 @@ function init(conf, data) {
     dataFilter = new DataFilter(config, data, imageChannels);
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    dataFilter.wrangleData(dataFilter.getData());
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     channelList = new ChannelList(config, dataFilter, eventHandler);

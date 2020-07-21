@@ -23,40 +23,9 @@ class DataFilter {
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
-
-        // initialize quadtree
-        this.quadTree = this.initQuadTree();
     }
 
-    //some initial data parsing from string to float and adding additional fields
-    wrangleData(data) {
-        console.log('data wrangling')
-        var that = this;
 
-        this.totalMax = -10000000;
-        this.totalMin = 1000000;
-
-        let columns = Object.keys(data[0]).filter(key => key != 'id' && key != 'cluster');
-
-        return data;
-    }
-
-    //quadtree for fast spatial lookups and filterings
-    initQuadTree() {
-        console.log('init quadtree..');
-        const that = this;
-        const quadtree = d3.quadtree()
-            .x(function (d) {
-                return d[that.config["featureData"][dataSrcIndex]["xCoordinate"]]
-                return 0.0;
-            })
-            .y(function (d) {
-                return d[that.config["featureData"][dataSrcIndex]["yCoordinate"]]
-            })
-            .addAll(that.getData());
-        console.log("initialized quadtree");
-        return quadtree;
-    }
 
 
     //return the current data selection
@@ -81,9 +50,6 @@ class DataFilter {
     }
 
 
-    getQuadTree() {
-        return this.quadTree;
-    }
 
     getCurrentSelection() {
         return this.currentSelection;
