@@ -18,7 +18,7 @@ class DataFilter {
 
     async init() {
         let response = await fetch('/init_database?' + new URLSearchParams({
-            datasource: 'melanoma'
+            datasource: datasource
         }))
         let response_data = await response.json();
         return response_data;
@@ -27,11 +27,18 @@ class DataFilter {
     async getRow(row) {
         let response = await fetch('/get_database_row?' + new URLSearchParams({
             row: row,
-            datasource: 'melanoma'
+            datasource: datasource
         }))
         let response_data = await response.json();
         return response_data;
+    }
 
+     async getSampleRow(row) {
+        let response = await fetch('/get_sample_row?' + new URLSearchParams({
+            datasource: datasource
+        }))
+        let response_data = await response.json();
+        return response_data;
     }
 
     async findNearestCell(point_x, point_y, max_distance = 100) {
@@ -39,7 +46,7 @@ class DataFilter {
             point_x: point_x,
             point_y: point_y,
             max_distance: max_distance,
-            datasource: 'melanoma'
+            datasource: datasource
         }))
         let cell = await response.json();
         return cell;

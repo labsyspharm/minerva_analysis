@@ -387,11 +387,18 @@ def get_nearest_cell():
     return jsonify(dataFilter.query_for_closest_cell(x, y, datasource, max_distance=max_distance))
 
 
+# Gets a row based on the index
 @app.route('/get_database_row', methods=['GET'])
 def get_database_row():
     datasource = request.args.get('datasource')
     row = int(request.args.get('row'))
     return jsonify(dataFilter.get_row(row, datasource))
+
+
+@app.route('/get_sample_row', methods=['GET'])
+def get_sample_row():
+    datasource = request.args.get('datasource')
+    return jsonify(dataFilter.get_sample_row(datasource))
 
 
 #   #  "298176"

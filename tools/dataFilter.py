@@ -83,3 +83,12 @@ def get_row(row, datasource):
     obj = database.loc[[row]].to_dict(orient='records')[0]
     obj['id'] = row
     return obj
+
+
+def get_sample_row(datasource):
+    global database
+    global source
+    if datasource != source:
+        loadKDTree(datasource)
+    obj = database.iloc[[0]].to_dict(orient='records')[0]
+    return obj

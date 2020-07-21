@@ -38,8 +38,8 @@ class ChannelList {
 
     async init() {
         this.rainbow.hide();
-        let firstRow = await this.dataFilter.getRow(0);
-        this.wrangle(firstRow);
+        let sampleRow = await this.dataFilter.getSampleRow();
+        this.wrangle(sampleRow);
         // Hide the Loader
         document.getElementById('channel_list_loader').style.display = "none";
         let channel_list = document.getElementById("channel_list");
