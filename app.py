@@ -370,6 +370,14 @@ def save_config():
 
 # End of Facetto code
 
+@app.route('/init_database', methods=['GET'])
+def init_database():
+    datasource = request.args.get('datasource')
+    dataFilter.init(datasource)
+    resp = jsonify(success=True)
+    return resp
+
+
 @app.route('/get_nearest_cell', methods=['GET'])
 def get_nearest_cell():
     x = float(request.args.get('point_x'))

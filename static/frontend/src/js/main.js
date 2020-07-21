@@ -42,17 +42,12 @@ d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
     time = performance.now();
     console.log('loading data');
     this.config = config;
-    d3.csv(config[datasource]["featureData"][dataSrcIndex]["src"], convertNumbers).then(function (data) {
-        console.log(`Time:${performance.now() - time}`)
-        time = performance.now();
-        console.log('data loading finished');
-        init(config[datasource], data);
-    });
+    init(config[datasource]);
 });
 
 
 // init all views (datatable, seadragon viewer,...)
-function init(conf, data) {
+function init(conf) {
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     console.log('initialize system');
@@ -65,15 +60,12 @@ function init(conf, data) {
     //INIT DATA FILTER
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    dataFilter = new DataFilter(config, data, imageChannels);
+    dataFilter = new DataFilter(config, imageChannels);
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     channelList = new ChannelList(config, dataFilter, eventHandler);
-    console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
-    channelList.init(dataFilter.getData());
 
 
     //IMAGE VIEWER
@@ -151,43 +143,43 @@ function getCellId(cell) {
     return cell.id || cell.CellId;
 }
 
-function findCellById(cellId) {
-    let intCelId = _.toInteger(cellId);
-    let cell = dataFilter.getData()[intCelId];
-
-    if (getCellId(cell) != intCelId) {
-        console.log("Indices do not match IDs, falling back on manual find")
-        cell = _.find(dataFilter.getData(), elem => {
-            return getCellId(elem) == intCelId
-        });
-    }
-    console.log("Final Found Cell", cellId, getCellId(cell));
-    return cell;
-}
-
-function displayCell(cell) {
-    let xCoordinate = config.featureData[0].xCoordinate;
-    let yCoordinate = config.featureData[0].yCoordinate;
-    let viewport = {
-        'x': cell[xCoordinate] - 200,
-        'y': cell[yCoordinate] - 200,
-        'width': 400,
-        'height': 400
-    }
-    seaDragonViewer.actionFocus(viewport);
-    dataFilter.addToCurrentSelection(cell, true, true);
-    updateSeaDragonSelection();
-}
-
-function displayNeighborhood(cellId, neighborhoodIds) {
-    let cell = findCellById(cellId);
-    displayCell(cell);
-    let neighbors = _.map(neighborhoodIds, elem => {
-        return findCellById(elem)
-    });
-    _.each(neighbors, neighbor => {
-        dataFilter.addToCurrentSelection(neighbor, true, false);
-    });
-    updateSeaDragonSelection();
-}
-
+// function findCellById(cellId) {
+//     let intCelId = _.toInteger(cellId);
+//     let cell = dataFilter.getData()[intCelId];
+//
+//     if (getCellId(cell) != intCelId) {
+//         console.log("Indices do not match IDs, falling back on manual find")
+//         cell = _.find(dataFilter.getData(), elem => {
+//             return getCellId(elem) == intCelId
+//         });
+//     }
+//     console.log("Final Found Cell", cellId, getCellId(cell));
+//     return cell;
+// }
+//
+// function displayCell(cell) {
+//     let xCoordinate = config.featureData[0].xCoordinate;
+//     let yCoordinate = config.featureData[0].yCoordinate;
+//     let viewport = {
+//         'x': cell[xCoordinate] - 200,
+//         'y': cell[yCoordinate] - 200,
+//         'width': 400,
+//         'height': 400
+//     }
+//     seaDragonViewer.actionFocus(viewport);
+//     dataFilter.addToCurrentSelection(cell, true, true);
+//     updateSeaDragonSelection();
+// }
+//
+// function displayNeighborhood(cellId, neighborhoodIds) {
+//     let cell = findCellById(cellId);
+//     displayCell(cell);
+//     let neighbors = _.map(neighborhoodIds, elem => {
+//         return findCellById(elem)
+//     });
+//     _.each(neighbors, neighbor => {
+//         dataFilter.addToCurrentSelection(neighbor, true, false);
+//     });
+//     updateSeaDragonSelection();
+// }
+//

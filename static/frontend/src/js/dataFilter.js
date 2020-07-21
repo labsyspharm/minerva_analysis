@@ -2,40 +2,36 @@
 
 class DataFilter {
 
-    constructor(config, data, imageChannels) {
-
+    constructor(config, imageChannels) {
         var that = this;
-
         //vars and consts
         this.config = config;
-
         //all image channels
         this.imageChannels = imageChannels;
-
         //selections
         this.currentSelection = new Set();
-
-
-        //prefilter data
-        this.map = new Map(); //hm maybe use a map, too..
-        this.setData(data);
-
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
+        this.init();
     }
 
-
-
-
-    //return the current data selection
-    getData() {
-        return this.data;
-        // return this.cfDim.idDimension.top(Infinity);
+    async init() {
+        let response = await fetch('/init_database?' + new URLSearchParams({
+            datasource: 'melanoma'
+        }))
+        let response_data = await response.json();
+        return response_data;
     }
 
-    setData(data) {
-        this.data = data;
+    async getRow(row) {
+        let response = await fetch('/get_database_row?' + new URLSearchParams({
+            row: row,
+            datasource: 'melanoma'
+        }))
+        let response_data = await response.json();
+        return response_data;
+
     }
 
     async findNearestCell(point_x, point_y, max_distance = 100) {
@@ -48,7 +44,6 @@ class DataFilter {
         let cell = await response.json();
         return cell;
     }
-
 
 
     getCurrentSelection() {

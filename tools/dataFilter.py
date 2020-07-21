@@ -11,6 +11,10 @@ database = None
 source = None
 
 
+def init(datasource):
+    loadKDTree(datasource)
+
+
 def loadDB(datasource):
     global database
     global source
