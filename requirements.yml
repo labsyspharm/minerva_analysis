@@ -1,0 +1,15 @@
+channels:
+- conda-forge
+dependencies:
+- Flask=1.1.2
+- numpy
+- pandas
+- pillow=7.0.0
+- scikit-learn=0.20.2
+- scikit-image=0.14.2
+- scipy
+- tifffile
+- pip
+- pip:
+  - pyvips==2.1.8
+  - opencv-python==4.2.0.*
