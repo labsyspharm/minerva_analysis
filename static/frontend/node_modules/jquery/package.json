@@ -114,4 +114,8 @@
       "pre-commit": "grunt lint:newer qunit_fixture"
     }
   }
+
+,"_resolved": "https://registry.npmjs.org/jquery/-/jquery-3.5.1.tgz"
+,"_integrity": "sha512-XwIBPqcMn57FxfT+Go5pzySnm4KWkT1Tv7gjrpT1srtf8Weynl6R273VJ5GjkRb51IzMp5nbaPjJXMWeju2MKg=="
+,"_from": "jquery@3.5.1"
 }

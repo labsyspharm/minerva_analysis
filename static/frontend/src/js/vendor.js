@@ -12,6 +12,7 @@ import '@fortawesome/fontawesome-free/js/all'
 import Sortable from 'sortablejs';
 import Mark from 'mark.js'
 import $ from 'jquery'
+import 'node-fetch'
 
 window.$ = $;
 window.d3 = d3;

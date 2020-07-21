@@ -3,12 +3,12 @@
  */
 //EVENTHANDLER
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
-const database = flaskVariables.database;
+const datasource = flaskVariables.datasource;
 
 
 //VIEWS
 let seaDragonViewer;
-let distViewer;
+let channelList;
 let dataFilter;
 let dataSrcIndex = 0; // dataset id
 let idCount = 0;
@@ -21,8 +21,8 @@ document.getElementById("openseadragon").addEventListener('contextmenu', event =
 function convertNumbers(row) {
     var r = {};
     r['id'] = idCount + '';
-    if (config[database]["featureData"]['id'] && config[database]["featureData"]['id'] != "none") {
-        r['id'] = '' + parseInt(row[config[database]["featureData"]['id']] - 1);
+    if (config[datasource]["featureData"]['id'] && config[datasource]["featureData"]['id'] != "none") {
+        r['id'] = '' + parseInt(row[config[datasource]["featureData"]['id']] - 1);
     }
     for (var k in row) {
         r[k] = +row[k];
@@ -42,11 +42,11 @@ d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
     time = performance.now();
     console.log('loading data');
     this.config = config;
-    d3.csv(config[database]["featureData"][dataSrcIndex]["src"], convertNumbers).then(function (data) {
+    d3.csv(config[datasource]["featureData"][dataSrcIndex]["src"], convertNumbers).then(function (data) {
         console.log(`Time:${performance.now() - time}`)
         time = performance.now();
         console.log('data loading finished');
-        init(config[database], data);
+        init(config[datasource], data);
     });
 });
 
@@ -71,10 +71,10 @@ function init(conf, data) {
     dataFilter.wrangleData(dataFilter.getData());
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    distViewer = new ChannelList(config, dataFilter, eventHandler);
+    channelList = new ChannelList(config, dataFilter, eventHandler);
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    distViewer.init(dataFilter.getData());
+    channelList.init(dataFilter.getData());
 
 
     //IMAGE VIEWER
@@ -136,7 +136,6 @@ const actionImageClickedMultiSel = (d) => {
         console.log(d.selectedItem.length);
         dataFilter.addAllToCurrentSelection(d.selectedItem);
     }
-    distViewer.highlights(Array.from(dataFilter.getCurrentSelection()));
     updateSeaDragonSelection();
     d3.select('body').style('cursor', 'default');
 }
@@ -149,16 +148,21 @@ function updateSeaDragonSelection() {
     seaDragonViewer.updateSelection(selectionHashMap);
 }
 
+function getCellId(cell) {
+    return cell.id || cell.CellId;
+}
+
 function findCellById(cellId) {
     let intCelId = _.toInteger(cellId);
     let cell = dataFilter.getData()[intCelId];
-    if (cell.CellId != intCelId) {
+
+    if (getCellId(cell) != intCelId) {
         console.log("Indices do not match IDs, falling back on manual find")
         cell = _.find(dataFilter.getData(), elem => {
-            return elem.CellId == intCelId;
+            return getCellId(elem) == intCelId
         });
     }
-    console.log("Final Found Cell", cellId, cell.CellId);
+    console.log("Final Found Cell", cellId, getCellId(cell));
     return cell;
 }
 

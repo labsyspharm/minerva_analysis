@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, Response, jsonify
-from tools import mostFrequentLongestSubstring, fullConversion, pre_normalization
+from tools import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
 import os
 import csv
-import json
 from pathlib import Path
-
+from time import time
+from scipy.spatial import cKDTree
+import numpy as np
+import pandas as pd
 import json
 
 app = Flask(__name__)
@@ -12,15 +14,17 @@ app = Flask(__name__)
 
 @app.route("/")
 def my_index():
-    return render_template("index.html", data={'database': '', 'databases': get_config_names()})
+    return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
 
 
-@app.route('/<string:database>')
-def image_viewer(database):
-    databases = get_config_names()
-    if database not in databases:
-        database = ''
-    return render_template('index.html', data={'database': database, 'databases': databases})
+@app.route('/<string:datasource>')
+def image_viewer(datasource):
+    datasources = get_config_names()
+    if datasource not in datasources:
+        datasource = ''
+    # if datasource != '':
+    #     test = load_database(datasource)
+    return render_template('index.html', data={'datasource': datasource, 'datasources': datasources})
 
 
 def get_config_names():
@@ -31,7 +35,7 @@ def get_config_names():
 
 @app.route("/upload_page")
 def upload_page():
-    return render_template("upload.html", data={'database': '', 'databases': get_config_names()})
+    return render_template("upload.html", data={'datasource': '', 'datasources': get_config_names()})
 
 
 # Import / Upload Methods from Facetto
@@ -115,7 +119,7 @@ def edit_config_with_config_name(config_name):
         header_full_names = [elem['displayName'] for elem in csvHeaders]
         data['substring'] = mostFrequentLongestSubstring.find_substring(header_full_names)
         data['channelFileNames'] = channelFileNames
-        data['databases'] = [key for key in config_csv.keys()]
+        data['datasources'] = [key for key in config_csv.keys()]
         return render_template('channel_match.html', data=data)
 
 
@@ -222,8 +226,8 @@ def upload_file_page():
                     config_data['channelFileNames'] = channelFileNames
                     config_data['csvName'] = csvName
                     config_data['labelName'] = labelName
-                    config_data['databases'] = get_config_names()
-                    config_data['databases'].append(datasetName)
+                    config_data['datasources'] = get_config_names()
+                    config_data['datasources'].append(datasetName)
                     return render_template('channel_match.html', data=config_data)
         except Exception as e:
             completed_task = -1
@@ -280,7 +284,7 @@ def channel():
     test_data['normCsvName'] = 'segResultsRF_norm.csv'
     test_data['csvName'] = 'segResultsRF.csv'
     test_data['labelName'] = 'nucleiLabelRF'
-    test_data['databases'] = get_config_names()
+    test_data['datasources'] = get_config_names()
 
     return render_template('channel_match.html', data=test_data)
 
@@ -365,6 +369,24 @@ def save_config():
 
 
 # End of Facetto code
+
+@app.route('/get_nearest_cell', methods=['GET'])
+def get_nearest_cell():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    return jsonify(dataFilter.query_for_closest_cell(x, y, datasource, max_distance=max_distance))
+
+
+@app.route('/get_database_row', methods=['GET'])
+def get_database_row():
+    datasource = request.args.get('datasource')
+    row = int(request.args.get('row'))
+    return jsonify(dataFilter.get_row(row, datasource))
+
+
+#   #  "298176"
 
 
 if __name__ == "__main__":

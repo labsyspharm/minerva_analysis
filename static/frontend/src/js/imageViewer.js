@@ -161,23 +161,21 @@ class ImageViewer {
                 // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
                 //
 
-                var selectedItem = that.dataFilter.getQuadTree().find(imagePoint.x, imagePoint.y, 100);
-                if (selectedItem != null && selectedItem != undefined) {
-                    // check if user is doing multi-selection or not
-                    var clearPriors = true;
-                    if (event.originalEvent.ctrlKey) {
-                        clearPriors = false;
-                    }
-
-                    // trigger event
-                    that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-                        selectedItem,
-                        clearPriors
-                    });
-
-
-                }
-
+                return that.dataFilter.findNearestCell(imagePoint.x, imagePoint.y, 100)
+                    .then(selectedItem => {
+                        if (selectedItem != null && selectedItem != undefined) {
+                              // check if user is doing multi-selection or not
+                            var clearPriors = true;
+                            if (event.originalEvent.ctrlKey) {
+                                clearPriors = false;
+                            }
+                            // trigger event
+                            that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+                                selectedItem,
+                                clearPriors
+                            });
+                        }
+                    })
             }
         });
 

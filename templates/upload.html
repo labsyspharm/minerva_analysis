@@ -23,13 +23,13 @@
                   Data Sources
                 </span>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    {% for database in data.databases %}
+                    {% for datasource in data.datasources %}
                     <div class="row justify-content-between">
                         <div class="col-4 navbar-datasource">
-                            <a class href="/{{database}}">{{database}}</a>
+                            <a class href="/{{datasource}}">{{datasource}}</a>
                         </div>
                         <div class="col-4 navbar-datasource-edit-button">
-                            <a href="/edit_config/{{database}}"><span class="fas fa-pencil-alt"></span></a>
+                            <a href="/edit_config/{{datasource}}"><span class="fas fa-pencil-alt"></span></a>
                         </div>
                     </div>
                     {% endfor %}

@@ -26,80 +26,19 @@ class DataFilter {
 
         // initialize quadtree
         this.quadTree = this.initQuadTree();
-
-        //init data structure tree
-        this.treeModel = null;
-        this.tree = this.initTree();
-        this.setActiveNode(this.tree, false);
-        //this.addToTreeForTestPuprose(); //was to construct a test tree..
-        console.log('tree insertion done');
-
-        this.featureSelection = new Set();
-
-        //class label id (starts at 0 with first class user defines)
-        this.classLabelId = 0;
-
-    }
-
-    getMin(attribute) {
-        //var copy = this.getData().slice(0);
-        return this.getData().reduce((min, d) => d[attribute] < min ? d[attribute] : min, this.getData()[0][attribute]);
-    }
-
-    getMax(attribute) {
-        //var copy = this.getData().slice(0);
-        return this.getData().reduce((max, d) => d[attribute] > max ? d[attribute] : max, this.getData()[0][attribute]);
     }
 
     //some initial data parsing from string to float and adding additional fields
     wrangleData(data) {
         console.log('data wrangling')
         var that = this;
-        this.MaxVals = new Map();
-        this.MinVals = new Map();
 
         this.totalMax = -10000000;
         this.totalMin = 1000000;
 
         let columns = Object.keys(data[0]).filter(key => key != 'id' && key != 'cluster');
 
-        columns.forEach(function (column) {
-            that.MinVals.set(column, that.getMin(column));
-            that.MaxVals.set(column, that.getMax(column));
-        });
-
-        that.MaxVals.forEach(function (d, key) {
-            if (that.isImageFeature(key)) {
-                if (!isNaN(d)) {
-                    that.totalMax = Math.max(d, that.totalMax);
-                }
-            }
-        })
-
-        that.MinVals.forEach(function (d, key) {
-            if (that.isImageFeature(key)) {
-                if (!isNaN(d)) {
-                    that.totalMin = Math.min(d, that.totalMin);
-                }
-            }
-        })
         return data;
-    }
-
-    getMaxVal(column) {
-        return this.MaxVals.get(column);
-    }
-
-    getMinVal(column) {
-        return this.MinVals.get(column);
-    }
-
-    getTotalMax() {
-        return this.totalMax;
-    }
-
-    getTotalMin() {
-        return this.totalMin;
     }
 
     //quadtree for fast spatial lookups and filterings
@@ -120,33 +59,6 @@ class DataFilter {
     }
 
 
-    //filters all points within a radius around a center point and returns points around it in an Euclidean order. - input is a point and radius
-    filterFromPointInRadius(point, radius) {
-        var res = quadTreeHelper.search(this.quadTree, point.x, point.y, radius);
-        res.sort(function (a, b) {
-            return quadTreeHelper.euclidDistance(point.x, point.y, a.x, a.y)
-                - quadTreeHelper.euclidDistance(point.x, point.y, b.x, b.y);
-        });
-        return res;
-    }
-
-
-    //not in use.. but would norm the feature values of each column between 0 and 1 (min/max norm).
-    normalize(data) {
-        console.log('normalize');
-        var normData = data;
-        var nosrmData = normData.map(function (d, i) {
-
-            var max = d3.max(d3.values(d));
-            var min = d3.min(d3.values(d));
-            for (var key in d) {
-                d[key] = (d[key] - min) / (max - min);
-            }
-            return d;
-        });
-        return normData;
-    }
-
     //return the current data selection
     getData() {
         return this.data;
@@ -157,9 +69,17 @@ class DataFilter {
         this.data = data;
     }
 
-    updateData(data) {
-        this.setData(data);
+    async findNearestCell(point_x, point_y, max_distance = 100) {
+        let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
+            point_x: point_x,
+            point_y: point_y,
+            max_distance: max_distance,
+            datasource: 'melanoma'
+        }))
+        let cell = await response.json();
+        return cell;
     }
+
 
     getQuadTree() {
         return this.quadTree;
@@ -173,28 +93,6 @@ class DataFilter {
         this.currentSelection.clear();
     }
 
-    //TREE STRUCTURE FOR HIERARCHICAL DATA MANAGEMENT
-
-    //init the tree with all the data as root
-    initTree() {
-        this.treeModel = new TreeModel();
-        var root = {
-            nodeId: this.generateID(),
-            name: "All Data",
-            class: "-",
-            content: this.getData(),
-            children: []
-        }
-        return this.treeModel.parse(root);
-    }
-
-    //add a node as child to a given node (to add to root, call with dataFilter.getTree(0 )
-    addChildToNode(toNode, node) {
-        node.nodeId = this.generateID();
-        var nodeToAdd = this.treeModel.parse(node);
-        toNode.addChild(nodeToAdd);
-        return nodeToAdd;
-    }
 
     addToCurrentSelection(item, allowDelete, clearPriors) {
 
@@ -233,36 +131,6 @@ class DataFilter {
         that.currentSelection = new Set(items);
         console.log("update current selection done")
     }
-
-
-    //the ACTIVE NODE contains the dataset that is currently used in the system
-
-    setActiveNode(node, setData) {
-        this.activeNode = node;
-        if (setData) {
-            //single selection state model
-            //this.clearCurrentSelection();
-            // this.addAllToCurrentSelection(node.model.content);
-
-            //or should we have a two layer model in a sense that we can have an underlying subset and a selection on top of it?
-            this.clearCurrentSelection();
-            this.setData(node.model.content);
-            //re-init quadtree with subset only
-            if (this == null || this.getData() == null || this.getData() == undefined || this.getData().length == 0) {
-                console.log('hm..data is ' + this.getData())
-            }
-            if (this.getData == null || this.getData() == undefined || this.getData().length < 1) {
-                console.log('no data!!!!');
-            }
-            this.quadTree = this.initQuadTree();
-        }
-    }
-
-
-    generateID() {
-        return (Date.now().toString(36) + Math.random().toString(36).substr(2, 5)).toUpperCase();
-    }
-
 
     isImageFeature(key) {
         if (this.imageChannels.hasOwnProperty(key)
