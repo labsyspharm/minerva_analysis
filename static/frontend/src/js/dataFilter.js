@@ -17,39 +17,55 @@ class DataFilter {
     }
 
     async init() {
-        let response = await fetch('/init_database?' + new URLSearchParams({
-            datasource: datasource
-        }))
-        let response_data = await response.json();
-        return response_data;
+        try {
+            let response = await fetch('/init_database?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Initializing Dataset", e);
+        }
     }
 
     async getRow(row) {
-        let response = await fetch('/get_database_row?' + new URLSearchParams({
-            row: row,
-            datasource: datasource
-        }))
-        let response_data = await response.json();
-        return response_data;
+        try {
+            let response = await fetch('/get_database_row?' + new URLSearchParams({
+                row: row,
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Row", e);
+        }
     }
 
-     async getSampleRow(row) {
-        let response = await fetch('/get_sample_row?' + new URLSearchParams({
-            datasource: datasource
-        }))
-        let response_data = await response.json();
-        return response_data;
+    async getSampleRow(row) {
+        try {
+            let response = await fetch('/get_sample_row?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Sample Row", e);
+        }
     }
 
     async findNearestCell(point_x, point_y, max_distance = 100) {
-        let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
-            point_x: point_x,
-            point_y: point_y,
-            max_distance: max_distance,
-            datasource: datasource
-        }))
-        let cell = await response.json();
-        return cell;
+        try {
+            let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
+                point_x: point_x,
+                point_y: point_y,
+                max_distance: max_distance,
+                datasource: datasource
+            }))
+            let cell = await response.json();
+            return cell;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
     }
 
 
