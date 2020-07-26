@@ -10,6 +10,7 @@ import pandas as pd
 import json
 
 app = Flask(__name__)
+config_json_path = Path("static/data") / "config.json"
 
 
 @app.route("/")
@@ -28,7 +29,7 @@ def image_viewer(datasource):
 
 
 def get_config_names():
-    with open('./static/data/config.json') as f:
+    with open(config_json_path) as f:
         data = json.load(f)
     return [key for key in data.keys()]
 
@@ -57,7 +58,8 @@ def edit_config_with_request_name(config_name):
 
 def edit_config_with_config_name(config_name):
     data = {}
-    with open("static/data/config.json", "r+") as configJson:
+    global config_json_path
+    with open(config_json_path, "r+") as configJson:
         config_csv = json.load(configJson)
         config_data = config_csv[config_name]
         data['datasetName'] = config_name
@@ -291,6 +293,7 @@ def channel():
 
 @app.route('/save_config', methods=['POST'])
 def save_config():
+    global config_json_path
     try:
         originalData = request.json['originalData']
         datasetName = originalData['datasetName']
@@ -318,7 +321,7 @@ def save_config():
 
         headerList = [x for x in zip(headerList[1::3], headerList[0::3])]
         channelList = originalData['channelFileNames']
-        with open("static/data/config.json", "r+") as configJson:
+        with open(config_json_path, "r+") as configJson:
             configData = json.load(configJson)
             configData[datasetName] = {}
             configData[datasetName]['shapes'] = ''

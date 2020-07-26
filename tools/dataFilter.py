@@ -10,17 +10,21 @@ kdTree = None
 database = None
 source = None
 
+config_json_path = Path("static/data") / "config.json"
+
 
 def init(datasource):
     loadKDTree(datasource)
 
 
 def loadDB(datasource):
+    global config_json_path
     global database
     global source
     if source is datasource and database is not None:
         return
-    with open("static/data/config.json", "r+") as configJson:
+
+    with open(config_json_path, "r+") as configJson:
         configData = json.load(configJson)
     csvPath = "." + configData[datasource]['featureData'][0]['src']
     index_col = None
@@ -33,6 +37,7 @@ def loadDB(datasource):
 
 
 def loadKDTree(datasource):
+    global config_json_path
     global kdTree
     global database
     if datasource != source:
@@ -43,7 +48,7 @@ def loadKDTree(datasource):
         kdTree = pickle.load(open(pickled_kd_tree_path, "rb"))
     else:
         print("No Pickled KD Tree, Creating One")
-        with open("static/data/config.json", "r+") as configJson:
+        with open(config_json_path, "r+") as configJson:
             configData = json.load(configJson)
         xCoordinate = configData[datasource]['featureData'][0]['xCoordinate']
         yCoordinate = configData[datasource]['featureData'][0]['yCoordinate']
