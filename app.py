@@ -8,6 +8,7 @@ from scipy.spatial import cKDTree
 import numpy as np
 import pandas as pd
 import json
+import orjson
 
 app = Flask(__name__)
 config_json_path = Path("static/data") / "config.json"
@@ -387,7 +388,8 @@ def get_nearest_cell():
     y = float(request.args.get('point_y'))
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
-    return jsonify(dataFilter.query_for_closest_cell(x, y, datasource, max_distance=max_distance))
+    resp = dataFilter.query_for_closest_cell(x, y, datasource, max_distance=max_distance)
+    return serialize_and_submit_json(resp)
 
 
 # Gets a row based on the index
@@ -395,16 +397,25 @@ def get_nearest_cell():
 def get_database_row():
     datasource = request.args.get('datasource')
     row = int(request.args.get('row'))
-    return jsonify(dataFilter.get_row(row, datasource))
+    resp = dataFilter.get_row(row, datasource)
+    return serialize_and_submit_json(resp)
 
 
 @app.route('/get_sample_row', methods=['GET'])
 def get_sample_row():
     datasource = request.args.get('datasource')
-    return jsonify(dataFilter.get_sample_row(datasource))
+    resp = dataFilter.get_sample_row(datasource)
+    return serialize_and_submit_json(resp)
 
 
 #   #  "298176"
+
+def serialize_and_submit_json(data):
+    response = app.response_class(
+        response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),
+        mimetype='application/json'
+    )
+    return response
 
 
 if __name__ == "__main__":
