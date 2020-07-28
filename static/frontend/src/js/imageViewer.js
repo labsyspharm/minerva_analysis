@@ -37,6 +37,7 @@ class ImageViewer {
         this.currentChannels = {}; //array of {"url": "", "suburl": ""}
         // label channel
         this.labelChannel = {}; //{"url": "", "suburl": ""}
+        this.noLabel = false;
 
         // selection polygon (array of xy positions)
         this.selectionPolygonToDraw = [];
@@ -182,23 +183,24 @@ class ImageViewer {
         // ============
         // general init
         // ============
+        // load label image in background if it exists
+        if (that.config["imageData"][0]["src"] && that.config["imageData"][0]["src"] != '') {
+            that.viewer.addTiledImage({
+                tileSource: that.config["imageData"][0]["src"],
+                index: 0,
+                opacity: 1,
+                //preload: true,
+                success: function (event) {
+                    var url0 = that.viewer.world.getItemAt(0).source.tilesUrl;
+                    seaDragonViewer.labelChannel["url"] = url0;
+                    var group = url0.split("/");
+                    seaDragonViewer.labelChannel["sub_url"] = group[group.length - 2];
+                }
+            });
+        } else {
+            seaDragonViewer.noLabel = true;
+        }
 
-        // load label image in background
-        that.viewer.addTiledImage({
-            tileSource: that.config["imageData"][0]["src"],
-            index: 0,
-            opacity: 1,
-            //preload: true,
-            success: function (event) {
-
-                var url0 = that.viewer.world.getItemAt(0).source.tilesUrl;
-
-                seaDragonViewer.labelChannel["url"] = url0;
-
-                var group = url0.split("/");
-                seaDragonViewer.labelChannel["sub_url"] = group[group.length - 2];
-            }
-        });
 
     } // init()
 
@@ -309,10 +311,11 @@ class ImageViewer {
         var somePath = group[group.length - 3];
 
         // label data
-        var labelPath = seaDragonViewer.labelChannel["sub_url"];
-        var labelTileAdr = tile.url.replace(somePath, labelPath);
-        var labelTile = seaDragonViewer.tileCache[labelTileAdr];
-
+        if (!seaDragonViewer.noLabel) {
+            var labelPath = seaDragonViewer.labelChannel["sub_url"];
+            var labelTileAdr = tile.url.replace(somePath, labelPath);
+            var labelTile = seaDragonViewer.tileCache[labelTileAdr];
+        }
 
         // channel data
         var channelIdx = "";
@@ -345,80 +348,79 @@ class ImageViewer {
         var rgb = 0;
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        if (labelTile == null) {
+        if (labelTile == null && !seaDragonViewer.noLabel) {
             console.log("Missing Label Tile", labelTileAdr)
             const loaded = await addTile(labelTileAdr);
             labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
         // check if there is a label present
-        if (labelTile != null) {
 
-            var labelTileData = labelTile.data;
+        var labelTileData = _.get(labelTile, 'data');
 
-            // iterate over all tile pixels
-            for (var i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
+        // iterate over all tile pixels
+        for (var i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
 
-                // get 24bit label data
+            // get 24bit label data
+            if (labelTileData) {
                 labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
                 labelValueStr = labelValue.toString();
-                // get 16 bit data (stored in G and B channels)
-                channelValue = (channelTileData[i + 1] * 256) + channelTileData[i + 2];
+            }
+            // get 16 bit data (stored in G and B channels)
+            channelValue = (channelTileData[i + 1] * 256) + channelTileData[i + 2];
 
-                // apply color transfer function
-                rgb = evaluateTF(channelValue, tf);
+            // apply color transfer function
+            rgb = evaluateTF(channelValue, tf);
 
-                if (seaDragonViewer.show_subset) { // render everything outside subset as black/white
+            if (seaDragonViewer.show_subset) { // render everything outside subset as black/white
 
-                    // show data as black/white
-                    pixels[i] = channelTileData[i + 1];
-                    pixels[i + 1] = channelTileData[i + 1];
-                    pixels[i + 2] = channelTileData[i + 1];
+                // show data as black/white
+                pixels[i] = channelTileData[i + 1];
+                pixels[i + 1] = channelTileData[i + 1];
+                pixels[i + 2] = channelTileData[i + 1];
 
-                } else { // render everything with TF
+            } else { // render everything with TF
 
-                    if (channelValue < tf.min) {   // values lower than TF gating: 0
-                        pixels[i] = 0;
-                        pixels[i + 1] = 0;
-                        pixels[i + 2] = 0;
-                    } else {                        // values higher than TF gating: highest TF color
-                        pixels[i] = rgb.r;
-                        pixels[i + 1] = rgb.g;
-                        pixels[i + 2] = rgb.b;
+                if (channelValue < tf.min) {   // values lower than TF gating: 0
+                    pixels[i] = 0;
+                    pixels[i + 1] = 0;
+                    pixels[i + 2] = 0;
+                } else {                        // values higher than TF gating: highest TF color
+                    pixels[i] = rgb.r;
+                    pixels[i + 1] = rgb.g;
+                    pixels[i + 2] = rgb.b;
+                }
+            }
+
+            if (labelValue >= 0) { // check for label data
+
+                if (seaDragonViewer.show_subset) { // render subset with TF (check label id is in subset, apply TF)
+                    if (seaDragonViewer.data.has(labelValueStr)) {
+                        if (channelValue < tf.min) {
+                            pixels[i] = 0;
+                            pixels[i + 1] = 0;
+                            pixels[i + 2] = 0;
+                        } else {
+                            pixels[i] = rgb.r;
+                            pixels[i + 1] = rgb.g;
+                            pixels[i + 2] = rgb.b;
+                        }
                     }
                 }
 
-                if (labelValue >= 0) { // check for label data
-
-                    if (seaDragonViewer.show_subset) { // render subset with TF (check label id is in subset, apply TF)
-                        if (seaDragonViewer.data.has(labelValueStr)) {
-                            if (channelValue < tf.min) {
-                                pixels[i] = 0;
-                                pixels[i + 1] = 0;
-                                pixels[i + 2] = 0;
-                            } else {
-                                pixels[i] = rgb.r;
-                                pixels[i + 1] = rgb.g;
-                                pixels[i + 2] = rgb.b;
-                            }
-                        }
-                    }
-
-                    // render selection ids as highlighted
-                    if (seaDragonViewer.show_selection) {
-                        if (seaDragonViewer.selection.has(labelValueStr)) {
-                            var val = seaDragonViewer.selection.get(labelValueStr)['cluster'];
-                            if (val != undefined) {
-                                pixels[i] = colorScheme.classrColors[val][0];
-                                pixels[i + 1] = colorScheme.classrColors[val][1];
-                                pixels[i + 2] = colorScheme.classrColors[val][2];
-                            }
+                // render selection ids as highlighted
+                if (seaDragonViewer.show_selection) {
+                    if (seaDragonViewer.selection.has(labelValueStr)) {
+                        var val = seaDragonViewer.selection.get(labelValueStr)['cluster'];
+                        if (val != undefined) {
+                            pixels[i] = colorScheme.classrColors[val][0];
+                            pixels[i + 1] = colorScheme.classrColors[val][1];
+                            pixels[i + 2] = colorScheme.classrColors[val][2];
                         }
                     }
                 }
             }
 
-        } else {
-            console.log("No Label Present")
+
         }
 
         context.putImageData(screenData, 0, 0);
@@ -426,7 +428,7 @@ class ImageViewer {
     }
 
 
-    // apply TF on multi-channel tile, also accesses the label image
+// apply TF on multi-channel tile, also accesses the label image
     async renderTFWithLabelsMulti(context, callback, tile) {
 
         if (tile == null) {
@@ -443,10 +445,11 @@ class ImageViewer {
         var somePath = group[group.length - 3];
 
         // label data
-        var labelPath = seaDragonViewer.labelChannel["sub_url"];
-        var labelTileAdr = tile.url.replace(somePath, labelPath);
-
-        var labelTile = seaDragonViewer.tileCache[labelTileAdr];
+        if (!seaDragonViewer.noLabel) {
+            var labelPath = seaDragonViewer.labelChannel["sub_url"];
+            var labelTileAdr = tile.url.replace(somePath, labelPath);
+            var labelTile = seaDragonViewer.tileCache[labelTileAdr];
+        }
 
         // channel data
         var channelsTileData = [];
@@ -477,77 +480,75 @@ class ImageViewer {
         var pixels = screenData.data;
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        if (labelTile == null) {
+        if (labelTile == null && !seaDragonViewer.noLabel) {
             console.log("Missing Label Tile", labelTileAdr)
             const loaded = await addTile(labelTileAdr);
             labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
-        if (labelTile != null) { // check if there is a label present
 
-            var labelTileData = labelTile.data;
-            var labelValue = 0;
-            var labelValueStr = "";
-            var channelValue = 0;
-            var rgb = 0;
+        var labelTileData = _.get(labelTile, 'data');
+        var labelValue = 0;
+        var labelValueStr = "";
+        var channelValue = 0;
+        var rgb = 0;
 
-            // iterate over all tile pixels
-            for (var i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
+        // iterate over all tile pixels
+        for (var i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
 
-                pixels[i] = 0;
-                pixels[i + 1] = 0;
-                pixels[i + 2] = 0;
+            pixels[i] = 0;
+            pixels[i + 1] = 0;
+            pixels[i + 2] = 0;
 
-                // get 24bit label data
+            // get 24bit label data
+            if (labelTileData) {
                 labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
                 labelValueStr = labelValue + ''; //faster than labelValue.toString()
+            }
 
-                // iterate over all image channels
-                for (var channel = 0; channel < channelsTileData.length; channel++) {
+            // iterate over all image channels
+            for (var channel = 0; channel < channelsTileData.length; channel++) {
 
-                    // get 16 bit image data (stored in G and B channels)
-                    channelValue = (channelsTileData[channel][i + 1] * 256) + channelsTileData[channel][i + 2];
+                // get 16 bit image data (stored in G and B channels)
+                channelValue = (channelsTileData[channel][i + 1] * 256) + channelsTileData[channel][i + 2];
 
-                    // apply TF
-                    rgb = evaluateTF(channelValue, tfs[channel]);
+                // apply TF
+                rgb = evaluateTF(channelValue, tfs[channel]);
 
-                    if (!seaDragonViewer.show_subset) { // render everything with TF
-                        if (channelValue >= tfs_min[channel]) {
+                if (!seaDragonViewer.show_subset) { // render everything with TF
+                    if (channelValue >= tfs_min[channel]) {
+                        pixels[i] += rgb.r;
+                        pixels[i + 1] += rgb.g;
+                        pixels[i + 2] += rgb.b;
+                    }
+                }
+
+                if (seaDragonViewer.show_subset) { // render subset with TF
+                    if (seaDragonViewer.data.has(labelValueStr)) { // render with TF
+                        if (channelValue >= tfs[channel].min) {
                             pixels[i] += rgb.r;
                             pixels[i + 1] += rgb.g;
                             pixels[i + 2] += rgb.b;
                         }
-                    }
-
-                    if (seaDragonViewer.show_subset) { // render subset with TF
-                        if (seaDragonViewer.data.has(labelValueStr)) { // render with TF
-                            if (channelValue >= tfs[channel].min) {
-                                pixels[i] += rgb.r;
-                                pixels[i + 1] += rgb.g;
-                                pixels[i + 2] += rgb.b;
-                            }
-                        } else {
-                            // render data as black/white
-                            pixels[i] += channelsTileData[channel][i + 1];
-                            pixels[i + 1] += channelsTileData[channel][i + 1];
-                            pixels[i + 2] += channelsTileData[channel][i + 1];
-                        }
-                    }
-
-                    // render selection ids as highlighted
-                    if (seaDragonViewer.show_selection && seaDragonViewer.selection.size > 0) {
-                        if (seaDragonViewer.selection.has(labelValueStr)) {
-                            var val = seaDragonViewer.selection.get(labelValue.toString())['cluster'];
-                            pixels[i] = colorScheme.classrColors[val][0];
-                            pixels[i + 1] = colorScheme.classrColors[val][1];
-                            pixels[i + 2] = colorScheme.classrColors[val][2];
-                        }
+                    } else {
+                        // render data as black/white
+                        pixels[i] += channelsTileData[channel][i + 1];
+                        pixels[i + 1] += channelsTileData[channel][i + 1];
+                        pixels[i + 2] += channelsTileData[channel][i + 1];
                     }
                 }
-            }
-        } else {
-            console.log("No Label Present")
-        }
 
+                // render selection ids as highlighted
+                if (seaDragonViewer.show_selection && seaDragonViewer.selection.size > 0) {
+                    if (seaDragonViewer.selection.has(labelValueStr)) {
+                        var val = seaDragonViewer.selection.get(labelValue.toString())['cluster'];
+                        pixels[i] = colorScheme.classrColors[val][0];
+                        pixels[i + 1] = colorScheme.classrColors[val][1];
+                        pixels[i + 2] = colorScheme.classrColors[val][2];
+                    }
+                }
+
+            }
+        }
         context.putImageData(screenData, 0, 0);
         callback();
 
@@ -583,10 +584,10 @@ class ImageViewer {
         seaDragonViewer.forceRepaint();
     }
 
-    //example:
-    // name: "DNA4_Hoechst33342_12Nuclei"
-    // color: "rgb(177, 0, 255)"
-    // type: "right"
+//example:
+// name: "DNA4_Hoechst33342_12Nuclei"
+// color: "rgb(177, 0, 255)"
+// type: "right"
     updateChannelColors(name, color, type) {
         console.log('seaDragon: update channel colors event received ');
 
@@ -638,7 +639,7 @@ class ImageViewer {
         seaDragonViewer.forceRepaint();
     }
 
-    //mode is a string: 'show-subset', 'show-selection'
+//mode is a string: 'show-subset', 'show-selection'
     updateRenderingMode(mode) {
 
         console.log('seaDragonViewer: rendering mode change event received. mode ' + mode);

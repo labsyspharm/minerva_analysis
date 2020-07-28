@@ -350,7 +350,7 @@ def save_config():
             #
             configData[datasetName]['imageData'][0]['name'] = headerList[0][1]['value']
             configData[datasetName]['imageData'][0]['fullname'] = 'Area'
-            if 'labelName' in originalData:
+            if 'labelName' in originalData and originalData['labelName'] != '':
                 configData[datasetName]['imageData'][0]['src'] = "/static/data/" + datasetName + "/" + originalData[
                     'labelName'] + ".dzi"
             else:
