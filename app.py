@@ -408,7 +408,13 @@ def get_sample_row():
     return serialize_and_submit_json(resp)
 
 
-#   #  "298176"
+@app.route('/get_phenotypes', methods=['GET'])
+def get_phenotypes():
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_phenotypes(datasource)
+    return serialize_and_submit_json(resp)
+
+
 
 def serialize_and_submit_json(data):
     response = app.response_class(

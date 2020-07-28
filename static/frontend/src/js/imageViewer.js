@@ -164,7 +164,7 @@ class ImageViewer {
                 return that.dataFilter.findNearestCell(imagePoint.x, imagePoint.y, 100)
                     .then(selectedItem => {
                         if (selectedItem != null && selectedItem != undefined) {
-                              // check if user is doing multi-selection or not
+                            // check if user is doing multi-selection or not
                             var clearPriors = true;
                             if (event.originalEvent.ctrlKey) {
                                 clearPriors = false;
@@ -727,11 +727,6 @@ function addChannel(srcIdx) {
             var sub_url = group[group.length - 2];
 
             seaDragonViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
-
-            //console.log(seaDragonViewer.currentChannels);
-
-            //seaDragonViewer.forceRepaint();
-
         }
     });
 
@@ -756,10 +751,6 @@ function removeChannel(srcIdx) {
                 seaDragonViewer.viewer.world.removeItem(seaDragonViewer.viewer.world.getItemAt(i));
 
                 delete seaDragonViewer.currentChannels[srcIdx];
-
-                console.log(seaDragonViewer.currentChannels);
-                //activateMultiChannelRendering();
-
                 break;
             }
         }

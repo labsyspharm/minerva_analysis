@@ -9,50 +9,52 @@ import pickle
 kdTree = None
 database = None
 source = None
-
-config_json_path = Path("static/data") / "config.json"
+config = None
 
 
 def init(datasource):
-    loadKDTree(datasource)
+    load_kd_tree(datasource)
 
 
-def loadDB(datasource):
-    global config_json_path
+def load_db(datasource):
     global database
     global source
+    global config
     if source is datasource and database is not None:
         return
-
-    with open(config_json_path, "r+") as configJson:
-        configData = json.load(configJson)
-    csvPath = "." + configData[datasource]['featureData'][0]['src']
+    load_config()
+    csvPath = "." + config[datasource]['featureData'][0]['src']
     index_col = None
-    if 'idField' in configData[datasource]['featureData'][0]:
-        idField = configData[datasource]['featureData'][0]['idField']
+    if 'idField' in config[datasource]['featureData'][0]:
+        idField = config[datasource]['featureData'][0]['idField']
         if idField != 'none' and idField is not None:
             index_col = idField
     database = pd.read_csv(csvPath, index_col=index_col)
     source = datasource
 
 
-def loadKDTree(datasource):
-    global config_json_path
+def load_config():
+    config_json_path = Path("static/data") / "config.json"
+    global config
+    with open(config_json_path, "r+") as configJson:
+        config = json.load(configJson)
+
+
+def load_kd_tree(datasource):
     global kdTree
     global database
+    global config
     if datasource != source:
-        loadDB(datasource)
+        load_db(datasource)
     pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "kd_tree.pickle")
     if os.path.isfile(pickled_kd_tree_path):
         print("Pickled KD Tree Exists, Loading")
         kdTree = pickle.load(open(pickled_kd_tree_path, "rb"))
     else:
         print("No Pickled KD Tree, Creating One")
-        with open(config_json_path, "r+") as configJson:
-            configData = json.load(configJson)
-        xCoordinate = configData[datasource]['featureData'][0]['xCoordinate']
-        yCoordinate = configData[datasource]['featureData'][0]['yCoordinate']
-        csvPath = "." + configData[datasource]['featureData'][0]['src']
+        xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
+        yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
+        csvPath = "." + config[datasource]['featureData'][0]['src']
         raw_data = pd.read_csv(csvPath)
         kdTree = cKDTree(list(zip(raw_data[xCoordinate], raw_data[yCoordinate])))
         pickle.dump(kdTree, open(pickled_kd_tree_path, 'wb'))
@@ -63,7 +65,7 @@ def query_for_closest_cell(x, y, datasource, max_distance=100):
     global source
     global kdTree
     if datasource != source:
-        loadKDTree(datasource)
+        load_kd_tree(datasource)
     distance, index = kdTree.query([[x, y]], k=1, distance_upper_bound=max_distance)
     if distance == np.inf:
         return {}
@@ -84,7 +86,7 @@ def get_row(row, datasource):
     global source
     global kdTree
     if datasource != source:
-        loadKDTree(datasource)
+        load_kd_tree(datasource)
     obj = database.loc[[row]].to_dict(orient='records')[0]
     obj['id'] = row
     return obj
@@ -94,6 +96,21 @@ def get_sample_row(datasource):
     global database
     global source
     if datasource != source:
-        loadKDTree(datasource)
+        load_kd_tree(datasource)
     obj = database.iloc[[0]].to_dict(orient='records')[0]
     return obj
+
+
+def get_phenotypes(datasource):
+    global database
+    global source
+    global config
+    try:
+        phenotype_field = config[datasource]['featureData'][0]['phenotype']
+    except KeyError:
+        phenotype_field = 'phenotype'
+
+    if datasource != source:
+        load_kd_tree(datasource)
+    return database[phenotype_field].unique()
+
