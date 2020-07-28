@@ -71,15 +71,16 @@ body {
 /*END OF LOADING SPINNER SECTION*/
 
 #openseadragon {
-    width: 800px;
-    height: 600px;
+    width: 90vh;
+    height: 80vh;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 
 }
 
+
 #channel_list {
     width: 100%;
-    height: 600px;
+    height: 80vh;
     font-size: 6pt;
     overflow-y: auto;
     overflow-x: hidden;
