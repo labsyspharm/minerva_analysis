@@ -159,8 +159,6 @@ def upload_file_page():
                     labelFile = request.files.getlist("label_file")
                     if len(labelFile) > 1:
                         raise Exception("Please only Upload Only 1 Label File")
-                    elif len(labelFile) == 0:
-                        raise Exception("Please Upload a Label File")
 
                     channel_files = request.files.getlist("channel_files")
                     if len(channel_files) == 0:
@@ -299,7 +297,6 @@ def save_config():
         originalData = request.json['originalData']
         datasetName = originalData['datasetName']
         csvName = originalData['csvName']
-        labelName = originalData['labelName']
         headerList = request.json['headerList']
         normalizeCsv = request.json['normalizeCsv']
         if normalizeCsv:
@@ -350,10 +347,14 @@ def save_config():
             configData[datasetName]['featureData'][0]['src'] = "/static/data/" + datasetName + "/" + csvName
             # Adding the Label Channel as the First Label
             configData[datasetName]['imageData'] = [{}]
-            configData[datasetName]['imageData'][0][
-                'src'] = "/static/data/" + datasetName + "/" + labelName + ".dzi"
+            #
             configData[datasetName]['imageData'][0]['name'] = headerList[0][1]['value']
             configData[datasetName]['imageData'][0]['fullname'] = 'Area'
+            if 'labelName' in originalData:
+                configData[datasetName]['imageData'][0]['src'] = "/static/data/" + datasetName + "/" + originalData[
+                    'labelName'] + ".dzi"
+            else:
+                configData[datasetName]['imageData'][0]['src'] = ''
             channelList = channelList[3:]
             for i in range(len(channelList)):
                 channel = channelList[i]
@@ -413,7 +414,6 @@ def get_phenotypes():
     datasource = request.args.get('datasource')
     resp = dataFilter.get_phenotypes(datasource)
     return serialize_and_submit_json(resp)
-
 
 
 def serialize_and_submit_json(data):
