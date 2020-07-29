@@ -10,7 +10,7 @@ const datasource = flaskVariables.datasource;
 let seaDragonViewer;
 let channelList;
 let dataFilter;
-// let colorScheme;
+let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let idCount = 0;
 let k = 3;
