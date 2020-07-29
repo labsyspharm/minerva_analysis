@@ -59,7 +59,7 @@ class DataFilter {
             lightnessRange: ["25", "85"],
             startPalette: [],
             weights: {ciede2000: 1, nameDifference: 0, nameUniqueness: 0, pairPreference: 0},
-            paletteSize: _.size(phenotypes)
+            paletteSize: _.size(phenotypes) + 1 //Adding 1 for a color for null phenotype
         }
         //Routing this request to get the proper CORS headers
         let response = await fetch('https://cors-anywhere.herokuapp.com/http://vrl.cs.brown.edu/color/makePalette', {
@@ -73,8 +73,10 @@ class DataFilter {
             method: 'POST',
             body: JSON.stringify(body)
         });
-        let response_data = await response.json();
-        return _.get(response_data, 'palette', []);
+        let responseData = await response.json();
+        let phenotypeList = _.get(responseData, 'palette', []);
+        phenotypeList.push('');
+        return phenotypeList;
     }
 
     async getPhenotypes() {
