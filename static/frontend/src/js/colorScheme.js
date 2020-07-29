@@ -12,7 +12,9 @@ class colorScheme {
             this.colorScheme = await this.dataFilter.getColorScheme(this.phenotypes);
             this.colorMap = {}
             _.each(this.phenotypes, (phenotype, n) => {
-                this.colorMap[phenotype] = _.nth(this.colorScheme, n);
+                let color = _.nth(this.colorScheme, n)
+                // Converting colorLab color to RGB
+                this.colorMap[phenotype] = convert.lab.rgb(color)
             })
         } catch (e) {
             console.log("Error Getting Color Palette", e)
