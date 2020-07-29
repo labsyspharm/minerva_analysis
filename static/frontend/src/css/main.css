@@ -77,6 +77,24 @@ body {
 
 }
 
+#cell_display {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    padding: 20px;
+}
+
+.mylabels {
+    font-size: 0.6rem;
+}
+
+#cell_wrapper {
+    display: block;
+}
+
+#cell_icon {
+    height: 100px;
+    width: 100px;
+}
+
 
 #channel_list {
     width: 100%;

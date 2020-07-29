@@ -13,7 +13,7 @@ class DataFilter {
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
-        this.init();
+        this.phenotypes = [];
     }
 
     async init() {
@@ -22,7 +22,9 @@ class DataFilter {
                 datasource: datasource
             }))
             let response_data = await response.json();
-            return response_data;
+            this.phenotypes = await this.getPhenotypes();
+            this.phenotypes.push('');
+
         } catch (e) {
             console.log("Error Initializing Dataset", e);
         }
@@ -59,7 +61,7 @@ class DataFilter {
             lightnessRange: ["25", "85"],
             startPalette: [],
             weights: {ciede2000: 1, nameDifference: 0, nameUniqueness: 0, pairPreference: 0},
-            paletteSize: _.size(phenotypes) + 1 //Adding 1 for a color for null phenotype
+            paletteSize: _.size(phenotypes)
         }
         //Routing this request to get the proper CORS headers
         let response = await fetch('https://cors-anywhere.herokuapp.com/http://vrl.cs.brown.edu/color/makePalette', {
@@ -74,21 +76,12 @@ class DataFilter {
             body: JSON.stringify(body)
         });
         let responseData = await response.json();
-        let phenotypeList = _.get(responseData, 'palette', []);
-        phenotypeList.push('');
-        return phenotypeList;
+        let colorSchemeList = _.get(responseData, 'palette', []);
+        return colorSchemeList;
     }
 
-    async getPhenotypes() {
-        try {
-            let response = await fetch('/get_phenotypes?' + new URLSearchParams({
-                datasource: datasource
-            }))
-            let phenotypes = await response.json();
-            return phenotypes;
-        } catch (e) {
-            console.log("Error Getting Phenotypes", e);
-        }
+    getPhenotypes() {
+        return this.phenotypes;
     }
 
 

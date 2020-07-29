@@ -10,6 +10,7 @@ const datasource = flaskVariables.datasource;
 let seaDragonViewer;
 let channelList;
 let dataFilter;
+let cellInformation;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let idCount = 0;
@@ -48,27 +49,25 @@ d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
 
 
 // init all views (datatable, seadragon viewer,...)
-function init(conf) {
-    console.log(`Time:${performance.now() - time}`)
+async function init(conf) {
     time = performance.now();
     console.log('initialize system');
-
     config = conf;
     //channel information
     for (var idx = 0; idx < config["imageData"].length; idx = idx + 1) {
         imageChannels[config["imageData"][idx].fullname] = idx;
     }
     //INIT DATA FILTER
-    console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     dataFilter = new DataFilter(config, imageChannels);
-    console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
-    console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
+    await dataFilter.init();
+    console.log("Data Loaded");
     channelList = new ChannelList(config, dataFilter, eventHandler);
+    await channelList.init();
     colorScheme = new ColorScheme(dataFilter);
-
+    await colorScheme.init();
+    cellInformation = new CellInformation(dataFilter, colorScheme)
+    cellInformation.draw();
 
     //IMAGE VIEWER
     console.log(`Time:${performance.now() - time}`)
@@ -122,7 +121,6 @@ const actionImageClickedMultiSel = (d) => {
     console.log('actionImageClick3edMultSel');
     d3.select('body').style('cursor', 'progress');
     // add newly clicked item to selection
-
     console.log('add to selection');
     if (!Array.isArray(d.selectedItem)) {
         dataFilter.addToCurrentSelection(d.selectedItem, true, d.clearPriors);

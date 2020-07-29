@@ -1,14 +1,14 @@
 class ColorScheme {
     constructor(dataFilter) {
         this.dataFilter = dataFilter;
-        this.init().then(() => {
-            console.log("Successfully Configured Color Scheme");
-        });
+        this.colorMap = {};
+        this.phenotypes = [];
+        this.colorScheme = [];
     }
 
     async init() {
         try {
-            this.phenotypes = await this.dataFilter.getPhenotypes();
+            this.phenotypes = this.dataFilter.getPhenotypes();
             this.colorScheme = await this.dataFilter.getColorScheme(this.phenotypes);
             this.colorMap = {}
             _.each(this.phenotypes, (phenotype, n) => {
@@ -24,6 +24,11 @@ class ColorScheme {
 
     getPhenotypeColor(phenotype) {
         return this.colorMap[phenotype];
+    }
+
+    getPhenotypeColorHex(phenotype) {
+        let color = this.colorMap[phenotype];
+        return convert.rgb.hex(color);
     }
 
     classrColors = {

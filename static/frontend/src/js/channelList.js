@@ -28,7 +28,6 @@ class ChannelList {
                 .on('close', () => this.colorTransferHandle = null));
 
         this.container = d3.select("#channel_list");
-        this.init();
 
     }
 
