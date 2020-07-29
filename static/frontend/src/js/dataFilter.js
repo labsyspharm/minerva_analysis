@@ -74,7 +74,7 @@ class DataFilter {
             body: JSON.stringify(body)
         });
         let response_data = await response.json();
-        return response_data;
+        return _.get(response_data, 'palette', []);
     }
 
     async getPhenotypes() {
