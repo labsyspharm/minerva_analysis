@@ -30,9 +30,14 @@ def image_viewer(datasource):
 
 
 def get_config_names():
-    with open(config_json_path) as f:
-        data = json.load(f)
-    return [key for key in data.keys()]
+    if not os.path.isfile(config_json_path):
+        with open(config_json_path, 'w') as f:
+            json.dump({}, f)
+            return []
+    else:
+        with open(config_json_path) as f:
+            data = json.load(f)
+        return [key for key in data.keys()]
 
 
 @app.route("/upload_page")
