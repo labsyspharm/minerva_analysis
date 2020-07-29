@@ -30,6 +30,9 @@ def image_viewer(datasource):
 
 
 def get_config_names():
+    if not os.path.isdir(Path("static/data")):
+        os.makedirs(Path("static/data"))
+
     if not os.path.isfile(config_json_path):
         with open(config_json_path, 'w') as f:
             json.dump({}, f)
