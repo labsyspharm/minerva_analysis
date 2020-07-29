@@ -1,7 +1,7 @@
 class CellInformation {
     constructor(dataFilter) {
         this.svg = d3.select("#cell_legend");
-        this.phenotypes = dataFilter.getPhenotypes();
+        this.phenotypes = dataFilter.phenotypes;
         this.draw();
     }
 

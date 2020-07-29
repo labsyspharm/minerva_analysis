@@ -8,7 +8,7 @@ class ColorScheme {
 
     async init() {
         try {
-            this.phenotypes = this.dataFilter.getPhenotypes();
+            this.phenotypes = this.dataFilter.phenotypes;
             this.colorScheme = await this.dataFilter.getColorScheme(this.phenotypes);
             this.colorMap = {}
             _.each(this.phenotypes, (phenotype, n) => {

@@ -80,8 +80,16 @@ class DataFilter {
         return colorSchemeList;
     }
 
-    getPhenotypes() {
-        return this.phenotypes;
+    async getPhenotypes() {
+        try {
+            let response = await fetch('/get_phenotypes?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Phenotypes", e);
+        }
     }
 
 
