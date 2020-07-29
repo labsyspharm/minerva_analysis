@@ -6,11 +6,13 @@
  */
 class ImageViewer {
 
-    constructor(config, dataFilter, eventHandler) {
+    constructor(config, dataFilter, eventHandler, colorScheme) {
 
         this.config = config;
         this.eventHandler = eventHandler;
         this.dataFilter = dataFilter;
+        this.colorScheme = colorScheme;
+
 
         // openseadragon viewer
         this.viewer = {};
@@ -412,9 +414,9 @@ class ImageViewer {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         var val = seaDragonViewer.selection.get(labelValueStr)['cluster'];
                         if (val != undefined) {
-                            pixels[i] = colorScheme.classrColors[val][0];
-                            pixels[i + 1] = colorScheme.classrColors[val][1];
-                            pixels[i + 2] = colorScheme.classrColors[val][2];
+                            pixels[i] = this.colorScheme.classrColors[val][0];
+                            pixels[i + 1] = this.colorScheme.classrColors[val][1];
+                            pixels[i + 2] = this.colorScheme.classrColors[val][2];
                         }
                     }
                 }
@@ -541,9 +543,9 @@ class ImageViewer {
                 if (seaDragonViewer.show_selection && seaDragonViewer.selection.size > 0) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         var val = seaDragonViewer.selection.get(labelValue.toString())['cluster'];
-                        pixels[i] = colorScheme.classrColors[val][0];
-                        pixels[i + 1] = colorScheme.classrColors[val][1];
-                        pixels[i + 2] = colorScheme.classrColors[val][2];
+                        pixels[i] = this.colorScheme.classrColors[val][0];
+                        pixels[i + 1] = this.colorScheme.classrColors[val][1];
+                        pixels[i + 2] = this.colorScheme.classrColors[val][2];
                     }
                 }
 

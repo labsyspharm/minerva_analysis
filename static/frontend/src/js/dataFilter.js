@@ -53,6 +53,43 @@ class DataFilter {
         }
     }
 
+    async getColorScheme(phenotypes) {
+        const body = {
+            hueFilters: [],
+            lightnessRange: ["25", "85"],
+            startPalette: [],
+            weights: {ciede2000: 1, nameDifference: 0, nameUniqueness: 0, pairPreference: 0},
+            paletteSize: 10 //_.size(phenotypes)
+        }
+        //Routing this request to get the proper CORS headers
+        let response = await fetch('https://cors-anywhere.herokuapp.com/http://vrl.cs.brown.edu/color/makePalette', {
+            headers: new Headers(
+                {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    'Access-Control-Allow-Origin': '*'
+                }
+            ),
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+        let response_data = await response.json();
+        return response_data;
+    }
+
+    async getPhenotypes() {
+        try {
+            let response = await fetch('/get_phenotypes?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let phenotypes = await response.json();
+            return phenotypes;
+        } catch (e) {
+            console.log("Error Getting Phenotypes", e);
+        }
+    }
+
+
     async findNearestCell(point_x, point_y, max_distance = 100) {
         try {
             let response = await fetch('/get_nearest_cell?' + new URLSearchParams({

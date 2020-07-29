@@ -112,4 +112,7 @@ def get_phenotypes(datasource):
 
     if datasource != source:
         load_kd_tree(datasource)
-    return database[phenotype_field].unique().tolist()
+    if phenotype_field in database.columns:
+        return database[phenotype_field].unique().tolist()
+    else:
+        return []

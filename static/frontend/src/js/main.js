@@ -10,6 +10,7 @@ const datasource = flaskVariables.datasource;
 let seaDragonViewer;
 let channelList;
 let dataFilter;
+// let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let idCount = 0;
 let k = 3;
@@ -66,17 +67,19 @@ function init(conf) {
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     channelList = new ChannelList(config, dataFilter, eventHandler);
+    colorScheme = new colorScheme(dataFilter);
 
 
     //IMAGE VIEWER
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    seaDragonViewer = new ImageViewer(config, dataFilter, eventHandler);
+    seaDragonViewer = new ImageViewer(config, dataFilter, eventHandler, colorScheme);
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     seaDragonViewer.init();
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
+
 
 }
 
