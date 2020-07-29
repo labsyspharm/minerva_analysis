@@ -67,7 +67,7 @@ function init(conf) {
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     channelList = new ChannelList(config, dataFilter, eventHandler);
-    colorScheme = new colorScheme(dataFilter);
+    colorScheme = new ColorScheme(dataFilter);
 
 
     //IMAGE VIEWER

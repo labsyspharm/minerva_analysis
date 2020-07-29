@@ -1,4 +1,4 @@
-class colorScheme {
+class ColorScheme {
     constructor(dataFilter) {
         this.dataFilter = dataFilter;
         this.init().then(() => {
