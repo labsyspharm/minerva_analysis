@@ -413,7 +413,7 @@ class ImageViewer {
                 if (seaDragonViewer.show_selection) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorscheme.getPhenotypeColor(phenotype)
+                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
                         if (phenotype != undefined) {
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];
