@@ -3,6 +3,22 @@ class CellInformation {
         this.svg = d3.select("#cell_legend");
         this.phenotypes = dataFilter.phenotypes;
         this.draw();
+        this.selectedCell = null;
+        let slider = document.getElementById("formControlRange");
+        let value = document.getElementById("distance");
+        let button = document.getElementById("compute_neighborhood_button")
+        value.textContent = slider.value;
+        slider.oninput = function () {
+            value.textContent = this.value;
+        }
+        button.onclick = function () {
+            eventHandler.trigger(CellInformation.events.computeNeighborhood, {
+                'distance': slider.value,
+                'selectedCell': cellInformation.selectedCell
+            });
+        }
+
+
     }
 
     draw() {
@@ -48,4 +64,19 @@ class CellInformation {
             .attr("text-anchor", "left")
             .style("alignment-baseline", "middle")
     }
+
+    selectCell(selectedItem) {
+        this.selectedCell = selectedItem;
+        let phenotype = selectedItem.phenotype;
+        let path = _.first(document.getElementById("cell_icon").getElementsByTagName('path'));
+        path.setAttribute('style', `fill: #${colorScheme.getPhenotypeColorHex(phenotype)}`);
+        if (phenotype == '') {
+            phenotype = "None";
+        }
+        document.getElementById("phenotype").textContent = phenotype;
+    }
 }
+
+CellInformation.events = {
+    computeNeighborhood: 'computeNeighborhood'
+};

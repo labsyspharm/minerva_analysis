@@ -13,26 +13,11 @@ let dataFilter;
 let cellInformation;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
-let idCount = 0;
 let k = 3;
 let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
 
 //Disable right clicking on element
 document.getElementById("openseadragon").addEventListener('contextmenu', event => event.preventDefault());
-
-function convertNumbers(row) {
-    var r = {};
-    r['id'] = idCount + '';
-    if (config[datasource]["featureData"]['id'] && config[datasource]["featureData"]['id'] != "none") {
-        r['id'] = '' + parseInt(row[config[datasource]["featureData"]['id']] - 1);
-    }
-    for (var k in row) {
-        r[k] = +row[k];
-    }
-    r['cluster'] = '-';
-    idCount++;
-    return r;
-}
 
 
 //LOAD DATA
@@ -66,7 +51,7 @@ async function init(conf) {
     await channelList.init();
     colorScheme = new ColorScheme(dataFilter);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataFilter, colorScheme)
+    cellInformation = new CellInformation(dataFilter);
     cellInformation.draw();
 
     //IMAGE VIEWER
@@ -128,10 +113,18 @@ const actionImageClickedMultiSel = (d) => {
         console.log(d.selectedItem.length);
         dataFilter.addAllToCurrentSelection(d.selectedItem);
     }
+    cellInformation.selectCell(d.selectedItem);
     updateSeaDragonSelection();
     d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
+
+const computeCellNeighborhood = async ({distance, selectedCell}) => {
+    let neighborhood = await dataFilter.getNeighborhood(distance, selectedCell);
+    displayNeighborhood(neighborhood);
+}
+eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
+
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection() {
@@ -144,43 +137,10 @@ function getCellId(cell) {
     return cell.id || cell.CellId;
 }
 
-// function findCellById(cellId) {
-//     let intCelId = _.toInteger(cellId);
-//     let cell = dataFilter.getData()[intCelId];
-//
-//     if (getCellId(cell) != intCelId) {
-//         console.log("Indices do not match IDs, falling back on manual find")
-//         cell = _.find(dataFilter.getData(), elem => {
-//             return getCellId(elem) == intCelId
-//         });
-//     }
-//     console.log("Final Found Cell", cellId, getCellId(cell));
-//     return cell;
-// }
-//
-// function displayCell(cell) {
-//     let xCoordinate = config.featureData[0].xCoordinate;
-//     let yCoordinate = config.featureData[0].yCoordinate;
-//     let viewport = {
-//         'x': cell[xCoordinate] - 200,
-//         'y': cell[yCoordinate] - 200,
-//         'width': 400,
-//         'height': 400
-//     }
-//     seaDragonViewer.actionFocus(viewport);
-//     dataFilter.addToCurrentSelection(cell, true, true);
-//     updateSeaDragonSelection();
-// }
-//
-// function displayNeighborhood(cellId, neighborhoodIds) {
-//     let cell = findCellById(cellId);
-//     displayCell(cell);
-//     let neighbors = _.map(neighborhoodIds, elem => {
-//         return findCellById(elem)
-//     });
-//     _.each(neighbors, neighbor => {
-//         dataFilter.addToCurrentSelection(neighbor, true, false);
-//     });
-//     updateSeaDragonSelection();
-// }
-//
+
+function displayNeighborhood(neighborhoodIds) {
+    _.each(neighborhoodIds, neighbor => {
+        dataFilter.addToCurrentSelection(neighbor, true, false);
+    });
+    updateSeaDragonSelection();
+}

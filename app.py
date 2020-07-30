@@ -424,6 +424,18 @@ def get_phenotypes():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_neighborhood', methods=['GET'])
+def get_neighborhood():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    id = request.args.get('cellId')
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+
+    resp = dataFilter.get_neighborhood(x, y, id, datasource, max_distance)
+    return serialize_and_submit_json(resp)
+
+
 def serialize_and_submit_json(data):
     response = app.response_class(
         response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),

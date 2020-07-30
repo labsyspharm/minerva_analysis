@@ -93,7 +93,7 @@ class DataFilter {
     }
 
 
-    async findNearestCell(point_x, point_y, max_distance = 100) {
+    async getNearestCell(point_x, point_y, max_distance = 100) {
         try {
             let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
                 point_x: point_x,
@@ -108,6 +108,24 @@ class DataFilter {
         }
     }
 
+    async getNeighborhood(maxDistance, selectedCell) {
+        try {
+            let pointX = selectedCell[this.x];
+            let pointY = selectedCell[this.y];
+            let cellId = selectedCell.id;
+            let response = await fetch('/get_neighborhood?' + new URLSearchParams({
+                point_x: pointX,
+                point_y: pointY,
+                cellId: cellId,
+                max_distance: maxDistance,
+                datasource: datasource
+            }))
+            let neighborhood = await response.json();
+            return neighborhood;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
 
     getCurrentSelection() {
         return this.currentSelection;

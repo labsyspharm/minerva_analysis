@@ -75,7 +75,8 @@ def query_for_closest_cell(x, y, datasource, max_distance=100):
             row = database.loc[[index[0]]]
             obj = row.to_dict(orient='records')[0]
             obj['id'] = str(row.index.item())
-            obj['cluster'] = "-"
+            if 'phenotype' not in obj:
+                obj['phenotype'] = ''
             return obj
         except:
             return {}
@@ -116,3 +117,23 @@ def get_phenotypes(datasource):
         return database[phenotype_field].unique().tolist()
     else:
         return []
+
+
+def get_neighborhood(x, y, cellId, datasource, max_distance=100):
+    global database
+    global source
+    global kdTree
+    nn = 100
+    if datasource != source:
+        load_kd_tree(datasource)
+    distance, index = kdTree.query([[x, y]], k=nn, distance_upper_bound=max_distance)
+    valid_points = np.array(index[index < database.shape[0]])
+    neighborhood_cells = []
+    for neighbor in valid_points.tolist():
+        row = database.loc[[neighbor]]
+        obj = row.to_dict(orient='records')[0]
+        obj['id'] = str(row.index.item())
+        if 'phenotype' not in obj:
+            obj['phenotype'] = ''
+        neighborhood_cells.append(obj)
+    return neighborhood_cells
