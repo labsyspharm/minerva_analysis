@@ -92,7 +92,7 @@ body {
 }
 
 #cell_wrapper {
-    display: block;
+    display: none;
 }
 
 #compute_neighborhood_button {

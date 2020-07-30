@@ -121,25 +121,28 @@ eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMul
 
 const computeCellNeighborhood = async ({distance, selectedCell}) => {
     let neighborhood = await dataFilter.getNeighborhood(distance, selectedCell);
-    displayNeighborhood(neighborhood);
+    displayNeighborhood(selectedCell, neighborhood);
 }
 eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
 
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection() {
-    var arr = Array.from(dataFilter.getCurrentSelection())
+    let selection = dataFilter.getCurrentSelection();
+    var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
+    if (_.size(selection) == 0){
+        document.getElementById("cell_wrapper").style.display = "none";
+    } else{
+        document.getElementById("cell_wrapper").style.display = "block";
+    }
     seaDragonViewer.updateSelection(selectionHashMap);
 }
 
-function getCellId(cell) {
-    return cell.id || cell.CellId;
-}
 
-
-function displayNeighborhood(neighborhoodIds) {
-    _.each(neighborhoodIds, neighbor => {
+function displayNeighborhood(selectedCell, neighborhood) {
+    dataFilter.addToCurrentSelection(selectedCell, true, true);
+    _.each(neighborhood, neighbor => {
         dataFilter.addToCurrentSelection(neighbor, true, false);
     });
     updateSeaDragonSelection();
