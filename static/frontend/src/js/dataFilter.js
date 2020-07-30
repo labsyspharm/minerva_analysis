@@ -59,7 +59,7 @@ class DataFilter {
         const body = {
             hueFilters: [],
             lightnessRange: ["25", "85"],
-            startPalette: [],
+            startPalette: [[75, 25, 75]],
             weights: {ciede2000: 1, nameDifference: 0, nameUniqueness: 0, pairPreference: 0},
             paletteSize: _.size(phenotypes)
         }
