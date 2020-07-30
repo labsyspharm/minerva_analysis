@@ -126,7 +126,7 @@ def get_neighborhood(x, y, cellId, datasource, max_distance=100):
     nn = 100
     if datasource != source:
         load_kd_tree(datasource)
-    distance, index = kdTree.query([[x, y]], k=nn, distance_upper_bound=max_distance)
+    distance, index = kdTree.query([[x, y]], k=1, distance_upper_bound=max_distance)
     valid_points = np.array(index[index < database.shape[0]])
     neighborhood_cells = []
     for neighbor in valid_points.tolist():
