@@ -164,7 +164,7 @@ class ImageViewer {
                 // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
                 //
 
-                return that.dataFilter.getNearestCell(imagePoint.x, imagePoint.y, 100)
+                return that.dataFilter.getNearestCell(imagePoint.x, imagePoint.y)
                     .then(selectedItem => {
                         if (selectedItem != null && selectedItem != undefined) {
                             // check if user is doing multi-selection or not

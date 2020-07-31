@@ -93,12 +93,11 @@ class DataFilter {
     }
 
 
-    async getNearestCell(point_x, point_y, max_distance = 100) {
+    async getNearestCell(point_x, point_y) {
         try {
             let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
                 point_x: point_x,
                 point_y: point_y,
-                max_distance: max_distance,
                 datasource: datasource
             }))
             let cell = await response.json();
