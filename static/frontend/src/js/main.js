@@ -132,11 +132,11 @@ function updateSeaDragonSelection() {
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
-    // if (_.size(selection) == 0){
-    //     document.getElementById("cell_wrapper").style.display = "none";
-    // } else{
-    //     document.getElementById("cell_wrapper").style.display = "block";
-    // }
+    if (_.size(selection) == 0){
+        document.getElementById("cell_wrapper").style.display = "none";
+    } else{
+        document.getElementById("cell_wrapper").style.display = "block";
+    }
     seaDragonViewer.updateSelection(selectionHashMap);
 }
 
