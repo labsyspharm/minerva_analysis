@@ -6,16 +6,21 @@ class CellInformation {
         this.selectedCell = null;
         let slider = document.getElementById("formControlRange");
         let value = document.getElementById("distance");
-        let button = document.getElementById("compute_neighborhood_button")
+        let neighborhoodButton = document.getElementById("compute_neighborhood_button");
         value.textContent = slider.value;
         slider.oninput = function () {
             value.textContent = this.value;
         }
-        button.onclick = function () {
+        neighborhoodButton.onclick = function () {
             eventHandler.trigger(CellInformation.events.computeNeighborhood, {
                 'distance': slider.value,
                 'selectedCell': cellInformation.selectedCell
             });
+        }
+
+        let refreshColorsButton = document.getElementById("refresh_colors");
+        refreshColorsButton.onclick = function () {
+            eventHandler.trigger(CellInformation.events.refreshColors, {});
         }
 
 
@@ -38,7 +43,7 @@ class CellInformation {
             .attr("width", size)
             .attr("height", size)
             .style("fill", function (d) {
-                let color = colorScheme.getPhenotypeColorHex(d);
+                let color = colorScheme.colorMap[d].hex;
                 return `#${color}`
             })
 
@@ -52,7 +57,7 @@ class CellInformation {
                 return 10 + i * (size + 5) + (size / 2)
             }) // 100 is where the first dot appears. 25 is the distance between dots
             .style("fill", function (d) {
-                let color = colorScheme.getPhenotypeColorHex(d);
+                let color = colorScheme.colorMap[d].hex;
                 return `#${color}`
             })
             .text(d => {
@@ -69,7 +74,7 @@ class CellInformation {
         this.selectedCell = selectedItem;
         let phenotype = selectedItem.phenotype;
         let path = _.first(document.getElementById("cell_icon").getElementsByTagName('path'));
-        path.setAttribute('style', `fill: #${colorScheme.getPhenotypeColorHex(phenotype)}`);
+        path.setAttribute('style', `fill: #${colorScheme.colorMap[phenotype].hex}`);
         if (phenotype == '') {
             phenotype = "None";
         }
@@ -78,5 +83,6 @@ class CellInformation {
 }
 
 CellInformation.events = {
-    computeNeighborhood: 'computeNeighborhood'
+    computeNeighborhood: 'computeNeighborhood',
+    refreshColors: 'refreshColors'
 };

@@ -1,6 +1,8 @@
 from sklearn.neighbors import BallTree
 import numpy as np
 import pandas as pd
+from skimage import color
+import requests
 import json
 import os
 from pathlib import Path
@@ -13,7 +15,7 @@ config = None
 
 
 def init(datasource):
-    load_kd_tree(datasource)
+    load_ball_tree(datasource)
 
 
 def load_db(datasource):
@@ -40,7 +42,7 @@ def load_config():
         config = json.load(configJson)
 
 
-def load_kd_tree(datasource):
+def load_ball_tree(datasource):
     global ball_tree
     global database
     global config
@@ -66,7 +68,7 @@ def query_for_closest_cell(x, y, datasource):
     global source
     global ball_tree
     if datasource != source:
-        load_kd_tree(datasource)
+        load_ball_tree(datasource)
     distance, index = ball_tree.query([[x, y]], k=1)
     if distance == np.inf:
         return {}
@@ -88,7 +90,7 @@ def get_row(row, datasource):
     global source
     global ball_tree
     if datasource != source:
-        load_kd_tree(datasource)
+        load_ball_tree(datasource)
     obj = database.loc[[row]].to_dict(orient='records')[0]
     obj['id'] = row
     return obj
@@ -98,7 +100,7 @@ def get_sample_row(datasource):
     global database
     global source
     if datasource != source:
-        load_kd_tree(datasource)
+        load_ball_tree(datasource)
     obj = database.iloc[[0]].to_dict(orient='records')[0]
     return obj
 
@@ -113,11 +115,11 @@ def get_phenotypes(datasource):
         phenotype_field = 'phenotype'
 
     if datasource != source:
-        load_kd_tree(datasource)
+        load_ball_tree(datasource)
     if phenotype_field in database.columns:
         return database[phenotype_field].unique().tolist()
     else:
-        return []
+        return ['']
 
 
 def get_neighborhood(x, y, datasource, r=100):
@@ -125,7 +127,7 @@ def get_neighborhood(x, y, datasource, r=100):
     global source
     global ball_tree
     if datasource != source:
-        load_kd_tree(datasource)
+        load_ball_tree(datasource)
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
     try:
@@ -140,3 +142,35 @@ def get_neighborhood(x, y, datasource, r=100):
         return neighborhood
     except:
         return {}
+
+
+def get_color_scheme(datasource, refresh):
+    color_scheme_path = str(
+        Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "color_scheme.pickle")
+    if refresh == False:
+        if os.path.isfile(color_scheme_path):
+            print("Color Scheme Exists, Loading")
+            color_scheme = pickle.load(open(color_scheme_path, "rb"))
+            return color_scheme
+    phenotypes = get_phenotypes(datasource)
+    payload = {
+        'hueFilters': [],
+        'lightnessRange': ["25", "85"],
+        'startPalette': [[75, 25, 75]],
+        'weights': {'ciede2000': 1, 'nameDifference': 0, 'nameUniqueness': 0, 'pairPreference': 0},
+        'paletteSize': len(phenotypes)
+    }
+    r = requests.post("http://vrl.cs.brown.edu/color/makePalette",
+                      data=json.dumps(payload))
+    palette = r.json()['palette']
+    rgb_palette = [
+        np.array(color.lab2rgb(np.reshape(elem, (1, 1, 3)).astype(float)) * 255, dtype=int).flatten().tolist() for
+        elem in palette]
+    color_scheme = {}
+    for i in range(len(rgb_palette)):
+        color_scheme[phenotypes[i]] = {}
+        color_scheme[phenotypes[i]]['rgb'] = rgb_palette[i]
+        color_scheme[phenotypes[i]]['hex'] = '%02x%02x%02x' % tuple(rgb_palette[i])
+
+    pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
+    return color_scheme

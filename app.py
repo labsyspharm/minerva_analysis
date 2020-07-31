@@ -423,6 +423,14 @@ def get_phenotypes():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_color_scheme', methods=['GET'])
+def get_color_scheme():
+    datasource = request.args.get('datasource')
+    refresh = request.args.get('refresh') == 'true'
+    resp = dataFilter.get_color_scheme(datasource, refresh)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_neighborhood', methods=['GET'])
 def get_neighborhood():
     x = float(request.args.get('point_x'))

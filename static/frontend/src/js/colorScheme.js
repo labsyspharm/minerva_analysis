@@ -7,42 +7,16 @@ class ColorScheme {
     }
 
     async init() {
+        await this.getColorScheme(false);
+    }
+
+    async getColorScheme(refresh) {
         try {
-            this.phenotypes = this.dataFilter.phenotypes;
-            this.colorScheme = await this.dataFilter.getColorScheme(this.phenotypes);
-            this.colorMap = {}
-            _.each(this.phenotypes, (phenotype, n) => {
-                let color = _.nth(this.colorScheme, n)
-                // Converting colorLab color to RGB
-                this.colorMap[phenotype] = convert.lab.rgb(color)
-            })
+            this.colorMap = await this.dataFilter.getColorScheme(refresh);
         } catch (e) {
             console.log("Error Getting Color Palette", e)
 
         }
-    }
-
-    getPhenotypeColor(phenotype) {
-        return this.colorMap[phenotype];
-    }
-
-    getPhenotypeColorHex(phenotype) {
-        let color = this.colorMap[phenotype];
-        return convert.rgb.hex(color);
-    }
-
-    classrColors = {
-        '-': [255, 165, 0],
-        "0": [31, 120, 180],
-        "1": [227, 26, 28],
-        "2": [51, 160, 44],
-        "3": [106, 61, 154],
-        "4": [177, 89, 40],
-        "5": [255, 255, 153],
-        "6": [166, 206, 227],
-        "7": [178, 223, 138],
-        "8": [251, 154, 153],
-        "9": [202, 178, 214]
     }
 }
 

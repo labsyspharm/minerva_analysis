@@ -413,7 +413,7 @@ class ImageViewer {
                 if (seaDragonViewer.show_selection) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
+                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         if (color != undefined) {
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];
@@ -544,7 +544,7 @@ class ImageViewer {
                 if (seaDragonViewer.show_selection && seaDragonViewer.selection.size > 0) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
+                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         if (color != undefined) {
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];

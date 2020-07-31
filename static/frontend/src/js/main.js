@@ -125,6 +125,13 @@ const computeCellNeighborhood = async ({distance, selectedCell}) => {
 }
 eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
 
+const refreshColors = async () => {
+    await colorScheme.getColorScheme(true);
+    cellInformation.draw();
+
+}
+eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
+
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection() {
@@ -132,9 +139,9 @@ function updateSeaDragonSelection() {
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
-    if (_.size(selection) == 0){
+    if (_.size(selection) == 0) {
         document.getElementById("cell_wrapper").style.display = "none";
-    } else{
+    } else {
         document.getElementById("cell_wrapper").style.display = "block";
     }
     seaDragonViewer.updateSelection(selectionHashMap);
