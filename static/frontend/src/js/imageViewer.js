@@ -6,11 +6,13 @@
  */
 class ImageViewer {
 
-    constructor(config, dataFilter, eventHandler) {
+    constructor(config, dataFilter, eventHandler, colorScheme) {
 
         this.config = config;
         this.eventHandler = eventHandler;
         this.dataFilter = dataFilter;
+        this.colorScheme = colorScheme;
+
 
         // openseadragon viewer
         this.viewer = {};
@@ -162,7 +164,7 @@ class ImageViewer {
                 // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
                 //
 
-                return that.dataFilter.findNearestCell(imagePoint.x, imagePoint.y, 100)
+                return that.dataFilter.getNearestCell(imagePoint.x, imagePoint.y)
                     .then(selectedItem => {
                         if (selectedItem != null && selectedItem != undefined) {
                             // check if user is doing multi-selection or not
@@ -410,11 +412,12 @@ class ImageViewer {
                 // render selection ids as highlighted
                 if (seaDragonViewer.show_selection) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
-                        var val = seaDragonViewer.selection.get(labelValueStr)['cluster'];
-                        if (val != undefined) {
-                            pixels[i] = colorScheme.classrColors[val][0];
-                            pixels[i + 1] = colorScheme.classrColors[val][1];
-                            pixels[i + 2] = colorScheme.classrColors[val][2];
+                        let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
+                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
+                        if (color != undefined) {
+                            pixels[i] = color[0];
+                            pixels[i + 1] = color[1];
+                            pixels[i + 2] = color[2];
                         }
                     }
                 }
@@ -540,10 +543,13 @@ class ImageViewer {
                 // render selection ids as highlighted
                 if (seaDragonViewer.show_selection && seaDragonViewer.selection.size > 0) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
-                        var val = seaDragonViewer.selection.get(labelValue.toString())['cluster'];
-                        pixels[i] = colorScheme.classrColors[val][0];
-                        pixels[i + 1] = colorScheme.classrColors[val][1];
-                        pixels[i + 2] = colorScheme.classrColors[val][2];
+                        let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
+                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
+                        if (color != undefined) {
+                            pixels[i] = color[0];
+                            pixels[i + 1] = color[1];
+                            pixels[i + 2] = color[2];
+                        }
                     }
                 }
 

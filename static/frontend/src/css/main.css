@@ -77,6 +77,35 @@ body {
 
 }
 
+#cell_display {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    padding: 10px;
+    height: 80vh;
+}
+
+.mylabels {
+    font-size: 0.6rem;
+}
+
+#neighborhood_form {
+    font-size: 0.6rem;
+}
+
+#cell_wrapper {
+    display: none;
+}
+
+#compute_neighborhood_button {
+    font-size: 0.6rem;
+}
+
+#cell_icon {
+    height: 100px;
+    width: 100px;
+    display: block;
+    margin: auto;
+}
+
 
 #channel_list {
     width: 100%;
@@ -340,4 +369,13 @@ label {
 
 .fa-pencil-alt {
     color: black;
+}
+
+#phenotype_label {
+    font-size: 0.6rem;
+    font-weight: bold;
+}
+
+#phenotype {
+    font-size: 0.6rem;
 }

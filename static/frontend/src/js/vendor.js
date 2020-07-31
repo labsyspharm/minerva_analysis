@@ -13,7 +13,9 @@ import Sortable from 'sortablejs';
 import Mark from 'mark.js'
 import $ from 'jquery'
 import 'node-fetch'
+import convert from 'color-convert'
 
+window.convert = convert;
 window.$ = $;
 window.d3 = d3;
 window.PNG = PNG;

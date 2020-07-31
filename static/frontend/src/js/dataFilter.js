@@ -13,7 +13,7 @@ class DataFilter {
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
-        this.init();
+        this.phenotypes = [];
     }
 
     async init() {
@@ -22,7 +22,9 @@ class DataFilter {
                 datasource: datasource
             }))
             let response_data = await response.json();
-            return response_data;
+            this.phenotypes = await this.getPhenotypes();
+            this.phenotypes.push('');
+
         } catch (e) {
             console.log("Error Initializing Dataset", e);
         }
@@ -53,12 +55,49 @@ class DataFilter {
         }
     }
 
-    async findNearestCell(point_x, point_y, max_distance = 100) {
+    async getColorScheme(phenotypes) {
+        const body = {
+            hueFilters: [],
+            lightnessRange: ["25", "85"],
+            startPalette: [[75, 25, 75]],
+            weights: {ciede2000: 1, nameDifference: 0, nameUniqueness: 0, pairPreference: 0},
+            paletteSize: _.size(phenotypes)
+        }
+        //Routing this request to get the proper CORS headers
+        let response = await fetch('https://cors-anywhere.herokuapp.com/http://vrl.cs.brown.edu/color/makePalette', {
+            headers: new Headers(
+                {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    'Access-Control-Allow-Origin': '*'
+                }
+            ),
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+        let responseData = await response.json();
+        let colorSchemeList = _.get(responseData, 'palette', []);
+        return colorSchemeList;
+    }
+
+    async getPhenotypes() {
+        try {
+            let response = await fetch('/get_phenotypes?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Phenotypes", e);
+        }
+    }
+
+
+    async getNearestCell(point_x, point_y) {
         try {
             let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
                 point_x: point_x,
                 point_y: point_y,
-                max_distance: max_distance,
                 datasource: datasource
             }))
             let cell = await response.json();
@@ -68,6 +107,24 @@ class DataFilter {
         }
     }
 
+    async getNeighborhood(maxDistance, selectedCell) {
+        try {
+            let pointX = selectedCell[this.x];
+            let pointY = selectedCell[this.y];
+            let cellId = selectedCell.id;
+            let response = await fetch('/get_neighborhood?' + new URLSearchParams({
+                point_x: pointX,
+                point_y: pointY,
+                cellId: cellId,
+                max_distance: maxDistance,
+                datasource: datasource
+            }))
+            let neighborhood = await response.json();
+            return neighborhood;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
 
     getCurrentSelection() {
         return this.currentSelection;

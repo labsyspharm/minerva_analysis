@@ -395,9 +395,8 @@ def init_database():
 def get_nearest_cell():
     x = float(request.args.get('point_x'))
     y = float(request.args.get('point_y'))
-    max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
-    resp = dataFilter.query_for_closest_cell(x, y, datasource, max_distance=max_distance)
+    resp = dataFilter.query_for_closest_cell(x, y, datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -421,6 +420,16 @@ def get_sample_row():
 def get_phenotypes():
     datasource = request.args.get('datasource')
     resp = dataFilter.get_phenotypes(datasource)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_neighborhood', methods=['GET'])
+def get_neighborhood():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_neighborhood(x, y, datasource, r=max_distance)
     return serialize_and_submit_json(resp)
 
 
