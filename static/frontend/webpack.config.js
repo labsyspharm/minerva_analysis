@@ -16,7 +16,24 @@ module.exports = {
                     'style-loader',
                     'css-loader'
                 ]
-            }
+            },
+            {
+                test: /\.(png|svg|jpg|gif|dzi)$/,
+                use: [
+                    'file-loader',
+                ],
+            },
+            {
+                test: /\.m?js$/,
+                exclude: /(bower_components)/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        plugins: ['@babel/plugin-proposal-class-properties'],
+                        presets: ['@babel/preset-env']
+                    }
+                }
+            },
         ],
     }
 };

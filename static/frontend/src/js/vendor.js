@@ -14,6 +14,10 @@ import Mark from 'mark.js'
 import $ from 'jquery'
 import 'node-fetch'
 
+// For now, adding loaders to webpack.config.js - todo ck :: jj
+import * as l from 'lensing';
+window.l = l;
+
 window.$ = $;
 window.d3 = d3;
 window.PNG = PNG;

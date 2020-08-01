@@ -35,12 +35,12 @@ function convertNumbers(row) {
 
 //LOAD DATA
 let time = performance.now()
-console.log('loading config');
+// console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
 d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
-    console.log(`Time:${performance.now() - time}`)
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    console.log('loading data');
+    // console.log('loading data');
     this.config = config;
     init(config[datasource]);
 });
@@ -48,9 +48,9 @@ d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
 
 // init all views (datatable, seadragon viewer,...)
 function init(conf) {
-    console.log(`Time:${performance.now() - time}`)
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    console.log('initialize system');
+    // console.log('initialize system');
 
     config = conf;
     //channel information
@@ -58,24 +58,24 @@ function init(conf) {
         imageChannels[config["imageData"][idx].fullname] = idx;
     }
     //INIT DATA FILTER
-    console.log(`Time:${performance.now() - time}`)
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     dataFilter = new DataFilter(config, imageChannels);
-    console.log(`Time:${performance.now() - time}`)
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    console.log(`Time:${performance.now() - time}`)
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     channelList = new ChannelList(config, dataFilter, eventHandler);
 
 
     //IMAGE VIEWER
-    console.log(`Time:${performance.now() - time}`)
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     seaDragonViewer = new ImageViewer(config, dataFilter, eventHandler);
-    console.log(`Time:${performance.now() - time}`)
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     seaDragonViewer.init();
-    console.log(`Time:${performance.now() - time}`)
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
 
 }
@@ -116,15 +116,15 @@ eventHandler.bind(ChannelList.events.CHANNELS_CHANGE, actionChannelsToRenderChan
 
 //image region or single cell selection (may needs to be combined with other selection events)
 const actionImageClickedMultiSel = (d) => {
-    console.log('actionImageClick3edMultSel');
+    // console.log('actionImageClick3edMultSel');
     d3.select('body').style('cursor', 'progress');
     // add newly clicked item to selection
 
-    console.log('add to selection');
+    // console.log('add to selection');
     if (!Array.isArray(d.selectedItem)) {
         dataFilter.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
     } else {
-        console.log(d.selectedItem.length);
+        // console.log(d.selectedItem.length);
         dataFilter.addAllToCurrentSelection(d.selectedItem);
     }
     updateSeaDragonSelection();
@@ -148,12 +148,12 @@ function getCellId(cell) {
 //     let cell = dataFilter.getData()[intCelId];
 //
 //     if (getCellId(cell) != intCelId) {
-//         console.log("Indices do not match IDs, falling back on manual find")
+//         // console.log("Indices do not match IDs, falling back on manual find")
 //         cell = _.find(dataFilter.getData(), elem => {
 //             return getCellId(elem) == intCelId
 //         });
 //     }
-//     console.log("Final Found Cell", cellId, getCellId(cell));
+//     // console.log("Final Found Cell", cellId, getCellId(cell));
 //     return cell;
 // }
 //

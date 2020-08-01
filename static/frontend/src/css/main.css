@@ -71,8 +71,10 @@ body {
 /*END OF LOADING SPINNER SECTION*/
 
 #openseadragon {
-    width: 90vh;
+    /*width: 90vh;*/
+    width: 50vw;
     height: 80vh;
+    min-height: 570px;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 
 }

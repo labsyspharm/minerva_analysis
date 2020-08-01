@@ -1,9 +1,12 @@
+
+
 /**
  * viewer.js.
  *
  * ImageViewer for CyCif data based on OpenSeadragon.
  *
  */
+
 class ImageViewer {
 
     constructor(config, dataFilter, eventHandler) {
@@ -73,7 +76,7 @@ class ImageViewer {
 
     init() {
 
-        console.log('[seaDragonViewer::init]');
+        // console.log('[seaDragonViewer::init]');
 
         var that = this;
         //Hide Loader
@@ -81,17 +84,57 @@ class ImageViewer {
         // ==================
         // init openseadragon
         // ==================
-        that.viewer = OpenSeadragon({
+
+        // Config viewer - todo ck :: jj
+        const viewer_config = {
             id: "openseadragon",
             prefixUrl: "/static/frontend/external_js/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
-            defaultZoomLevel: 1.2,
+            //defaultZoomLevel: 1.2,
             loadTilesWithAjax: true,
             immediateRender: false,
             maxImageCacheCount: 1000, // default is 200, had to set up for loading two layers (labels and image)
-            preload: true
+            preload: true,
+            // Keep screen filled - todo ck :: jj
+            homeFillsViewer: true,
+            visibilityRatio: 1.0
             //debugMode:  true,
-        });
+        };
+
+        // Instantiate viewer - todo ck :: jj
+        that.viewer = OpenSeadragon(viewer_config);
+
+        // Init data w config - todo ck :: jj
+        const data = [
+            {
+                index: 0,
+                name: 'red',
+                r: 255,
+                g: 0,
+                b: 0
+            },
+            {
+                index: 1,
+                name: 'green',
+                r: 0,
+                g: 255,
+                b: 0
+            },
+            {
+                index: 2,
+                name: 'blue',
+                r: 0,
+                g: 0,
+                b: 255
+            },
+        ];
+        const data_config = {
+            type: 'color'
+        };
+
+        // Instantiate viewer - todo ck :: jj
+        that.viewer.lensing = l.construct(OpenSeadragon, that.viewer, viewer_config, data, data_config);
+
 
         that.viewer.addHandler('tile-loaded', this.tileLoaded);
         that.viewer.addHandler('tile-unloaded', this.tileUnloaded);
@@ -158,7 +201,7 @@ class ImageViewer {
                 var imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
                 //var imagePoint = that.viewer.viewport.viewportToImageCoordinates(viewportPoint);
 
-                // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
+                // // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
                 // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
                 //
 
@@ -197,6 +240,22 @@ class ImageViewer {
                     seaDragonViewer.labelChannel["sub_url"] = group[group.length - 2];
                 }
             });
+
+            // Update viewer_aux - todo ck :: jj
+            that.viewer.lensing.viewer_aux.addTiledImage({
+                tileSource: that.config["imageData"][0]["src"],
+                index: 0,
+                opacity: 1,
+                //preload: true,
+                success: function (event) {
+                    /*
+                    var url0 = that.viewer.lensing.viewer_aux.world.getItemAt(0).source.tilesUrl;
+                    seaDragonViewer.labelChannel["url"] = url0;
+                    var group = url0.split("/");
+                    seaDragonViewer.labelChannel["sub_url"] = group[group.length - 2];
+                    */
+                }
+            });
         } else {
             seaDragonViewer.noLabel = true;
         }
@@ -211,6 +270,9 @@ class ImageViewer {
         var lowerBounds = this.viewer.viewport.imageToViewportCoordinates(width, height);
         var box1 = new OpenSeadragon.Rect(coords.x, coords.y, lowerBounds.x, lowerBounds.y);
         this.viewer.viewport.fitBounds(box1);
+
+        // Update viewer_aux - todo ck :: jj
+        this.viewer.lensing.viewer_aux.viewport.fitBounds(box1);
     }
 
 
@@ -266,7 +328,7 @@ class ImageViewer {
                 // save tile in tileCache
                 seaDragonViewer.tileCache[tile.url] = tile_png;
             } else {
-                console.log('[TILE LOADED]: buffer UNDEFINED');
+                // console.log('[TILE LOADED]: buffer UNDEFINED');
             }
         }
     }
@@ -275,7 +337,7 @@ class ImageViewer {
     // event raised when tile is being unloaded by openSeaDragon; we also purge it from local tile cache
     tileUnloaded(event) {
 
-        //console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
+        //// console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
         seaDragonViewer.tileCache[event.tile.url] = null;
 
     }
@@ -349,7 +411,7 @@ class ImageViewer {
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !seaDragonViewer.noLabel) {
-            console.log("Missing Label Tile", labelTileAdr)
+            // console.log("Missing Label Tile", labelTileAdr)
             const loaded = await addTile(labelTileAdr);
             labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
@@ -481,7 +543,7 @@ class ImageViewer {
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !seaDragonViewer.noLabel) {
-            console.log("Missing Label Tile", labelTileAdr)
+            // console.log("Missing Label Tile", labelTileAdr)
             const loaded = await addTile(labelTileAdr);
             labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
@@ -555,20 +617,20 @@ class ImageViewer {
     }
 
     updateSelection(selection) {
-        console.log('seaDragon: update selection event received');
+        // console.log('seaDragon: update selection event received');
         this.selection = selection;
         seaDragonViewer.forceRepaint();
     }
 
     updateData(data) {
-        console.log('seaDragon: update subset event received');
+        // console.log('seaDragon: update subset event received');
         this.data = data;
         seaDragonViewer.forceRepaint();
     }
 
 
     updateChannelRange(name, tfmin, tfmax) {
-        console.log('updating TF range');
+        // console.log('updating TF range');
 
         var channelIdx = imageChannels[name];
 
@@ -589,7 +651,7 @@ class ImageViewer {
 // color: "rgb(177, 0, 255)"
 // type: "right"
     updateChannelColors(name, color, type) {
-        console.log('seaDragon: update channel colors event received ');
+        // console.log('seaDragon: update channel colors event received ');
 
         var channelIdx = imageChannels[name];
 
@@ -616,23 +678,23 @@ class ImageViewer {
 
         var channelIdx = imageChannels[name];
 
-        console.log('seaDragon: update active channels event received. channel ', channelIdx);
+        // console.log('seaDragon: update active channels event received. channel ', channelIdx);
 
         if (selection.length == 0) {
-            console.log('nothing selected - keep showing last image');
+            // console.log('nothing selected - keep showing last image');
             // return;
         } else if (selection.length == 1) {
 
-            console.log('1 channel selected');
+            // console.log('1 channel selected');
         } else {
-            console.log('multiple channels selected');
+            // console.log('multiple channels selected');
         }
 
         if (status == true) {
-            console.log('channel added');
+            // console.log('channel added');
             addChannel(channelIdx);
         } else {
-            console.log('channel removed');
+            // console.log('channel removed');
             removeChannel(channelIdx);
         }
 
@@ -642,14 +704,14 @@ class ImageViewer {
 //mode is a string: 'show-subset', 'show-selection'
     updateRenderingMode(mode) {
 
-        console.log('seaDragonViewer: rendering mode change event received. mode ' + mode);
+        // console.log('seaDragonViewer: rendering mode change event received. mode ' + mode);
 
         if (mode == 'show-subset') {
             this.show_subset = !this.show_subset;
         }
         if (mode == 'show-selection') {
             this.show_selection = !this.show_selection;
-            console.log(this.show_selection);
+            // console.log(this.show_selection);
         }
 
         seaDragonViewer.forceRepaint();
@@ -809,9 +871,9 @@ async function addTile(path) {
 
     function addTileResponse(success, error) {
         if (error) {
-            console.log("Error Adding Tile:", error)
+            // console.log("Error Adding Tile:", error)
         }
-        console.log("Emergency Added Tile:", path)
+        // console.log("Emergency Added Tile:", path)
     }
 
     const options = {
