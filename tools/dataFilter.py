@@ -6,6 +6,7 @@ import requests
 import json
 import os
 from pathlib import Path
+import time
 import pickle
 
 ball_tree = None
@@ -160,8 +161,10 @@ def get_color_scheme(datasource, refresh):
         'weights': {'ciede2000': 1, 'nameDifference': 0, 'nameUniqueness': 0, 'pairPreference': 0},
         'paletteSize': len(phenotypes)
     }
+    now = time.time()
     r = requests.post("http://vrl.cs.brown.edu/color/makePalette",
-                      data=json.dumps(payload))
+                      data=json.dumps(payload),allow_redirects=True)
+    print((now - time.time()), 'seconds to fetch')
     palette = r.json()['palette']
     rgb_palette = [
         np.array(color.lab2rgb(np.reshape(elem, (1, 1, 3)).astype(float)) * 255, dtype=int).flatten().tolist() for

@@ -29,56 +29,70 @@ class CellInformation {
     draw() {
         const size = 10;
         let docHeight = 20 + _.size(this.phenotypes) * (size + 5);
+        let data = _.map(this.phenotypes, phenotype => {
+            return {'phenotype': phenotype, 'color': `#${colorScheme.colorMap[phenotype].hex}`};
+        })
         document.getElementById('cell_legend').setAttribute("height", `${docHeight}px`);
 
-        this.svg.selectAll(".myrects")
-            .data(this.phenotypes)
-            .enter()
+        let rects = this.svg.selectAll(".myrects")
+            .data(data)
+        rects.enter()
             .append("rect")
             .attr("class", "myrects")
+            .merge(rects)
             .attr("x", 0)
             .attr("y", function (d, i) {
                 return 10 + i * (size + 5)
             }) // 100 is where the first dot appears. 25 is the distance between dots
             .attr("width", size)
             .attr("height", size)
-            .style("fill", function (d) {
-                let color = colorScheme.colorMap[d].hex;
-                return `#${color}`
+            .style("fill", d => {
+                return d.color;
             })
+        rects.exit().remove();
 
-        this.svg.selectAll(".mylabels")
-            .data(this.phenotypes)
-            .enter()
+        let labels = this.svg.selectAll(".mylabels")
+            .data(data)
+        labels.enter()
             .append("text")
             .attr("class", "mylabels")
+            .merge(labels)
             .attr("x", 0 + size * 1.2)
             .attr("y", function (d, i) {
                 return 10 + i * (size + 5) + (size / 2)
             }) // 100 is where the first dot appears. 25 is the distance between dots
-            .style("fill", function (d) {
-                let color = colorScheme.colorMap[d].hex;
-                return `#${color}`
+            .style("fill", d => {
+                return d.color;
             })
             .text(d => {
+                let phenotype = d.phenotype;
                 if (d == "") {
                     return "No Phenotype";
                 }
-                return d;
+                return phenotype;
             })
             .attr("text-anchor", "left")
             .style("alignment-baseline", "middle")
+        labels.exit().remove();
+
+        if (this.selectedCell) {
+            this.fillCellIcon(this.selectedCell.phenotype);
+        }
     }
 
     selectCell(selectedItem) {
         this.selectedCell = selectedItem;
         let phenotype = selectedItem.phenotype;
-        let path = _.first(document.getElementById("cell_icon").getElementsByTagName('path'));
-        path.setAttribute('style', `fill: #${colorScheme.colorMap[phenotype].hex}`);
+        this.fillCellIcon(phenotype);
         if (phenotype == '') {
             phenotype = "None";
         }
         document.getElementById("phenotype").textContent = phenotype;
+    }
+
+    fillCellIcon(phenotype) {
+        let path = _.first(document.getElementById("cell_icon").getElementsByTagName('path'));
+        path.setAttribute('style', `fill: #${colorScheme.colorMap[phenotype].hex}`);
     }
 }
 

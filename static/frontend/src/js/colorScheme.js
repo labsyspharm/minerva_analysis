@@ -2,8 +2,6 @@ class ColorScheme {
     constructor(dataFilter) {
         this.dataFilter = dataFilter;
         this.colorMap = {};
-        this.phenotypes = [];
-        this.colorScheme = [];
     }
 
     async init() {
@@ -13,6 +11,7 @@ class ColorScheme {
     async getColorScheme(refresh) {
         try {
             this.colorMap = await this.dataFilter.getColorScheme(refresh);
+            console.log("Loaded Color Scheme");
         } catch (e) {
             console.log("Error Getting Color Palette", e)
 

@@ -85,7 +85,7 @@ class ImageViewer {
         // ==================
         that.viewer = OpenSeadragon({
             id: "openseadragon",
-            prefixUrl: "/static/frontend/external_js/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
+            prefixUrl: "/static/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
             defaultZoomLevel: 1.2,
             loadTilesWithAjax: true,
