@@ -125,6 +125,11 @@ const computeCellNeighborhood = async ({distance, selectedCell}) => {
 }
 eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
 
+const drawNeighborhoodRadius = async ({distance, selectedCell}) => {
+    seaDragonViewer.drawCellRadius(distance, selectedCell);
+}
+eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
+
 const refreshColors = async () => {
     await colorScheme.getColorScheme(true);
     cellInformation.draw();
@@ -155,3 +160,4 @@ function displayNeighborhood(selectedCell, neighborhood) {
     });
     updateSeaDragonSelection();
 }
+

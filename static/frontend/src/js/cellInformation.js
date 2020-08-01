@@ -11,6 +11,12 @@ class CellInformation {
         slider.oninput = function () {
             value.textContent = this.value;
         }
+        slider.onchange = function () {
+            eventHandler.trigger(CellInformation.events.drawNeighborhoodRadius, {
+                'distance': slider.value,
+                'selectedCell': cellInformation.selectedCell
+            });
+        }
         neighborhoodButton.onclick = function () {
             eventHandler.trigger(CellInformation.events.computeNeighborhood, {
                 'distance': slider.value,
@@ -66,7 +72,7 @@ class CellInformation {
             })
             .text(d => {
                 let phenotype = d.phenotype;
-                if (d == "") {
+                if (phenotype == "") {
                     return "No Phenotype";
                 }
                 return phenotype;
@@ -98,5 +104,7 @@ class CellInformation {
 
 CellInformation.events = {
     computeNeighborhood: 'computeNeighborhood',
-    refreshColors: 'refreshColors'
+    refreshColors: 'refreshColors',
+    drawNeighborhoodRadius: 'drawNeighborhoodRadius',
+
 };

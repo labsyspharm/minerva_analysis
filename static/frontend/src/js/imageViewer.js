@@ -666,18 +666,70 @@ class ImageViewer {
         seaDragonViewer.viewer.forceRefilter();
         seaDragonViewer.viewer.forceRedraw();
     }
+
+    drawCellRadius(radius, selection) {
+        let x = selection[dataFilter.x];
+        let y = selection[dataFilter.y];
+        let imagePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x, y);
+        let circlePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x + _.toNumber(radius), y);
+        let viewportRadius = Math.abs(circlePoint.x - imagePoint.x);
+        let overlay = seaDragonViewer.viewer.svgOverlay();
+
+        // let rects = this.svg.selectAll(".myrects")
+        //     .data(data)
+        // rects.enter()
+        //     .append("rect")
+        //     .attr("class", "myrects")
+        //     .merge(rects)
+        //     .attr("x", 0)
+        //     .attr("y", function (d, i) {
+        //         return 10 + i * (size + 5)
+        //     }) // 100 is where the first dot appears. 25 is the distance between dots
+        //     .attr("width", size)
+        //     .attr("height", size)
+        //     .style("fill", d => {
+        //         return d.color;
+        //     })
+        // rects.exit().remove();
+
+        let circle = d3.select(overlay.node())
+            .selectAll('.radius-circle')
+            .data([{'x': imagePoint.x, 'y': imagePoint.y, 'r': viewportRadius}])
+        circle.enter()
+            .append("circle")
+            .attr("class", "radius-circle")
+            .merge(circle)
+            .attr("cx", d => {
+                return d.x;
+            })
+            .attr("cy", d => {
+                return d.y;
+            })
+            .attr("r", d => {
+                return d.r;
+            })
+
+        circle.exit().remove();
+
+        // var webPoint = event.position;
+        //             // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+        // var viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+        // // Convert from viewport coordinates to image coordinates.
+
+
+    }
 }
 
 
 //static vars
 ImageViewer.events = {
-    //imageClicked: 'image_clicked',
     imageClickedMultiSel: 'image_clicked_multi_selection',
     renderingMode: 'renderingMode'
 };
 
 
 // PUBLIC METHODS
+
 
 // activates filtering plugin to draw images with applied TF
 function activateTFRendering() {
