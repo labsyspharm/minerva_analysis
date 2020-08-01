@@ -30,9 +30,17 @@ def image_viewer(datasource):
 
 
 def get_config_names():
-    with open(config_json_path) as f:
-        data = json.load(f)
-    return [key for key in data.keys()]
+    if not os.path.isdir(Path("static/data")):
+        os.makedirs(Path("static/data"))
+
+    if not os.path.isfile(config_json_path):
+        with open(config_json_path, 'w') as f:
+            json.dump({}, f)
+            return []
+    else:
+        with open(config_json_path) as f:
+            data = json.load(f)
+        return [key for key in data.keys()]
 
 
 @app.route("/upload_page")
@@ -387,9 +395,8 @@ def init_database():
 def get_nearest_cell():
     x = float(request.args.get('point_x'))
     y = float(request.args.get('point_y'))
-    max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
-    resp = dataFilter.query_for_closest_cell(x, y, datasource, max_distance=max_distance)
+    resp = dataFilter.query_for_closest_cell(x, y, datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -413,6 +420,16 @@ def get_sample_row():
 def get_phenotypes():
     datasource = request.args.get('datasource')
     resp = dataFilter.get_phenotypes(datasource)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_neighborhood', methods=['GET'])
+def get_neighborhood():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_neighborhood(x, y, datasource, r=max_distance)
     return serialize_and_submit_json(resp)
 
 

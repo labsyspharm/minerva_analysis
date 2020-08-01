@@ -1,4 +1,4 @@
-from scipy.spatial import cKDTree
+from sklearn.neighbors import BallTree
 import numpy as np
 import pandas as pd
 import json
@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import pickle
 
-kdTree = None
+ball_tree = None
 database = None
 source = None
 config = None
@@ -41,41 +41,43 @@ def load_config():
 
 
 def load_kd_tree(datasource):
-    global kdTree
+    global ball_tree
     global database
     global config
     if datasource != source:
         load_db(datasource)
-    pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "kd_tree.pickle")
+    pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "ball_tree.pickle")
     if os.path.isfile(pickled_kd_tree_path):
         print("Pickled KD Tree Exists, Loading")
-        kdTree = pickle.load(open(pickled_kd_tree_path, "rb"))
+        ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
     else:
         print("No Pickled KD Tree, Creating One")
         xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
         yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
         csvPath = "." + config[datasource]['featureData'][0]['src']
         raw_data = pd.read_csv(csvPath)
-        kdTree = cKDTree(list(zip(raw_data[xCoordinate], raw_data[yCoordinate])))
-        pickle.dump(kdTree, open(pickled_kd_tree_path, 'wb'))
+        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+        ball_tree = BallTree(points, metric='euclidean')
+        pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
 
-def query_for_closest_cell(x, y, datasource, max_distance=100):
+def query_for_closest_cell(x, y, datasource):
     global database
     global source
-    global kdTree
+    global ball_tree
     if datasource != source:
         load_kd_tree(datasource)
-    distance, index = kdTree.query([[x, y]], k=1, distance_upper_bound=max_distance)
+    distance, index = ball_tree.query([[x, y]], k=1)
     if distance == np.inf:
         return {}
     #         Nothing found
     else:
         try:
-            row = database.loc[[index[0]]]
+            row = database.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
-            obj['id'] = str(row.index.item())
-            obj['cluster'] = "-"
+            obj['id'] = str(index[0][0])
+            if 'phenotype' not in obj:
+                obj['phenotype'] = ''
             return obj
         except:
             return {}
@@ -84,7 +86,7 @@ def query_for_closest_cell(x, y, datasource, max_distance=100):
 def get_row(row, datasource):
     global database
     global source
-    global kdTree
+    global ball_tree
     if datasource != source:
         load_kd_tree(datasource)
     obj = database.loc[[row]].to_dict(orient='records')[0]
@@ -112,5 +114,29 @@ def get_phenotypes(datasource):
 
     if datasource != source:
         load_kd_tree(datasource)
-    return database[phenotype_field].unique()
+    if phenotype_field in database.columns:
+        return database[phenotype_field].unique().tolist()
+    else:
+        return []
 
+
+def get_neighborhood(x, y, datasource, r=100):
+    global database
+    global source
+    global ball_tree
+    if datasource != source:
+        load_kd_tree(datasource)
+    index = ball_tree.query_radius([[x, y]], r=r)
+    neighbors = index[0]
+    try:
+        neighborhood = []
+        for neighbor in neighbors:
+            row = database.iloc[[neighbor]]
+            obj = row.to_dict(orient='records')[0]
+            obj['id'] = str(neighbor)
+            if 'phenotype' not in obj:
+                obj['phenotype'] = ''
+            neighborhood.append(obj)
+        return neighborhood
+    except:
+        return {}
