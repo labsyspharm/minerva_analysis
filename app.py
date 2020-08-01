@@ -426,4 +426,4 @@ def serialize_and_submit_json(data):
 
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.run(debug=True, use_reloader=True)
+    app.run(debug=True, use_reloader=True)
