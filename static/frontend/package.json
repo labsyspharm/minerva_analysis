@@ -19,7 +19,7 @@
     "install": "^0.13.0",
     "jquery": "^3.5.1",
     "jquery-form": "^4.3.0",
-    "lensing": "^1.0.10",
+    "lensing": "^1.0.11",
     "lodash": "^4.17.19",
     "mark.js": "^8.11.1",
     "node-fetch": "^2.6.0",
