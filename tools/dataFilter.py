@@ -38,7 +38,6 @@ def load_db(datasource):
         idField = config[datasource]['featureData'][0]['idField']
         if idField != 'none' and idField is not None:
             index_col = idField
-            split_cols.append(idField)
     split_cols.append(config[datasource]['featureData'][0]['xCoordinate'])
     split_cols.append(config[datasource]['featureData'][0]['yCoordinate'])
     split_cols.append(config[datasource]['imageData'][0]['name'])
@@ -54,7 +53,7 @@ def load_db(datasource):
                 min_index = index
         except ValueError:
             pass
-    if (index_col):
+    if index_col:
         adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index], CellId=index_col)
     else:
         adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index])
