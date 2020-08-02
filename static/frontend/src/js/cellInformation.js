@@ -4,17 +4,37 @@ class CellInformation {
         this.phenotypes = dataFilter.phenotypes;
         this.draw();
         this.selectedCell = null;
+        let neighborhoodButton = document.getElementById("compute_neighborhood_button");
+
+
         let slider = document.getElementById("formControlRange");
         let value = document.getElementById("distance");
-        let neighborhoodButton = document.getElementById("compute_neighborhood_button");
         value.textContent = slider.value;
+
+        let sliderDown = false;
         slider.oninput = function () {
             value.textContent = this.value;
         }
+        slider.addEventListener("mousedown", function (e) {
+            sliderDown = true;
+        });
+        slider.addEventListener("mouseup", function (e) {
+            sliderDown = false;
+        });
+        slider.addEventListener("mousemove", function (e) {
+            if (sliderDown) {
+                eventHandler.trigger(CellInformation.events.drawNeighborhoodRadius, {
+                    'distance': slider.value,
+                    'selectedCell': cellInformation.selectedCell,
+                    'dragging': true
+                });
+            }
+        });
         slider.onchange = function () {
             eventHandler.trigger(CellInformation.events.drawNeighborhoodRadius, {
                 'distance': slider.value,
-                'selectedCell': cellInformation.selectedCell
+                'selectedCell': cellInformation.selectedCell,
+                'dragging': false
             });
         }
         neighborhoodButton.onclick = function () {

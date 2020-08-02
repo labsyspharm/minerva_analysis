@@ -667,33 +667,22 @@ class ImageViewer {
         seaDragonViewer.viewer.forceRedraw();
     }
 
-    drawCellRadius(radius, selection) {
+    drawCellRadius(radius, selection, dragging = false) {
         let x = selection[dataFilter.x];
         let y = selection[dataFilter.y];
         let imagePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x, y);
         let circlePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x + _.toNumber(radius), y);
         let viewportRadius = Math.abs(circlePoint.x - imagePoint.x);
         let overlay = seaDragonViewer.viewer.svgOverlay();
-
-        // let rects = this.svg.selectAll(".myrects")
-        //     .data(data)
-        // rects.enter()
-        //     .append("rect")
-        //     .attr("class", "myrects")
-        //     .merge(rects)
-        //     .attr("x", 0)
-        //     .attr("y", function (d, i) {
-        //         return 10 + i * (size + 5)
-        //     }) // 100 is where the first dot appears. 25 is the distance between dots
-        //     .attr("width", size)
-        //     .attr("height", size)
-        //     .style("fill", d => {
-        //         return d.color;
-        //     })
-        // rects.exit().remove();
+        let fade = 0;
+        // when dragging the bar, don't fade out
+        if (dragging) {
+            fade = 1;
+        }
 
         let circle = d3.select(overlay.node())
             .selectAll('.radius-circle')
+            .interrupt()
             .data([{'x': imagePoint.x, 'y': imagePoint.y, 'r': viewportRadius}])
         circle.enter()
             .append("circle")
@@ -708,13 +697,12 @@ class ImageViewer {
             .attr("r", d => {
                 return d.r;
             })
-
+            .style("opacity", 1)
+            .transition()
+            .duration(1000)
+            .ease(d3.easeLinear)
+            .style("opacity", fade);
         circle.exit().remove();
-
-        // var webPoint = event.position;
-        //             // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-        // var viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-        // // Convert from viewport coordinates to image coordinates.
 
 
     }

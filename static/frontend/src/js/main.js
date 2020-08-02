@@ -125,8 +125,8 @@ const computeCellNeighborhood = async ({distance, selectedCell}) => {
 }
 eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
 
-const drawNeighborhoodRadius = async ({distance, selectedCell}) => {
-    seaDragonViewer.drawCellRadius(distance, selectedCell);
+const drawNeighborhoodRadius = async ({distance, selectedCell, dragging}) => {
+    seaDragonViewer.drawCellRadius(distance, selectedCell, dragging);
 }
 eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
 

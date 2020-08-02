@@ -386,7 +386,8 @@ label {
 }
 
 .radius-circle {
-    stroke-width: 10px;
-    stroke: blue;
-    fill: red;
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 3px;
+    vector-effect: non-scaling-stroke;
 }
