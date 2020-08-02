@@ -125,6 +125,5 @@ class CellInformation {
 CellInformation.events = {
     computeNeighborhood: 'computeNeighborhood',
     refreshColors: 'refreshColors',
-    drawNeighborhoodRadius: 'drawNeighborhoodRadius',
-
+    drawNeighborhoodRadius: 'drawNeighborhoodRadius'
 };
