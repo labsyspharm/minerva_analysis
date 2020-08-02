@@ -161,7 +161,7 @@ def get_neighborhood(x, y, datasource, r=100):
     try:
         neighborhood = []
         for neighbor in neighbors:
-            row = database.iloc[[neighbor]]
+            row = adata.obs.iloc[[neighbor]]
             obj = row.to_dict(orient='records')[0]
             obj['id'] = str(neighbor)
             if 'phenotype' not in obj:
