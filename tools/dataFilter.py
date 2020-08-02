@@ -8,11 +8,14 @@ import os
 from pathlib import Path
 import time
 import pickle
+import scimap as sm
+import csv
 
 ball_tree = None
 database = None
 source = None
 config = None
+adata = None
 
 
 def init(datasource):
@@ -23,15 +26,38 @@ def load_db(datasource):
     global database
     global source
     global config
+    global adata
     if source is datasource and database is not None:
         return
     load_config()
     csvPath = "." + config[datasource]['featureData'][0]['src']
+
     index_col = None
+    split_cols = []  # Potential columns that would indicate end of marker quantification
     if 'idField' in config[datasource]['featureData'][0]:
         idField = config[datasource]['featureData'][0]['idField']
         if idField != 'none' and idField is not None:
             index_col = idField
+            split_cols.append(idField)
+    split_cols.append(config[datasource]['featureData'][0]['xCoordinate'])
+    split_cols.append(config[datasource]['featureData'][0]['yCoordinate'])
+    split_cols.append(config[datasource]['imageData'][0]['name'])
+
+    with open(csvPath) as in_file:
+        csv_reader = csv.reader(in_file)
+        header = next(csv_reader)
+    min_index = np.inf
+    for col in split_cols:
+        try:
+            index = header.index(col)
+            if index < min_index:
+                min_index = index
+        except ValueError:
+            pass
+    if (index_col):
+        adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index], CellId=index_col)
+    else:
+        adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index])
     database = pd.read_csv(csvPath, index_col=index_col)
     source = datasource
 
@@ -68,6 +94,7 @@ def query_for_closest_cell(x, y, datasource):
     global database
     global source
     global ball_tree
+    global adata
     if datasource != source:
         load_ball_tree(datasource)
     distance, index = ball_tree.query([[x, y]], k=1)
@@ -76,7 +103,7 @@ def query_for_closest_cell(x, y, datasource):
     #         Nothing found
     else:
         try:
-            row = database.iloc[index[0]]
+            row = adata.obs.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
             obj['id'] = str(index[0][0])
             if 'phenotype' not in obj:
@@ -163,7 +190,7 @@ def get_color_scheme(datasource, refresh):
     }
     now = time.time()
     r = requests.post("http://vrl.cs.brown.edu/color/makePalette",
-                      data=json.dumps(payload),allow_redirects=True)
+                      data=json.dumps(payload), allow_redirects=True)
     print((now - time.time()), 'seconds to fetch')
     palette = r.json()['palette']
     rgb_palette = [
