@@ -12,7 +12,6 @@ import scimap as sm
 import csv
 
 ball_tree = None
-database = None
 source = None
 config = None
 adata = None
@@ -23,11 +22,10 @@ def init(datasource):
 
 
 def load_db(datasource):
-    global database
     global source
     global config
     global adata
-    if source is datasource and database is not None:
+    if source is datasource and adata is not None:
         return
     load_config()
     csvPath = "." + config[datasource]['featureData'][0]['src']
@@ -57,7 +55,6 @@ def load_db(datasource):
         adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index], CellId=index_col)
     else:
         adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index])
-    database = pd.read_csv(csvPath, index_col=index_col)
     source = datasource
 
 
@@ -70,7 +67,6 @@ def load_config():
 
 def load_ball_tree(datasource):
     global ball_tree
-    global database
     global config
     if datasource != source:
         load_db(datasource)
@@ -82,15 +78,12 @@ def load_ball_tree(datasource):
         print("No Pickled KD Tree, Creating One")
         xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
         yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
-        csvPath = "." + config[datasource]['featureData'][0]['src']
-        raw_data = pd.read_csv(csvPath)
-        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+        points = pd.DataFrame({'x': adata.obs[xCoordinate], 'y': adata.obs[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
         pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
 
 def query_for_closest_cell(x, y, datasource):
-    global database
     global source
     global ball_tree
     global adata
@@ -113,29 +106,37 @@ def query_for_closest_cell(x, y, datasource):
 
 
 def get_row(row, datasource):
-    global database
     global source
     global ball_tree
+    global adata
+
     if datasource != source:
         load_ball_tree(datasource)
-    obj = database.loc[[row]].to_dict(orient='records')[0]
+    obj = {}
     obj['id'] = row
+    adata_row = adata[row]
+    obs = adata_row.obs.to_dict()
+    for key in obs:
+        obj[key] = (list(obs[key].values())[0])
+    cols = adata[row].var_names
+    [x] = adata_row.X
+    for i in range(len(cols)):
+        obj[cols[i]] = x[i]
     return obj
 
 
-def get_sample_row(datasource):
-    global database
+def get_column_names(datasource):
     global source
+    global adata
     if datasource != source:
         load_ball_tree(datasource)
-    obj = database.iloc[[0]].to_dict(orient='records')[0]
-    return obj
+    return adata.var_names.values.tolist()
 
 
 def get_phenotypes(datasource):
-    global database
     global source
     global config
+    global adata
     try:
         phenotype_field = config[datasource]['featureData'][0]['phenotype']
     except KeyError:
@@ -143,14 +144,14 @@ def get_phenotypes(datasource):
 
     if datasource != source:
         load_ball_tree(datasource)
-    if phenotype_field in database.columns:
-        return database[phenotype_field].unique().tolist()
+
+    if phenotype_field in adata.obs.columns:
+        return adata.obs[phenotype_field].unique().tolist()
     else:
         return ['']
 
 
 def get_neighborhood(x, y, datasource, r=100):
-    global database
     global source
     global ball_tree
     if datasource != source:

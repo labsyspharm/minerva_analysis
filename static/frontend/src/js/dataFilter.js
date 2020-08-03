@@ -42,9 +42,9 @@ class DataFilter {
         }
     }
 
-    async getSampleRow(row) {
+    async getColumnNames(row) {
         try {
-            let response = await fetch('/get_sample_row?' + new URLSearchParams({
+            let response = await fetch('/get_column_names?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();

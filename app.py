@@ -409,10 +409,10 @@ def get_database_row():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_sample_row', methods=['GET'])
-def get_sample_row():
+@app.route('/get_column_names', methods=['GET'])
+def get_column_names():
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_sample_row(datasource)
+    resp = dataFilter.get_column_names(datasource)
     return serialize_and_submit_json(resp)
 
 

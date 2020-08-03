@@ -37,8 +37,10 @@ class ChannelList {
 
     async init() {
         this.rainbow.hide();
-        let sampleRow = await this.dataFilter.getSampleRow();
-        this.wrangle(sampleRow);
+        let columnNames = await this.dataFilter.getColumnNames();
+        this.columns = _.map(columnNames, column => {
+            return this.dataFilter.getShortChannelName(column);
+        });
         // Hide the Loader
         document.getElementById('channel_list_loader').style.display = "none";
         let channel_list = document.getElementById("channel_list");
@@ -53,7 +55,7 @@ class ChannelList {
             this.rainbow.show(d3.event.clientX, d3.event.clientY);
         };
         // Draws rows in the channel list
-        _.each(this.visData, column => {
+        _.each(this.columns, column => {
             // div for each row in channel list
             let listItemParentDiv = document.createElement("div");
             listItemParentDiv.classList.add("list-group-item");
@@ -147,17 +149,6 @@ class ChannelList {
         });
 
     }
-
-    wrangle(sampleRow) {
-        var that = this;
-        let columns = Object.keys(sampleRow).filter(key =>
-            that.dataFilter.isImageFeature(key));
-        this.visData = _.map(columns, column => {
-            return this.dataFilter.getShortChannelName(column);
-        })
-
-    }
-
 }
 
 //static vars
