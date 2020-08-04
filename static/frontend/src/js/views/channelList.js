@@ -1,10 +1,10 @@
 class ChannelList {
 
 
-    constructor(config, dataFilter, eventHandler) {
+    constructor(config, dataLayer, eventHandler) {
         this.config = config;
         this.eventHandler = eventHandler;
-        this.dataFilter = dataFilter;
+        this.dataLayer = dataLayer;
         this.selections = [];
         this.maxSelections = 4;
         this.ranges = {};
@@ -37,9 +37,9 @@ class ChannelList {
 
     async init() {
         this.rainbow.hide();
-        let columnNames = await this.dataFilter.getColumnNames();
+        let columnNames = await this.dataLayer.getColumnNames();
         this.columns = _.map(columnNames, column => {
-            return this.dataFilter.getShortChannelName(column);
+            return this.dataLayer.getShortChannelName(column);
         });
         // Hide the Loader
         document.getElementById('channel_list_loader').style.display = "none";

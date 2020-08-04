@@ -1,6 +1,6 @@
 //todo add crossfilter stuff here... build some filters and sorters for individual and combined dimensions
 
-class DataFilter {
+class DataLayer {
 
     constructor(config, imageChannels) {
         var that = this;

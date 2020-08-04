@@ -9,7 +9,7 @@ const datasource = flaskVariables.datasource;
 //VIEWS
 let seaDragonViewer;
 let channelList;
-let dataFilter;
+let dataLayer;
 let cellInformation;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
@@ -44,20 +44,20 @@ async function init(conf) {
     }
     //INIT DATA FILTER
     time = performance.now();
-    dataFilter = new DataFilter(config, imageChannels);
-    await dataFilter.init();
+    dataLayer = new DataLayer(config, imageChannels);
+    await dataLayer.init();
     console.log("Data Loaded");
-    channelList = new ChannelList(config, dataFilter, eventHandler);
+    channelList = new ChannelList(config, dataLayer, eventHandler);
     await channelList.init();
-    colorScheme = new ColorScheme(dataFilter);
+    colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataFilter);
+    cellInformation = new CellInformation(dataLayer.phenotypes);
     cellInformation.draw();
 
     //IMAGE VIEWER
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-    seaDragonViewer = new ImageViewer(config, dataFilter, eventHandler, colorScheme);
+    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     seaDragonViewer.init();
@@ -72,7 +72,7 @@ async function init(conf) {
 const actionColorTransferChange = (d) => {
 
     //map to full name
-    d.name = dataFilter.getFullChannelName(d.name);
+    d.name = dataLayer.getFullChannelName(d.name);
 
     d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
@@ -92,7 +92,7 @@ const actionChannelsToRenderChange = (d) => {
     d3.select('body').style('cursor', 'progress');
 
     //map to full name
-    d.name = dataFilter.getFullChannelName(d.name);
+    d.name = dataLayer.getFullChannelName(d.name);
 
     //send to image viewer
     seaDragonViewer.updateActiveChannels(d.name, d.selections, d.status);
@@ -108,10 +108,10 @@ const actionImageClickedMultiSel = (d) => {
     // add newly clicked item to selection
     console.log('add to selection');
     if (!Array.isArray(d.selectedItem)) {
-        dataFilter.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
+        dataLayer.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
     } else {
         console.log(d.selectedItem.length);
-        dataFilter.addAllToCurrentSelection(d.selectedItem);
+        dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
     cellInformation.selectCell(d.selectedItem);
     updateSeaDragonSelection();
@@ -120,7 +120,7 @@ const actionImageClickedMultiSel = (d) => {
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
 
 const computeCellNeighborhood = async ({distance, selectedCell}) => {
-    let neighborhood = await dataFilter.getNeighborhood(distance, selectedCell);
+    let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
     displayNeighborhood(selectedCell, neighborhood);
 }
 eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
@@ -140,7 +140,7 @@ eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection() {
-    let selection = dataFilter.getCurrentSelection();
+    let selection = dataLayer.getCurrentSelection();
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
@@ -154,9 +154,9 @@ function updateSeaDragonSelection() {
 
 
 function displayNeighborhood(selectedCell, neighborhood) {
-    dataFilter.addToCurrentSelection(selectedCell, true, true);
+    dataLayer.addToCurrentSelection(selectedCell, true, true);
     _.each(neighborhood, neighbor => {
-        dataFilter.addToCurrentSelection(neighbor, true, false);
+        dataLayer.addToCurrentSelection(neighbor, true, false);
     });
     updateSeaDragonSelection();
 }
