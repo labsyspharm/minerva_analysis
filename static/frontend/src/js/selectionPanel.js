@@ -17,6 +17,7 @@ class SelectionPanel {
 
         //the display to add buttons to
         that.selectionDisplay = d3.select('#selection_display');
+        that.selectionDisplay.attr('class', "text-center");
 
         //deactive all buttons except the input one
         that.buttons.deactivateOthers = function(button){

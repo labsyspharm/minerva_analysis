@@ -1,14 +1,14 @@
 .selection_button {
     background-color: transparent; /* make the button transparent */
-    background-size: 40px 40px;
+    background-size: 75% 75%;
     background-repeat: no-repeat;  /* make the background image appear only once */
-    background-position: 0px 0px;  /* equivalent to 'top left' */
-    background-color: #dbdbdb;
+    background-position: 5px 5px;  /* equivalent to 'top left' */
+    background-color: #f9f9f9;
     border: 0.5px solid #000000;           /* assuming we want rounded borders */
-    border-radius: 2px;
+    border-radius: 4px;
     cursor: pointer;        /* make the cursor like hovering over an <a> element */
-    height: 40px;           /* make this the size of your image */
-    width: 40px;
+    width: 100%;
+    padding-top: 100%;
     vertical-align: middle; /* align the text vertically centered */
     margin-bottom: 10px;
 }
