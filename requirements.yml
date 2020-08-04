@@ -5,6 +5,7 @@ dependencies:
   - numpy
   - pandas
   - pillow=7.0.0
+  - pysal
   - requests
   - scikit-learn
   - scikit-image=0.14.2
