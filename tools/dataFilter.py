@@ -172,7 +172,7 @@ def get_neighborhood(x, y, datasource, r=100):
         return {}
 
 
-def get_density(x, y, datasource, r):
+def get_number_of_cells_in_circle(x, y, datasource, r):
     global source
     global ball_tree
     if datasource != source:

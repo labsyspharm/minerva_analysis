@@ -441,13 +441,13 @@ def get_neighborhood():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_cell_density', methods=['GET'])
-def get_density():
+@app.route('/get_num_cells_in_circle', methods=['GET'])
+def get_num_cells_in_circle():
     datasource = request.args.get('datasource')
     x = float(request.args.get('point_x'))
     y = float(request.args.get('point_y'))
     r = float(request.args.get('radius'))
-    resp = dataFilter.get_density(x, y, datasource, r=r)
+    resp = dataFilter.get_number_of_cells_in_circle(x, y, datasource, r=r)
     return serialize_and_submit_json(resp)
 
 
