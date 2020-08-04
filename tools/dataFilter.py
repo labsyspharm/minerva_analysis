@@ -172,6 +172,18 @@ def get_neighborhood(x, y, datasource, r=100):
         return {}
 
 
+def get_density(x, y, datasource, r):
+    global source
+    global ball_tree
+    if datasource != source:
+        load_ball_tree(datasource)
+    index = ball_tree.query_radius([[x, y]], r=r)
+    try:
+        return len(index[0])
+    except:
+        return 0
+
+
 def get_color_scheme(datasource, refresh):
     color_scheme_path = str(
         Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "color_scheme.pickle")
