@@ -52,9 +52,9 @@ def load_db(datasource):
         except ValueError:
             pass
     if index_col:
-        adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index], CellId=index_col)
+        adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index], remove_dna=False, CellId=index_col)
     else:
-        adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index])
+        adata = sm.pp.mcmicro_to_scimap([csvPath], remove_dna=True, split=header[min_index])
     source = datasource
 
 
