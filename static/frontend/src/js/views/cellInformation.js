@@ -1,7 +1,7 @@
 class CellInformation {
-    constructor(dataFilter) {
+    constructor(phenotypes) {
         this.svg = d3.select("#cell_legend");
-        this.phenotypes = dataFilter.phenotypes;
+        this.phenotypes = phenotypes;
         this.draw();
         this.selectedCell = null;
         let neighborhoodButton = document.getElementById("compute_neighborhood_button");

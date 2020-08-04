@@ -6,11 +6,11 @@
  */
 class ImageViewer {
 
-    constructor(config, dataFilter, eventHandler, colorScheme) {
+    constructor(config, dataLayer, eventHandler, colorScheme) {
 
         this.config = config;
         this.eventHandler = eventHandler;
-        this.dataFilter = dataFilter;
+        this.dataLayer = dataLayer;
         this.colorScheme = colorScheme;
 
 
@@ -164,7 +164,7 @@ class ImageViewer {
                 // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
                 //
 
-                return that.dataFilter.getNearestCell(imagePoint.x, imagePoint.y)
+                return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
                     .then(selectedItem => {
                         if (selectedItem != null && selectedItem != undefined) {
                             // check if user is doing multi-selection or not
@@ -668,8 +668,8 @@ class ImageViewer {
     }
 
     drawCellRadius(radius, selection, dragging = false) {
-        let x = selection[dataFilter.x];
-        let y = selection[dataFilter.y];
+        let x = selection[dataLayer.x];
+        let y = selection[dataLayer.y];
         let imagePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x, y);
         let circlePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x + _.toNumber(radius), y);
         let viewportRadius = Math.abs(circlePoint.x - imagePoint.x);
