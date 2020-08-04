@@ -147,7 +147,7 @@ function updateSeaDragonSelection() {
     if (_.size(selection) == 0) {
         document.getElementById("cell_wrapper").style.display = "none";
     } else {
-        document.getElementById("cell_wrapper").style.display = "none";
+        document.getElementById("cell_wrapper").style.display = "block";
     }
     seaDragonViewer.updateSelection(selectionHashMap);
 }
