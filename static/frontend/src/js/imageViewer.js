@@ -85,7 +85,7 @@ class ImageViewer {
         // ==================
         that.viewer = OpenSeadragon({
             id: "openseadragon",
-            prefixUrl: "/static/frontend/external_js/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
+            prefixUrl: "/static/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
             defaultZoomLevel: 1.2,
             loadTilesWithAjax: true,
@@ -413,7 +413,7 @@ class ImageViewer {
                 if (seaDragonViewer.show_selection) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
+                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         if (color != undefined) {
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];
@@ -544,7 +544,7 @@ class ImageViewer {
                 if (seaDragonViewer.show_selection && seaDragonViewer.selection.size > 0) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
+                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         if (color != undefined) {
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];
@@ -666,18 +666,58 @@ class ImageViewer {
         seaDragonViewer.viewer.forceRefilter();
         seaDragonViewer.viewer.forceRedraw();
     }
+
+    drawCellRadius(radius, selection, dragging = false) {
+        let x = selection[dataFilter.x];
+        let y = selection[dataFilter.y];
+        let imagePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x, y);
+        let circlePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x + _.toNumber(radius), y);
+        let viewportRadius = Math.abs(circlePoint.x - imagePoint.x);
+        let overlay = seaDragonViewer.viewer.svgOverlay();
+        let fade = 0;
+        // when dragging the bar, don't fade out
+        if (dragging) {
+            fade = 1;
+        }
+
+        let circle = d3.select(overlay.node())
+            .selectAll('.radius-circle')
+            .interrupt()
+            .data([{'x': imagePoint.x, 'y': imagePoint.y, 'r': viewportRadius}])
+        circle.enter()
+            .append("circle")
+            .attr("class", "radius-circle")
+            .merge(circle)
+            .attr("cx", d => {
+                return d.x;
+            })
+            .attr("cy", d => {
+                return d.y;
+            })
+            .attr("r", d => {
+                return d.r;
+            })
+            .style("opacity", 1)
+            .transition()
+            .duration(1000)
+            .ease(d3.easeLinear)
+            .style("opacity", fade);
+        circle.exit().remove();
+
+
+    }
 }
 
 
 //static vars
 ImageViewer.events = {
-    //imageClicked: 'image_clicked',
     imageClickedMultiSel: 'image_clicked_multi_selection',
     renderingMode: 'renderingMode'
 };
 
 
 // PUBLIC METHODS
+
 
 // activates filtering plugin to draw images with applied TF
 function activateTFRendering() {

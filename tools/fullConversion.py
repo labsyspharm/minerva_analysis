@@ -3,18 +3,10 @@ import timeit
 import os
 import shutil
 from pathlib import Path
-
-
-# works with python 3 -  call as  /Users/johanna/anaconda/bin/python TifConverter.py
-if os.name == 'nt':
-    vipshome = os.path.dirname(os.path.abspath(__file__)) + r"\..\static\vips-dev-8.9\bin"
-    os.environ['PATH'] = vipshome + ';' + os.environ['PATH']
-
 import pyvips
 import numpy as np
 import cv2
 from skimage.io import imread
-
 import tifffile as tf
 from PIL import Image
 import os
@@ -22,7 +14,7 @@ import re
 
 # set Libvips path for windows. If mac, please run `brew install vips`
 if os.name == 'nt':
-    vipshome = '..\\static\\vips-dev-8.9\\bin'
+    vipshome = '..\\static\\external\\vips-dev-8.9\\bin'
     os.environ['PATH'] = vipshome + ';' + os.environ['PATH']
 
 Image.MAX_IMAGE_PIXELS = 1000000000

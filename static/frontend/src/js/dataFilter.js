@@ -23,7 +23,6 @@ class DataFilter {
             }))
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();
-            this.phenotypes.push('');
 
         } catch (e) {
             console.log("Error Initializing Dataset", e);
@@ -43,9 +42,9 @@ class DataFilter {
         }
     }
 
-    async getSampleRow(row) {
+    async getColumnNames(row) {
         try {
-            let response = await fetch('/get_sample_row?' + new URLSearchParams({
+            let response = await fetch('/get_column_names?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
@@ -55,29 +54,17 @@ class DataFilter {
         }
     }
 
-    async getColorScheme(phenotypes) {
-        const body = {
-            hueFilters: [],
-            lightnessRange: ["25", "85"],
-            startPalette: [[75, 25, 75]],
-            weights: {ciede2000: 1, nameDifference: 0, nameUniqueness: 0, pairPreference: 0},
-            paletteSize: _.size(phenotypes)
+    async getColorScheme(refresh = false) {
+        try {
+            let response = await fetch('/get_color_scheme?' + new URLSearchParams({
+                datasource: datasource,
+                refresh: refresh
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Sample Row", e);
         }
-        //Routing this request to get the proper CORS headers
-        let response = await fetch('https://cors-anywhere.herokuapp.com/http://vrl.cs.brown.edu/color/makePalette', {
-            headers: new Headers(
-                {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    'Access-Control-Allow-Origin': '*'
-                }
-            ),
-            method: 'POST',
-            body: JSON.stringify(body)
-        });
-        let responseData = await response.json();
-        let colorSchemeList = _.get(responseData, 'palette', []);
-        return colorSchemeList;
     }
 
     async getPhenotypes() {
