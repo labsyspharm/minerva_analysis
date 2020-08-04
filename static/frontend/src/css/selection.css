@@ -1,8 +1,8 @@
 .selection_button {
     background-color: transparent; /* make the button transparent */
-    background-size: 75% 75%;
+    background-size: 100% 100%;
     background-repeat: no-repeat;  /* make the background image appear only once */
-    background-position: 5px 5px;  /* equivalent to 'top left' */
+    /*background-position: 5px 5px;  !* equivalent to 'top left' *!*/
     background-color: #f9f9f9;
     border: 0.5px solid #000000;           /* assuming we want rounded borders */
     border-radius: 4px;
