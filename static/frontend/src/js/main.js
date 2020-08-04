@@ -34,37 +34,19 @@ d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
 
 
 // init all views (datatable, seadragon viewer,...)
-<<<<<<< HEAD
-function init(conf) {
-    // console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
-    // console.log('initialize system');
-
-=======
 async function init(conf) {
     time = performance.now();
-    console.log('initialize system');
->>>>>>> 891450404bb7b7a4cbfc5de5475020da255ef711
+    // console.log('initialize system');
     config = conf;
     //channel information
     for (var idx = 0; idx < config["imageData"].length; idx = idx + 1) {
         imageChannels[config["imageData"][idx].fullname] = idx;
     }
     //INIT DATA FILTER
-<<<<<<< HEAD
-    // console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
-    dataFilter = new DataFilter(config, imageChannels);
-    // console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
-    // console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
-=======
     time = performance.now();
     dataFilter = new DataFilter(config, imageChannels);
     await dataFilter.init();
-    console.log("Data Loaded");
->>>>>>> 891450404bb7b7a4cbfc5de5475020da255ef711
+    // console.log("Data Loaded");
     channelList = new ChannelList(config, dataFilter, eventHandler);
     await channelList.init();
     colorScheme = new ColorScheme(dataFilter);
@@ -75,13 +57,8 @@ async function init(conf) {
     //IMAGE VIEWER
     // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
-<<<<<<< HEAD
-    seaDragonViewer = new ImageViewer(config, dataFilter, eventHandler);
-    // console.log(`Time:${performance.now() - time}`)
-=======
     seaDragonViewer = new ImageViewer(config, dataFilter, eventHandler, colorScheme);
-    console.log(`Time:${performance.now() - time}`)
->>>>>>> 891450404bb7b7a4cbfc5de5475020da255ef711
+    // console.log(`Time:${performance.now() - time}`)
     time = performance.now();
     seaDragonViewer.init();
     // console.log(`Time:${performance.now() - time}`)
@@ -129,12 +106,7 @@ const actionImageClickedMultiSel = (d) => {
     // console.log('actionImageClick3edMultSel');
     d3.select('body').style('cursor', 'progress');
     // add newly clicked item to selection
-<<<<<<< HEAD
-
     // console.log('add to selection');
-=======
-    console.log('add to selection');
->>>>>>> 891450404bb7b7a4cbfc5de5475020da255ef711
     if (!Array.isArray(d.selectedItem)) {
         dataFilter.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
     } else {
@@ -169,48 +141,6 @@ function updateSeaDragonSelection() {
 }
 
 
-<<<<<<< HEAD
-// function findCellById(cellId) {
-//     let intCelId = _.toInteger(cellId);
-//     let cell = dataFilter.getData()[intCelId];
-//
-//     if (getCellId(cell) != intCelId) {
-//         // console.log("Indices do not match IDs, falling back on manual find")
-//         cell = _.find(dataFilter.getData(), elem => {
-//             return getCellId(elem) == intCelId
-//         });
-//     }
-//     // console.log("Final Found Cell", cellId, getCellId(cell));
-//     return cell;
-// }
-//
-// function displayCell(cell) {
-//     let xCoordinate = config.featureData[0].xCoordinate;
-//     let yCoordinate = config.featureData[0].yCoordinate;
-//     let viewport = {
-//         'x': cell[xCoordinate] - 200,
-//         'y': cell[yCoordinate] - 200,
-//         'width': 400,
-//         'height': 400
-//     }
-//     seaDragonViewer.actionFocus(viewport);
-//     dataFilter.addToCurrentSelection(cell, true, true);
-//     updateSeaDragonSelection();
-// }
-//
-// function displayNeighborhood(cellId, neighborhoodIds) {
-//     let cell = findCellById(cellId);
-//     displayCell(cell);
-//     let neighbors = _.map(neighborhoodIds, elem => {
-//         return findCellById(elem)
-//     });
-//     _.each(neighbors, neighbor => {
-//         dataFilter.addToCurrentSelection(neighbor, true, false);
-//     });
-//     updateSeaDragonSelection();
-// }
-//
-=======
 function displayNeighborhood(selectedCell, neighborhood) {
     dataFilter.addToCurrentSelection(selectedCell, true, true);
     _.each(neighborhood, neighbor => {
@@ -218,4 +148,3 @@ function displayNeighborhood(selectedCell, neighborhood) {
     });
     updateSeaDragonSelection();
 }
->>>>>>> 891450404bb7b7a4cbfc5de5475020da255ef711

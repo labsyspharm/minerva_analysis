@@ -1,5 +1,3 @@
-
-
 /**
  * viewer.js.
  *
@@ -150,6 +148,16 @@ class ImageViewer {
         // OpenSeaDragonFiltering: applying custom filters (e.g., transfer functions)
 
         seaDragonViewer.viewer.setFilterOptions({
+            //loadMode: 'sync',
+            // items do not work in sync mode
+            filters: {
+                //items: seaDragonViewer.viewer.world.getItemAt(0), //seaDragonViewer.viewer.world.getItemCount() - 1),
+                processors:
+                seaDragonViewer.renderTFWithLabels
+            }
+        });
+        // Add rendering - todo ck :: jj
+        seaDragonViewer.viewer.lensing.viewer_aux.setFilterOptions({
             //loadMode: 'sync',
             // items do not work in sync mode
             filters: {
@@ -754,8 +762,24 @@ function activateTFRendering() {
                 seaDragonViewer.renderTFWithLabels
             }
         });
+        // - todo ck :: jj (Not confirmed to help, prob can remove)
+        seaDragonViewer.viewer.lensing.viewer_aux.setFilterOptions({
+            //  loadMode: 'sync',
+            filters: {
+                processors: //OpenSeadragon.Filters.BRIGHTNESS(200), ImageViewer.myfilter
+                seaDragonViewer.renderTFWithLabels
+            }
+        });
+
     } else {
         seaDragonViewer.viewer.setFilterOptions({
+            // loadMode: 'sync',
+            filters: {
+                processors: []
+            }
+        });
+        // - todo ck :: jj (Not confirmed to help, prob can remove)
+        seaDragonViewer.viewer.viewer_aux.setFilterOptions({
             // loadMode: 'sync',
             filters: {
                 processors: []
@@ -799,6 +823,23 @@ function addChannel(srcIdx) {
         }
     });
 
+    // Imitating - todo ck :: jj
+    seaDragonViewer.viewer.lensing.viewer_aux.addTiledImage({
+        tileSource: src,
+        //index: 0,
+        opacity: 1, //    preload: true, (not working correctly for us)
+        preload: true,
+        success: function (event) {
+            /*
+            var itemidx = seaDragonViewer.viewer.world.getItemCount() - 1; //0
+            var url = seaDragonViewer.viewer.world.getItemAt(itemidx).source.tilesUrl;
+            var group = url.split("/");
+            var sub_url = group[group.length - 2];
+
+            seaDragonViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
+            */
+        }
+    });
 }
 
 
@@ -818,6 +859,10 @@ function removeChannel(srcIdx) {
             if (url == seaDragonViewer.currentChannels[srcIdx]["url"]) {
 
                 seaDragonViewer.viewer.world.removeItem(seaDragonViewer.viewer.world.getItemAt(i));
+                // - todo ck :: jj (Not confirmed to help, prob can remove)
+                seaDragonViewer.viewer.lensing.viewer_aux.world.removeItem(
+                    seaDragonViewer.viewer.lensing.viewer_aux.world.getItemAt(i)
+                );
 
                 delete seaDragonViewer.currentChannels[srcIdx];
                 break;
@@ -890,6 +935,8 @@ async function addTile(path) {
         callback: addTileResponse
     }
     return new Promise(resolve => {
+        // - todo ck :: jj (Not confirmed to help, prob can remove)
+        seaDragonViewer.viewer.lensing.viewer_aux.imageLoader.addJob(options)
         return seaDragonViewer.viewer.imageLoader.addJob(options)
     })
         .then(response => {
