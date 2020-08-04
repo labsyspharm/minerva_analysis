@@ -8,6 +8,7 @@ const datasource = flaskVariables.datasource;
 
 //VIEWS
 let seaDragonViewer;
+let selectionPanel;
 let channelList;
 let dataFilter;
 let cellInformation;
@@ -64,7 +65,15 @@ async function init(conf) {
     console.log(`Time:${performance.now() - time}`)
     time = performance.now();
 
-
+    //SELECTION PANEL
+    console.log(`Time:${performance.now() - time}`)
+    time = performance.now();
+    selectionPanel = new SelectionPanel(config, dataFilter, eventHandler, colorScheme);
+    // selectionPane = new SelectionPanel(config, dataFilter, eventHandler, colorScheme);
+    // d3.select("#lasso").on("click", function(d, i){
+    //     console.log('lasso selected');
+    //     eventHandler.trigger(SelectionPanel.events.LASSO, "lasso");
+    // });
 }
 
 
@@ -125,6 +134,12 @@ const computeCellNeighborhood = async ({distance, selectedCell}) => {
 }
 eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
 
+const triggerMultiSelection = (d) => {
+    seaDragonViewer.switchSelectionMode(d.selectionType, d.active);
+    console.log(d.active);
+}
+eventHandler.bind(SelectionPanel.events.SELECTION, triggerMultiSelection);
+
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection() {
@@ -140,6 +155,14 @@ function updateSeaDragonSelection() {
     seaDragonViewer.updateSelection(selectionHashMap);
 }
 
+
+function clearSelectionsTool() {
+    //todo
+     //do sth. with the selected data, probably clear ...
+
+    seaDragonViewer.clearSelectionTool();
+}
+eventHandler.bind(SelectionPanel.events.CLEARSELECTION, clearSelectionsTool);
 
 function displayNeighborhood(selectedCell, neighborhood) {
     dataFilter.addToCurrentSelection(selectedCell, true, true);

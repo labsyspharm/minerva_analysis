@@ -9,8 +9,10 @@
     <script src="/static/frontend/external_js/openseadragon-bin-2.4.0/viaWebGL.js"></script>
     <script src="/static/frontend/external_js/openseadragon-bin-2.4.0/openSeadragonGL.js"></script>
     <script src="/static/frontend/external_js/openseadragon-bin-2.4.0/openseadragon-filtering.js"></script>
+    <script src="/static/frontend/external_js/compression/lz-string.js"></script>
 
     <link rel="stylesheet" href="../static/frontend/src/css/main.css">
+    <link rel="stylesheet" href="../static/frontend/src/css/selection.css">
     <script src="../static/frontend/src/js/passVariablesToFrontend.js" type="text/javascript"></script>
     <script type="text/javascript">
         <!--@formatter:off-->
@@ -26,6 +28,7 @@
     <script src="../static/frontend/src/js/channelList.js"></script>
     <script src="../static/frontend/src/js/cellInformation.js"></script>
     <script src="../static/frontend/src/js/imageViewer.js"></script>
+    <script src="../static/frontend/src/js/selectionPanel.js"></script>
     <script src="../static/frontend/src/js/simpleEventHandler.js"></script>
 </head>
 <body>
@@ -95,6 +98,11 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="col-sm-1" id="selection_wrapper">
+            <span id="selection_label">Selection</span>
+            <div id="selection_display">
             </div>
         </div>
         <div class="col-sm-2" id="cell_wrapper">

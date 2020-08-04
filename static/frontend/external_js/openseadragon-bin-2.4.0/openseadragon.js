@@ -5798,8 +5798,8 @@ $.EventSource.prototype = {
             curGPoint,
             updateGPoint;
 
-        if ( typeof event.buttons !== 'undefined' ) {
-            pointsList.buttons = event.buttons;
+        if ( typeof event.selection !== 'undefined' ) {
+            pointsList.buttons = event.selection;
         } else {
             if ( $.Browser.vendor === $.BROWSERS.IE && $.Browser.version < 9 ) {
                 if ( buttonChanged === 0 ) {
@@ -5973,8 +5973,8 @@ $.EventSource.prototype = {
             wasCaptured = false,
             quick;
 
-        if ( typeof event.buttons !== 'undefined' ) {
-            pointsList.buttons = event.buttons;
+        if ( typeof event.selection !== 'undefined' ) {
+            pointsList.buttons = event.selection;
         } else {
             if ( $.Browser.vendor === $.BROWSERS.IE && $.Browser.version < 9 ) {
                 if ( buttonChanged === 0 ) {
@@ -6247,8 +6247,8 @@ $.EventSource.prototype = {
             delta,
             propagate;
 
-        if ( typeof event.buttons !== 'undefined' ) {
-            pointsList.buttons = event.buttons;
+        if ( typeof event.selection !== 'undefined' ) {
+            pointsList.buttons = event.selection;
         }
 
         for ( i = 0; i < gPointCount; i++ ) {
@@ -7446,13 +7446,13 @@ $.Viewer = function( options ) {
     if (!this.drawer.canRotate()) {
         // Disable/remove the rotate left/right buttons since they aren't supported
         if (this.rotateLeft) {
-            i = this.buttons.buttons.indexOf(this.rotateLeft);
-            this.buttons.buttons.splice(i, 1);
+            i = this.buttons.selection.indexOf(this.rotateLeft);
+            this.buttons.selection.splice(i, 1);
             this.buttons.element.removeChild(this.rotateLeft.element);
         }
         if (this.rotateRight) {
-            i = this.buttons.buttons.indexOf(this.rotateRight);
-            this.buttons.buttons.splice(i, 1);
+            i = this.buttons.selection.indexOf(this.rotateRight);
+            this.buttons.selection.splice(i, 1);
             this.buttons.element.removeChild(this.rotateRight.element);
         }
     }
@@ -9926,7 +9926,7 @@ function onCanvasEnter( event ) {
         tracker: event.eventSource,
         pointerType: event.pointerType,
         position: event.position,
-        buttons: event.buttons,
+        buttons: event.selection,
         pointers: event.pointers,
         insideElementPressed: event.insideElementPressed,
         buttonDownAny: event.buttonDownAny,
@@ -9961,7 +9961,7 @@ function onCanvasExit( event ) {
         tracker: event.eventSource,
         pointerType: event.pointerType,
         position: event.position,
-        buttons: event.buttons,
+        buttons: event.selection,
         pointers: event.pointers,
         insideElementPressed: event.insideElementPressed,
         buttonDownAny: event.buttonDownAny,
@@ -10044,7 +10044,7 @@ function onCanvasNonPrimaryPress( event ) {
         position: event.position,
         pointerType: event.pointerType,
         button: event.button,
-        buttons: event.buttons,
+        buttons: event.selection,
         originalEvent: event.originalEvent
     });
 }
@@ -10072,7 +10072,7 @@ function onCanvasNonPrimaryRelease( event ) {
         position: event.position,
         pointerType: event.pointerType,
         button: event.button,
-        buttons: event.buttons,
+        buttons: event.selection,
         originalEvent: event.originalEvent
     });
 }
@@ -10226,7 +10226,7 @@ function onContainerEnter( event ) {
     this.raiseEvent( 'container-enter', {
         tracker: event.eventSource,
         position: event.position,
-        buttons: event.buttons,
+        buttons: event.selection,
         pointers: event.pointers,
         insideElementPressed: event.insideElementPressed,
         buttonDownAny: event.buttonDownAny,
@@ -10260,7 +10260,7 @@ function onContainerExit( event ) {
     this.raiseEvent( 'container-exit', {
         tracker: event.eventSource,
         position: event.position,
-        buttons: event.buttons,
+        buttons: event.selection,
         pointers: event.pointers,
         insideElementPressed: event.insideElementPressed,
         buttonDownAny: event.buttonDownAny,
@@ -10489,8 +10489,8 @@ function doSingleZoomOut() {
 
 
 function lightUp() {
-    this.buttons.emulateEnter();
-    this.buttons.emulateExit();
+    this.selection.emulateEnter();
+    this.selection.emulateExit();
 }
 
 
@@ -10509,8 +10509,8 @@ function onFullScreen() {
         this.setFullScreen( !this.isFullPage() );
     }
     // correct for no mouseout event on change
-    if ( this.buttons ) {
-        this.buttons.emulateExit();
+    if ( this.selection ) {
+        this.selection.emulateExit();
     }
     this.fullPageButton.element.focus();
     if ( this.viewport ) {

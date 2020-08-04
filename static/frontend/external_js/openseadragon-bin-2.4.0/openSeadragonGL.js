@@ -105,8 +105,8 @@ openSeadragonGL.prototype = {
         terms.srcDown = terms.srcDown || prefix+name+'_pressed.png';
         terms.srcGroup = terms.srcGroup || prefix+name+'_grouphover.png';
         // Replace the current controls with the same controls plus a new button
-        this.openSD.clearControls().buttons.buttons.push(new OpenSeadragon.Button(terms));
-        var toolbar = new OpenSeadragon.ButtonGroup({buttons: this.openSD.buttons.buttons});
+        this.openSD.clearControls().selection.selection.push(new OpenSeadragon.Button(terms));
+        var toolbar = new OpenSeadragon.ButtonGroup({buttons: this.openSD.selection.selection});
         this.openSD.addControl(toolbar.element,{anchor: OpenSeadragon.ControlAnchor.TOP_LEFT});
     },
     // Switch Shaders on or off

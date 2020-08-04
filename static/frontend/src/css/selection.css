@@ -1,0 +1,36 @@
+.selection_button {
+    background-color: transparent; /* make the button transparent */
+    background-size: 40px 40px;
+    background-repeat: no-repeat;  /* make the background image appear only once */
+    background-position: 0px 0px;  /* equivalent to 'top left' */
+    background-color: #dbdbdb;
+    border: 0.5px solid #000000;           /* assuming we want rounded borders */
+    border-radius: 2px;
+    cursor: pointer;        /* make the cursor like hovering over an <a> element */
+    height: 40px;           /* make this the size of your image */
+    width: 40px;
+    vertical-align: middle; /* align the text vertically centered */
+    margin-bottom: 10px;
+}
+
+.selection_button:hover {
+    background-color: #868282;
+}
+
+.selection_button.active {
+    background-color: #ffbc3e;
+}
+
+polygon {
+    fill: rgba(70, 130, 180, 0.0);
+    stroke: #ffbc3e;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}
+
+polygon:hover{
+    fill: rgba(70, 130, 180, 0.0);
+    stroke: #ffbc3e;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}
