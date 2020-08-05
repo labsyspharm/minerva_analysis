@@ -115,6 +115,11 @@ body {
     margin: auto;
 }
 
+#refresh_colors {
+    position: absolute;
+    bottom: 15px;
+    font-size: 0.6rem;
+}
 
 #channel_list {
     width: 100%;
@@ -387,5 +392,12 @@ label {
 
 #phenotype {
     font-size: 0.6rem;
+}
+
+.radius-circle {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 3px;
+    vector-effect: non-scaling-stroke;
 }
 

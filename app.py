@@ -409,10 +409,10 @@ def get_database_row():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_sample_row', methods=['GET'])
-def get_sample_row():
+@app.route('/get_column_names', methods=['GET'])
+def get_column_names():
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_sample_row(datasource)
+    resp = dataFilter.get_column_names(datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -423,6 +423,14 @@ def get_phenotypes():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_color_scheme', methods=['GET'])
+def get_color_scheme():
+    datasource = request.args.get('datasource')
+    refresh = request.args.get('refresh') == 'true'
+    resp = dataFilter.get_color_scheme(datasource, refresh)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_neighborhood', methods=['GET'])
 def get_neighborhood():
     x = float(request.args.get('point_x'))
@@ -430,6 +438,16 @@ def get_neighborhood():
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
     resp = dataFilter.get_neighborhood(x, y, datasource, r=max_distance)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_num_cells_in_circle', methods=['GET'])
+def get_num_cells_in_circle():
+    datasource = request.args.get('datasource')
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    r = float(request.args.get('radius'))
+    resp = dataFilter.get_number_of_cells_in_circle(x, y, datasource, r=r)
     return serialize_and_submit_json(resp)
 
 

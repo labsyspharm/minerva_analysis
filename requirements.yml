@@ -1,15 +1,19 @@
 channels:
-- conda-forge
+  - conda-forge
 dependencies:
-- Flask=1.1.2
-- numpy
-- pandas
-- pillow=7.0.0
-- scikit-learn=0.20.2
-- scikit-image=0.14.2
-- scipy
-- tifffile
-- pip
-- pip:
-  - pyvips==2.1.8
-  - opencv-python==4.2.0.*
+  - Flask=1.1.2
+  - numpy
+  - pandas
+  - pillow=7.0.0
+  - requests
+  - scikit-learn
+  - scikit-image=0.14.2
+  - scipy
+  - tifffile
+  - pip
+  - pip:
+      - pyvips==2.1.8
+      - opencv-python==4.2.0.*
+      - orjson==3.3.0
+      - napari[pyqt5]
+      - scimap==0.1.11
