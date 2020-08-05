@@ -51,6 +51,29 @@ export class ViewerManager {
         this.viewer.addHandler('tile-unloaded', this.tileUnloaded.bind(this));
     }
 
+
+    /**
+     * @function evaluateTF
+     *
+     * @param val
+     * @param tf
+     * @returns {*}
+     */
+    evaluateTF(val, tf) {
+
+        let lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
+
+        if (lerpFactor >= tf.num_bins) {
+            lerpFactor = tf.num_bins - 1;
+        }
+
+        if (lerpFactor < 0) {
+            lerpFactor = 0;
+        }
+
+        return tf.tf[lerpFactor];
+    }
+
     /**
      * @function load_label_image
      *
@@ -103,7 +126,7 @@ export class ViewerManager {
 
         // If multi-channel image
         if (Object.keys(seaDragonViewer.currentChannels).length > 1) {
-            await this.imageViewer.renderTFWithLabelsMulti(context, callback, tile);
+            await this.renderTFWithLabelsMulti(context, callback, tile);
             return;
         }
 
@@ -172,7 +195,7 @@ export class ViewerManager {
             channelValue = (channelTileData[i + 1] * 256) + channelTileData[i + 2];
 
             // Apply color transfer function
-            rgb = evaluateTF(channelValue, tf);
+            rgb = this.evaluateTF(channelValue, tf);
 
             // Eval rendering
             if (seaDragonViewer.show_subset) {
@@ -234,24 +257,152 @@ export class ViewerManager {
 
         context.putImageData(screenData, 0, 0);
         callback();
+    }
 
-        /*
-        evaluateTF
-         */
-        function evaluateTF(val, tf) {
+    /**
+     * @function renderTFWithLabelsMulti
+     * Apply TF on multi-channel tile, also accesses the label image
+     *
+     * @param context
+     * @param callback
+     * @param tile
+     * @returns {Promise<void>}
+     */
+    async renderTFWithLabelsMulti(context, callback, tile) {
 
-            let lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
-
-            if (lerpFactor >= tf.num_bins) {
-                lerpFactor = tf.num_bins - 1;
-            }
-
-            if (lerpFactor < 0) {
-                lerpFactor = 0;
-            }
-
-            return tf.tf[lerpFactor];
+        // Ck for tile
+        if (tile == null) {
+            callback();
+            return;
         }
+
+        // Ck tile cache
+        const inputTile = this.imageViewer.tileCache[tile.url];
+        if (inputTile == null) {
+            callback();
+            return;
+        }
+
+        // Render multi-channel image
+        const group = tile.url.split("/");
+        const somePath = group[group.length - 3];
+
+        // Label data
+        let labelTileAdr = '';
+        let labelTile = '';
+        if (!this.imageViewer.noLabel) {
+            const labelPath = this.imageViewer.labelChannel["sub_url"];
+            labelTileAdr = tile.url.replace(somePath, labelPath);
+            labelTile = this.imageViewer.tileCache[labelTileAdr];
+        }
+
+        // Channel data
+        const channelsTileData = [];
+        const tfs = [];
+        const tfs_min = [];
+        const tileurl = tile.url;
+
+        // Get tfs for channels
+        for (const key in this.imageViewer.currentChannels) {
+            const channelIdx = key;
+
+            const channelPath = this.imageViewer.currentChannels[channelIdx]["sub_url"];
+            const channelTileAdr = tileurl.replace(somePath, channelPath);
+            const channelTile = this.imageViewer.tileCache[channelTileAdr];
+
+            if (channelTile == null) {
+                return;
+            }
+
+            channelsTileData.push(channelTile.data);
+            tfs.push(this.imageViewer.channelTF[channelIdx]);
+            tfs_min.push(this.imageViewer.channelTF[channelIdx].min);
+        }
+
+        // get screen pixels to write into
+        const screenData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
+        const pixels = screenData.data;
+
+        // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
+        if (labelTile == null && !this.imageViewer.noLabel) {
+            // console.log("Missing Label Tile", labelTileAdr)
+            const loaded = await addTile(labelTileAdr);
+            labelTile = this.imageViewer.tileCache[labelTileAdr];
+        }
+
+        // Init
+        const labelTileData = _.get(labelTile, 'data');
+        let labelValue = 0;
+        let labelValueStr = "";
+        let channelValue = 0;
+        let rgb = 0;
+
+        // iterate over all tile pixels
+        for (let i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
+
+            pixels[i] = 0;
+            pixels[i + 1] = 0;
+            pixels[i + 2] = 0;
+
+            // Get 24bit label data
+            if (labelTileData) {
+                labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
+                labelValueStr = labelValue + ''; //faster than labelValue.toString()
+            }
+
+            // Iterate over all image channels
+            for (let channel = 0; channel < channelsTileData.length; channel++) {
+
+                // get 16 bit image data (stored in G and B channels)
+                channelValue = (channelsTileData[channel][i + 1] * 256) + channelsTileData[channel][i + 2];
+
+                // apply TF
+                rgb = this.evaluateTF(channelValue, tfs[channel]);
+
+                if (!this.imageViewer.show_subset) { // render everything with TF
+                    if (channelValue >= tfs_min[channel]) {
+                        pixels[i] += rgb.r;
+                        pixels[i + 1] += rgb.g;
+                        pixels[i + 2] += rgb.b;
+                    }
+                }
+
+                // render subset with TF
+                if (this.imageViewer.show_subset) {
+                    // render with TF
+                    if (this.imageViewer.data.has(labelValueStr)) {
+                        if (channelValue >= tfs[channel].min) {
+                            pixels[i] += rgb.r;
+                            pixels[i + 1] += rgb.g;
+                            pixels[i + 2] += rgb.b;
+                        }
+                    } else {
+                        // render data as black/white
+                        pixels[i] += channelsTileData[channel][i + 1];
+                        pixels[i + 1] += channelsTileData[channel][i + 1];
+                        pixels[i + 2] += channelsTileData[channel][i + 1];
+                    }
+                }
+
+                // Render selection ids as highlighted
+                if (this.imageViewer.show_selection && this.imageViewer.selection.size > 0) {
+                    if (this.imageViewer.selection.has(labelValueStr)) {
+                        let phenotype = _.get(this.imageViewer.selection.get(labelValueStr), 'phenotype', '');
+                        let color = this.imageViewer.colorScheme.getPhenotypeColor(phenotype)
+                        if (color !== undefined) {
+                            pixels[i] = color[0];
+                            pixels[i + 1] = color[1];
+                            pixels[i + 2] = color[2];
+                        }
+                    }
+                }
+
+            }
+        }
+
+        context.putImageData(screenData, 0, 0);
+        callback();
+
     }
 
     /**
@@ -324,7 +475,7 @@ export class ViewerManager {
     tileUnloaded(event) {
 
         //// console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
-        seaDragonViewer.tileCache[event.tile.url] = null;
+        this.imageViewer.tileCache[event.tile.url] = null;
 
     }
 

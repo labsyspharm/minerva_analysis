@@ -5,5 +5,5 @@
 
 #### Todos
 1. Update branch name - CK
-2. Connect w viewer coloring strategy 
-    + It might be helpful to abstract the 24-bit image decoding / selection based color assignments in order to decouple viewers
+2. Manage viewers (decoding) - CK
+3. Discover reason for tile load fails on full screen

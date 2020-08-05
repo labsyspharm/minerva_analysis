@@ -219,216 +219,125 @@ class ImageViewer {
      * @function actionFocus
      *
      * @param vp
+     *
+     * @returns void
      */
     actionFocus(vp) {
         this.setViewPort(vp.x, vp.y, vp.width, vp.height);
     }
 
-
-// apply TF on multi-channel tile, also accesses the label image
-    async renderTFWithLabelsMulti(context, callback, tile) {
-
-        if (tile == null) {
-            callback();
-            return;
-        }
-        var inputTile = seaDragonViewer.tileCache[tile.url];
-        if (inputTile == null) {
-            callback();
-            return;
-        }
-
-        var group = tile.url.split("/");
-        var somePath = group[group.length - 3];
-
-        // label data
-        if (!seaDragonViewer.noLabel) {
-            var labelPath = seaDragonViewer.labelChannel["sub_url"];
-            var labelTileAdr = tile.url.replace(somePath, labelPath);
-            var labelTile = seaDragonViewer.tileCache[labelTileAdr];
-        }
-
-        // channel data
-        var channelsTileData = [];
-        var tfs = [];
-        var tfs_min = [];
-
-        var tileurl = tile.url;
-
-        // get tfs for channels
-        for (const key in seaDragonViewer.currentChannels) {
-            var channelIdx = key;
-
-            var channelPath = seaDragonViewer.currentChannels[channelIdx]["sub_url"];
-            var channelTileAdr = tileurl.replace(somePath, channelPath);
-            var channelTile = seaDragonViewer.tileCache[channelTileAdr];
-
-            if (channelTile == null) {
-                return;
-            }
-
-            channelsTileData.push(channelTile.data);
-            tfs.push(seaDragonViewer.channelTF[channelIdx]);
-            tfs_min.push(seaDragonViewer.channelTF[channelIdx].min);
-        }
-
-        // get screen pixels to write into
-        var screenData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
-        var pixels = screenData.data;
-
-        // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        if (labelTile == null && !seaDragonViewer.noLabel) {
-            // console.log("Missing Label Tile", labelTileAdr)
-            const loaded = await addTile(labelTileAdr);
-            labelTile = seaDragonViewer.tileCache[labelTileAdr];
-        }
-
-        var labelTileData = _.get(labelTile, 'data');
-        var labelValue = 0;
-        var labelValueStr = "";
-        var channelValue = 0;
-        var rgb = 0;
-
-        // iterate over all tile pixels
-        for (var i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
-
-            pixels[i] = 0;
-            pixels[i + 1] = 0;
-            pixels[i + 2] = 0;
-
-            // get 24bit label data
-            if (labelTileData) {
-                labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
-                labelValueStr = labelValue + ''; //faster than labelValue.toString()
-            }
-
-            // iterate over all image channels
-            for (var channel = 0; channel < channelsTileData.length; channel++) {
-
-                // get 16 bit image data (stored in G and B channels)
-                channelValue = (channelsTileData[channel][i + 1] * 256) + channelsTileData[channel][i + 2];
-
-                // apply TF
-                rgb = evaluateTF(channelValue, tfs[channel]);
-
-                if (!seaDragonViewer.show_subset) { // render everything with TF
-                    if (channelValue >= tfs_min[channel]) {
-                        pixels[i] += rgb.r;
-                        pixels[i + 1] += rgb.g;
-                        pixels[i + 2] += rgb.b;
-                    }
-                }
-
-                if (seaDragonViewer.show_subset) { // render subset with TF
-                    if (seaDragonViewer.data.has(labelValueStr)) { // render with TF
-                        if (channelValue >= tfs[channel].min) {
-                            pixels[i] += rgb.r;
-                            pixels[i + 1] += rgb.g;
-                            pixels[i + 2] += rgb.b;
-                        }
-                    } else {
-                        // render data as black/white
-                        pixels[i] += channelsTileData[channel][i + 1];
-                        pixels[i + 1] += channelsTileData[channel][i + 1];
-                        pixels[i + 2] += channelsTileData[channel][i + 1];
-                    }
-                }
-
-                // render selection ids as highlighted
-                if (seaDragonViewer.show_selection && seaDragonViewer.selection.size > 0) {
-                    if (seaDragonViewer.selection.has(labelValueStr)) {
-                        let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
-                        if (color != undefined) {
-                            pixels[i] = color[0];
-                            pixels[i + 1] = color[1];
-                            pixels[i + 2] = color[2];
-                        }
-                    }
-                }
-
-            }
-        }
-        context.putImageData(screenData, 0, 0);
-        callback();
-
-    }
-
+    /**
+     * @function updateSelection
+     *
+     * @param selection
+     *
+     * @returns void
+     */
     updateSelection(selection) {
         // console.log('seaDragon: update selection event received');
         this.selection = selection;
         seaDragonViewer.forceRepaint();
     }
 
+    /**
+     * @function updateData
+     *
+     * @param data
+     *
+     * @returns void
+     */
     updateData(data) {
         // console.log('seaDragon: update subset event received');
         this.data = data;
         seaDragonViewer.forceRepaint();
     }
 
-
+    /**
+     * @function updateChannelRange
+     *
+     * @param name
+     * @param tfmin
+     * @param tfmax
+     *
+     * @returns void
+     */
     updateChannelRange(name, tfmin, tfmax) {
+
         // console.log('updating TF range');
+        const channelIdx = imageChannels[name];
 
-        var channelIdx = imageChannels[name];
-
-        var min = tfmin;
-        var max = tfmax;
-        var rgb1 = seaDragonViewer.channelTF[channelIdx].start_color;
-        var rgb2 = seaDragonViewer.channelTF[channelIdx].end_color;
-
-        var tf_def = createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
+        const min = tfmin;
+        const max = tfmax;
+        const rgb1 = seaDragonViewer.channelTF[channelIdx].start_color;
+        const rgb2 = seaDragonViewer.channelTF[channelIdx].end_color;
+        const tf_def = createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
 
         seaDragonViewer.channelTF[channelIdx] = tf_def;
-
         seaDragonViewer.forceRepaint();
     }
 
-//example:
-// name: "DNA4_Hoechst33342_12Nuclei"
-// color: "rgb(177, 0, 255)"
-// type: "right"
+    /**
+     * @function updateChannelColors
+     *
+     * @param name
+     * @param color
+     * @param type
+     *
+     * @returns void
+     */
     updateChannelColors(name, color, type) {
+
+        /*
+        example:
+        name: "DNA4_Hoechst33342_12Nuclei"
+        color: "rgb(177, 0, 255)"
+        type: "right"
+        */
+
         // console.log('seaDragon: update channel colors event received ');
 
-        var channelIdx = imageChannels[name];
+        const channelIdx = imageChannels[name];
 
-        var min = seaDragonViewer.channelTF[channelIdx].min;
-        var max = seaDragonViewer.channelTF[channelIdx].max;
-        var rgb1 = seaDragonViewer.channelTF[channelIdx].start_color;
-        var rgb2 = seaDragonViewer.channelTF[channelIdx].end_color;
-
-        if (type == "black") {
+        const min = seaDragonViewer.channelTF[channelIdx].min;
+        const max = seaDragonViewer.channelTF[channelIdx].max;
+        let rgb1 = seaDragonViewer.channelTF[channelIdx].start_color;
+        let rgb2 = seaDragonViewer.channelTF[channelIdx].end_color;
+        if (type === "black") {
             rgb1 = color;
         } else {
             rgb2 = color;
         }
-
-        var tf_def = createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
+        const tf_def = createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
 
         seaDragonViewer.channelTF[channelIdx] = tf_def;
-
         seaDragonViewer.forceRepaint();
     }
 
-
+    /**
+     * @function updateActiveChannels
+     *
+     * @param name
+     * @param selection
+     * @param status
+     *
+     * @returns void
+     */
     updateActiveChannels(name, selection, status) {
 
         var channelIdx = imageChannels[name];
 
         // console.log('seaDragon: update active channels event received. channel ', channelIdx);
 
-        if (selection.length == 0) {
+        if (selection.length === 0) {
             // console.log('nothing selected - keep showing last image');
             // return;
-        } else if (selection.length == 1) {
-
+        } else if (selection.length === 1) {
             // console.log('1 channel selected');
         } else {
             // console.log('multiple channels selected');
         }
 
-        if (status == true) {
+        if (status) {
             // console.log('channel added');
             addChannel(channelIdx);
         } else {
@@ -439,15 +348,23 @@ class ImageViewer {
         seaDragonViewer.forceRepaint();
     }
 
-//mode is a string: 'show-subset', 'show-selection'
+    /**
+     * @function updateRenderingMode
+     *
+     * @param mode
+     *
+     * @returns void
+     */
     updateRenderingMode(mode) {
+
+        // mode is a string: 'show-subset', 'show-selection'
 
         // console.log('seaDragonViewer: rendering mode change event received. mode ' + mode);
 
-        if (mode == 'show-subset') {
+        if (mode === 'show-subset') {
             this.show_subset = !this.show_subset;
         }
-        if (mode == 'show-selection') {
+        if (mode === 'show-selection') {
             this.show_selection = !this.show_selection;
             // console.log(this.show_selection);
         }
@@ -459,6 +376,8 @@ class ImageViewer {
     forceRepaint() {
         seaDragonViewer.viewer.forceRefilter();
         seaDragonViewer.viewer.forceRedraw();
+        seaDragonViewer.viewer.lensing.viewer_aux.forceRefilter();
+        seaDragonViewer.viewer.lensing.viewer_aux.forceRedraw();
     }
 }
 
@@ -471,7 +390,7 @@ ImageViewer.events = {
 };
 
 
-// PUBLIC METHODS
+// PUBLIC METHODS TODO - integrate as static (talk w Robert/Simon)
 
 // activates filtering plugin to draw images with applied TF
 function activateTFRendering() {
@@ -497,13 +416,6 @@ function activateTFRendering() {
 
     } else {
         seaDragonViewer.viewer.setFilterOptions({
-            // loadMode: 'sync',
-            filters: {
-                processors: []
-            }
-        });
-        // - todo ck :: jj (Not confirmed to help, prob can remove)
-        seaDragonViewer.viewer.viewer_aux.setFilterOptions({
             // loadMode: 'sync',
             filters: {
                 processors: []
@@ -544,24 +456,6 @@ function addChannel(srcIdx) {
             var sub_url = group[group.length - 2];
 
             seaDragonViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
-        }
-    });
-
-    // Imitating - todo ck :: jj
-    seaDragonViewer.viewer.lensing.viewer_aux.addTiledImage({
-        tileSource: src,
-        //index: 0,
-        opacity: 1, //    preload: true, (not working correctly for us)
-        preload: true,
-        success: function (event) {
-            /*
-            var itemidx = seaDragonViewer.viewer.world.getItemCount() - 1; //0
-            var url = seaDragonViewer.viewer.world.getItemAt(itemidx).source.tilesUrl;
-            var group = url.split("/");
-            var sub_url = group[group.length - 2];
-
-            seaDragonViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
-            */
         }
     });
 }
