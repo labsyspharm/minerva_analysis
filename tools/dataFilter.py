@@ -28,7 +28,7 @@ def load_db(datasource):
     if source is datasource and adata is not None:
         return
     load_config()
-    csvPath = "." + config[datasource]['featureData'][0]['src']
+    csvPath = str(Path("." + config[datasource]['featureData'][0]['src']))
 
     index_col = None
     split_cols = []  # Potential columns that would indicate end of marker quantification
