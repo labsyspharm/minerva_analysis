@@ -51,6 +51,7 @@ def load_db(datasource):
                 min_index = index
         except ValueError:
             pass
+    print("Loading CSV:", csvPath)
     if index_col:
         adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index], remove_dna=False, CellId=index_col)
     else:
@@ -130,7 +131,9 @@ def get_column_names(datasource):
     global adata
     if datasource != source:
         load_ball_tree(datasource)
-    return adata.var_names.values.tolist()
+    column_names = adata.var_names.values.tolist()
+    column_names.remove('ImageId')
+    return column_names
 
 
 def get_phenotypes(datasource):
