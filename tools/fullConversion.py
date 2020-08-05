@@ -1,6 +1,12 @@
 from PIL import Image
 import timeit
 import os
+
+# set Libvips path for windows. If mac, please run `brew install vips`
+if os.name == 'nt':
+    vipshome = os.path.dirname(os.path.abspath(__file__)) + r"\..\static\external\vips-dev-8.9\bin"
+    os.environ['PATH'] = vipshome + ';' + os.environ['PATH']
+
 import shutil
 from pathlib import Path
 import pyvips
@@ -11,11 +17,6 @@ import tifffile as tf
 from PIL import Image
 import os
 import re
-
-# set Libvips path for windows. If mac, please run `brew install vips`
-if os.name == 'nt':
-    vipshome = '..\\static\\external\\vips-dev-8.9\\bin'
-    os.environ['PATH'] = vipshome + ';' + os.environ['PATH']
 
 Image.MAX_IMAGE_PIXELS = 1000000000
 
