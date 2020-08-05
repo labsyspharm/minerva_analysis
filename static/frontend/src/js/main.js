@@ -51,7 +51,7 @@ async function init(conf) {
     await channelList.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataLayer.phenotypes);
+    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
     cellInformation.draw();
 
     //IMAGE VIEWER
