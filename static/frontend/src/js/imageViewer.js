@@ -24,7 +24,6 @@ class ImageViewer {
         //this.rgbPlugin = {}; // reads rgb colors from mouse position
         this.canvasOverlay = {}; // canvas overlay
 
-
         // ==========
         // local data
         // ==========
@@ -77,13 +76,10 @@ class ImageViewer {
     init() {
 
         // console.log('[seaDragonViewer::init]');
+        const that = this;
 
-        var that = this;
-        //Hide Loader
+        // Hide Loader
         document.getElementById('openseadragon_loader').style.display = "none";
-        // ==================
-        // init openseadragon
-        // ==================
 
         // Config viewer - todo ck :: jj
         const viewer_config = {
@@ -95,16 +91,15 @@ class ImageViewer {
             immediateRender: false,
             maxImageCacheCount: 1000, // default is 200, had to set up for loading two layers (labels and image)
             preload: true,
-            // Keep screen filled - todo ck :: jj
             homeFillsViewer: true,
             visibilityRatio: 1.0
             //debugMode:  true,
         };
 
-        // Instantiate viewer - todo ck :: jj
+        // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
-        // Init data w config - todo ck :: jj
+        // Init data w config
         const data = [
             {
                 index: 0,
@@ -135,42 +130,11 @@ class ImageViewer {
         // Instantiate viewer - todo ck :: jj
         that.viewer.lensing = l.construct(OpenSeadragon, that.viewer, viewer_config, data, data_config);
 
+        // Instantiate colorManagers -todo ck :: jj
+        that.viewerManagerVMain = new ViewerManager(that, that.viewer);
+        that.viewerManagerVAuxi = new ViewerManager(that, that.viewer.lensing.viewer_aux);
 
-        that.viewer.addHandler('tile-loaded', this.tileLoaded);
-        that.viewer.addHandler('tile-unloaded', this.tileUnloaded);
-
-        // ==================
-        // init Plugins
-        // ==================
-
-
-        // =======================
-        // OpenSeaDragonFiltering: applying custom filters (e.g., transfer functions)
-
-        seaDragonViewer.viewer.setFilterOptions({
-            //loadMode: 'sync',
-            // items do not work in sync mode
-            filters: {
-                //items: seaDragonViewer.viewer.world.getItemAt(0), //seaDragonViewer.viewer.world.getItemCount() - 1),
-                processors:
-                seaDragonViewer.renderTFWithLabels
-            }
-        });
-        // Add rendering - todo ck :: jj
-        seaDragonViewer.viewer.lensing.viewer_aux.setFilterOptions({
-            //loadMode: 'sync',
-            // items do not work in sync mode
-            filters: {
-                //items: seaDragonViewer.viewer.world.getItemAt(0), //seaDragonViewer.viewer.world.getItemCount() - 1),
-                processors:
-                seaDragonViewer.renderTFWithLabels
-            }
-        });
-
-
-        // =======================
         // OpenSeadragonCanvasOverlayHd: add canvas overlay -  drawing selection rectangles
-
         this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
                 var context = opts.context;
@@ -184,7 +148,7 @@ class ImageViewer {
                     context.lineWidth = 15;
                     context.beginPath();
                     d.forEach(function (xVal, i) {
-                        if (i == 0) {
+                        if (i === 0) {
                             context.moveTo(d[i].x, d[i].y);
                         } else {
                             context.lineTo(d[i].x, d[i].y);
@@ -197,33 +161,29 @@ class ImageViewer {
             },
         });
 
-        // on mouse click
+        // Add event mouse handler (cell selection)
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
 
-            // right click
+            // Right click (cell selection)
             if (event.button === 2) {
                 // The canvas-click event gives us a position in web coordinates.
-                var webPoint = event.position;
+                const webPoint = event.position;
                 // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                var viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
                 // Convert from viewport coordinates to image coordinates.
-
-                var imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+                const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
                 //var imagePoint = that.viewer.viewport.viewportToImageCoordinates(viewportPoint);
-
                 // // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
-                // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
-                //
 
                 return that.dataFilter.getNearestCell(imagePoint.x, imagePoint.y)
                     .then(selectedItem => {
-                        if (selectedItem != null && selectedItem != undefined) {
-                            // check if user is doing multi-selection or not
-                            var clearPriors = true;
+                        if (selectedItem !== null && selectedItem !== undefined) {
+                            // Check if user is doing multi-selection or not
+                            let clearPriors = true;
                             if (event.originalEvent.ctrlKey) {
                                 clearPriors = false;
                             }
-                            // trigger event
+                            // Trigger event
                             that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
                                 selectedItem,
                                 clearPriors
@@ -233,271 +193,35 @@ class ImageViewer {
             }
         });
 
-        // ============
-        // general init
-        // ============
-        // load label image in background if it exists
-        if (that.config["imageData"][0]["src"] && that.config["imageData"][0]["src"] != '') {
-            that.viewer.addTiledImage({
-                tileSource: that.config["imageData"][0]["src"],
-                index: 0,
-                opacity: 1,
-                //preload: true,
-                success: function (event) {
-                    var url0 = that.viewer.world.getItemAt(0).source.tilesUrl;
-                    seaDragonViewer.labelChannel["url"] = url0;
-                    var group = url0.split("/");
-                    seaDragonViewer.labelChannel["sub_url"] = group[group.length - 2];
-                }
-            });
+    }
 
-            // Update viewer_aux - todo ck :: jj
-            that.viewer.lensing.viewer_aux.addTiledImage({
-                tileSource: that.config["imageData"][0]["src"],
-                index: 0,
-                opacity: 1,
-                //preload: true,
-                success: function (event) {
-                    /*
-                    var url0 = that.viewer.lensing.viewer_aux.world.getItemAt(0).source.tilesUrl;
-                    seaDragonViewer.labelChannel["url"] = url0;
-                    var group = url0.split("/");
-                    seaDragonViewer.labelChannel["sub_url"] = group[group.length - 2];
-                    */
-                }
-            });
-        } else {
-            seaDragonViewer.noLabel = true;
-        }
-
-
-    } // init()
-
-
-    // set viewport (called on focus action)
+    /**
+     * @function setViewport
+     *
+     * @param {int} x
+     * @param {int} y
+     * @param {int} width
+     * @param {int} height
+     *
+     * @returns void
+     */
     setViewPort(x, y, width, height) {
-        var coords = this.viewer.viewport.imageToViewportCoordinates(x, y);
-        var lowerBounds = this.viewer.viewport.imageToViewportCoordinates(width, height);
-        var box1 = new OpenSeadragon.Rect(coords.x, coords.y, lowerBounds.x, lowerBounds.y);
+        // Calc
+        const coords = this.viewer.viewport.imageToViewportCoordinates(x, y);
+        const lowerBounds = this.viewer.viewport.imageToViewportCoordinates(width, height);
+        const box1 = new OpenSeadragon.Rect(coords.x, coords.y, lowerBounds.x, lowerBounds.y);
+        //
         this.viewer.viewport.fitBounds(box1);
-
-        // Update viewer_aux - todo ck :: jj
         this.viewer.lensing.viewer_aux.viewport.fitBounds(box1);
     }
 
-
-    // =============
-    // handle events
-    // =============
-
-
+    /**
+     * @function actionFocus
+     *
+     * @param vp
+     */
     actionFocus(vp) {
         this.setViewPort(vp.x, vp.y, vp.width, vp.height);
-    }
-
-
-    // =====================
-    // tile cache management
-    // =====================
-
-
-    // event raised when tile loaded with openSeaDragon, we want to store it locally so we can access it later (to manually filter, etc.)
-    tileLoaded(event) {
-
-        if (event == null || event == undefined || event.tileRequest == null) {
-            return;
-        }
-
-        var handlePngAs8Bit = false;
-        if (handlePngAs8Bit) {
-            var img = new Image();
-            img.onload = function () {
-
-                var tile = event.tile;
-                var canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                var ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-
-                // this gets back an 8 bit RGBA image
-                var imageData = ctx.getImageData(0, 0, img.width, img.height);
-
-                seaDragonViewer.tileCache[img.src] = imageData;
-
-            };
-            img.src = event.tile.url;
-
-        } else { // full 24bit png handling: get buffer, parse it into png, save in cache
-
-            var buffer = new Buffer(event.tileRequest.response);
-            if (buffer) {
-                var tile = event.tile;
-                var tile_png = PNG.sync.read(buffer, {colortype: 0});
-
-                // save tile in tileCache
-                seaDragonViewer.tileCache[tile.url] = tile_png;
-            } else {
-                // console.log('[TILE LOADED]: buffer UNDEFINED');
-            }
-        }
-    }
-
-
-    // event raised when tile is being unloaded by openSeaDragon; we also purge it from local tile cache
-    tileUnloaded(event) {
-
-        //// console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
-        seaDragonViewer.tileCache[event.tile.url] = null;
-
-    }
-
-
-    // ===================
-    // rendering functions
-    // ===================
-
-
-    // called by filtering plugin, applies TF on single tile, also accesses the label image
-    async renderTFWithLabels(context, callback, tile) {
-
-        if (tile == null) {
-            callback();
-            return;
-        }
-        var inputTile = seaDragonViewer.tileCache[tile.url];
-        if (inputTile == null) {
-            callback();
-            return;
-        }
-
-        // render multi-channel image
-        if (Object.keys(seaDragonViewer.currentChannels).length > 1) {
-            seaDragonViewer.renderTFWithLabelsMulti(context, callback, tile);
-            return;
-        }
-
-        // render single-channel image
-
-        var group = tile.url.split("/");
-        var somePath = group[group.length - 3];
-
-        // label data
-        if (!seaDragonViewer.noLabel) {
-            var labelPath = seaDragonViewer.labelChannel["sub_url"];
-            var labelTileAdr = tile.url.replace(somePath, labelPath);
-            var labelTile = seaDragonViewer.tileCache[labelTileAdr];
-        }
-
-        // channel data
-        var channelIdx = "";
-        for (var key in seaDragonViewer.currentChannels) {
-            channelIdx = key;
-            break;
-        }
-        if (channelIdx == "") {
-            return;
-        }
-
-        var channelPath = seaDragonViewer.currentChannels[channelIdx]["sub_url"];
-        var channelTileAdr = tile.url.replace(somePath, channelPath);
-        var channelTile = seaDragonViewer.tileCache[channelTileAdr];
-
-        if (channelTile == null) {
-            return;
-        }
-        var channelTileData = channelTile.data;
-
-        var tf = seaDragonViewer.channelTF[channelIdx];
-
-        // get screen pixels to write into
-        var screenData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
-        var pixels = screenData.data;
-
-        var labelValue = 0;
-        var labelValueStr = "";
-        var channelValue = 0;
-        var rgb = 0;
-
-        // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        if (labelTile == null && !seaDragonViewer.noLabel) {
-            // console.log("Missing Label Tile", labelTileAdr)
-            const loaded = await addTile(labelTileAdr);
-            labelTile = seaDragonViewer.tileCache[labelTileAdr];
-        }
-        // check if there is a label present
-
-        var labelTileData = _.get(labelTile, 'data');
-
-        // iterate over all tile pixels
-        for (var i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
-
-            // get 24bit label data
-            if (labelTileData) {
-                labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
-                labelValueStr = labelValue.toString();
-            }
-            // get 16 bit data (stored in G and B channels)
-            channelValue = (channelTileData[i + 1] * 256) + channelTileData[i + 2];
-
-            // apply color transfer function
-            rgb = evaluateTF(channelValue, tf);
-
-            if (seaDragonViewer.show_subset) { // render everything outside subset as black/white
-
-                // show data as black/white
-                pixels[i] = channelTileData[i + 1];
-                pixels[i + 1] = channelTileData[i + 1];
-                pixels[i + 2] = channelTileData[i + 1];
-
-            } else { // render everything with TF
-
-                if (channelValue < tf.min) {   // values lower than TF gating: 0
-                    pixels[i] = 0;
-                    pixels[i + 1] = 0;
-                    pixels[i + 2] = 0;
-                } else {                        // values higher than TF gating: highest TF color
-                    pixels[i] = rgb.r;
-                    pixels[i + 1] = rgb.g;
-                    pixels[i + 2] = rgb.b;
-                }
-            }
-
-            if (labelValue >= 0) { // check for label data
-
-                if (seaDragonViewer.show_subset) { // render subset with TF (check label id is in subset, apply TF)
-                    if (seaDragonViewer.data.has(labelValueStr)) {
-                        if (channelValue < tf.min) {
-                            pixels[i] = 0;
-                            pixels[i + 1] = 0;
-                            pixels[i + 2] = 0;
-                        } else {
-                            pixels[i] = rgb.r;
-                            pixels[i + 1] = rgb.g;
-                            pixels[i + 2] = rgb.b;
-                        }
-                    }
-                }
-
-                // render selection ids as highlighted
-                if (seaDragonViewer.show_selection) {
-                    if (seaDragonViewer.selection.has(labelValueStr)) {
-                        let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorScheme.getPhenotypeColor(phenotype)
-                        if (color != undefined) {
-                            pixels[i] = color[0];
-                            pixels[i + 1] = color[1];
-                            pixels[i + 2] = color[2];
-                        }
-                    }
-                }
-            }
-
-
-        }
-
-        context.putImageData(screenData, 0, 0);
-        callback();
     }
 
 
@@ -898,24 +622,6 @@ function createTFArray(min, max, rgb1, rgb2, numBins) {
         num_bins: numBins,
         tf: tfArray
     }
-}
-
-
-function evaluateTF(val, tf) {
-
-    var lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
-
-    if (lerpFactor >= tf.num_bins) {
-        lerpFactor = tf.num_bins - 1;
-    }
-
-    if (lerpFactor < 0) {
-        lerpFactor = 0;
-    }
-
-    var col = tf.tf[lerpFactor];
-
-    return col;
 }
 
 async function addTile(path) {

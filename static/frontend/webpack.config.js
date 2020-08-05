@@ -24,6 +24,11 @@ module.exports = {
                 ],
             },
             {
+                test: /\.js$/,
+                enforce: 'pre',
+                use: ['source-map-loader'],
+            },
+            {
                 test: /\.m?js$/,
                 exclude: /(bower_components)/,
                 use: {

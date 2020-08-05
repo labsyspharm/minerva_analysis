@@ -15,6 +15,7 @@ import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert'
 import * as l from 'lensing';
+import {ViewerManager} from './viewerManager'
 
 window.convert = convert;
 window.$ = $;
@@ -24,4 +25,5 @@ window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.l = l;
+window.ViewerManager = ViewerManager;
 
