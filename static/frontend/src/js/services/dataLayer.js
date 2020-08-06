@@ -42,10 +42,11 @@ class DataLayer {
         }
     }
 
-    async getColumnNames(row) {
+    async getChannelNames(shortNames = true) {
         try {
-            let response = await fetch('/get_column_names?' + new URLSearchParams({
-                datasource: datasource
+            let response = await fetch('/get_channel_names?' + new URLSearchParams({
+                datasource: datasource,
+                shortNames: shortNames
             }))
             let response_data = await response.json();
             return response_data;

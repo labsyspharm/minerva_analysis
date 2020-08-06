@@ -409,10 +409,11 @@ def get_database_row():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_column_names', methods=['GET'])
-def get_column_names():
+@app.route('/get_channel_names', methods=['GET'])
+def get_channel_names():
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_column_names(datasource)
+    shortnames = bool(request.args.get('shortNames'))
+    resp = dataFilter.get_channel_names(datasource, shortnames)
     return serialize_and_submit_json(resp)
 
 
