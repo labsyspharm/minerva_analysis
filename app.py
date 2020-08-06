@@ -409,10 +409,11 @@ def get_database_row():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_column_names', methods=['GET'])
-def get_column_names():
+@app.route('/get_channel_names', methods=['GET'])
+def get_channel_names():
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_column_names(datasource)
+    shortnames = bool(request.args.get('shortNames'))
+    resp = dataFilter.get_channel_names(datasource, shortnames)
     return serialize_and_submit_json(resp)
 
 
@@ -438,6 +439,16 @@ def get_neighborhood():
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
     resp = dataFilter.get_neighborhood(x, y, datasource, r=max_distance)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_num_cells_in_circle', methods=['GET'])
+def get_num_cells_in_circle():
+    datasource = request.args.get('datasource')
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    r = float(request.args.get('radius'))
+    resp = dataFilter.get_number_of_cells_in_circle(x, y, datasource, r=r)
     return serialize_and_submit_json(resp)
 
 

@@ -1,12 +1,11 @@
 class CellInformation {
-    constructor(phenotypes) {
+    constructor(phenotypes, colorScheme) {
         this.svg = d3.select("#cell_legend");
         this.phenotypes = phenotypes;
-        this.draw();
+        this.colorScheme = colorScheme;
         this.selectedCell = null;
+        this.draw();
         let neighborhoodButton = document.getElementById("compute_neighborhood_button");
-
-
         let slider = document.getElementById("formControlRange");
         let value = document.getElementById("distance");
         value.textContent = slider.value;
@@ -55,8 +54,9 @@ class CellInformation {
     draw() {
         const size = 10;
         let docHeight = 20 + _.size(this.phenotypes) * (size + 5);
+        let colorMap = this.colorScheme.colorMap;
         let data = _.map(this.phenotypes, phenotype => {
-            return {'phenotype': phenotype, 'color': `#${colorScheme.colorMap[phenotype].hex}`};
+            return {'phenotype': phenotype, 'color': `#${colorMap[phenotype].hex}`};
         })
         document.getElementById('cell_legend').setAttribute("height", `${docHeight}px`);
 
@@ -108,7 +108,7 @@ class CellInformation {
 
     selectCell(selectedItem) {
         this.selectedCell = selectedItem;
-        let phenotype = selectedItem.phenotype;
+        let phenotype = selectedItem.phenotype || '';
         this.fillCellIcon(phenotype);
         if (phenotype == '') {
             phenotype = "None";
@@ -118,7 +118,7 @@ class CellInformation {
 
     fillCellIcon(phenotype) {
         let path = _.first(document.getElementById("cell_icon").getElementsByTagName('path'));
-        path.setAttribute('style', `fill: #${colorScheme.colorMap[phenotype].hex}`);
+        path.setAttribute('style', `fill: #${this.colorScheme.colorMap[phenotype].hex}`);
     }
 }
 

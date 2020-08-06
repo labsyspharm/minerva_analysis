@@ -37,10 +37,7 @@ class ChannelList {
 
     async init() {
         this.rainbow.hide();
-        let columnNames = await this.dataLayer.getColumnNames();
-        this.columns = _.map(columnNames, column => {
-            return this.dataLayer.getShortChannelName(column);
-        });
+        this.columns = await this.dataLayer.getChannelNames(true);
         // Hide the Loader
         document.getElementById('channel_list_loader').style.display = "none";
         let channel_list = document.getElementById("channel_list");
