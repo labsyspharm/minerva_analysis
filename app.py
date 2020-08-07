@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, Response, jsonify
-from tools import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
+from server import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
 import os
 import csv
 from pathlib import Path
