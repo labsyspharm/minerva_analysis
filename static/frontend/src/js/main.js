@@ -11,6 +11,8 @@ let seaDragonViewer;
 let selectionPanel;
 let channelList;
 let dataLayer;
+let config;
+
 let cellInformation;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
@@ -22,29 +24,26 @@ document.getElementById("openseadragon").addEventListener('contextmenu', event =
 
 
 //LOAD DATA
-let time = performance.now()
 console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
 d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
-    console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
     console.log('loading data');
     this.config = config;
-    init(config[datasource]);
+    init(config[datasource]).then(() => {
+        console.log("done loading data");
+    });
 });
 
 
 // init all views (datatable, seadragon viewer,...)
 async function init(conf) {
-    time = performance.now();
     console.log('initialize system');
     config = conf;
     //channel information
-    for (var idx = 0; idx < config["imageData"].length; idx = idx + 1) {
+    for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;
     }
     //INIT DATA FILTER
-    time = performance.now();
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
     console.log("Data Loaded");
@@ -52,22 +51,13 @@ async function init(conf) {
     await channelList.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataLayer.phenotypes);
+    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
     cellInformation.draw();
-
     //IMAGE VIEWER
-    console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-    console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
     seaDragonViewer.init();
-    console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
 
     //SELECTION PANEL
-    console.log(`Time:${performance.now() - time}`)
-    time = performance.now();
     selectionPanel = new SelectionPanel(config, dataLayer, eventHandler, colorScheme);
     // selectionPane = new SelectionPanel(config, dataFilter, eventHandler, colorScheme);
     // d3.select("#lasso").on("click", function(d, i){

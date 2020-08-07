@@ -8,13 +8,11 @@ import os
 from pathlib import Path
 import time
 import pickle
-import scimap as sm
-import csv
 
 ball_tree = None
+database = None
 source = None
 config = None
-adata = None
 
 
 def init(datasource):
@@ -22,39 +20,19 @@ def init(datasource):
 
 
 def load_db(datasource):
+    global database
     global source
     global config
-    global adata
-    if source is datasource and adata is not None:
+    if source is datasource and database is not None:
         return
     load_config()
     csvPath = "." + config[datasource]['featureData'][0]['src']
-
     index_col = None
-    split_cols = []  # Potential columns that would indicate end of marker quantification
     if 'idField' in config[datasource]['featureData'][0]:
         idField = config[datasource]['featureData'][0]['idField']
         if idField != 'none' and idField is not None:
             index_col = idField
-    split_cols.append(config[datasource]['featureData'][0]['xCoordinate'])
-    split_cols.append(config[datasource]['featureData'][0]['yCoordinate'])
-    split_cols.append(config[datasource]['imageData'][0]['name'])
-
-    with open(csvPath) as in_file:
-        csv_reader = csv.reader(in_file)
-        header = next(csv_reader)
-    min_index = np.inf
-    for col in split_cols:
-        try:
-            index = header.index(col)
-            if index < min_index:
-                min_index = index
-        except ValueError:
-            pass
-    if index_col:
-        adata = sm.pp.mcmicro_to_scimap([csvPath], split=header[min_index], remove_dna=False, CellId=index_col)
-    else:
-        adata = sm.pp.mcmicro_to_scimap([csvPath], remove_dna=True, split=header[min_index])
+    database = pd.read_csv(csvPath, index_col=index_col)
     source = datasource
 
 
@@ -67,6 +45,7 @@ def load_config():
 
 def load_ball_tree(datasource):
     global ball_tree
+    global database
     global config
     if datasource != source:
         load_db(datasource)
@@ -78,15 +57,17 @@ def load_ball_tree(datasource):
         print("No Pickled KD Tree, Creating One")
         xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
         yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
-        points = pd.DataFrame({'x': adata.obs[xCoordinate], 'y': adata.obs[yCoordinate]})
+        csvPath = "." + config[datasource]['featureData'][0]['src']
+        raw_data = pd.read_csv(csvPath)
+        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
         pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
 
 def query_for_closest_cell(x, y, datasource):
+    global database
     global source
     global ball_tree
-    global adata
     if datasource != source:
         load_ball_tree(datasource)
     distance, index = ball_tree.query([[x, y]], k=1)
@@ -95,7 +76,7 @@ def query_for_closest_cell(x, y, datasource):
     #         Nothing found
     else:
         try:
-            row = adata.obs.iloc[index[0]]
+            row = database.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
             obj['id'] = str(index[0][0])
             if 'phenotype' not in obj:
@@ -106,37 +87,32 @@ def query_for_closest_cell(x, y, datasource):
 
 
 def get_row(row, datasource):
+    global database
     global source
     global ball_tree
-    global adata
-
     if datasource != source:
         load_ball_tree(datasource)
-    obj = {}
+    obj = database.loc[[row]].to_dict(orient='records')[0]
     obj['id'] = row
-    adata_row = adata[row]
-    obs = adata_row.obs.to_dict()
-    for key in obs:
-        obj[key] = (list(obs[key].values())[0])
-    cols = adata[row].var_names
-    [x] = adata_row.X
-    for i in range(len(cols)):
-        obj[cols[i]] = x[i]
     return obj
 
 
-def get_column_names(datasource):
+def get_channel_names(datasource, shortnames=True):
+    global database
     global source
-    global adata
     if datasource != source:
         load_ball_tree(datasource)
-    return adata.var_names.values.tolist()
+    if shortnames:
+        channel_names = [channel['name'] for channel in config[datasource]['imageData'][1:]]
+    else:
+        channel_names = [channel['fullname'] for channel in config[datasource]['imageData'][1:]]
+    return channel_names
 
 
 def get_phenotypes(datasource):
+    global database
     global source
     global config
-    global adata
     try:
         phenotype_field = config[datasource]['featureData'][0]['phenotype']
     except KeyError:
@@ -144,14 +120,14 @@ def get_phenotypes(datasource):
 
     if datasource != source:
         load_ball_tree(datasource)
-
-    if phenotype_field in adata.obs.columns:
-        return adata.obs[phenotype_field].unique().tolist()
+    if phenotype_field in database.columns:
+        return database[phenotype_field].unique().tolist()
     else:
         return ['']
 
 
 def get_neighborhood(x, y, datasource, r=100):
+    global database
     global source
     global ball_tree
     if datasource != source:
@@ -161,7 +137,7 @@ def get_neighborhood(x, y, datasource, r=100):
     try:
         neighborhood = []
         for neighbor in neighbors:
-            row = adata.obs.iloc[[neighbor]]
+            row = database.iloc[[neighbor]]
             obj = row.to_dict(orient='records')[0]
             obj['id'] = str(neighbor)
             if 'phenotype' not in obj:
