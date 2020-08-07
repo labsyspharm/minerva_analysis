@@ -123,7 +123,7 @@ eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoo
 const refreshColors = async () => {
     await colorScheme.getColorScheme(true);
     cellInformation.draw();
-
+    updateSeaDragonSelection();
 }
 eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
