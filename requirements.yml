@@ -10,6 +10,7 @@ dependencies:
   - scikit-image=0.14.2
   - scipy
   - tifffile
+  - umap-learn=0.4.6
   - pip
   - pip:
       - pyvips==2.1.8
