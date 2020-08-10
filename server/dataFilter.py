@@ -19,11 +19,11 @@ def init(datasource):
     load_ball_tree(datasource)
 
 
-def load_db(datasource):
+def load_db(datasource, reload=False):
     global database
     global source
     global config
-    if source is datasource and database is not None:
+    if source is datasource and database is not None and reload is False:
         return
     load_config()
     csvPath = "." + config[datasource]['featureData'][0]['src']

@@ -374,6 +374,7 @@ def save_config():
             configJson.seek(0)  # <--- should reset file position to the beginning.
             json.dump(configData, configJson, indent=4)
             configJson.truncate()
+            dataFilter.load_db(datasetName, reload=True)
             resp = jsonify(success=True)
             return resp
     except Exception as e:
