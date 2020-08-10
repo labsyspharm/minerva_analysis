@@ -7,6 +7,8 @@ import os
 
 metric = 'euclidean'
 A = np.load('../static/data/neighborhood_array.npy')
+A = A.astype(np.float32, copy=False)
+
 for n_neighbors in [10, 100, 200]:
     for min_dist in [.2, .8]:
         start_time = time.time()
