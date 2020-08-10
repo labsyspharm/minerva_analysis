@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import umap
 import time
+import os
 
 metric = 'cosine'
 A = np.load('../static/data/neighborhood_array.npy')

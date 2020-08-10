@@ -3,6 +3,7 @@ from tqdm import tqdm
 import numpy as np
 import umap
 import time
+import os
 
 metric = 'euclidean'
 A = np.load('../static/data/neighborhood_array.npy')
