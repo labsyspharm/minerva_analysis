@@ -16,7 +16,8 @@ for n_neighbors in [10, 100, 200]:
         if (os.path.isfile(save_string + '.npy')):
             print("skipping")
         else:
-            new_data_embedding = umap.UMAP(metric=metric, n_neighbors=n_neighbors, min_dist=min_dist).fit_transform(
-                A)
+            mapping = umap.UMAP(metric=metric, n_neighbors=n_neighbors, min_dist=min_dist).fit(A)
+            print("Mapped", save_string, "Time:", time.time() - start_time)
+            new_data_embedding = mapping.transform(A)
             np.save(save_string, new_data_embedding)
         print("--- %s seconds ---" % (time.time() - start_time))
