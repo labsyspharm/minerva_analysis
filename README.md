@@ -13,9 +13,15 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 #### 3. Node.js installation and packages
 * Install [Node.js](https://nodejs.org/en/), then navigate to `/static` and run `npm install` to install all packages listed in package.json.
 * Run `npm run start` to package the Javascript, or run `npm run watch` if you plan on editing dependencies
-#### 4. Run Server
-* Active environment: `conda activate [myenvname]`. Navigate to your project root folder and run your server: `python.exe -m flask run`
-* `python-m flask run` 
+#### 4. Activate Environment
+* Active environment: `conda activate [myenvname]`. 
+#### 5. Install libvips
+##### Mac/Linux Users:
+* Install `pyvips` with conda, `conda install --channel conda-forge pyvips`, the conda package includes the `libvips` image conversion binary
+##### Windows Users:
+* Install `pyvips` with pip, `pip install pyvips`. I've included the windows libvips binary in the package for convenience.
+#### 6. Start the Server
+* Navigate to your project root folder and run your server `python-m flask run`  / ``python.exe -m flask run`
 * The tool is by default available http://127.0.0.1:5000/ 
 
 
