@@ -17,7 +17,7 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 * Active environment: `conda activate [myenvname]`. 
 #### 5. Install libvips
 ##### Mac/Linux Users:
-* Install `pyvips` with conda, `conda install --channel conda-forge pyvips`, the conda package includes the `libvips` image conversion binary
+*  Install the `libvips` CLI w/ homebrew for macOS, `brew install libvips`. Linux users, see instructions on the [libvips page](https://libvips.github.io/libvips/install.html)
 ##### Windows Users:
 * Install `pyvips` with pip, `pip install pyvips`. I've included the windows libvips binary in the package for convenience.
 #### 6. Start the Server
