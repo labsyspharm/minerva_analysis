@@ -12,9 +12,10 @@ export class ViewerManager {
      *
      * @param {Object} _viewer
      */
-    constructor(_imageViewer, _viewer) {
+    constructor(_imageViewer, _viewer, _viewerName) {
         this.viewer = _viewer;
         this.imageViewer = _imageViewer;
+        this.viewer_name = _viewerName;
 
         this.init();
     }
@@ -36,6 +37,46 @@ export class ViewerManager {
         // Load label image
         this.load_label_image();
 
+    }
+
+    /**
+     * @function addChannel
+     * Add channel to multi-channel rendering
+     *
+     * @param srcIdx
+     */
+    addChannel(srcIdx) {
+
+        //jojo
+        // no channel -> add channel
+        // already a channel -> getItemAt -> tiledImage.myMetaInfo = {otherdata: 'foo', more: 'foo2'}
+
+        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
+
+        if ((srcIdx in this.imageViewer.currentChannels)) {
+            return;
+        }
+
+        /* not working correctly, image will be white
+        var imgopacity = 1;
+        if ( Object.keys(seaDragonViewer.currentChannels).length > 0 ){
+            imgopacity = 0;
+        }*/
+
+        this.viewer.addTiledImage({
+            tileSource: src,
+            //index: 0,
+            opacity: 1, //    preload: true, (not working correctly for us)
+            preload: true,
+            success: () => {
+                var itemidx = this.viewer.world.getItemCount() - 1; //0
+                var url = this.viewer.world.getItemAt(itemidx).source.tilesUrl;
+                var group = url.split("/");
+                var sub_url = group[group.length - 2];
+
+                this.imageViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
+            }
+        });
     }
 
     /**
@@ -143,6 +184,7 @@ export class ViewerManager {
             labelTile = this.imageViewer.tileCache[labelTileAdr];
         }
 
+
         // Retrieve channel data
         let channelIdx = "";
         for (let key in this.imageViewer.currentChannels) {
@@ -155,6 +197,8 @@ export class ViewerManager {
         const channelPath = this.imageViewer.currentChannels[channelIdx]["sub_url"];
         const channelTileAdr = tile.url.replace(somePath, channelPath);
         const channelTile = this.imageViewer.tileCache[channelTileAdr];
+        // if (this.viewer_name === 'auxi') console.log('auxi', channelTileAdr)
+        // if (this.viewer_name === 'main') console.log('main', channelTileAdr)
 
         if (channelTile === null || !channelTile) {
             return;
@@ -403,6 +447,35 @@ export class ViewerManager {
         context.putImageData(screenData, 0, 0);
         callback();
 
+    }
+
+    /**
+     * @function removeChannel
+     * Remove channel from multichannel rendering
+     *
+     * @param srcIdx
+     */
+    removeChannel(srcIdx) {
+
+        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
+
+        const img_count = this.viewer.world.getItemCount();
+
+        // remove channel
+        if ((srcIdx in this.imageViewer.currentChannels)) {
+
+            // remove channel - first find it
+            for (let i = 0; i < img_count; i = i + 1) {
+                const url = this.viewer.world.getItemAt(i).source.tilesUrl;
+                if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
+
+                    this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
+
+                    delete this.imageViewer.currentChannels[srcIdx];
+                    break;
+                }
+            }
+        }
     }
 
     /**

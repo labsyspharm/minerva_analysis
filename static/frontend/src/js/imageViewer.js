@@ -14,7 +14,6 @@ class ImageViewer {
         this.dataFilter = dataFilter;
         this.colorScheme = colorScheme;
 
-
         // openseadragon viewer
         this.viewer = {};
 
@@ -72,7 +71,6 @@ class ImageViewer {
 
     }
 
-
     init() {
 
         // console.log('[seaDragonViewer::init]');
@@ -89,7 +87,7 @@ class ImageViewer {
             //defaultZoomLevel: 1.2,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 1000, // default is 200, had to set up for loading two layers (labels and image)
+            maxImageCacheCount: 2000, // default is 200, had to set up for loading two layers (labels and image)
             preload: true,
             homeFillsViewer: true,
             visibilityRatio: 1.0
@@ -103,23 +101,58 @@ class ImageViewer {
         const data = [
             {
                 index: 0,
+                name: 'black',
+                r: 0,
+                g: 0,
+                b: 0
+            },
+            {
+                index: 1,
+                name: 'white',
+                r: 255,
+                g: 255,
+                b: 255
+            },
+            {
+                index: 2,
                 name: 'red',
                 r: 255,
                 g: 0,
                 b: 0
             },
             {
-                index: 1,
+                index: 3,
                 name: 'green',
                 r: 0,
                 g: 255,
                 b: 0
             },
             {
-                index: 2,
+                index: 4,
                 name: 'blue',
                 r: 0,
                 g: 0,
+                b: 255
+            },
+            {
+                index: 5,
+                name: 'light red',
+                r: 255,
+                g: 128,
+                b: 128
+            },
+            {
+                index: 6,
+                name: 'light green',
+                r: 128,
+                g: 255,
+                b: 128
+            },
+            {
+                index: 7,
+                name: 'light blue',
+                r: 128,
+                g: 128,
                 b: 255
             },
         ];
@@ -131,13 +164,13 @@ class ImageViewer {
         that.viewer.lensing = l.construct(OpenSeadragon, that.viewer, viewer_config, data, data_config);
 
         // Instantiate colorManagers -todo ck :: jj
-        that.viewerManagerVMain = new ViewerManager(that, that.viewer);
-        that.viewerManagerVAuxi = new ViewerManager(that, that.viewer.lensing.viewer_aux);
+        that.viewerManagerVMain = new ViewerManager(that, that.viewer, 'main');
+        that.viewerManagerVAuxi = new ViewerManager(that, that.viewer.lensing.viewer_aux, 'auxi');
 
         // OpenSeadragonCanvasOverlayHd: add canvas overlay -  drawing selection rectangles
         this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
-                var context = opts.context;
+                const context = opts.context;
 
                 //area selection polygon
                 if (that.selectionPolygonToDraw && that.selectionPolygonToDraw.length > 0) {
@@ -339,10 +372,12 @@ class ImageViewer {
 
         if (status) {
             // console.log('channel added');
-            addChannel(channelIdx);
+            this.viewerManagerVMain.addChannel(channelIdx);
+            this.viewerManagerVAuxi.addChannel(channelIdx);
         } else {
             // console.log('channel removed');
-            removeChannel(channelIdx);
+            this.viewerManagerVMain.removeChannel(channelIdx);
+            this.viewerManagerVAuxi.removeChannel(channelIdx);
         }
 
         seaDragonViewer.forceRepaint();
@@ -424,72 +459,6 @@ function activateTFRendering() {
     }
 }
 
-
-// add channel to multi-channel rendering
-function addChannel(srcIdx) {
-
-    //jojo
-    // no channel -> add channel
-    // already a channel -> getItemAt -> tiledImage.myMetaInfo = {otherdata: 'foo', more: 'foo2'}
-
-    var src = seaDragonViewer.config["imageData"][srcIdx]["src"];
-
-    if ((srcIdx in seaDragonViewer.currentChannels)) {
-        return;
-    }
-
-    /* not working correctly, image will be white
-    var imgopacity = 1;
-    if ( Object.keys(seaDragonViewer.currentChannels).length > 0 ){
-        imgopacity = 0;
-    }*/
-
-    var img = seaDragonViewer.viewer.addTiledImage({
-        tileSource: src,
-        //index: 0,
-        opacity: 1, //    preload: true, (not working correctly for us)
-        preload: true,
-        success: function (event) {
-            var itemidx = seaDragonViewer.viewer.world.getItemCount() - 1; //0
-            var url = seaDragonViewer.viewer.world.getItemAt(itemidx).source.tilesUrl;
-            var group = url.split("/");
-            var sub_url = group[group.length - 2];
-
-            seaDragonViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
-        }
-    });
-}
-
-
-// remove channel from multichannel rendering
-function removeChannel(srcIdx) {
-
-    var src = seaDragonViewer.config["imageData"][srcIdx]["src"];
-
-    var img_count = seaDragonViewer.viewer.world.getItemCount();
-
-    // remove channel
-    if ((srcIdx in seaDragonViewer.currentChannels)) {
-
-        // remove channel - first find it
-        for (var i = 0; i < img_count; i = i + 1) {
-            var url = seaDragonViewer.viewer.world.getItemAt(i).source.tilesUrl;
-            if (url == seaDragonViewer.currentChannels[srcIdx]["url"]) {
-
-                seaDragonViewer.viewer.world.removeItem(seaDragonViewer.viewer.world.getItemAt(i));
-                // - todo ck :: jj (Not confirmed to help, prob can remove)
-                seaDragonViewer.viewer.lensing.viewer_aux.world.removeItem(
-                    seaDragonViewer.viewer.lensing.viewer_aux.world.getItemAt(i)
-                );
-
-                delete seaDragonViewer.currentChannels[srcIdx];
-                break;
-            }
-        }
-    }
-}
-
-
 function createTFArray(min, max, rgb1, rgb2, numBins) {
 
     var tfArray = [];
@@ -519,6 +488,7 @@ function createTFArray(min, max, rgb1, rgb2, numBins) {
 }
 
 async function addTile(path) {
+    console.log('ding')
 
     function addTileResponse(success, error) {
         if (error) {
