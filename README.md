@@ -6,7 +6,7 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 
 ### Install
 #### 1. Checkout Project
-`git clone https://github.com/labsyspharm/cycif_viewer.git
+`git clone https://github.com/labsyspharm/cycif_viewer.git`
 #### 2. Python environment installation
 * Install [miniconda](https://conda.io/miniconda.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html). 
 * Create env:  `conda env create -n [myenvname] -f requirements.yml` 
