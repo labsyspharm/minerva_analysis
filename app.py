@@ -192,7 +192,7 @@ def upload_file_page():
                         # Converting Label
                         current_task = "Converting Label File"
                         fullConversion.convertChannel(path_str, True)
-                        os.remove(path_str) # remove the raw file after converting it
+                        os.remove(path_str)  # remove the raw file after converting it
                         labelName = name
                         completed_task += 1
 
@@ -381,6 +381,7 @@ def save_config():
             dataFilter.load_db(datasetName, reload=True)
             resp = jsonify(success=True)
             return resp
+
     except Exception as e:
         resp = jsonify(success=False)
         return resp
