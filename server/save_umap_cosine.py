@@ -6,12 +6,12 @@ import time
 import os
 
 metric = 'cosine'
-A = np.load('../static/data/neighborhood_array.npy')
+A = np.load('../static/data/neighborhood_array_complex.npy')
 A = A.astype(np.float32, copy=False)
 for n_neighbors in [10, 100, 200]:
     for min_dist in [.2, .8]:
         start_time = time.time()
-        save_string = 'full_weighted_umap_' + metric + '_' + str(n_neighbors) + 'neighbors_' + str(min_dist) + 'dist'
+        save_string = 'full_hybrid_umap_' + metric + '_' + str(n_neighbors) + 'neighbors_' + str(min_dist) + 'dist'
         save_string = save_string.replace('.', '')
         print(save_string)
         if (os.path.isfile(save_string + '.npy')):
