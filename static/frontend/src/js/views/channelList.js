@@ -187,7 +187,7 @@ class ChannelList {
             .sliderBottom()
             .min(d3.min(data))
             .max(d3.max(data))
-            .width(swidth-50)//.tickFormat(d3.format("s"))
+            .width(swidth-60)//.tickFormat(d3.format("s"))
             .fill('orange')
             .ticks(5)
             .default(activeRange)
