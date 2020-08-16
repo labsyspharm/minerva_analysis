@@ -6,6 +6,7 @@ import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'pngjs'
 import * as d3 from 'd3';
+import * as slider from 'd3-simple-slider';
 import 'lodash'
 import 'jquery-form'
 import '@fortawesome/fontawesome-free/js/all'
@@ -18,6 +19,7 @@ import convert from 'color-convert'
 window.convert = convert;
 window.$ = $;
 window.d3 = d3;
+window.d3.slider = slider;
 window.PNG = PNG;
 window.Buffer = Buffer;
 window.Sortable = Sortable;
