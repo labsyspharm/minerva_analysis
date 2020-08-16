@@ -9,6 +9,7 @@ class ChannelList {
         this.ranges = {};
         this.sliders = new Map();
         var that = this;
+        this.imageBitRange = [0,65536];
 
         //  create a color picker
         this.rainbow = rainbow();
@@ -166,12 +167,12 @@ class ChannelList {
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
-            this.addSlider([0,65536], column, document.getElementById("channel_list").getBoundingClientRect().width);
+            this.addSlider(this.imageBitRange, this.imageBitRange, column, document.getElementById("channel_list").getBoundingClientRect().width);
             d3.select('div#channel-slider_' + column).style('display', "none");
         });
     }
 
-    addSlider(data, name, swidth){
+    addSlider(data, activeRange, name, swidth){
 
         var that = this;
         //add range slider row content
@@ -182,7 +183,7 @@ class ChannelList {
             .width(swidth-50)//.tickFormat(d3.format("s"))
             .fill('orange')
             .ticks(5)
-            .default(data)
+            .default(activeRange)
             .handle(
               d3.symbol()
                 .type(d3.symbolCircle)
@@ -193,7 +194,7 @@ class ChannelList {
                 this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
                 console.log('gating event triggered');
         });
-
+        sliderSimple.set
         this.sliders.set(name, sliderSimple);
 
         //create the slider svg and call the slider
@@ -219,7 +220,7 @@ window.addEventListener("resize", function(){
     if (channelList){
         channelList.sliders.forEach(function(slider, name){
             d3.select('div#channel-slider_' + name).select('svg').remove();
-            channelList.addSlider(slider.value(), name,
+            channelList.addSlider(channelList.imageBitRange, slider.value(), name,
                 document.getElementById("channel_list").getBoundingClientRect().width);
         });
     }
