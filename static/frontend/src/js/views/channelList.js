@@ -1,6 +1,5 @@
 class ChannelList {
 
-
     constructor(config, dataLayer, eventHandler) {
         this.config = config;
         this.eventHandler = eventHandler;
@@ -8,7 +7,8 @@ class ChannelList {
         this.selections = [];
         this.maxSelections = 4;
         this.ranges = {};
-
+        this.sliders = new Map();
+        var that = this;
 
         //  create a color picker
         this.rainbow = rainbow();
@@ -28,7 +28,6 @@ class ChannelList {
                 .on('close', () => this.colorTransferHandle = null));
 
         this.container = d3.select("#channel_list");
-
     }
 
     selectChannel(name) {
@@ -62,11 +61,24 @@ class ChannelList {
             let row = document.createElement("div");
             row.classList.add("row");
             listItemParentDiv.appendChild(row);
+            // row
+            let row2 = document.createElement("div");
+            row2.classList.add("row");
+            listItemParentDiv.appendChild(row2);
+
             // column within row that contains the name of the channel
             let nameCol = document.createElement("div");
             nameCol.classList.add("col-md-4");
             nameCol.classList.add("channel-col");
             row.appendChild(nameCol);
+
+            // column within row that cintains the slider for the channel
+            let sliderCol = document.createElement("div");
+            sliderCol.classList.add("col-md-12");
+            sliderCol.classList.add("channel-slider");
+            sliderCol.setAttribute('id', "channel-slider_" + column)
+            row2.appendChild(sliderCol);
+
             // column within row that contains svg for color pickers
             let svgCol = document.createElement("div");
             svgCol.classList.add("col-md-4");
@@ -84,7 +96,7 @@ class ChannelList {
                 .attr("width", 30)
                 .attr("height", 15)
             svg.selectAll("circle")
-                .data([{"color": "white", "name": column}, {"color": "black", "name": column}])
+                .data([{"color": "black", "name": column}, {"color": "white", "name": column}])
                 .enter().append("rect")
                 .attr("class", "color-transfer")
                 .attr("cursor", "pointer")
@@ -95,7 +107,7 @@ class ChannelList {
                 .attr("rx", "2")
                 .attr("ry", "2")
                 .attr("x", d => {
-                    if (d.color == "white") {
+                    if (d.color == "black") {
                         return 3;
                     } else { //black
                         return 17;
@@ -110,6 +122,7 @@ class ChannelList {
             channelName.classList.add("channel-name");
             channelName.textContent = column;
             nameCol.appendChild(channelName);
+
             listItemParentDiv.addEventListener("click", () => {
                 // IF you clicked on the svg, ignore this behavior
                 if (event.target.closest("svg")) {
@@ -126,10 +139,18 @@ class ChannelList {
                     parent.classList.add("active");
                     svgCol.style.display = "block";
                     this.selectChannel(name);
+
+                    //add range slider row content
+                    d3.select('div#channel-slider_' + name).style('display', "block")
+
+                 //channel not active
                 } else {
                     this.selections = _.remove(this.selections, name);
                     parent.classList.remove("active")
                     svgCol.style.display = "none";
+
+                    //hide range slider row content
+                    d3.select('div#channel-slider_' + name).style('display', "none");
                 }
                 let selectionsHeaderDiv = document.getElementById("selected-channels-header-div");
                 if (_.size(this.selections) >= this.maxSelections) {
@@ -143,10 +164,66 @@ class ChannelList {
                 this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
             })
             list.appendChild(listItemParentDiv);
+
+            //add and hide channel sliders (will be visible when channel is active)
+            this.addSlider([0,65536], column, 180);
+            d3.select('div#channel-slider_' + column).style('display', "none");
+        });
+    }
+
+    addSlider(data, name, swidth){
+
+        var that = this;
+        //add range slider row content
+        var sliderSimple = d3.slider
+            .sliderBottom()
+            .min(d3.min(data))
+            .max(d3.max(data))
+            .width(swidth-50)//.tickFormat(d3.format("s"))
+            .fill('orange')
+            .ticks(5)
+            .default(data)
+            .handle(
+              d3.symbol()
+                .type(d3.symbolCircle)
+                .size(100))
+            .tickValues([]).on('onchange', range => {
+                console.log('trigger gating event');
+                let packet = {name: name, dataRange: range};
+                this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
+                console.log('gating event triggered');
         });
 
-    }
+        this.sliders.set(name, sliderSimple);
+
+        //create the slider svg and call the slider
+        var gSimple = d3
+            .select('#channel-slider_' + name)
+            .append('svg')
+            .attr('class' , 'svgslider')
+            .attr('width', swidth)
+            .attr('height', 30)
+            .append('g')
+            .attr('transform', 'translate(20,10)');
+        gSimple.call(sliderSimple);
+
+        //slider value to be displayed closer to the sliderthan default
+        d3.selectAll('.parameter-value').select('text')
+            .attr("y",10);
+
+        return sliderSimple;
+    };
 }
+
+window.addEventListener("resize", function(){
+    if (channelList){
+        channelList.sliders.forEach(function(slider, name){
+            d3.select('div#channel-slider_' + name).select('svg').remove();
+            channelList.addSlider(slider.value(), name,
+                document.getElementById("channel_list").getBoundingClientRect().width);
+        });
+    }
+});
 
 //static vars
 ChannelList.events = {

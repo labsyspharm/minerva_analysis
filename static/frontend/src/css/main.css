@@ -135,6 +135,7 @@ body {
 #channel_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
+    height:50px;
 }
 
 #channel_list .list-group {
@@ -144,6 +145,20 @@ body {
 #openseadragon_loader, #channel_list_loader {
     margin-left: 33px;
 }
+
+.slider .handle {
+    fill: #fff;
+    stroke: #000;
+    stroke-opacity: .5;
+    stroke-width: 1.25px;
+    cursor: move;
+}
+
+.slider text{
+    margin-top: -10px;
+    font-size: 8px;
+}
+
 
 nav {
     margin-bottom: 10px;
