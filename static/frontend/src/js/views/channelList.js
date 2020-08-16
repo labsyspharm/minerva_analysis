@@ -172,6 +172,13 @@ class ChannelList {
         });
     }
 
+    /*
+    add a slider
+    @data the min and max range of the slider
+    @activeRange the predefined values for the lower and upper handle
+    @name the name of the slider (used as part of the id)
+    @swidth the pixel width of the slider
+     */
     addSlider(data, activeRange, name, swidth){
 
         var that = this;
@@ -208,7 +215,7 @@ class ChannelList {
             .attr('transform', 'translate(20,10)');
         gSimple.call(sliderSimple);
 
-        //slider value to be displayed closer to the sliderthan default
+        //slider value to be displayed closer to the slider than default
         d3.selectAll('.parameter-value').select('text')
             .attr("y",10);
 
@@ -217,6 +224,7 @@ class ChannelList {
 }
 
 window.addEventListener("resize", function(){
+    //reinitialize slider on window change..(had some bug updating with via d3 update)
     if (channelList){
         channelList.sliders.forEach(function(slider, name){
             d3.select('div#channel-slider_' + name).select('svg').remove();
