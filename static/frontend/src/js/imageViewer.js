@@ -97,8 +97,8 @@ class ImageViewer {
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
-        // Init data w config
-        const data = [
+        // Data load 1 - rgb filter
+        const data_colors = [
             {
                 index: 0,
                 name: 'black',
@@ -156,12 +156,254 @@ class ImageViewer {
                 b: 255
             },
         ];
-        const data_config = {
-            type: 'color'
-        };
+        const dataLoad1 = {
+            data: data_colors,
+            config: {
+                type: 'color-index',
+                filter: 'fil_data_rgb'
+            }
+        }
+
+        // Data load 2 - nearest cell
+        const data_nearest_cell = [];
+        const dataLoad2 = {
+            data: data_nearest_cell,
+            config: {
+                type: 'object-single',
+                filter: 'fil_data_custom',
+                vf_ref: 'vis_data_custom',
+                bridge: dataFilter.getNearestCell,
+                filterCode: {
+                    data: [],
+                    name: 'fil_data_nearest_cell',
+                    vis_name: 'Data Nearest Cell',
+                    settings: {
+                        active: 1,
+                        default: 1,
+                        max: 1,
+                        min: 0,
+                        step: 1,
+                        vf: true,
+                        vf_setup: 'vis_data_nearest_cell',
+                        iter: 'px'
+                    },
+                    set_pixel: (px) => {
+                        // Emulate lenses class setting
+                        const vis = this.viewer.lensing.lenses;
+
+                        // Get position of cell and add to data
+                        const pos = vis.lensing.configs.pos_full;
+                        dataFilter.getNearestCell(pos[0], pos[1]).then(d => {
+
+                            // Clear data to vis
+                            vis.lensing.viewfinder.data_cells = [];
+
+                            // Calc offset
+                            const cell_point = new OpenSeadragon.Point(d.CellPosition_X, d.CellPosition_Y);
+                            const cell_vpoint = vis.lensing.viewer_aux.viewport.pixelFromPoint(
+                                vis.lensing.viewer_aux.world.getItemAt(0).imageToViewportCoordinates(cell_point)
+                            );
+                            const offset = [
+                                Math.round(cell_vpoint.x - vis.lensing.configs.pos[0] / vis.lensing.configs.pxRatio),
+                                Math.round(cell_vpoint.y - vis.lensing.configs.pos[1] / vis.lensing.configs.pxRatio)
+                            ];
+                            const distance = Math.sqrt(offset[0] ** 2 + offset[1] ** 2);
+
+                            // Add to vis data
+                            if (distance <= vis.lensing.configs.rad / vis.lensing.configs.pxRatio) {
+                                vis.lensing.viewfinder.data_cells.push({
+                                    data: d,
+                                    offset: offset
+                                });
+                            }
+
+                        }).catch(err => console.log(err));
+
+                    },
+                    update: (i, index) => {
+                        // Emulate lenses class setting
+                        const vis = this.viewer.lensing.lenses;
+
+                        // Magnify
+                        vis.selections.magnifier.update(i, index);
+                    },
+                    fill: 'rgba(255, 255, 255, 0)',
+                    stroke: 'rgba(0, 0, 0, 1)'
+                },
+                get_vf_setup: () => {
+                    return {
+                        name: 'vis_data_nearest_cell',
+                        init: () => {
+                            // Define this
+                            const vis = this.viewer.lensing.viewfinder;
+
+                            // Vars
+                            vis.data_cells = [];
+                            vis.nest_range = [];
+                            vis.active_channels = ['DNA'];
+
+                            // Els
+                            vis.els.cellsG = null
+                            vis.els.textReportG = null
+                            vis.els.areachartG = null;
+                            vis.els.areachartAxisG = null
+
+                            // Configs
+                            vis.configs.row_spacing = 16;
+                            vis.configs.areachartW = 120;
+                            vis.configs.areachartH = 20;
+                            vis.configs.newBlackboardH = 80;
+
+                            // Tools
+                            vis.tools.nestScX = d3.scaleLinear().range([0, vis.configs.areachartW])
+                            vis.tools.nestScY = d3.scaleLinear()
+                                .range([vis.configs.areachartH, 0])
+                                .domain([0, 2 ** 16])
+                            vis.tools.area = d3.area()
+                                .x(d => vis.tools.nestScX(d.index))
+                                .y1(d => vis.tools.nestScY(d.value))
+                                .y0(vis.configs.areachartH);
+
+                            // Resize box g
+                            vis.els.blackboardG.attr('height', vis.configs.newBlackboardH);
+
+                            // Append radial g
+                            vis.els.cellsG = vis.els.radialG.append('g');
+
+                            // Append text report g
+                            vis.els.textReportG = vis.els.boxG.append('g')
+                                .attr('class', 'viewfinder_text_report_g');
+                            vis.els.textReportG.append('text')
+                                .attr('class', 'viewfinder_box_text viewfinder_box_text_a')
+                                .attr('fill', 'white')
+                                .attr('x', `${vis.configs.boxW / 2}px`)
+                                .attr('y', `${vis.configs.row_spacing}px`)
+                                .attr('text-anchor', 'middle')
+                                .attr('alignment-baseline', 'middle')
+                                .style('font-family', 'sans-serif')
+                                .style('font-size', '10px')
+                                .style('font-weight', 'lighter');
+
+                            // Add area chart (histogram)
+                            vis.els.areachartG = vis.els.boxG.append('g')
+                                .attr('class', 'viewfinder_areachasrt_g')
+                                .style('transform',
+                                    `translate(${(vis.configs.boxW - vis.configs.areachartW) / 2}px, ${vis.configs.row_spacing * 2}px)`);
+                            vis.els.areachartG.append('path')
+                                .attr('class', 'viewfinder_areachart_path');
+
+                        },
+                        wrangle: () => {
+                            // Define this
+                            const vis = this.viewer.lensing.viewfinder;
+
+                            // Get range nest
+                            vis.nest_range = [];
+                            if (vis.data_cells.length > 0) {
+
+                                const blacklist = ['id', 'phenotype'];
+                                let index = 0;
+                                for (let d in vis.data_cells[0].data) {
+                                    if (!blacklist.includes(d)) {
+                                        vis.nest_range.push({
+                                            key: d,
+                                            value: vis.data_cells[0].data[d],
+                                            index: index
+                                        });
+                                        index++;
+                                    }
+                                }
+
+                                // Set scales
+                                vis.tools.nestScX.domain([0, vis.nest_range.length - 1]);
+                            } else {
+                                vis.tools.nestScX.domain([0, 1]);
+                            }
+
+                        },
+                        render: () => {
+                            // Define this
+                            const vis = this.viewer.lensing.viewfinder;
+
+                            // Append cell center circles
+                            vis.els.cellsG.selectAll('.cell')
+                                .data(vis.data_cells)
+                                .join(
+                                    enter => enter.append('g')
+                                        .attr('class', 'cell')
+                                        .each(function (d) {
+                                            const g = d3.select(this)
+                                                .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                                            g.append('circle')
+                                                .attr('r', 3)
+                                                .attr('fill', 'none')
+                                                .attr('stroke', 'rgba(0, 0, 0, 0.5)')
+                                                .attr('stroke-width', 3);
+                                            g.append('circle')
+                                                .attr('r', 3)
+                                                .attr('fill', 'none')
+                                                .attr('stroke', 'white');
+                                        }),
+                                    update => update
+                                        .each(function (d) {
+                                            const g = d3.select(this)
+                                                .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                                        }),
+                                    exit => exit.remove()
+                                );
+
+                            // Update text
+                            const id = vis.data_cells.length > 0 ? vis.data_cells[0].data.id : 'None in range';
+                            vis.els.textReportG.select('.viewfinder_box_text_a')
+                                .text(`Cell ID: ${id}`);
+
+                            // Build area chart
+                            vis.els.areachartG.select('.viewfinder_areachart_path')
+                                .datum(vis.nest_range)
+                                .attr('d', vis.tools.area)
+                                .attr('fill', 'white');
+
+                            // Add markers
+                            const channelArray = vis.nest_range.length > 0 ? vis.active_channels : [];
+                            vis.els.areachartG.selectAll('.viewfinder_areachart_markerG')
+                                .data(channelArray, d => d)
+                                .join(
+                                    enter => enter.append('g')
+                                        .attr('class', 'viewfinder_areachart_markerG')
+                                        .each(function (d) {
+                                            const g = d3.select(this);
+                                            const findChannel = vis.nest_range.find(c => d === c.key.split('_')[0]);
+                                            const x = vis.tools.nestScX(d.index);
+                                            g.style('transform', `translateX(${x}px)`);
+                                            g.append('line')
+                                                .attr('y1', vis.configs.areachartH + 3)
+                                                .attr('y2', vis.configs.areachartH + 6)
+                                                .attr('stroke', 'white');
+                                            g.append('text')
+                                                .attr('class', 'viewfinder_areachart_marker_text')
+                                                .attr('y', vis.configs.areachartH + 15)
+                                                .attr('fill', 'white')
+                                                .attr('font-family', 'sans-serif;')
+                                                .attr('font-size', 8)
+                                                .attr('font-weight', 'lighter')
+                                                .attr('text-anchor', `middle`)
+                                                .text(d);
+                                        })
+                                )
+
+                        },
+                        destroy: () => {
+
+                        }
+                    }
+                },
+            }
+        }
+
+        const dataLoad = [dataLoad1, dataLoad2];
 
         // Instantiate viewer - todo ck :: jj
-        that.viewer.lensing = l.construct(OpenSeadragon, that.viewer, viewer_config, data, data_config);
+        that.viewer.lensing = l.construct(OpenSeadragon, that.viewer, viewer_config, dataLoad);
 
         // Instantiate colorManagers -todo ck :: jj
         that.viewerManagerVMain = new ViewerManager(that, that.viewer, 'main');
@@ -408,6 +650,12 @@ class ImageViewer {
 
     }
 
+
+    /**
+     * @function forceRepaint
+     *
+     * @returns void
+     */
     forceRepaint() {
         seaDragonViewer.viewer.forceRefilter();
         seaDragonViewer.viewer.forceRedraw();
@@ -488,7 +736,6 @@ function createTFArray(min, max, rgb1, rgb2, numBins) {
 }
 
 async function addTile(path) {
-    console.log('ding')
 
     function addTileResponse(success, error) {
         if (error) {

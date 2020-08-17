@@ -144,9 +144,9 @@ class DataFilter {
                 this.currentSelection.clear();
             }
 
-            console.log('current selection size:', this.currentSelection.size);
+            // console.log('current selection size:', this.currentSelection.size);
             if (this.currentSelection.size > 0) {
-                console.log('id: ', this.currentSelection.values().next().value.id);
+                // console.log('id: ', this.currentSelection.values().next().value.id);
             }
             return;
         }
@@ -159,9 +159,9 @@ class DataFilter {
         // add new item
         this.currentSelection.add(item);
 
-        console.log('current selection size:', this.currentSelection.size);
+        // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {
-            console.log('id: ', this.currentSelection.values().next().value.id);
+            // console.log('id: ', this.currentSelection.values().next().value.id);
         }
     }
 

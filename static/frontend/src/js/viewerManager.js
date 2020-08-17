@@ -197,8 +197,6 @@ export class ViewerManager {
         const channelPath = this.imageViewer.currentChannels[channelIdx]["sub_url"];
         const channelTileAdr = tile.url.replace(somePath, channelPath);
         const channelTile = this.imageViewer.tileCache[channelTileAdr];
-        // if (this.viewer_name === 'auxi') console.log('auxi', channelTileAdr)
-        // if (this.viewer_name === 'main') console.log('main', channelTileAdr)
 
         if (channelTile === null || !channelTile) {
             return;
@@ -242,7 +240,7 @@ export class ViewerManager {
             rgb = this.evaluateTF(channelValue, tf);
 
             // Eval rendering
-            if (seaDragonViewer.show_subset) {
+            if (this.imageViewer.show_subset) {
 
                 // Show data as black/white
                 pixels[i] = channelTileData[i + 1];
@@ -285,6 +283,7 @@ export class ViewerManager {
                 // Render selection ids as highlighted
                 if (this.imageViewer.show_selection) {
                     if (this.imageViewer.selection.has(labelValueStr)) {
+                        console.log(this.imageViewer)
                         const phenotype = _.get(this.imageViewer.selection.get(labelValueStr), 'phenotype', '');
                         const color = this.imageViewer.colorScheme.getPhenotypeColor(phenotype)
                         if (color !== undefined) {

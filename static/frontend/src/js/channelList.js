@@ -139,7 +139,7 @@ class ChannelList {
                     selectionsHeaderDiv.classList.remove('bold-selections-header');
                 }
                 let packet = {selections: this.selections, name, status};
-                console.log('channels_change', packet);
+                // console.log('channels_change', packet);
                 document.getElementById("num-selected-channels").textContent = _.size(this.selections);
                 this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
             })
