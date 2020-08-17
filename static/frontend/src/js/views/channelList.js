@@ -201,7 +201,6 @@ class ChannelList {
                 this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
                 console.log('gating event triggered');
         });
-        sliderSimple.set
         this.sliders.set(name, sliderSimple);
 
         //create the slider svg and call the slider
