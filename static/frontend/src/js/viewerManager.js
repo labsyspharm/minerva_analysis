@@ -283,9 +283,8 @@ export class ViewerManager {
                 // Render selection ids as highlighted
                 if (this.imageViewer.show_selection) {
                     if (this.imageViewer.selection.has(labelValueStr)) {
-                        console.log(this.imageViewer)
-                        const phenotype = _.get(this.imageViewer.selection.get(labelValueStr), 'phenotype', '');
-                        const color = this.imageViewer.colorScheme.getPhenotypeColor(phenotype)
+                        // const phenotype = _.get(this.imageViewer.selection.get(labelValueStr), 'phenotype', '');
+                        const color = this.imageViewer.colorScheme.getColorScheme(false);
                         if (color !== undefined) {
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];

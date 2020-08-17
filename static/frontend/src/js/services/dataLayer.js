@@ -154,10 +154,10 @@ class DataLayer {
 
 
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
-        console.log("update current selection")
+       // console.log("update current selection")
         var that = this;
         that.currentSelection = new Set(items);
-        console.log("update current selection done")
+       // console.log("update current selection done")
     }
 
     isImageFeature(key) {
