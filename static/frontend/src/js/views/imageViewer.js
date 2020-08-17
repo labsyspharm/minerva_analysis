@@ -246,13 +246,12 @@ class ImageViewer {
                             vis.els.cellsG = null
                             vis.els.textReportG = null
                             vis.els.areachartG = null;
-                            vis.els.areachartAxisG = null
 
                             // Configs
                             vis.configs.row_spacing = 16;
                             vis.configs.areachartW = 120;
                             vis.configs.areachartH = 20;
-                            vis.configs.newBlackboardH = 80;
+                            vis.configs.newBoxH = 80;
 
                             // Tools
                             vis.tools.nestScX = d3.scaleLinear().range([0, vis.configs.areachartW])
@@ -265,7 +264,7 @@ class ImageViewer {
                                 .y0(vis.configs.areachartH);
 
                             // Resize box g
-                            vis.els.blackboardG.attr('height', vis.configs.newBlackboardH);
+                            vis.els.blackboardRect.attr('height', vis.configs.newBoxH);
 
                             // Append radial g
                             vis.els.cellsG = vis.els.radialG.append('g');
@@ -338,11 +337,12 @@ class ImageViewer {
                                                 .attr('r', 3)
                                                 .attr('fill', 'none')
                                                 .attr('stroke', 'rgba(0, 0, 0, 0.5)')
-                                                .attr('stroke-width', 3);
+                                                .attr('stroke-width', 1.5);
                                             g.append('circle')
                                                 .attr('r', 3)
                                                 .attr('fill', 'none')
-                                                .attr('stroke', 'white');
+                                                .attr('stroke', 'white')
+                                                .attr('stroke-width', 0.5);
                                         }),
                                     update => update
                                         .each(function (d) {
@@ -393,14 +393,271 @@ class ImageViewer {
 
                         },
                         destroy: () => {
+                            // Define this
+                            const vis = this.viewer.lensing.viewfinder;
 
+                            // Remove els
+                            vis.els.cellsG.remove();
+                            vis.els.textReportG.remove();
+                            vis.els.areachartG.remove();
                         }
                     }
                 },
             }
         }
 
-        const dataLoad = [dataLoad1, dataLoad2];
+        // Data load 3 - nearest cells
+        const data_nearest_cells = [];
+        const dataLoad3 = {
+            data: data_nearest_cell,
+            config: {
+                type: 'object-single',
+                filter: 'fil_data_custom',
+                vf_ref: 'vis_data_custom',
+                bridge: dataLayer.getNeighborhood,
+                filterCode: {
+                    data: [],
+                    name: 'fil_data_nearest_cells',
+                    vis_name: 'Data Nearest Cells',
+                    settings: {
+                        active: 1,
+                        default: 1,
+                        max: 1,
+                        min: 0,
+                        step: 1,
+                        vf: true,
+                        vf_setup: 'vis_data_nearest_cells',
+                        iter: 'px'
+                    },
+                    set_pixel: () => {
+                        // Emulate lenses class setting
+                        const vis = this.viewer.lensing.lenses;
+
+                        // Measure relative
+                        // const screenPt = new vis.lensing.osd.Point(vis.lensing.configs.rad / vis.lensing.configs.pxRatio, 0);
+                        // const contextPt = vis.lensing.viewer.viewport.viewerElementToViewportCoordinates(screenPt);
+                        // const moveOver = this.viewer.world.getItemAt(0).viewportToImageCoordinates(contextPt);
+
+                        // Get position of cell and add to data
+                        const pos = vis.lensing.configs.pos_full;
+
+                        // TODO - need to refactor radius to image size
+                        dataLayer.getNeighborhood(vis.lensing.configs.rad, pos[0], pos[1]).then(arr => {
+
+                            // Clear data to vis
+                            vis.lensing.viewfinder.data_cells = [];
+
+                            arr.forEach(d => {// // Calc offset
+                                const cell_point = new OpenSeadragon.Point(d.CellPosition_X, d.CellPosition_Y);
+                                const cell_vpoint = vis.lensing.viewer_aux.viewport.pixelFromPoint(
+                                    vis.lensing.viewer_aux.world.getItemAt(0).imageToViewportCoordinates(cell_point)
+                                );
+                                const offset = [
+                                    Math.round(cell_vpoint.x - vis.lensing.configs.pos[0] / vis.lensing.configs.pxRatio),
+                                    Math.round(cell_vpoint.y - vis.lensing.configs.pos[1] / vis.lensing.configs.pxRatio)
+                                ];
+                                const distance = Math.sqrt(offset[0] ** 2 + offset[1] ** 2);
+
+                                // Add to vis data
+                                if (distance <= vis.lensing.configs.rad / vis.lensing.configs.pxRatio) {
+                                    vis.lensing.viewfinder.data_cells.push({
+                                        data: d,
+                                        offset: offset
+                                    });
+                                }
+                            })
+
+                        }).catch(err => console.log(err));
+
+                    },
+                    update: (i, index) => {
+                        // Emulate lenses class setting
+                        const vis = this.viewer.lensing.lenses;
+
+                        // Magnify
+                        vis.selections.magnifier.update(i, index);
+                    },
+                    fill: 'rgba(255, 255, 255, 0)',
+                    stroke: 'rgba(0, 0, 0, 1)'
+                },
+                get_vf_setup: () => {
+                    return {
+                        name: 'vis_data_nearest_cells',
+                        init: () => {
+                            // Define this
+                            const vis = this.viewer.lensing.viewfinder;
+
+                            // Vars
+                            vis.data_cells = [];
+                            vis.nest_range = [];
+                            vis.active_channels = ['DNA'];
+
+                            // Els
+                            vis.els.cellsG = null
+                            vis.els.textReportG = null
+                            vis.els.areachartG = null;
+                            vis.els.areachartAxisG = null
+
+                            // Configs
+                            vis.configs.row_spacing = 16;
+                            vis.configs.areachartW = 120;
+                            vis.configs.areachartH = 20;
+                            vis.configs.newBoxH = 80;
+
+                            // Tools
+                            vis.tools.nestScX = d3.scaleLinear().range([0, vis.configs.areachartW])
+                            vis.tools.nestScY = d3.scaleLinear()
+                                .range([vis.configs.areachartH, 0])
+                                .domain([0, 2 ** 16])
+                            vis.tools.area = d3.area()
+                                .x(d => vis.tools.nestScX(d.index))
+                                .y1(d => vis.tools.nestScY(d.value))
+                                .y0(vis.configs.areachartH);
+
+                            // Resize box g
+                            vis.els.blackboardRect.attr('height', vis.configs.newBoxH);
+
+                            // Append radial g
+                            vis.els.cellsG = vis.els.radialG.append('g');
+
+                            // Append text report g
+                            vis.els.textReportG = vis.els.boxG.append('g')
+                                .attr('class', 'viewfinder_text_report_g');
+                            vis.els.textReportG.append('text')
+                                .attr('class', 'viewfinder_box_text viewfinder_box_text_a')
+                                .attr('fill', 'white')
+                                .attr('x', `${vis.configs.boxW / 2}px`)
+                                .attr('y', `${vis.configs.row_spacing}px`)
+                                .attr('text-anchor', 'middle')
+                                .attr('alignment-baseline', 'middle')
+                                .style('font-family', 'sans-serif')
+                                .style('font-size', '10px')
+                                .style('font-weight', 'lighter')
+                                .text('Neighborhood view');
+
+                            // Add area chart (histogram)
+                            vis.els.areachartG = vis.els.boxG.append('g')
+                                .attr('class', 'viewfinder_areachasrt_g')
+                                .style('transform',
+                                    `translate(${(vis.configs.boxW - vis.configs.areachartW) / 2}px, ${vis.configs.row_spacing * 2}px)`);
+                            vis.els.areachartG.append('path')
+                                .attr('class', 'viewfinder_areachart_path');
+
+                        },
+                        wrangle: () => {
+                            // Define this
+                            const vis = this.viewer.lensing.viewfinder;
+
+                            // Get range nest
+                            vis.nest_range = [];
+                            if (vis.data_cells.length > 0) {
+
+                                const blacklist = ['id', 'CellPosition_X', 'CellPosition_Y', 'NucleusArea', 'phenotype'];
+                                let index = 0;
+                                for (let d in vis.data_cells[0].data) {
+                                    if (!blacklist.includes(d)) {
+                                        vis.nest_range.push({
+                                            key: d,
+                                            value: (() => {
+                                                let sum = 0;
+                                                vis.data_cells.forEach(c => {
+                                                    sum += c.data[d];
+                                                })
+                                                return sum;
+                                            })()
+                                        });
+                                        index++;
+                                    }
+                                }
+
+                                // Set scales
+                                vis.tools.nestScX.domain([0, vis.nest_range.length - 1]);
+                            } else {
+                                vis.tools.nestScX.domain([0, 1]);
+                            }
+                            console.log(vis.nest_range)
+
+                        },
+                        render: () => {
+                            // Define this
+                            const vis = this.viewer.lensing.viewfinder;
+
+                            // Append cell center circles
+                            vis.els.cellsG.selectAll('.cell')
+                                .data(vis.data_cells)
+                                .join(
+                                    enter => enter.append('g')
+                                        .attr('class', 'cell')
+                                        .each(function (d) {
+                                            const g = d3.select(this)
+                                                .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                                            g.append('circle')
+                                                .attr('r', 3)
+                                                .attr('fill', 'none')
+                                                .attr('stroke', 'rgba(0, 0, 0, 0.5)')
+                                                .attr('stroke-width', 1.5);
+                                            g.append('circle')
+                                                .attr('r', 3)
+                                                .attr('fill', 'none')
+                                                .attr('stroke', 'white')
+                                                .attr('stroke-width', 0.5);
+                                        }),
+                                    update => update
+                                        .each(function (d) {
+                                            const g = d3.select(this)
+                                                .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                                        }),
+                                    exit => exit.remove()
+                                );
+
+                            // // Update text
+                            // const id = vis.data_cells.length > 0 ? vis.data_cells[0].data.id : 'None in range';
+                            // vis.els.textReportG.select('.viewfinder_box_text_a')
+                            //     .text(`Cell ID: ${id}`);
+
+                            // // Build area chart
+                            // vis.els.areachartG.select('.viewfinder_areachart_path')
+                            //     .datum(vis.nest_range)
+                            //     .attr('d', vis.tools.area)
+                            //     .attr('fill', 'white');
+                            //
+                            // // Add markers
+                            // const channelArray = vis.nest_range.length > 0 ? vis.active_channels : [];
+                            // vis.els.areachartG.selectAll('.viewfinder_areachart_markerG')
+                            //     .data(channelArray, d => d)
+                            //     .join(
+                            //         enter => enter.append('g')
+                            //             .attr('class', 'viewfinder_areachart_markerG')
+                            //             .each(function (d) {
+                            //                 const g = d3.select(this);
+                            //                 const findChannel = vis.nest_range.find(c => d === c.key.split('_')[0]);
+                            //                 const x = vis.tools.nestScX(d.index);
+                            //                 g.style('transform', `translateX(${x}px)`);
+                            //                 g.append('line')
+                            //                     .attr('y1', vis.configs.areachartH + 3)
+                            //                     .attr('y2', vis.configs.areachartH + 6)
+                            //                     .attr('stroke', 'white');
+                            //                 g.append('text')
+                            //                     .attr('class', 'viewfinder_areachart_marker_text')
+                            //                     .attr('y', vis.configs.areachartH + 15)
+                            //                     .attr('fill', 'white')
+                            //                     .attr('font-family', 'sans-serif;')
+                            //                     .attr('font-size', 8)
+                            //                     .attr('font-weight', 'lighter')
+                            //                     .attr('text-anchor', `middle`)
+                            //                     .text(d);
+                            //             })
+                            //     )
+
+                        },
+                        destroy: () => {
+                        }
+                    }
+                },
+            }
+        }
+
+        const dataLoad = [dataLoad1, dataLoad2, dataLoad3];
 
         // Instantiate viewer - todo ck :: jj
         that.viewer.lensing = l.construct(OpenSeadragon, that.viewer, viewer_config, dataLoad);

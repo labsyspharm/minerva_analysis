@@ -283,8 +283,8 @@ export class ViewerManager {
                 // Render selection ids as highlighted
                 if (this.imageViewer.show_selection) {
                     if (this.imageViewer.selection.has(labelValueStr)) {
-                        // const phenotype = _.get(this.imageViewer.selection.get(labelValueStr), 'phenotype', '');
-                        const color = this.imageViewer.colorScheme.getColorScheme(false);
+                        const phenotype = _.get(this.imageViewer.selection.get(labelValueStr), 'phenotype', '');
+                        const color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         if (color !== undefined) {
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];
@@ -430,7 +430,7 @@ export class ViewerManager {
                 if (this.imageViewer.show_selection && this.imageViewer.selection.size > 0) {
                     if (this.imageViewer.selection.has(labelValueStr)) {
                         let phenotype = _.get(this.imageViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = this.imageViewer.colorScheme.getPhenotypeColor(phenotype)
+                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         if (color !== undefined) {
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];
