@@ -1,0 +1,10 @@
+prefix=/data/inst
+libdir=/data/inst/lib
+includedir=/data/inst/include
+
+Name: poppler
+Description: PDF rendering library
+Version: 0.79.0
+
+Libs: -L${libdir} -lpoppler
+Cflags: -I${includedir}/poppler

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, Response, jsonify
-from tools import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
+from server import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
 import os
 import csv
 from pathlib import Path
@@ -192,6 +192,7 @@ def upload_file_page():
                         # Converting Label
                         current_task = "Converting Label File"
                         fullConversion.convertChannel(path_str, True)
+                        os.remove(path_str)  # remove the raw file after converting it
                         labelName = name
                         completed_task += 1
 
@@ -203,16 +204,19 @@ def upload_file_page():
                         if len(channel_files) > 1:
                             raise Exception("Please Only Upload One Channel .ome.tif ")
                         else:
-                            channel_files[0].save(str(Path(file_path) / channel_files[0].filename))
+                            path_str = str(Path(file_path) / channel_files[0].filename)
+                            channel_files[0].save(path_str)
                             current_task = "Converting OME-TIFF Channels (This Will Take a While)"
                             channelFileNames.extend(fullConversion.convertOmeTiff(file_path, channel_files[0].filename,
                                                                                   False))
+                            os.remove(path_str)  # remove the raw file after converting it
                             completed_task += 1
                     else:
                         for file_number in range(len(channel_files)):
                             file = channel_files[file_number]
                             path_str = str(Path(file_path) / file.filename)
                             file.save(path_str)
+                            os.remove(path_str)  # remove the raw file after converting it
                             current_task = "Converting Channel 1 of " + str(len(channel_files))
                             fullConversion.convertChannel(path_str, False)
                             name, ext = os.path.splitext(file.filename)
@@ -374,8 +378,10 @@ def save_config():
             configJson.seek(0)  # <--- should reset file position to the beginning.
             json.dump(configData, configJson, indent=4)
             configJson.truncate()
+            dataFilter.load_db(datasetName, reload=True)
             resp = jsonify(success=True)
             return resp
+
     except Exception as e:
         resp = jsonify(success=False)
         return resp
@@ -409,10 +415,11 @@ def get_database_row():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_sample_row', methods=['GET'])
-def get_sample_row():
+@app.route('/get_channel_names', methods=['GET'])
+def get_channel_names():
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_sample_row(datasource)
+    shortnames = bool(request.args.get('shortNames'))
+    resp = dataFilter.get_channel_names(datasource, shortnames)
     return serialize_and_submit_json(resp)
 
 
@@ -423,6 +430,14 @@ def get_phenotypes():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_color_scheme', methods=['GET'])
+def get_color_scheme():
+    datasource = request.args.get('datasource')
+    refresh = request.args.get('refresh') == 'true'
+    resp = dataFilter.get_color_scheme(datasource, refresh)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_neighborhood', methods=['GET'])
 def get_neighborhood():
     x = float(request.args.get('point_x'))
@@ -430,6 +445,16 @@ def get_neighborhood():
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
     resp = dataFilter.get_neighborhood(x, y, datasource, r=max_distance)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_num_cells_in_circle', methods=['GET'])
+def get_num_cells_in_circle():
+    datasource = request.args.get('datasource')
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    r = float(request.args.get('radius'))
+    resp = dataFilter.get_number_of_cells_in_circle(x, y, datasource, r=r)
     return serialize_and_submit_json(resp)
 
 
