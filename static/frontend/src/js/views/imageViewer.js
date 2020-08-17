@@ -575,7 +575,6 @@ class ImageViewer {
                             } else {
                                 vis.tools.nestScX.domain([0, 1]);
                             }
-                            console.log(vis.nest_range)
 
                         },
                         render: () => {
@@ -651,6 +650,13 @@ class ImageViewer {
 
                         },
                         destroy: () => {
+                            // Define this
+                            const vis = this.viewer.lensing.viewfinder;
+
+                            // Remove els
+                            vis.els.cellsG.remove();
+                            vis.els.textReportG.remove();
+                            vis.els.areachartG.remove();
                         }
                     }
                 },
