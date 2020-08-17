@@ -57,7 +57,6 @@ async function init(conf) {
     seaDragonViewer.init();
 }
 
-
 //feature color map changed in ridge plot
 const actionColorTransferChange = (d) => {
 
@@ -141,6 +140,14 @@ function updateSeaDragonSelection() {
     }
     seaDragonViewer.updateSelection(selectionHashMap);
 }
+
+//feature range selection changed in ridge plot
+const actionFeatureGatingChange = (d) => {
+    console.log("gating event received");
+    seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
+    console.log("gating event executed");
+}
+eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
 
 function displayNeighborhood(selectedCell, neighborhood) {

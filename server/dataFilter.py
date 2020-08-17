@@ -26,6 +26,8 @@ def load_db(datasource, reload=False):
     if source is datasource and database is not None and reload is False:
         return
     load_config()
+    if reload:
+        load_ball_tree(datasource, reload=reload)
     csvPath = "." + config[datasource]['featureData'][0]['src']
     index_col = None
     if 'idField' in config[datasource]['featureData'][0]:
@@ -43,19 +45,20 @@ def load_config():
         config = json.load(configJson)
 
 
-def load_ball_tree(datasource):
+def load_ball_tree(datasource, reload=False):
     global ball_tree
     global database
     global config
     if datasource != source:
         load_db(datasource)
     pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "ball_tree.pickle")
-    if os.path.isfile(pickled_kd_tree_path):
+    if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
     else:
-        print("No Pickled KD Tree, Creating One")
+        print("Creating KD Tree")
         xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
+        print('X', xCoordinate)
         yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
         csvPath = "." + config[datasource]['featureData'][0]['src']
         raw_data = pd.read_csv(csvPath)

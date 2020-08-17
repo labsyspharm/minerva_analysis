@@ -11,12 +11,9 @@ dependencies:
   - scikit-image=0.14.2
   - scipy
   - tifffile
-  - umap-learn
   - pip
   - pip:
-      - pynndescent==0.4.8
-      - pyvips==2.1.8
-      - opencv-python==4.2.0.*
+      - pyvips
+      - opencv-python==4.4.0.*
       - orjson==3.3.0
-      - napari[pyqt5]
       - scimap==0.1.11
