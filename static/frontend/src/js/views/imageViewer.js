@@ -285,7 +285,7 @@ class ImageViewer {
 
                             // Add area chart (histogram)
                             vis.els.areachartG = vis.els.boxG.append('g')
-                                .attr('class', 'viewfinder_areachasrt_g')
+                                .attr('class', 'viewfinder_areachart_g')
                                 .style('transform',
                                     `translate(${(vis.configs.boxW - vis.configs.areachartW) / 2}px, ${vis.configs.row_spacing * 2}px)`);
                             vis.els.areachartG.append('path')
@@ -489,29 +489,30 @@ class ImageViewer {
 
                             // Vars
                             vis.data_cells = [];
-                            vis.nest_range = [];
-                            vis.active_channels = ['DNA'];
+                            vis.hist_range = [];
+                            vis.active_channels = ['DNA', 'S100'];
 
                             // Els
                             vis.els.cellsG = null
                             vis.els.textReportG = null
                             vis.els.areachartG = null;
                             vis.els.areachartAxisG = null
+                            vis.els.areachartG2 = null;
+                            vis.els.areachartAxisG2 = null
 
                             // Configs
                             vis.configs.row_spacing = 16;
                             vis.configs.areachartW = 120;
                             vis.configs.areachartH = 20;
-                            vis.configs.newBoxH = 80;
+                            vis.configs.newBoxH = 130;
 
                             // Tools
                             vis.tools.nestScX = d3.scaleLinear().range([0, vis.configs.areachartW])
-                            vis.tools.nestScY = d3.scaleLinear()
-                                .range([vis.configs.areachartH, 0])
-                                .domain([0, 2 ** 16])
+                                .domain([0, 2 ** 16]);
+                            vis.tools.nestScY = d3.scaleLinear().range([vis.configs.areachartH, 0]);
                             vis.tools.area = d3.area()
-                                .x(d => vis.tools.nestScX(d.index))
-                                .y1(d => vis.tools.nestScY(d.value))
+                                .x(d => vis.tools.nestScX(d.x0))
+                                .y1(d => vis.tools.nestScY(d.length))
                                 .y0(vis.configs.areachartH);
 
                             // Resize box g
@@ -537,43 +538,160 @@ class ImageViewer {
 
                             // Add area chart (histogram)
                             vis.els.areachartG = vis.els.boxG.append('g')
-                                .attr('class', 'viewfinder_areachasrt_g')
+                                .attr('class', 'viewfinder_areachart_g')
                                 .style('transform',
                                     `translate(${(vis.configs.boxW - vis.configs.areachartW) / 2}px, ${vis.configs.row_spacing * 2}px)`);
                             vis.els.areachartG.append('path')
                                 .attr('class', 'viewfinder_areachart_path');
+                            // TODO - make dynamic (hardcoded for demo)
+                            vis.els.areachartG2 = vis.els.boxG.append('g')
+                                .attr('class', 'viewfinder_areachart_g')
+                                .style('transform',
+                                    `translate(${(vis.configs.boxW - vis.configs.areachartW) / 2}px, 
+                                    ${vis.configs.areachartH + vis.configs.row_spacing * 4}px)`);
+                            vis.els.areachartG2.append('path')
+                                .attr('class', 'viewfinder_areachart_path');
+
+                            // Add area chart axis
+                            vis.els.areachartAxisG = vis.els.areachartG.append('g')
+                                .attr('class', 'viewfinder_areachart_axis_g')
+                                .style('transform', `translateY(${vis.configs.areachartH + 2}px)`);
+                            vis.els.areachartAxisG.append('text')
+                                .attr('class', 'viewfinder_areachart_label')
+                                .attr('x', -4)
+                                .attr('y', -(vis.configs.areachartH + 2))
+                                .attr('fill', 'white')
+                                .attr('font-family', 'sans-serif;')
+                                .attr('font-size', 8)
+                                .attr('font-weight', 'normal')
+                                .attr('text-anchor', `start`)
+                                .text('DNA');
+                            vis.els.areachartAxisG.append('line')
+                                .attr('class', 'viewfinder_areachart_axis_line viewfinder_areachart__axis_line_left')
+                                .attr('x1', 0)
+                                .attr('x2', 0)
+                                .attr('y1', 0)
+                                .attr('y2', 4)
+                                .attr('stroke', 'white')
+                                .attr('stroke-width', 0.5);
+                            vis.els.areachartAxisG.append('line')
+                                .attr('class', 'viewfinder_areachart_axis_line viewfinder_areachart_axis_line_right')
+                                .attr('x1', vis.configs.areachartW)
+                                .attr('x2', vis.configs.areachartW)
+                                .attr('y1', 0)
+                                .attr('y2', 3)
+                                .attr('stroke', 'white')
+                                .attr('stroke-width', 0.5);
+                            vis.els.areachartAxisG.append('text')
+                                .attr('class', 'viewfinder_areachart_axis_text viewfinder_areachart_axis_text_left')
+                                .attr('x', 0)
+                                .attr('y', 12)
+                                .attr('fill', 'white')
+                                .attr('font-family', 'sans-serif;')
+                                .attr('font-size', 8)
+                                .attr('font-weight', 'lighter')
+                                .attr('text-anchor', `middle`)
+                                .text(0);
+                            vis.els.areachartAxisG.append('text')
+                                .attr('class', 'viewfinder_areachart_axis_text viewfinder_areachart_axis_text_right')
+                                .attr('x', vis.configs.areachartW)
+                                .attr('y', 12)
+                                .attr('fill', 'white')
+                                .attr('font-family', 'sans-serif;')
+                                .attr('font-size', 8)
+                                .attr('font-weight', 'lighter')
+                                .attr('text-anchor', `middle`)
+                                .text(d3.format(',')(2 ** 16));
+                            // TODO - make dynamic (hardcoded for demo)
+                            vis.els.areachartAxisG2 = vis.els.areachartG2.append('g')
+                                .attr('class', 'viewfinder_areachart_axis_g')
+                                .style('transform', `translateY(${vis.configs.areachartH + 2}px)`);
+                            vis.els.areachartAxisG2.append('text')
+                                .attr('class', 'viewfinder_areachart_label')
+                                .attr('x', -4)
+                                .attr('y', -(vis.configs.areachartH + 2))
+                                .attr('fill', 'white')
+                                .attr('font-family', 'sans-serif;')
+                                .attr('font-size', 8)
+                                .attr('font-weight', 'normal')
+                                .attr('text-anchor', `start`)
+                                .text('S100');
+                            vis.els.areachartAxisG2.append('line')
+                                .attr('class', 'viewfinder_areachart_axis_line viewfinder_areachart__axis_line_left')
+                                .attr('x1', 0)
+                                .attr('x2', 0)
+                                .attr('y1', 0)
+                                .attr('y2', 4)
+                                .attr('stroke', 'white')
+                                .attr('stroke-width', 0.5);
+                            vis.els.areachartAxisG2.append('line')
+                                .attr('class', 'viewfinder_areachart_axis_line viewfinder_areachart_axis_line_right')
+                                .attr('x1', vis.configs.areachartW)
+                                .attr('x2', vis.configs.areachartW)
+                                .attr('y1', 0)
+                                .attr('y2', 3)
+                                .attr('stroke', 'white')
+                                .attr('stroke-width', 0.5);
+                            vis.els.areachartAxisG2.append('text')
+                                .attr('class', 'viewfinder_areachart_axis_text viewfinder_areachart_axis_text_left')
+                                .attr('x', 0)
+                                .attr('y', 12)
+                                .attr('fill', 'white')
+                                .attr('font-family', 'sans-serif;')
+                                .attr('font-size', 8)
+                                .attr('font-weight', 'lighter')
+                                .attr('text-anchor', `middle`)
+                                .text(0);
+                            vis.els.areachartAxisG2.append('text')
+                                .attr('class', 'viewfinder_areachart_axis_text viewfinder_areachart_axis_text_right')
+                                .attr('x', vis.configs.areachartW)
+                                .attr('y', 12)
+                                .attr('fill', 'white')
+                                .attr('font-family', 'sans-serif;')
+                                .attr('font-size', 8)
+                                .attr('font-weight', 'lighter')
+                                .attr('text-anchor', `middle`)
+                                .text(d3.format(',')(2 ** 16));
 
                         },
                         wrangle: () => {
                             // Define this
                             const vis = this.viewer.lensing.viewfinder;
 
-                            // Get range nest
-                            vis.nest_range = [];
+                            // Get range hist
+                            vis.hist_range = [];
                             if (vis.data_cells.length > 0) {
-
-                                const blacklist = ['id', 'CellPosition_X', 'CellPosition_Y', 'NucleusArea', 'phenotype'];
                                 let index = 0;
                                 for (let d in vis.data_cells[0].data) {
-                                    if (!blacklist.includes(d)) {
-                                        vis.nest_range.push({
+                                    if (vis.active_channels.includes(d.split('_')[0])) {
+                                        vis.hist_range.push({
                                             key: d,
-                                            value: (() => {
-                                                let sum = 0;
-                                                vis.data_cells.forEach(c => {
-                                                    sum += c.data[d];
-                                                })
-                                                return sum;
-                                            })()
+                                            values: vis.data_cells.map(c => c.data[d])
                                         });
                                         index++;
                                     }
                                 }
 
-                                // Set scales
-                                vis.tools.nestScX.domain([0, vis.nest_range.length - 1]);
+                                // Histogram
+                                vis.hist_range.forEach(d => {
+                                    d.bins = d3.histogram()
+                                        .domain(vis.tools.nestScX.domain())
+                                        .thresholds(vis.tools.nestScX.ticks(20))
+                                        (d.values);
+                                })
+
+                                // Config
+                                let max = 0;
+                                vis.hist_range.forEach(d => {
+                                    d.bins.forEach(b => {
+                                        if (b.length > max) max = b.length;
+                                    });
+                                });
+                                vis.tools.nestScY.domain([0, max]);
+
+
                             } else {
-                                vis.tools.nestScX.domain([0, 1]);
+
                             }
 
                         },
@@ -614,12 +732,63 @@ class ImageViewer {
                             // vis.els.textReportG.select('.viewfinder_box_text_a')
                             //     .text(`Cell ID: ${id}`);
 
-                            // // Build area chart
-                            // vis.els.areachartG.select('.viewfinder_areachart_path')
-                            //     .datum(vis.nest_range)
-                            //     .attr('d', vis.tools.area)
-                            //     .attr('fill', 'white');
-                            //
+                            // Build area chart
+                            if (vis.hist_range.length > 0) {
+                                vis.els.areachartG.selectAll('.viewfinder_areachart_bin')
+                                    .data(vis.hist_range[0].bins)
+                                    .join(
+                                        enter => enter.append('g')
+                                            .attr('class', 'viewfinder_areachart_bin')
+                                            .each(function (d, i) {
+                                                const g = d3.select(this)
+                                                    .style('transform',
+                                                        `translate(${vis.configs.areachartW / 20 * i}px, ${vis.tools.nestScY(d.length)}px)`);
+                                                g.append('rect')
+                                                    .attr('width', vis.configs.areachartW / 20 - 2)
+                                                    .attr('height', vis.configs.areachartH - vis.tools.nestScY(d.length))
+                                                    .attr('fill', 'rgba(255, 255, 255, 1)')
+                                            }),
+                                        update => update
+                                            .each(function (d, i) {
+                                                const g = d3.select(this)
+                                                    .style('transform',
+                                                        `translate(${vis.configs.areachartW / 20 * i}px, ${vis.tools.nestScY(d.length)}px)`);
+                                                g.select('rect')
+                                                    .attr('width', vis.configs.areachartW / 20 - 2)
+                                                    .attr('height', vis.configs.areachartH - vis.tools.nestScY(d.length))
+                                                    .attr('fill', 'rgba(255, 255, 255, 1)')
+                                            }),
+                                        exit => exit.remove()
+                                    )
+                                // TODO - make dynamic (hardcoded for demo)
+                                vis.els.areachartG2.selectAll('.viewfinder_areachart_bin')
+                                    .data(vis.hist_range[1].bins)
+                                    .join(
+                                        enter => enter.append('g')
+                                            .attr('class', 'viewfinder_areachart_bin')
+                                            .each(function (d, i) {
+                                                const g = d3.select(this)
+                                                    .style('transform',
+                                                        `translate(${vis.configs.areachartW / 20 * i}px, ${vis.tools.nestScY(d.length)}px)`);
+                                                g.append('rect')
+                                                    .attr('width', vis.configs.areachartW / 20 - 2)
+                                                    .attr('height', vis.configs.areachartH - vis.tools.nestScY(d.length))
+                                                    .attr('fill', 'rgba(255, 255, 255, 1)')
+                                            }),
+                                        update => update
+                                            .each(function (d, i) {
+                                                const g = d3.select(this)
+                                                    .style('transform',
+                                                        `translate(${vis.configs.areachartW / 20 * i}px, ${vis.tools.nestScY(d.length)}px)`);
+                                                g.select('rect')
+                                                    .attr('width', vis.configs.areachartW / 20 - 2)
+                                                    .attr('height', vis.configs.areachartH - vis.tools.nestScY(d.length))
+                                                    .attr('fill', 'rgba(255, 255, 255, 1)')
+                                            }),
+                                        exit => exit.remove()
+                                    )
+                            }
+
                             // // Add markers
                             // const channelArray = vis.nest_range.length > 0 ? vis.active_channels : [];
                             // vis.els.areachartG.selectAll('.viewfinder_areachart_markerG')
@@ -657,6 +826,9 @@ class ImageViewer {
                             vis.els.cellsG.remove();
                             vis.els.textReportG.remove();
                             vis.els.areachartG.remove();
+                            vis.els.areachartAxisG.remove();
+                            vis.els.areachartG2.remove();
+                            vis.els.areachartAxisG2.remove();
                         }
                     }
                 },
