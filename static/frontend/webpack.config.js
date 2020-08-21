@@ -6,7 +6,7 @@ module.exports = {
         vendor: './src/js/vendor.js'
     },
     output: {
-        filename: '[name]_bundle.js'
+        filename: '../src/js/[name]_bundle.js'
     },
     module: {
         rules: [

@@ -10,6 +10,7 @@ dependencies:
   - scikit-image=0.14.2
   - scipy
   - tifffile
+  - waitress
   - pip
   - pip:
       - pyvips
