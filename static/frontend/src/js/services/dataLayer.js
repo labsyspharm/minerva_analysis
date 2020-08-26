@@ -114,6 +114,17 @@ class DataLayer {
         }
     }
 
+    async getScatterplotData() {
+        try {
+            let response = await fetch('/get_scatterplot_data')
+            let scatterplotData = await response.json();
+            return scatterplotData;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
+
+
     getCurrentSelection() {
         return this.currentSelection;
     }

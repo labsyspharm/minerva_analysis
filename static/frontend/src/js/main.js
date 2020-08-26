@@ -55,6 +55,9 @@ async function init(conf) {
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
+    let infoVis = new InfoVis('scatterplot_display', eventHandler);
+    let scatterplotData = await dataLayer.getScatterplotData();
+    infoVis.renderCanvasScatterplot({'data':scatterplotData});
 }
 
 //feature color map changed in ridge plot

@@ -21,7 +21,7 @@ def my_index():
     return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
 
 
-@app.route('/<string:datasource>')
+@app.route('/datasource/<string:datasource>')
 def image_viewer(datasource):
     datasources = get_config_names()
     if datasource not in datasources:
@@ -457,6 +457,11 @@ def get_num_cells_in_circle():
     y = float(request.args.get('point_y'))
     r = float(request.args.get('radius'))
     resp = dataFilter.get_number_of_cells_in_circle(x, y, datasource, r=r)
+    return serialize_and_submit_json(resp)
+
+@app.route('/get_scatterplot_data', methods=['GET'])
+def get_scatterplot_data():
+    resp = dataFilter.get_scatterplot_data()
     return serialize_and_submit_json(resp)
 
 

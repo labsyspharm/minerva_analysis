@@ -42,7 +42,7 @@
                     {% for datasource in data.datasources %}
                     <div class="row justify-content-between">
                         <div class="col-4 navbar-datasource">
-                            <a class href="/{{datasource}}">{{datasource}}</a>
+                            <a class href="/datasource/{{datasource}}">{{datasource}}</a>
                         </div>
                         <div class="col-4 navbar-datasource-edit-button">
                             <a href="/edit_config/{{datasource}}"><span class="fas fa-pencil-alt"></span></a>
@@ -81,7 +81,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-7" id="openseadragon_wrapper">
+        <div class="col-sm-5" id="openseadragon_wrapper">
             <span>Viewer</span>
             <div id="openseadragon">
                 <div class="row">
@@ -127,6 +127,10 @@
                 <svg width="150" height="0" id="cell_legend"></svg>
                 <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors">
             </div>
+        </div>
+        <div class="col-sm-3" id="scatterplot_wrapper">
+            <span id="scatterplot_label">Scatterplot</span>
+            <div id="scatterplot_display"></div>
         </div>
     </div>
 </div>
