@@ -413,6 +413,18 @@ label {
 }
 
 #viewer_container {
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
     margin: 0;
+}
+#channel_list_wrapper, #openseadragon_wrapper, #cell_wrapper, #scatterplot_wrapper{
+    padding: 0px 5px;
+}
+
+#cell_wrapper{
+    flex: 0 0 10%;
+    max-width: 10%;
+}
+#cell_wrapper .btn {
+    padding: 6px;
 }

@@ -60,7 +60,7 @@
 {% if data.datasource %}
 <div class="container" id="viewer_container">
     <div class="row">
-        <div class="col-sm-3" id="channel_list_wrapper">
+        <div class="col-sm-3 viewer_col" id="channel_list_wrapper">
             <div class="row">
                 <div class="col-auto mr-auto"><span class="box-heading">Channels</span></div>
                 <div class="col-auto" id="selected-channels-header-div">
@@ -81,7 +81,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-5" id="openseadragon_wrapper">
+        <div class="col-sm-5 viewer_col" id="openseadragon_wrapper">
             <span>Viewer</span>
             <div id="openseadragon">
                 <div class="row">
@@ -96,7 +96,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-2" id="cell_wrapper">
+        <div class="col-sm-2 viewer_col" id="cell_wrapper">
             <span id="cell_label">Cell Information</span>
             <div id="cell_display">
                 <div class="row align-items-center">
@@ -128,8 +128,8 @@
                 <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors">
             </div>
         </div>
-        <div class="col-sm-3" id="scatterplot_wrapper">
-            <span id="scatterplot_label">Scatterplot</span>
+        <div class="col-sm-2 viewer_col" id="scatterplot_wrapper">
+            <span id="scatterplot_label">Embedding</span>
             <div id="scatterplot_display"></div>
         </div>
     </div>
