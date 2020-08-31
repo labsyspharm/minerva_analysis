@@ -55,7 +55,7 @@ async function init(conf) {
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
-    let scatterplot = new Scatterplot('scatterplot_display', eventHandler);
+    let scatterplot = new Scatterplot('scatterplot_display', eventHandler, colorScheme);
     let scatterplotData = await dataLayer.getScatterplotData();
     scatterplot.init(scatterplotData);
 }

@@ -1,7 +1,8 @@
 class Scatterplot {
-    constructor(id, eventHandler) {
+    constructor(id, eventHandler, colorScheme) {
         this.id = id;
         this.eventHandler = eventHandler;
+        this.colorScheme = colorScheme;
     }
 
     init(visData) {
@@ -94,9 +95,9 @@ class Scatterplot {
                     .call(pointer)
             );
         let quadtree;
-        const languageColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
-        const languageFill = webglColor("steelblue");
+        const languageFill = d =>
+            webglColor(`#${this.colorScheme.colorMap[d.phenotype].hex}`);
+        // const languageFill = webglColor("steelblue");
 
         const fillColor = fc.webglFillColor().value(languageFill).data(data);
         pointSeries.decorate(program => fillColor(program));

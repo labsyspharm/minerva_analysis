@@ -192,14 +192,17 @@ def get_color_scheme(datasource, refresh):
         color_scheme[phenotypes[i]] = {}
         color_scheme[phenotypes[i]]['rgb'] = rgb_palette[i]
         color_scheme[phenotypes[i]]['hex'] = '%02x%02x%02x' % tuple(rgb_palette[i])
+        color_scheme[str(i)] = {}
+        color_scheme[str(i)]['rgb'] = rgb_palette[i]
+        color_scheme[str(i)]['hex'] = '%02x%02x%02x' % tuple(rgb_palette[i])
 
     pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
     return color_scheme
 
 
 def get_scatterplot_data():
-    data = np.load(Path("static/data_analysis/full_weighted_umap_cosine_100neighbors_02dist.npy"))
-    list_of_obs = [{'x': elem[0], 'y': elem[1], 'id': id} for id, elem in enumerate(data)]
+    data = np.load(Path("static/data/Ton_378/embedding.npy"))
+    list_of_obs = [{'x': elem[0], 'y': elem[1], 'phenotype': elem[2], 'id': id} for id, elem in enumerate(data)]
     visData = {
         'data': list_of_obs,
         'xMin': np.min(data[:, 0]),
