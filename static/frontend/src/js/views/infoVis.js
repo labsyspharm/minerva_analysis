@@ -69,7 +69,7 @@ class InfoVis {
             let data = visdata.data.map(function (d, i) {
                 return [parseFloat(d.x), parseFloat(d.y), d, i, false]
             });
-            
+
             // create a quadtree for fast hit detection
             var quadTree = d3.quadtree(data);
 
@@ -294,14 +294,16 @@ class InfoVis {
 
                     if (!isActive) {
                         // var hexColor = colors[point[2].clust_ID-1];
-                        var color = d3.rgb("#" + colors[parseInt(point[2].clust_ID) - 1]);
+                        let color = d3.rgb("steelblue");
+                        // var color = d3.rgb("#" + colors[parseInt(point[2].clust_ID) - 1]);
                         color.opacity = opacity;
                         context.fillStyle = color + "";
                         context.beginPath();
                         context.arc(cx, cy, r * (k / 10.0), 0, 2 * Math.PI);
                         context.fill();
                     } else {
-                        var color = d3.rgb("#" + colors[parseInt(point[2].clust_ID) - 1]);
+                        let color = d3.rgb("steelblue");
+                        // var color = d3.rgb("#" + colors[parseInt(point[2].clust_ID) - 1]);
                         context.strokeStyle = '#FFA500';
                         context.lineWidth = 5;
                         context.fillStyle = color + "";
@@ -393,3 +395,4 @@ class InfoVis {
         }
     }
 }
+

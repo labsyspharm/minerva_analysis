@@ -2,6 +2,8 @@ channels:
   - conda-forge
 dependencies:
   - Flask=1.1.2
+  - imageio
+  - matplotlib
   - numpy
   - pandas
   - pillow=7.0.0
@@ -10,6 +12,7 @@ dependencies:
   - scikit-learn
   - scikit-image=0.14.2
   - scipy
+  - tensorflow
   - tifffile
   - waitress
   - pip

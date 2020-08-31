@@ -24,7 +24,7 @@
     <script src="../static/frontend/src/js/views/channelList.js"></script>
     <script src="../static/frontend/src/js/views/cellInformation.js"></script>
     <script src="../static/frontend/src/js/views/imageViewer.js"></script>
-    <script src="../static/frontend/src/js/views/infoVis.js"></script>
+    <script src="../static/frontend/src/js/views/scatterplot.js"></script>
     <script src="../static/frontend/src/js/services/simpleEventHandler.js"></script>
 </head>
 <body>
@@ -58,7 +58,7 @@
     </div>
 </nav>
 {% if data.datasource %}
-<div class="container">
+<div class="container" id="viewer_container">
     <div class="row">
         <div class="col-sm-3" id="channel_list_wrapper">
             <div class="row">

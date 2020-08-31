@@ -55,9 +55,9 @@ async function init(conf) {
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
-    let infoVis = new InfoVis('scatterplot_display', eventHandler);
+    let scatterplot = new Scatterplot('scatterplot_display', eventHandler);
     let scatterplotData = await dataLayer.getScatterplotData();
-    infoVis.renderCanvasScatterplot({'data':scatterplotData});
+    scatterplot.init(scatterplotData);
 }
 
 //feature color map changed in ridge plot
@@ -160,4 +160,5 @@ function displayNeighborhood(selectedCell, neighborhood) {
     });
     updateSeaDragonSelection();
 }
+
 

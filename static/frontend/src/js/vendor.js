@@ -5,8 +5,9 @@ import 'jquery';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'pngjs';
-import * as d3 from 'd3';
+import * as d3base from 'd3';
 import * as slider from 'd3-simple-slider';
+import {annotation} from 'd3-svg-annotation';
 import {legendColor} from 'd3-svg-legend'
 import colorbrewer from 'colorbrewer';
 import 'lodash';
@@ -17,12 +18,15 @@ import Mark from 'mark.js';
 import $ from 'jquery';
 import 'node-fetch';
 import convert from 'color-convert';
+import * as fc from  'd3fc'
+
+window.d3 = Object.assign(d3base, {legendColor, slider, annotation})
+
 
 window.convert = convert;
 window.$ = $;
 window.d3 = d3;
-window.d3.slider = slider;
-window.legendColor = legendColor;
+window.fc = fc;
 window.colorbrewer = colorbrewer;
 window.PNG = PNG;
 window.Buffer = Buffer;

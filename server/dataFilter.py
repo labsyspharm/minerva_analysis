@@ -199,5 +199,12 @@ def get_color_scheme(datasource, refresh):
 
 def get_scatterplot_data():
     data = np.load(Path("static/data_analysis/full_weighted_umap_cosine_100neighbors_02dist.npy"))
-    list_of_obs = [{'x': elem[0], 'y': elem[1]} for elem in data]
-    return list_of_obs
+    list_of_obs = [{'x': elem[0], 'y': elem[1], 'id': id} for id, elem in enumerate(data)]
+    visData = {
+        'data': list_of_obs,
+        'xMin': np.min(data[:, 0]),
+        'xMax': np.max(data[:, 0]),
+        'yMin': np.min(data[:, 1]),
+        'yMax': np.max(data[:, 1])
+    }
+    return visData

@@ -81,7 +81,8 @@ body {
     padding: 10px;
     height: 80vh;
 }
-#scatterplot_display{
+
+#scatterplot_display {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     padding: 10px;
     height: 40vh;
@@ -139,7 +140,7 @@ body {
 #channel_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
-    height:50px;
+    height: 50px;
 }
 
 #channel_list .list-group {
@@ -158,7 +159,7 @@ body {
     cursor: move;
 }
 
-.slider text{
+.slider text {
     margin-top: -10px;
     font-size: 8px;
 }
@@ -409,4 +410,9 @@ label {
     stroke: steelblue;
     stroke-width: 3px;
     vector-effect: non-scaling-stroke;
+}
+
+#viewer_container {
+    width: 100vw;
+    margin: 0;
 }
