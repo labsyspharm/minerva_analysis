@@ -17,6 +17,7 @@ import 'node-fetch'
 import convert from 'color-convert'
 import * as l from 'lensing';
 import {ViewerManager} from './viewerManager'
+import {LensingFiltersExt} from './lensingFiltersExt'
 
 window.convert = convert;
 window.$ = $;
@@ -28,4 +29,5 @@ window.Sortable = Sortable;
 window.Mark = Mark;
 window.l = l;
 window.ViewerManager = ViewerManager;
+window.LensingFiltersExt = LensingFiltersExt;
 
