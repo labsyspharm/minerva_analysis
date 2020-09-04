@@ -39,7 +39,7 @@ export class ViewerManager {
 
     }
 
-    /**
+    /** jj:ck
      * @function addChannel
      * Add channel to multi-channel rendering
      *
@@ -47,39 +47,33 @@ export class ViewerManager {
      */
     addChannel(srcIdx) {
 
-        //jojo
-        // no channel -> add channel
-        // already a channel -> getItemAt -> tiledImage.myMetaInfo = {otherdata: 'foo', more: 'foo2'}
-
-        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
-
+        // If already exists
         if ((srcIdx in this.imageViewer.currentChannels)) {
             return;
         }
 
-        /* not working correctly, image will be white
-        var imgopacity = 1;
-        if ( Object.keys(seaDragonViewer.currentChannels).length > 0 ){
-            imgopacity = 0;
-        }*/
+        // Get dzi path
+        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
 
+        // Add tiled image
         this.viewer.addTiledImage({
             tileSource: src,
-            //index: 0,
-            opacity: 1, //    preload: true, (not working correctly for us)
+            // index: 0,
+            opacity: 1,
             preload: true,
             success: () => {
-                var itemidx = this.viewer.world.getItemCount() - 1; //0
-                var url = this.viewer.world.getItemAt(itemidx).source.tilesUrl;
-                var group = url.split("/");
-                var sub_url = group[group.length - 2];
-
+                // Define url and suburl
+                const itemidx = this.viewer.world.getItemCount() - 1;
+                const url = this.viewer.world.getItemAt(itemidx).source.tilesUrl;
+                const group = url.split("/");
+                const sub_url = group[group.length - 2];
+                // Attach
                 this.imageViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
             }
         });
     }
 
-    /**
+    /** jj:ck
      * @function add_handlers
      * Adds relevant event handlers to the viewer
      *
@@ -93,7 +87,7 @@ export class ViewerManager {
     }
 
 
-    /**
+    /** jj:??
      * @function evaluateTF
      *
      * @param val
@@ -118,13 +112,12 @@ export class ViewerManager {
     /**
      * @function load_label_image
      *
-     *
      * @returns void
      */
     load_label_image() {
 
         // Load label image in background if it exists
-        if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] != '') {
+        if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] !== '') {
             this.viewer.addTiledImage({
                 tileSource: this.imageViewer.config["imageData"][0]["src"],
                 index: 0,
@@ -183,7 +176,6 @@ export class ViewerManager {
             labelTileAdr = tile.url.replace(somePath, labelPath);
             labelTile = this.imageViewer.tileCache[labelTileAdr];
         }
-
 
         // Retrieve channel data
         let channelIdx = "";

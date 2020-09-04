@@ -369,16 +369,27 @@ export class LensingFiltersExt {
                         if (!dataLoad2.config.filterCode.settings.loading) {
 
                             // Measure relative
-                            // const screenPt = new vis.lensing.osd.Point(vis.lensing.configs.rad / vis.lensing.configs.pxRatio, 0);
-                            // const contextPt = vis.lensing.viewer.viewport.viewerElementToViewportCoordinates(screenPt);
-                            // const moveOver = imageViewer.viewer.world.getItemAt(0).viewportToImageCoordinates(contextPt);
+                            const screenPt1 = new vis.lensing.osd.Point(0, 0);
+                            const screenPt2 = new vis.lensing.osd.Point(vis.lensing.configs.rad / vis.lensing.configs.pxRatio, 0);
+                            const contextPt1 = imageViewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1)
+                            const contextPt2 = imageViewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
+                            let newRad =  Math.round(contextPt2.x - contextPt1.x)
+                            if (newRad > 300) {
+                                newRad = 300;
+                            }
 
                             // Get position of cell and add to data
                             const pos = vis.lensing.configs.pos_full;
 
+                            //
+                            const start = performance.now()
+
                             // TODO - need to refactor radius to image size
                             dataLoad2.config.filterCode.settings.loading = true;
-                            dataLayer.getNeighborhood(vis.lensing.configs.rad, pos[0], pos[1]).then(arr => {
+                            dataLayer.getNeighborhood(newRad, pos[0], pos[1]).then(arr => {
+                                const stop = performance.now()
+                                const time = stop - start;
+                                console.log(arr.length, time)
 
                                 // Loaded
                                 dataLoad2.config.filterCode.settings.loading = false;
@@ -642,6 +653,10 @@ export class LensingFiltersExt {
                         render: () => {
                             // Define this
                             const vis = imageViewer.viewer.lensing.viewfinder;
+
+                            // Update cell count
+                            vis.els.textReportG.select('text')
+                                .text(`Neighborhood: ${vis.data_cells.length} cells`);
 
                             // Append cell center circles
                             vis.els.cellsG.selectAll('.cell')

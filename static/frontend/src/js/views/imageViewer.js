@@ -5,6 +5,10 @@
  *
  */
 
+/* todo
+ 1. major - the viewer managers should not be looking up the same renderTF
+ */
+
 class ImageViewer {
 
     constructor(config, dataLayer, eventHandler, colorScheme) {
@@ -685,6 +689,7 @@ class ImageViewer {
      * @returns void
      */
     forceRepaint() {
+        // Refilter, redraw
         seaDragonViewer.viewer.forceRefilter();
         seaDragonViewer.viewer.forceRedraw();
         seaDragonViewer.viewer.lensing.viewer_aux.forceRefilter();
@@ -732,36 +737,33 @@ class ImageViewer {
     }
 }
 
-
-//static vars
+// Static vars
 ImageViewer.events = {
     imageClickedMultiSel: 'image_clicked_multi_selection',
     renderingMode: 'renderingMode'
 };
 
 
-// PUBLIC METHODS TODO - integrate as static (talk w Robert/Simon)
+// PUBLIC METHODS
 
-
-// activates filtering plugin to draw images with applied TF
+// Activates filtering plugin to draw images with applied TF
 function activateTFRendering() {
 
+    const tempSet = true;
+
     //jojo
-    if (!false) {
-        // filtering plugin
+    if (tempSet) {
+        // Filtering plugin
         seaDragonViewer.viewer.setFilterOptions({
             //  loadMode: 'sync',
             filters: {
                 processors: //OpenSeadragon.Filters.BRIGHTNESS(200), ImageViewer.myfilter
-                seaDragonViewer.renderTFWithLabels
+                seaDragonViewer.viewerManagerVMain.renderTFWithLabels
             }
         });
-        // - todo ck :: jj (Not confirmed to help, prob can remove)
         seaDragonViewer.viewer.lensing.viewer_aux.setFilterOptions({
-            //  loadMode: 'sync',
             filters: {
-                processors: //OpenSeadragon.Filters.BRIGHTNESS(200), ImageViewer.myfilter
-                seaDragonViewer.renderTFWithLabels
+                processors: seaDragonViewer.viewerManagerVAuxi.renderTFWithLabels
             }
         });
 
@@ -777,22 +779,21 @@ function activateTFRendering() {
 
 function createTFArray(min, max, rgb1, rgb2, numBins) {
 
-    var tfArray = [];
+    const tfArray = [];
 
-    var numBinsF = parseFloat(numBins);
+    const numBinsF = parseFloat(numBins);
     col1 = d3.rgb(rgb1);
     col2 = d3.rgb(rgb2);
 
-
-    for (var i = 0; i < numBins; i++) {
-        var rgbTupel = {};
-        var lerpFactor = (i / (numBinsF - 1.0));
+    for (let i = 0; i < numBins; i++) {
+        const rgbTupel = {};
+        const lerpFactor = (i / (numBinsF - 1.0));
 
         rgbTupel.r = col1.r + (col2.r - col1.r) * lerpFactor;
         rgbTupel.g = col1.g + (col2.g - col1.g) * lerpFactor;
         rgbTupel.b = col1.b + (col2.b - col1.b) * lerpFactor;
 
-        var lerpCol = d3.rgb(rgbTupel.r, rgbTupel.g, rgbTupel.b);
+        const lerpCol = d3.rgb(rgbTupel.r, rgbTupel.g, rgbTupel.b);
         tfArray.push(lerpCol);
     }
 
@@ -807,7 +808,7 @@ async function addTile(path) {
 
     function addTileResponse(success, error) {
         if (error) {
-            // console.log("Error Adding Tile:", error)
+            console.log("Error Adding Tile:", error)
         }
         // console.log("Emergency Added Tile:", path)
     }
@@ -820,6 +821,7 @@ async function addTile(path) {
         callback: addTileResponse
     }
     return new Promise(resolve => {
+        console.log('hi')
         // - todo ck :: jj (Not confirmed to help, prob can remove)
         seaDragonViewer.viewer.lensing.viewer_aux.imageLoader.addJob(options)
         return seaDragonViewer.viewer.imageLoader.addJob(options)
@@ -830,6 +832,5 @@ async function addTile(path) {
         .catch(err => {
             return Promise.resolve()
         })
-
 
 }
