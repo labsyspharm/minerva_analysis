@@ -88,6 +88,14 @@ body {
     height: 40vh;
 }
 
+.legend {
+    position: absolute;
+}
+
+.legend text {
+    font: 12px sans-serif;
+}
+
 .mylabels {
     font-size: 0.6rem;
 }

@@ -55,10 +55,11 @@ class DataLayer {
         }
     }
 
-    async getColorScheme(refresh = false) {
+    async getColorScheme(refresh = false, field = 'phenotype') {
         try {
             let response = await fetch('/get_color_scheme?' + new URLSearchParams({
                 datasource: datasource,
+                field: field,
                 refresh: refresh
             }))
             let response_data = await response.json();

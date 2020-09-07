@@ -436,7 +436,8 @@ def get_phenotypes():
 def get_color_scheme():
     datasource = request.args.get('datasource')
     refresh = request.args.get('refresh') == 'true'
-    resp = dataFilter.get_color_scheme(datasource, refresh)
+    field = request.args.get('field')
+    resp = dataFilter.get_color_scheme(datasource, refresh, field)
     return serialize_and_submit_json(resp)
 
 

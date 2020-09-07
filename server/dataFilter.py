@@ -163,21 +163,24 @@ def get_number_of_cells_in_circle(x, y, datasource, r):
         return 0
 
 
-def get_color_scheme(datasource, refresh):
+def get_color_scheme(datasource, refresh, label_field='phenotype'):
     color_scheme_path = str(
-        Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "color_scheme.pickle")
+        Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / str(label_field + "_color_scheme.pickle"))
     if refresh == False:
         if os.path.isfile(color_scheme_path):
             print("Color Scheme Exists, Loading")
             color_scheme = pickle.load(open(color_scheme_path, "rb"))
             return color_scheme
-    phenotypes = get_phenotypes(datasource)
+    if label_field == 'phenotype':
+        labels = get_phenotypes(datasource)
+    elif label_field == 'cluster':
+        labels = get_clusters()
     payload = {
         'hueFilters': [],
         'lightnessRange': ["25", "85"],
         'startPalette': [[75, 25, 75]],
         'weights': {'ciede2000': 1, 'nameDifference': 0, 'nameUniqueness': 0, 'pairPreference': 0},
-        'paletteSize': len(phenotypes)
+        'paletteSize': len(labels)
     }
     now = time.time()
     r = requests.post("http://vrl.cs.brown.edu/color/makePalette",
@@ -189,20 +192,24 @@ def get_color_scheme(datasource, refresh):
         elem in palette]
     color_scheme = {}
     for i in range(len(rgb_palette)):
-        color_scheme[phenotypes[i]] = {}
-        color_scheme[phenotypes[i]]['rgb'] = rgb_palette[i]
-        color_scheme[phenotypes[i]]['hex'] = '%02x%02x%02x' % tuple(rgb_palette[i])
-        color_scheme[str(i)] = {}
-        color_scheme[str(i)]['rgb'] = rgb_palette[i]
-        color_scheme[str(i)]['hex'] = '%02x%02x%02x' % tuple(rgb_palette[i])
+        color_scheme[str(labels[i])] = {}
+        color_scheme[str(labels[i])]['rgb'] = rgb_palette[i]
+        color_scheme[str(labels[i])]['hex'] = '%02x%02x%02x' % tuple(rgb_palette[i])
+
 
     pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
     return color_scheme
 
 
+def get_clusters():
+    data = np.load(Path("static/data/Ton_378/embedding.npy"))
+    clusters = np.unique(data[:, 2])
+    return clusters.astype('int32').tolist()
+
+
 def get_scatterplot_data():
     data = np.load(Path("static/data/Ton_378/embedding.npy"))
-    list_of_obs = [{'x': elem[0], 'y': elem[1], 'phenotype': elem[2], 'id': id} for id, elem in enumerate(data)]
+    list_of_obs = [{'x': elem[0], 'y': elem[1], 'cluster': elem[2], 'id': id} for id, elem in enumerate(data)]
     visData = {
         'data': list_of_obs,
         'xMin': np.min(data[:, 0]),

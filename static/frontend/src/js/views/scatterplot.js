@@ -1,16 +1,33 @@
 class Scatterplot {
-    constructor(id, eventHandler, colorScheme) {
+    constructor(id, eventHandler, dataLayer) {
         this.id = id;
         this.eventHandler = eventHandler;
-        this.colorScheme = colorScheme;
+        this.dataLayer = dataLayer;
     }
 
-    init(visData) {
+    async init(visData) {
+        this.colorMap = await dataLayer.getColorScheme(true, 'cluster');
+
         let data = visData.data;
         const xScale = d3.scaleLinear().domain([visData.xMin, visData.xMax]);
         const yScale = d3.scaleLinear().domain([visData.yMin, visData.yMax]);
         const xScaleOriginal = xScale.copy();
         const yScaleOriginal = yScale.copy();
+        var color = d3.scaleOrdinal() // D3 Version 4
+            .domain(Object.keys(this.colorMap))
+            .range(_.map(this.colorMap, elem => `#${elem.hex}`));
+        var legend = d3.legendColor()
+            .orient('vertical')
+            .shapePadding(0)
+            .titleWidth(100)
+            .labelOffset(5)
+            .shapeWidth(10)
+            .shapeHeight(10)
+            .scale(color)
+            .on("cellclick", function (d) {
+                recolor(d);
+            });
+
         const createAnnotationData = datapoint => ({
             note: {
                 label: `ID: ${datapoint.id}`,
@@ -83,23 +100,34 @@ class Scatterplot {
                     .series([annotationSeries])
                     .mapping(d => d.annotations)
             )
-            .decorate(sel =>
-                sel
-                    .enter()
-                    .select("d3fc-svg.plot-area")
+            .decorate((selection) => {
+                let sel = selection.enter()
+
+
+                sel.append('svg')
+                    .attr('class', 'legend')
+                    .attr("width", "30px")
+                    .attr("height", "300px")
+                //
+                sel.select('.legend')
+                    .attr("transform", "translate(0,20)")
+                    .call(legend);
+
+                sel.select("d3fc-svg.plot-area")
                     .on("measure.range", () => {
                         xScaleOriginal.range([0, d3.event.detail.width]);
                         yScaleOriginal.range([d3.event.detail.height, 0]);
                     })
                     .call(zoom)
                     .call(pointer)
-            );
-        let quadtree;
-        const languageFill = d =>
-            webglColor(`#${this.colorScheme.colorMap[d.phenotype].hex}`);
-        // const languageFill = webglColor("steelblue");
 
-        const fillColor = fc.webglFillColor().value(languageFill).data(data);
+            });
+        let quadtree;
+        const pointFill = d => {
+            return webglColor(color(d.cluster));
+        }
+
+        const fillColor = fc.webglFillColor().value(pointFill).data(data);
         pointSeries.decorate(program => fillColor(program));
 
         // wire up the fill color selector
@@ -107,7 +135,7 @@ class Scatterplot {
             el.addEventListener("click", () => {
                 iterateElements(".controls a", el2 => el2.classList.remove("active"));
                 el.classList.add("active");
-                fillColor.value(languageFill);
+                fillColor.value(pointFill);
                 redraw();
             });
         });
@@ -122,6 +150,18 @@ class Scatterplot {
 
         // render the chart with the required data
         // Enqueues a redraw to occur on the next animation frame
+        const recolor = (cluster) => {
+            const pointFillCluster = d => {
+                let pointColor = webglColor(color(d.cluster));
+                if (d.cluster != cluster) {
+                    pointColor[3] = 0.4;
+                }
+                return pointColor;
+            }
+            const fillColorCluster = fc.webglFillColor().value(pointFillCluster).data(data);
+            pointSeries.decorate(program => fillColorCluster(program));
+            redraw();
+        }
         const redraw = () => {
             d3.select(`#${this.id}`).datum({annotations, data}).call(chart);
         };

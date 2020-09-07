@@ -55,9 +55,9 @@ async function init(conf) {
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
-    let scatterplot = new Scatterplot('scatterplot_display', eventHandler, colorScheme);
+    let scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer);
     let scatterplotData = await dataLayer.getScatterplotData();
-    scatterplot.init(scatterplotData);
+    await scatterplot.init(scatterplotData);
 }
 
 //feature color map changed in ridge plot
@@ -123,7 +123,7 @@ const drawNeighborhoodRadius = async ({distance, selectedCell, dragging}) => {
 eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
 
 const refreshColors = async () => {
-    await colorScheme.getColorScheme(true);
+    await colorScheme.refreshColorScheme(true);
     cellInformation.draw();
     updateSeaDragonSelection();
 }
