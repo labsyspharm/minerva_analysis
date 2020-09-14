@@ -13,17 +13,28 @@ class Scatterplot {
         const yScale = d3.scaleLinear().domain([visData.yMin, visData.yMax]);
         const xScaleOriginal = xScale.copy();
         const yScaleOriginal = yScale.copy();
-        var color = d3.scaleOrdinal() // D3 Version 4
+
+        let color = d3.scaleOrdinal() // D3 Version 4
             .domain(Object.keys(this.colorMap))
-            .range(_.map(this.colorMap, elem => `#${elem.hex}`));
-        var legend = d3.legendColor()
+            .range(_.map(this.colorMap, elem => {
+                    return webglColor(`#${elem.hex}`)
+                }
+            ));
+
+        let legendColors = color.copy();
+        let rgbaColors = _.map(color.range(), glColor => {
+            return `rgba(${_.toInteger(glColor[0] * 255)},${_.toInteger(glColor[1] * 255)},${_.toInteger(glColor[2] * 255)},${glColor[3]})`
+        });
+        legendColors.range(rgbaColors);
+
+        let legend = d3.legendColor()
             .orient('vertical')
             .shapePadding(0)
             .titleWidth(100)
             .labelOffset(5)
             .shapeWidth(10)
             .shapeHeight(10)
-            .scale(color)
+            .scale(legendColors)
             .on("cellclick", function (d) {
                 recolor(d);
             });
@@ -124,7 +135,7 @@ class Scatterplot {
             });
         let quadtree;
         const pointFill = d => {
-            return webglColor(color(d.cluster));
+            return color(d.cluster);
         }
 
         const fillColor = fc.webglFillColor().value(pointFill).data(data);
@@ -147,23 +158,43 @@ class Scatterplot {
             .y(d => d.y)
             .addAll(data);
 
+        let selectedCluster = null;
+
+        const recolor = (cluster) => {
+            let prevColorRange = color.range();
+            color.range(_.map(prevColorRange, (thisColor, i) => {
+                if (selectedCluster != cluster && cluster != _.toString(i)) {
+                    thisColor[3] = 0.5;
+                    return thisColor;
+                } else {
+                    thisColor[3] = 1;
+                    return thisColor;
+                }
+            }))
+
+            legendColors.range(_.map(color.range(), thisColor => {
+                return `rgba(${_.toInteger(thisColor[0] * 255)},${_.toInteger(thisColor[1] * 255)},${_.toInteger(thisColor[2] * 255)},${thisColor[3]})`
+            }))
+            const pointFill = d => {
+                return color(d.cluster);
+            }
+            const fillColor = fc.webglFillColor().value(pointFill).data(data);
+            pointSeries.decorate(program => fillColor(program));
+            redraw();
+        }
 
         // render the chart with the required data
         // Enqueues a redraw to occur on the next animation frame
-        const recolor = (cluster) => {
-            const pointFillCluster = d => {
-                let pointColor = webglColor(color(d.cluster));
-                if (d.cluster != cluster) {
-                    pointColor[3] = 0.4;
-                }
-                return pointColor;
-            }
-            const fillColorCluster = fc.webglFillColor().value(pointFillCluster).data(data);
-            pointSeries.decorate(program => fillColorCluster(program));
-            redraw();
-        }
         const redraw = () => {
             d3.select(`#${this.id}`).datum({annotations, data}).call(chart);
+            let legendSvg = d3.select('.legend')
+                .data([legendColors]);
+            legendSvg.enter()
+                .append('g')
+                .attr('class', 'legend');
+            legendSvg.call(legend);
+            legendSvg.exit()
+                .remove();
         };
         redraw();
     }
