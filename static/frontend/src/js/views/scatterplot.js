@@ -15,8 +15,9 @@ class Scatterplot {
             let obj = {}
             obj.hex = schemeCategory10[cluster];
             obj.rgba = webglColor(obj.hex);
-            obj.grayRgb = d3.color(d3.interpolateGreys((cluster + 5) / (_.size(self.visData.clusters) + 10)))
-            obj.grayRgba = [obj.grayRgb.r / 255.0, obj.grayRgb.g / 255.0, obj.grayRgb.b / 255.0, 0.6]
+            obj.grayRgb = d3.color(d3.interpolateGreys((cluster + 5) / (_.size(self.visData.clusters) + 10)));
+            obj.grayRgba = [obj.grayRgb.r / 255.0, obj.grayRgb.g / 255.0, obj.grayRgb.b / 255.0, 0.8];
+            return obj;
         })
         const xScale = d3.scaleLinear().domain([visData.xMin, visData.xMax]);
         const yScale = d3.scaleLinear().domain([visData.yMin, visData.yMax]);
@@ -26,7 +27,7 @@ class Scatterplot {
         let color = d3.scaleOrdinal() // D3 Version 4
             .domain(Object.keys(this.colorMap))
             .range(_.map(this.colorMap, elem => {
-                    return
+                    return elem.rgba;
                 }
             ));
 
@@ -173,11 +174,9 @@ class Scatterplot {
             let prevColorRange = color.range();
             color.range(_.map(prevColorRange, (thisColor, i) => {
                 if (selectedCluster != cluster && cluster != _.toString(i)) {
-                    thisColor[3] = 0.8;
-                    return thisColor;
+                    return self.colorMap[i].grayRgba;
                 } else {
-                    thisColor[3] = 1;
-                    return thisColor;
+                    return self.colorMap[i].rgba;
                 }
             }))
 

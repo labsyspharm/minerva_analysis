@@ -5,17 +5,19 @@ class Barchart {
         this.colorScheme = colorScheme;
     }
 
-    init() {
+    init(visData) {
         this.margin = {top: 10, right: 10, bottom: 100, left: 40},
             this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
 
         this.svg = d3.select("#barchart_display").append("svg")
+            .attr("id", "barchart_svg")
             .attr("width", this.width + this.margin.left + this.margin.right)
             .attr("height", this.height + this.margin.top + this.margin.bottom)
             .append("g")
             .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
-
+        this.svgSelector = document.getElementById("barchart_svg");
+        this.svgSelector.style.display = "none";
         this.x = d3.scaleBand()
             .rangeRound([0, this.width], .1)
             .paddingInner(0.1);
@@ -44,11 +46,13 @@ class Barchart {
             .attr("dy", ".71em")
             .style("text-anchor", "end")
             .text("Weighted Neighborhood Contribution");
+        this.visData = visData;
     }
 
-    draw(visData) {
+    draw(cluster) {
         const self = this;
-        let chartData = _.get(visData, 'weighted_contribution', []);
+        self.svgSelector.style.display = "block";
+        let chartData = _.get(self.visData, `[${cluster}].clusterSummary.weighted_contribution`, []);
         self.x.domain(chartData.map(function (d) {
             return _.keys(d)[0]
         }));
@@ -96,6 +100,12 @@ class Barchart {
                 return `#${self.colorScheme.colorMap[_.keys(d)[0]].hex}`
             });
         bars.exit().remove()
+    }
+
+    hide() {
+        const self = this;
+        self.svgSelector.style.display = "none";
+
     }
 
 }

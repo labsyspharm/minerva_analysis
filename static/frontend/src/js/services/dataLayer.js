@@ -115,10 +115,9 @@ class DataLayer {
         }
     }
 
-    async getClusterCells(cluster) {
+    async getClusterCells() {
         try {
             let response = await fetch('/get_cluster_cells?' + new URLSearchParams({
-                cluster: cluster,
                 datasource: datasource
             }))
             let clusterCells = await response.json();

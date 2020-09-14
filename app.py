@@ -453,10 +453,10 @@ def get_neighborhood():
 
 @app.route('/get_cluster_cells', methods=['GET'])
 def get_cluster_cells():
-    cluster = int(request.args.get('cluster'))
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_cluster_cells(cluster, datasource)
+    resp = dataFilter.get_cluster_cells(datasource)
     return serialize_and_submit_json(resp)
+
 
 @app.route('/get_num_cells_in_circle', methods=['GET'])
 def get_num_cells_in_circle():
@@ -466,6 +466,7 @@ def get_num_cells_in_circle():
     r = float(request.args.get('radius'))
     resp = dataFilter.get_number_of_cells_in_circle(x, y, datasource, r=r)
     return serialize_and_submit_json(resp)
+
 
 @app.route('/get_scatterplot_data', methods=['GET'])
 def get_scatterplot_data():
@@ -484,4 +485,4 @@ def serialize_and_submit_json(data):
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     # 100 GB file Max
-    serve(app, host='0.0.0.0', port=8000,max_request_body_size=107374182400)
+    serve(app, host='0.0.0.0', port=8000, max_request_body_size=107374182400)

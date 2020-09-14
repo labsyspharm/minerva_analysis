@@ -17,6 +17,7 @@ let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
 let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
+let clusterData;
 
 //Disable right clicking on element
 document.getElementById("openseadragon").addEventListener('contextmenu', event => event.preventDefault());
@@ -59,7 +60,8 @@ async function init(conf) {
     let scatterplotData = await dataLayer.getScatterplotData();
     await scatterplot.init(scatterplotData);
     barchart = new Barchart('barchart_display', colorScheme);
-    barchart.init();
+    clusterData = await dataLayer.getClusterCells()
+    barchart.init(clusterData);
 
 }
 
@@ -118,11 +120,12 @@ eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMul
 const selectCluster = async (cluster) => {
     console.log('selecting Cluster');
     if (cluster) {
-        let clusterData = await dataLayer.getClusterCells(cluster)
-        dataLayer.addAllToCurrentSelection(clusterData.cells)
-        barchart.draw(clusterData.clusterSummary)
+        let selectedCluster = _.get(clusterData, `[${cluster}]`);
+        dataLayer.addAllToCurrentSelection(selectedCluster.cells)
+        barchart.draw(cluster)
 
     } else {
+        barchart.hide();
         dataLayer.clearCurrentSelection();
     }
     updateSeaDragonSelection(false);
