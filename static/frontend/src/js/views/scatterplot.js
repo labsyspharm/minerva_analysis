@@ -6,9 +6,18 @@ class Scatterplot {
     }
 
     async init(visData) {
-        this.colorMap = await dataLayer.getColorScheme(true, 'cluster');
-
-        let data = visData.data;
+        const self = this;
+        // this.colorMap = await dataLayer.getColorScheme(true, 'cluster');
+        this.visData = visData;
+        let data = this.visData.data;
+        let schemeCategory10 = d3.schemeCategory10
+        this.colorMap = _.map(this.visData.clusters, cluster => {
+            let obj = {}
+            obj.hex = schemeCategory10[cluster];
+            obj.rgba = webglColor(obj.hex);
+            obj.grayRgb = d3.color(d3.interpolateGreys((cluster + 5) / (_.size(self.visData.clusters) + 10)))
+            obj.grayRgba = [obj.grayRgb.r / 255.0, obj.grayRgb.g / 255.0, obj.grayRgb.b / 255.0, 0.6]
+        })
         const xScale = d3.scaleLinear().domain([visData.xMin, visData.xMax]);
         const yScale = d3.scaleLinear().domain([visData.yMin, visData.yMax]);
         const xScaleOriginal = xScale.copy();
@@ -17,7 +26,7 @@ class Scatterplot {
         let color = d3.scaleOrdinal() // D3 Version 4
             .domain(Object.keys(this.colorMap))
             .range(_.map(this.colorMap, elem => {
-                    return webglColor(`#${elem.hex}`)
+                    return
                 }
             ));
 
@@ -164,7 +173,7 @@ class Scatterplot {
             let prevColorRange = color.range();
             color.range(_.map(prevColorRange, (thisColor, i) => {
                 if (selectedCluster != cluster && cluster != _.toString(i)) {
-                    thisColor[3] = 0.5;
+                    thisColor[3] = 0.8;
                     return thisColor;
                 } else {
                     thisColor[3] = 1;
@@ -180,6 +189,12 @@ class Scatterplot {
             }
             const fillColor = fc.webglFillColor().value(pointFill).data(data);
             pointSeries.decorate(program => fillColor(program));
+            if (selectedCluster == cluster) {
+                selectedCluster = null;
+            } else {
+                selectedCluster = cluster;
+            }
+            this.eventHandler.trigger(Scatterplot.events.selectCluster, selectedCluster)
             redraw();
         }
 
@@ -200,6 +215,10 @@ class Scatterplot {
     }
 
 }
+
+Scatterplot.events = {
+    selectCluster: 'selectCluster'
+};
 
 const distance = (x1, y1, x2, y2) => {
     const dx = x1 - x2,

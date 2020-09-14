@@ -11,7 +11,7 @@ let seaDragonViewer;
 let channelList;
 let dataLayer;
 let config;
-
+let barchart;
 let cellInformation;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
@@ -58,6 +58,9 @@ async function init(conf) {
     let scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer);
     let scatterplotData = await dataLayer.getScatterplotData();
     await scatterplot.init(scatterplotData);
+    barchart = new Barchart('barchart_display', colorScheme);
+    barchart.init();
+
 }
 
 //feature color map changed in ridge plot
@@ -106,10 +109,27 @@ const actionImageClickedMultiSel = (d) => {
         dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
     cellInformation.selectCell(d.selectedItem);
-    updateSeaDragonSelection();
+    updateSeaDragonSelection(true);
     d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
+
+//image region or single cell selection (may needs to be combined with other selection events)
+const selectCluster = async (cluster) => {
+    console.log('selecting Cluster');
+    if (cluster) {
+        let clusterData = await dataLayer.getClusterCells(cluster)
+        dataLayer.addAllToCurrentSelection(clusterData.cells)
+        barchart.draw(clusterData.clusterSummary)
+
+    } else {
+        dataLayer.clearCurrentSelection();
+    }
+    updateSeaDragonSelection(false);
+    d3.select('body').style('cursor', 'default');
+}
+eventHandler.bind(Scatterplot.events.selectCluster, selectCluster);
+
 
 const computeCellNeighborhood = async ({distance, selectedCell}) => {
     let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
@@ -125,21 +145,21 @@ eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoo
 const refreshColors = async () => {
     await colorScheme.refreshColorScheme(true);
     cellInformation.draw();
-    updateSeaDragonSelection();
+    updateSeaDragonSelection(true);
 }
 eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 
 //current fast solution for seadragon updates
-function updateSeaDragonSelection() {
+function updateSeaDragonSelection(showCellInfoPanel = false) {
     let selection = dataLayer.getCurrentSelection();
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
-    if (_.size(selection) == 0) {
-        document.getElementById("cell_wrapper").style.display = "none";
-    } else {
+    if (showCellInfoPanel) {
         document.getElementById("cell_wrapper").style.display = "block";
+    } else {
+        document.getElementById("cell_wrapper").style.display = "none";
     }
     seaDragonViewer.updateSelection(selectionHashMap);
 }
@@ -154,11 +174,9 @@ eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
 
 function displayNeighborhood(selectedCell, neighborhood) {
-    dataLayer.addToCurrentSelection(selectedCell, true, true);
-    _.each(neighborhood, neighbor => {
-        dataLayer.addToCurrentSelection(neighbor, true, false);
-    });
-    updateSeaDragonSelection();
+    dataLayer.addAllToCurrentSelection(neighborhood);
+    dataLayer.addToCurrentSelection(selectedCell, false, false);
+    updateSeaDragonSelection(true);
 }
 
 

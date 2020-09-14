@@ -451,6 +451,13 @@ def get_neighborhood():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_cluster_cells', methods=['GET'])
+def get_cluster_cells():
+    cluster = int(request.args.get('cluster'))
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_cluster_cells(cluster, datasource)
+    return serialize_and_submit_json(resp)
+
 @app.route('/get_num_cells_in_circle', methods=['GET'])
 def get_num_cells_in_circle():
     datasource = request.args.get('datasource')

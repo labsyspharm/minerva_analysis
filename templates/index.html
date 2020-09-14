@@ -25,6 +25,7 @@
     <script src="../static/frontend/src/js/views/cellInformation.js"></script>
     <script src="../static/frontend/src/js/views/imageViewer.js"></script>
     <script src="../static/frontend/src/js/views/scatterplot.js"></script>
+    <script src="../static/frontend/src/js/views/barchart.js"></script>
     <script src="../static/frontend/src/js/services/simpleEventHandler.js"></script>
 </head>
 <body>
@@ -40,14 +41,14 @@
                 </span>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     {% for datasource in data.datasources %}
-                    <div class="row justify-content-between">
-                        <div class="col-4 navbar-datasource">
-                            <a class href="/datasource/{{datasource}}">{{datasource}}</a>
+                        <div class="row justify-content-between">
+                            <div class="col-4 navbar-datasource">
+                                <a class href="/datasource/{{ datasource }}">{{ datasource }}</a>
+                            </div>
+                            <div class="col-4 navbar-datasource-edit-button">
+                                <a href="/edit_config/{{ datasource }}"><span class="fas fa-pencil-alt"></span></a>
+                            </div>
                         </div>
-                        <div class="col-4 navbar-datasource-edit-button">
-                            <a href="/edit_config/{{datasource}}"><span class="fas fa-pencil-alt"></span></a>
-                        </div>
-                    </div>
                     {% endfor %}
                 </div>
             </li>
@@ -58,83 +59,87 @@
     </div>
 </nav>
 {% if data.datasource %}
-<div class="container" id="viewer_container">
-    <div class="row">
-        <div class="col-sm-2 viewer_col" id="channel_list_wrapper">
-            <div class="row">
-                <div class="col-auto mr-auto"><span class="box-heading">Channels</span></div>
-                <div class="col-auto" id="selected-channels-header-div">
-                    <span class="selected-channels-header" id="num-selected-channels">0</span>
-                    <span class="selected-channels-header">of 4 (Max) Selected</span>
-                </div>
-            </div>
-            <div id="channel_list">
+    <div class="container" id="viewer_container">
+        <div class="row">
+            <div class="col-sm-2 viewer_col" id="channel_list_wrapper">
                 <div class="row">
-                    <div class="col-auto">
-                        <div class="lds-ellipsis" id="channel_list_loader">
-                            <div></div>
-                            <div></div>
-                            <div></div>
-                            <div></div>
-                        </div>
+                    <div class="col-auto mr-auto"><span class="box-heading">Channels</span></div>
+                    <div class="col-auto" id="selected-channels-header-div">
+                        <span class="selected-channels-header" id="num-selected-channels">0</span>
+                        <span class="selected-channels-header">of 4 (Max) Selected</span>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-sm-5 viewer_col" id="openseadragon_wrapper">
-            <span>Viewer</span>
-            <div id="openseadragon">
-                <div class="row">
-                    <div class="col-auto">
-                        <div class="lds-ellipsis" id="openseadragon_loader">
-                            <div></div>
-                            <div></div>
-                            <div></div>
-                            <div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-2 viewer_col" id="cell_wrapper">
-            <span id="cell_label">Cell Information</span>
-            <div id="cell_display">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <span id="cell_icon" class="fas fa-disease"></span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <span id="phenotype_label">Phenotype:</span>
-                        <span id="phenotype"></span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <form>
-                            <div class="form-group" id="neighborhood_form">
-                                <label for="formControlRange">Max Distance:</label>
-                                <span id="distance"></span>
-                                <input type="range" min="1" max="100" value="30" class="form-control-range"
-                                       id="formControlRange">
+                <div id="channel_list">
+                    <div class="row">
+                        <div class="col-auto">
+                            <div class="lds-ellipsis" id="channel_list_loader">
+                                <div></div>
+                                <div></div>
+                                <div></div>
+                                <div></div>
                             </div>
-                            <input id="compute_neighborhood_button" class="btn btn-dark" type="button"
-                                   value="Display Neighborhood">
-                        </form>
+                        </div>
                     </div>
                 </div>
-                <svg width="150" height="0" id="cell_legend"></svg>
-                <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors">
             </div>
-        </div>
-        <div class="col-sm-2 viewer_col" id="scatterplot_wrapper">
-            <span id="scatterplot_label">Embedding</span>
-            <div id="scatterplot_display"></div>
+            <div class="col-sm-5 viewer_col" id="openseadragon_wrapper">
+                <span>Viewer</span>
+                <div id="openseadragon">
+                    <div class="row">
+                        <div class="col-auto">
+                            <div class="lds-ellipsis" id="openseadragon_loader">
+                                <div></div>
+                                <div></div>
+                                <div></div>
+                                <div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 viewer_col" id="cell_wrapper">
+                <span id="cell_label">Cell Information</span>
+                <div id="cell_display">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <span id="cell_icon" class="fas fa-disease"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <span id="phenotype_label">Phenotype:</span>
+                            <span id="phenotype"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <form>
+                                <div class="form-group" id="neighborhood_form">
+                                    <label for="formControlRange">Max Distance:</label>
+                                    <span id="distance"></span>
+                                    <input type="range" min="1" max="100" value="30" class="form-control-range"
+                                           id="formControlRange">
+                                </div>
+                                <input id="compute_neighborhood_button" class="btn btn-dark" type="button"
+                                       value="Display Neighborhood">
+                            </form>
+                        </div>
+                    </div>
+                    <svg width="150" height="0" id="cell_legend"></svg>
+                    <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors">
+                </div>
+            </div>
+            <div class="col-sm-2 viewer_col" id="scatterplot_wrapper">
+                <span id="scatterplot_label">Embedding</span>
+                <div id="plots_display" class="col">
+                    <div class="row" id="scatterplot_display"></div>
+                    <div class="row" id="barchart_display"></div>
+                </div>
+
+            </div>
         </div>
     </div>
-</div>
-<script src="../static/frontend/src/js/main.js"></script>
+    <script src="../static/frontend/src/js/main.js"></script>
 {% endif %}
 
 </body>

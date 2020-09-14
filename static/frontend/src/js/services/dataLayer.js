@@ -115,6 +115,20 @@ class DataLayer {
         }
     }
 
+    async getClusterCells(cluster) {
+        try {
+            let response = await fetch('/get_cluster_cells?' + new URLSearchParams({
+                cluster: cluster,
+                datasource: datasource
+            }))
+            let clusterCells = await response.json();
+            return clusterCells;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
+
+
     async getScatterplotData() {
         try {
             let response = await fetch('/get_scatterplot_data')

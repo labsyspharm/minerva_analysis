@@ -29,12 +29,10 @@ def load_db(datasource, reload=False):
     if reload:
         load_ball_tree(datasource, reload=reload)
     csvPath = "." + config[datasource]['featureData'][0]['src']
-    index_col = None
-    if 'idField' in config[datasource]['featureData'][0]:
-        idField = config[datasource]['featureData'][0]['idField']
-        if idField != 'none' and idField is not None:
-            index_col = idField
-    database = pd.read_csv(csvPath, index_col=index_col)
+    database = pd.read_csv(csvPath)
+    embedding = np.load(Path("static/data/Ton_378/embedding.npy"))
+    database['id'] = database.index
+    database['Cluster'] = embedding[:, 2].astype('int32').tolist()
     source = datasource
 
 
@@ -142,7 +140,6 @@ def get_neighborhood(x, y, datasource, r=100):
         for neighbor in neighbors:
             row = database.iloc[[neighbor]]
             obj = row.to_dict(orient='records')[0]
-            obj['id'] = str(neighbor)
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             neighborhood.append(obj)
@@ -174,7 +171,7 @@ def get_color_scheme(datasource, refresh, label_field='phenotype'):
     if label_field == 'phenotype':
         labels = get_phenotypes(datasource)
     elif label_field == 'cluster':
-        labels = get_clusters()
+        labels = get_cluster_labels()
     payload = {
         'hueFilters': [],
         'lightnessRange': ["25", "85"],
@@ -196,12 +193,33 @@ def get_color_scheme(datasource, refresh, label_field='phenotype'):
         color_scheme[str(labels[i])]['rgb'] = rgb_palette[i]
         color_scheme[str(labels[i])]['hex'] = '%02x%02x%02x' % tuple(rgb_palette[i])
 
-
     pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
     return color_scheme
 
 
-def get_clusters():
+def get_cluster_cells(cluster, datasource):
+    global database
+    global source
+    global ball_tree
+    if datasource != source:
+        load_ball_tree(datasource)
+    cluster_cells = database.loc[database['Cluster'] == cluster]
+    indices = cluster_cells.index.values.tolist()
+    cluster_cells = cluster_cells[['id', 'Cluster', 'phenotype']].to_dict(orient='records')
+    neighborhood_array = np.load(Path("static/data/Ton_378/neighborhood_array_complex.npy"))
+    cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
+    summary_stats = {'neighborhood_count': [], 'avg_weight': [], 'weighted_contribution': []}
+    phenotypes = database.phenotype.unique().tolist()
+    for i in range(len(phenotypes)):
+        count = cluster_summary[i * 2]
+        weight = cluster_summary[i * 2 + 1]
+        summary_stats['neighborhood_count'].append({phenotypes[i]: count})
+        summary_stats['avg_weight'].append({phenotypes[i]: weight})
+        summary_stats['weighted_contribution'].append({phenotypes[i]: weight * count})
+    return {'cells': cluster_cells, 'clusterSummary': summary_stats}
+
+
+def get_cluster_labels():
     data = np.load(Path("static/data/Ton_378/embedding.npy"))
     clusters = np.unique(data[:, 2])
     return clusters.astype('int32').tolist()
@@ -215,6 +233,7 @@ def get_scatterplot_data():
         'xMin': np.min(data[:, 0]),
         'xMax': np.max(data[:, 0]),
         'yMin': np.min(data[:, 1]),
-        'yMax': np.max(data[:, 1])
+        'yMax': np.max(data[:, 1]),
+        'clusters': np.unique(data[:, 2]).astype('int32').tolist()
     }
     return visData

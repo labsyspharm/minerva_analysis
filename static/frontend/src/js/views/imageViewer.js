@@ -712,7 +712,7 @@ class ImageViewer {
 //static vars
 ImageViewer.events = {
     imageClickedMultiSel: 'image_clicked_multi_selection',
-    renderingMode: 'renderingMode'
+    renderingMode: 'renderingMode',
 };
 
 
