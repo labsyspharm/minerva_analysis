@@ -2,13 +2,12 @@
 <head>
     <meta content="utf-8" http-equiv="encoding">
     <!-- OpenSeadragon Imports-->
-    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-svg-overlay.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/openseadragonrgb.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/viaWebGL.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/openSeadragonGL.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-filtering.js"></script>
+    {#    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon.js"></script>#}
+    {#    <script src="/static/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>#}
+    {#    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-svg-overlay.js"></script>#}
+    {#    <script src="/static/external/openseadragon-bin-2.4.0/openseadragonrgb.js"></script>#}
+    {#    <script src="/static/external/openseadragon-bin-2.4.0/viaWebGL.js"></script>#}
+    {#    <script src="/static/external/openseadragon-bin-2.4.0/openSeadragonGL.js"></script>#}
 
     <!-- STYLES -->
     <link rel="stylesheet" href="../static/frontend/src/css/main.css">
@@ -20,7 +19,14 @@
         const flaskVariables = passVariablesToFrontend({{data|tojson}});
         //<!--@formatter:on-->
     </script>
+
+    <!-- Webpack bundle -->
     <script src="../static/frontend/dist/vendor_bundle.js"></script>
+
+    <!-- OSD Plugins -->
+    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-filtering.js"></script>
+
+
     <script src="../static/frontend/src/js/services/colorScheme.js"></script>
     <script src="../static/frontend/src/js/views/rainbow.js"></script>
     <script src="../static/frontend/src/js/services/dataLayer.js"></script>
@@ -30,7 +36,7 @@
     <script src="../static/frontend/src/js/services/simpleEventHandler.js"></script>
 </head>
 <body>
-<title>CyCIF Viewer</title>
+<title>CyCIF Viewer - OLD</title>
 <nav id="topBar" class="navbar navbar-expand-sm navbar-light bg-light">
     <span id="title" class="navbar-brand mb-0 h1">CyCIF Viewer</span>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">

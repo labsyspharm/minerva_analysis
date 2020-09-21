@@ -91,7 +91,7 @@ class ImageViewer {
 
         /************************************************************************************* Lensing Implementation */
 
-            // Get filters data
+        // Get filters data
         const dataLoad = LensingFiltersExt.getFilters(this);
 
         // Instantiate viewer
@@ -105,6 +105,8 @@ class ImageViewer {
 
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
+
+        /************************************************************************************* Create viewer managers */
 
         /* TODO - unused
         // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
@@ -559,7 +561,6 @@ async function addTile(path) {
         callback: addTileResponse
     }
     return new Promise(resolve => {
-        // - todo ck :: jj (Not confirmed to help, prob can remove)
         seaDragonViewer.viewer.lensing.viewer_aux.imageLoader.addJob(options)
         return seaDragonViewer.viewer.imageLoader.addJob(options)
     })
