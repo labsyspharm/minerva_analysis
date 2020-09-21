@@ -15,7 +15,8 @@ import Mark from 'mark.js'
 import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert'
-import * as l from 'lensing';
+import * as OpenSeadragon from 'openseadragon';
+import * as Lensing from 'lensing';
 import {ViewerManager} from './viewerManager'
 import {LensingFiltersExt} from './lensingFiltersExt'
 
@@ -27,7 +28,8 @@ window.PNG = PNG;
 window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
-window.l = l;
+window.OpenSeadragon = OpenSeadragon;
+window.Lensing = Lensing;
 window.ViewerManager = ViewerManager;
 window.LensingFiltersExt = LensingFiltersExt;
 

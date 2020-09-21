@@ -39,13 +39,13 @@ export class ViewerManager {
 
     }
 
-    /** jj:ck
+    /**
      * @function addChannel
      * Add channel to multi-channel rendering
      *
      * @param srcIdx
      */
-    addChannel(srcIdx) {
+    add_channel(srcIdx) {
 
         // If already exists
         if ((srcIdx in this.imageViewer.currentChannels)) {
@@ -73,7 +73,7 @@ export class ViewerManager {
         });
     }
 
-    /** jj:ck
+    /**
      * @function add_handlers
      * Adds relevant event handlers to the viewer
      *
@@ -82,12 +82,12 @@ export class ViewerManager {
     add_handlers() {
 
         // Add event load handlers
-        this.viewer.addHandler('tile-loaded', this.tileLoaded.bind(this));
-        this.viewer.addHandler('tile-unloaded', this.tileUnloaded.bind(this));
+        this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind( this.imageViewer));
+        this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind( this.imageViewer));
     }
 
 
-    /** jj:??
+    /**
      * @function evaluateTF
      *
      * @param val
@@ -480,66 +480,6 @@ export class ViewerManager {
                 processors: this.renderTFWithLabels.bind(this)
             }
         });
-    }
-
-
-    /**
-     * @function tileLoaded
-     * Raised when tile loaded with openSeaDragon, we want to store it locally so we can access it later (to manually filter, etc.)
-     *
-     * @param event
-     */
-    tileLoaded(event) {
-
-        if (event === null || event === undefined || event.tileRequest === null) {
-            return;
-        }
-
-        const handlePngAs8Bit = false;
-        if (handlePngAs8Bit) {
-            const img = new Image();
-            img.onload = () => {
-
-                const tile = event.tile;
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-
-                // This gets back an 8 bit RGBA image
-                this.imageViewer.tileCache[img.src] = ctx.getImageData(0, 0, img.width, img.height);
-
-            };
-            img.src = event.tile.url;
-
-        } else {
-
-            // Full 24bit png handling: get buffer, parse it into png, save in cache
-            const buffer = new Buffer(event.tileRequest.response);
-            if (buffer) {
-                const tile = event.tile;
-
-                // Save tile in tileCache
-                this.imageViewer.tileCache[tile.url] = PNG.sync.read(buffer, {colortype: 0});
-            } else {
-                // console.log('[TILE LOADED]: buffer UNDEFINED');
-            }
-        }
-    }
-
-
-    /**
-     * @function tileUnloaded
-     * Raised when tile is being unloaded by openSeaDragon; we also purge it from local tile cache
-     *
-     * @param event
-     */
-    tileUnloaded(event) {
-
-        //// console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
-        this.imageViewer.tileCache[event.tile.url] = null;
-
     }
 
 
