@@ -217,14 +217,14 @@ def get_cluster_cells(datasource):
         cluster_cells = cluster_cells[['id', 'Cluster', 'phenotype']].to_dict(orient='records')
         neighborhood_array = np.load(Path("static/data/Ton_378/neighborhood_array_complex.npy"))
         cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
-        summary_stats = {'neighborhood_count': [], 'avg_weight': [], 'weighted_contribution': []}
+        summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
         phenotypes = database.phenotype.unique().tolist()
         for i in range(len(phenotypes)):
             count = cluster_summary[i * 2]
             weight = cluster_summary[i * 2 + 1]
-            summary_stats['neighborhood_count'].append({phenotypes[i]: count})
-            summary_stats['avg_weight'].append({phenotypes[i]: weight})
-            summary_stats['weighted_contribution'].append({phenotypes[i]: weight * count})
+            summary_stats['neighborhood_count'][phenotypes[i]] = count
+            summary_stats['avg_weight'][phenotypes[i]] = weight
+            summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
         obj[str(cluster)] = {'cells': cluster_cells, 'clusterSummary': summary_stats}
     pickle.dump(obj, open(cluster_stats_path, 'wb'))
     return obj

@@ -11,7 +11,7 @@ let seaDragonViewer;
 let channelList;
 let dataLayer;
 let config;
-let barchart;
+let starplot;
 let cellInformation;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
@@ -59,9 +59,9 @@ async function init(conf) {
     let scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer);
     let scatterplotData = await dataLayer.getScatterplotData();
     await scatterplot.init(scatterplotData);
-    barchart = new Barchart('barchart_display', colorScheme);
+    starplot = new Starplot('barchart_display', colorScheme);
     clusterData = await dataLayer.getClusterCells()
-    barchart.init(clusterData);
+    starplot.init(clusterData);
 
 }
 
@@ -122,10 +122,10 @@ const selectCluster = async (cluster) => {
     if (cluster) {
         let selectedCluster = _.get(clusterData, `[${cluster}]`);
         dataLayer.addAllToCurrentSelection(selectedCluster.cells)
-        barchart.draw(cluster)
+        starplot.draw(cluster)
 
     } else {
-        barchart.hide();
+        starplot.hide();
         dataLayer.clearCurrentSelection();
     }
     updateSeaDragonSelection(false);
