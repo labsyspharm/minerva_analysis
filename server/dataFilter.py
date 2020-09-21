@@ -203,6 +203,12 @@ def get_cluster_cells(datasource):
     global ball_tree
     if datasource != source:
         load_ball_tree(datasource)
+    cluster_stats_path = str(
+        Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "cluster_stats.pickle")
+    if os.path.isfile(cluster_stats_path):
+        print("Cluster Stats Exist, Loading")
+        cluster_stats = pickle.load(open(cluster_stats_path, "rb"))
+        return cluster_stats
     clusters = database['Cluster'].unique().tolist()
     obj = {}
     for cluster in clusters:
@@ -220,6 +226,7 @@ def get_cluster_cells(datasource):
             summary_stats['avg_weight'].append({phenotypes[i]: weight})
             summary_stats['weighted_contribution'].append({phenotypes[i]: weight * count})
         obj[str(cluster)] = {'cells': cluster_cells, 'clusterSummary': summary_stats}
+    pickle.dump(obj, open(cluster_stats_path, 'wb'))
     return obj
 
 
