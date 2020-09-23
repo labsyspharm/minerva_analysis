@@ -9,6 +9,7 @@ const datasource = flaskVariables.datasource;
 //VIEWS
 let seaDragonViewer;
 let channelList;
+let csv_gatingList;
 let dataLayer;
 let config;
 
@@ -48,10 +49,15 @@ async function init(conf) {
     console.log("Data Loaded");
     channelList = new ChannelList(config, dataLayer, eventHandler);
     await channelList.init();
+
+    csv_gatingList = new CSVGatingList(config, dataLayer, eventHandler);
+    await csv_gatingList.init();
+
+
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
-    cellInformation.draw();
+    // cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
+    // cellInformation.draw();
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();

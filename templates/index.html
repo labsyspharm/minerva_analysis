@@ -22,6 +22,7 @@
     <script src="../static/frontend/src/js/views/rainbow.js"></script>
     <script src="../static/frontend/src/js/services/dataLayer.js"></script>
     <script src="../static/frontend/src/js/views/channelList.js"></script>
+    <script src="../static/frontend/src/js/views/csvGatingList.js"></script>
     <script src="../static/frontend/src/js/views/cellInformation.js"></script>
     <script src="../static/frontend/src/js/views/imageViewer.js"></script>
     <script src="../static/frontend/src/js/services/simpleEventHandler.js"></script>
@@ -59,7 +60,7 @@
 {% if data.datasource %}
 <div class="container">
     <div class="row">
-        <div class="col-sm-3" id="channel_list_wrapper">
+        <div class="col-lg-3" id="channel_list_wrapper">
             <div class="row">
                 <div class="col-auto mr-auto"><span class="box-heading">Channels</span></div>
                 <div class="col-auto" id="selected-channels-header-div">
@@ -80,7 +81,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-7" id="openseadragon_wrapper">
+        <div class="col-lg-6" id="openseadragon_wrapper">
             <span>Viewer</span>
             <div id="openseadragon">
                 <div class="row">
@@ -95,36 +96,25 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-2" id="cell_wrapper">
-            <span id="cell_label">Cell Information</span>
-            <div id="cell_display">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <span id="cell_icon" class="fas fa-disease"></span>
-                    </div>
+        <div class="col-lg-3" id="csv_channel_list_wrapper">
+            <div class="row">
+                <div class="col-auto mr-auto"><span class="box-heading">CSV Gating</span></div>
+                <div class="col-auto" id="csv_selected-gating-header-div">
+                    <span class="csv_selected-channels-header" id="csv_num-selected-channels">0</span>
+                    <span class="selected-channels-header"> Selected</span>
                 </div>
+            </div>
+            <div id="csv_gating_list">
                 <div class="row">
-                    <div class="col">
-                        <span id="phenotype_label">Phenotype:</span>
-                        <span id="phenotype"></span>
+                    <div class="col-auto">
+                        <div class="lds-ellipsis" id="csv_gating_list_loader">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col">
-                        <form>
-                            <div class="form-group" id="neighborhood_form">
-                                <label for="formControlRange">Max Distance:</label>
-                                <span id="distance"></span>
-                                <input type="range" min="1" max="100" value="30" class="form-control-range"
-                                       id="formControlRange">
-                            </div>
-                            <input id="compute_neighborhood_button" class="btn btn-dark" type="button"
-                                   value="Display Neighborhood">
-                        </form>
-                    </div>
-                </div>
-                <svg width="150" height="0" id="cell_legend"></svg>
-                <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors">
             </div>
         </div>
     </div>
