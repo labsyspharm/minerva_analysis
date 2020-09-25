@@ -52,19 +52,18 @@ def load_ball_tree(datasource, reload=False):
     if datasource != source:
         load_db(datasource)
     pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "ball_tree.pickle")
-    if os.path.isfile(pickled_kd_tree_path) and reload is False:
-        print("Pickled KD Tree Exists, Loading")
-        ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
-    else:
-        print("Creating KD Tree")
-        xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
-        print('X', xCoordinate)
-        yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
-        csvPath = "." + config[datasource]['featureData'][0]['src']
-        raw_data = pd.read_csv(csvPath)
-        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
-        ball_tree = BallTree(points, metric='euclidean')
-        pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
+    # if os.path.isfile(pickled_kd_tree_path) and reload is False:
+    #     print("Pickled KD Tree Exists, Loading")
+    #     ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
+    # else:
+    print("Creating KD Tree")
+    xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
+    yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
+    csvPath = "." + config[datasource]['featureData'][0]['src']
+    raw_data = pd.read_csv(csvPath)
+    points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+    ball_tree = BallTree(points, metric='euclidean')
+    pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
 
 def query_for_closest_cell(x, y, datasource):
