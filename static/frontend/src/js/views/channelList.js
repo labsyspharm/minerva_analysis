@@ -160,7 +160,7 @@ class ChannelList {
                     selectionsHeaderDiv.classList.remove('bold-selections-header');
                 }
                 let packet = {selections: this.selections, name, status};
-                console.log('channels_change', packet);
+                // console.log('channels_change', packet);
                 document.getElementById("num-selected-channels").textContent = _.size(this.selections);
                 this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
             })
@@ -196,10 +196,10 @@ class ChannelList {
                 .type(d3.symbolCircle)
                 .size(100))
             .tickValues([]).on('onchange', range => {
-                console.log('trigger gating event');
+                // console.log('trigger gating event');
                 let packet = {name: name, dataRange: range};
                 this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-                console.log('gating event triggered');
+                // console.log('gating event triggered');
         });
         this.sliders.set(name, sliderSimple);
 
