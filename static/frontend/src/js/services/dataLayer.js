@@ -132,9 +132,9 @@ class DataLayer {
                 this.currentSelection.clear();
             }
 
-            console.log('current selection size:', this.currentSelection.size);
+            // console.log('current selection size:', this.currentSelection.size);
             if (this.currentSelection.size > 0) {
-                console.log('id: ', this.currentSelection.values().next().value.id);
+                // console.log('id: ', this.currentSelection.values().next().value.id);
             }
             return;
         }
@@ -147,7 +147,7 @@ class DataLayer {
         // add new item
         this.currentSelection.add(item);
 
-        console.log('current selection size:', this.currentSelection.size);
+        // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {
             console.log('id: ', this.currentSelection.values().next().value.id);
         }
@@ -155,10 +155,10 @@ class DataLayer {
 
 
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
-        console.log("update current selection")
+        // console.log("update current selection")
         var that = this;
         that.currentSelection = new Set(items);
-        console.log("update current selection done")
+        // console.log("update current selection done")
     }
 
     isImageFeature(key) {

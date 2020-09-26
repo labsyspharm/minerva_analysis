@@ -11,7 +11,7 @@ class ColorScheme {
     async getColorScheme(refresh) {
         try {
             this.colorMap = await this.dataLayer.getColorScheme(refresh);
-            console.log("Loaded Color Scheme");
+            // console.log("Loaded Color Scheme");
         } catch (e) {
             console.log("Error Getting Color Palette", e)
 

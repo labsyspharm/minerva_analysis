@@ -9,7 +9,7 @@ class CSVGatingList {
         this.ranges = {};
         this.sliders = new Map();
         var that = this;
-        this.imageBitRange = [0,65536];
+        this.imageBitRange = [0, 65536];
 
         //  create a color picker
         // this.rainbow = rainbow();
@@ -40,10 +40,10 @@ class CSVGatingList {
         this.columns = await this.dataLayer.getChannelNames(true);
         // Hide the Loader
         document.getElementById('csv_gating_list_loader').style.display = "none";
-        let channel_list = document.getElementById("csv_gating_list");
+        let gating_list = document.getElementById("csv_gating_list");
         let list = document.createElement("ul");
         list.classList.add("list-group")
-        channel_list.appendChild(list)
+        gating_list.appendChild(list)
         // Will show the picker when you click on a color rect
         let showPicker = () => {
             this.colorTransferHandle = d3.select(d3.event.target);
@@ -51,13 +51,13 @@ class CSVGatingList {
             let hsl = d3.hsl(color);
             this.rainbow.show(d3.event.clientX, d3.event.clientY);
         };
-        // Draws rows in the channel list
+        // Draws rows in the gating list
         _.each(this.columns, column => {
-            // div for each row in channel list
+            // div for each row in gating list
             let listItemParentDiv = document.createElement("div");
             listItemParentDiv.classList.add("list-group-item");
             listItemParentDiv.classList.add("container");
-            listItemParentDiv.classList.add("channel-list-content");
+            listItemParentDiv.classList.add("gating-list-content");
             // row
             let row = document.createElement("div");
             row.classList.add("row");
@@ -67,13 +67,13 @@ class CSVGatingList {
             row2.classList.add("row");
             listItemParentDiv.appendChild(row2);
 
-            // column within row that contains the name of the channel
+            // column within row that contains the name of the gating
             let nameCol = document.createElement("div");
             nameCol.classList.add("col-md-4");
-            nameCol.classList.add("channel-col");
+            nameCol.classList.add("gating-col");
             row.appendChild(nameCol);
 
-            // column within row that cintains the slider for the channel
+            // column within row that cintains the slider for the gating
             let sliderCol = document.createElement("div");
             sliderCol.classList.add("col-md-12");
             sliderCol.classList.add("csv_gating-slider");
@@ -84,8 +84,9 @@ class CSVGatingList {
             let svgCol = document.createElement("div");
             svgCol.classList.add("col-md-4");
             svgCol.classList.add("ml-auto");
-            svgCol.classList.add("channel-col");
-            svgCol.classList.add("channel-svg-wrapper");
+            svgCol.classList.add("gating-col");
+            svgCol.classList.add("gating-svg-wrapper");
+            svgCol.classList.add("col-svg-wrapper");
             row.appendChild(svgCol);
 
             // let colorLabel = document.createElement("span");
@@ -119,57 +120,70 @@ class CSVGatingList {
             //<rect class="color-transfer" cursor="pointer" stroke="#757575" fill="black" width="10" height="10" rx="2" ry="2" x="-5" y="4.725680443548387" transform="translate(65,0)"></rect>
             svgCol.style.display = "none";
 
-            let channelName = document.createElement("span");
-            channelName.classList.add("channel-name");
-            channelName.textContent = column;
-            nameCol.appendChild(channelName);
+            let gatingName = document.createElement("span");
+            gatingName.classList.add("gating-name");
+            gatingName.textContent = column;
+            nameCol.appendChild(gatingName);
 
-            listItemParentDiv.addEventListener("click", () => {
-                // IF you clicked on the svg, ignore this behavior
-                if (event.target.closest("svg")) {
-                    return;
-                }
-                let parent = event.target.closest(".list-group-item");
-                let name = parent.querySelector('.channel-name').textContent;
-                let status = !parent.classList.contains("active");
-                if (status) {
-                    //Don't add channel is the max are selected
-                    if (_.size(this.selections) >= this.maxSelections) {
-                        return;
-                    }
-                    parent.classList.add("active");
-                    svgCol.style.display = "block";
-                    this.selectChannel(name);
-
-                    //add range slider row content
-                    d3.select('div#csv_gating-slider_' + name).style('display', "block")
-
-                 //channel not active
-                } else {
-                    this.selections = _.remove(this.selections, name);
-                    parent.classList.remove("active")
-                    svgCol.style.display = "none";
-
-                    //hide range slider row content
-                    d3.select('div#csv_gating-slider_' + name).style('display', "none");
-                }
-                let selectionsHeaderDiv = document.getElementById("csv_selected-channels-header-div");
-                if (_.size(this.selections) >= this.maxSelections) {
-                    selectionsHeaderDiv.classList.add('bold-selections-header');
-                } else {
-                    selectionsHeaderDiv.classList.remove('bold-selections-header');
-                }
-                let packet = {selections: this.selections, name, status};
-                console.log('channels_change', packet);
-                document.getElementById("csv_num-selected-channels").textContent = _.size(this.selections);
-                this.eventHandler.trigger(CSVGatingList.events.GATING_CHANNELS_CHANGE, packet);
-            })
+            listItemParentDiv.addEventListener("click", e => this.abstract_click(e, svgCol));
             list.appendChild(listItemParentDiv);
 
-            //add and hide channel sliders (will be visible when channel is active)
+            //add and hide gating sliders (will be visible when gating is active)
             this.addSlider(this.imageBitRange, this.imageBitRange, column, document.getElementById("csv_gating_list").getBoundingClientRect().width);
             d3.select('div#csv_gating-slider_' + column).style('display', "none");
         });
+    }
+
+    /**
+     * @function abstract_click
+     *
+     * @param e
+     * @param svgCol
+     */
+    abstract_click(event, svgCol) {
+
+        // IF you clicked on the svg, ignore this behavior
+        if (event.target.closest("svg")) {
+            return;
+        }
+        let parent = event.target.closest(".list-group-item");
+        let name = parent.querySelector('.gating-name').textContent;
+        let status = !parent.classList.contains("active");
+        if (status) {
+            //Don't add gating is the max are selected
+            if (_.size(this.selections) >= this.maxSelections) {
+                return;
+            }
+            parent.classList.add("active");
+            svgCol.style.display = "block";
+            this.selectChannel(name);
+
+            //add range slider row content
+            d3.select('div#csv_gating-slider_' + name).style('display', "block")
+
+            //gating not active
+        } else {
+            this.selections = _.remove(this.selections, name);
+            parent.classList.remove("active")
+            svgCol.style.display = "none";
+
+            //hide range slider row content
+            d3.select('div#csv_gating-slider_' + name).style('display', "none");
+        }
+
+        let selectionsHeaderDiv = document.getElementById("csv_selected-gatings-header-div");
+        if (selectionsHeaderDiv) {
+            if (_.size(this.selections) >= this.maxSelections) {
+                selectionsHeaderDiv.classList.add('bold-selections-header');
+            } else {
+                selectionsHeaderDiv.classList.remove('bold-selections-header');
+            }
+            let packet = {selections: this.selections, name, status};
+            // console.log('gatings_change', packet);
+            document.getElementById("csv_num-selected-gatings").textContent = _.size(this.selections);
+            this.eventHandler.trigger(CSVGatingList.events.GATING_CHANNELS_CHANGE, packet);
+
+        }
     }
 
     /*
@@ -179,7 +193,7 @@ class CSVGatingList {
     @name the name of the slider (used as part of the id)
     @swidth the pixel width of the slider
      */
-    addSlider(data, activeRange, name, swidth){
+    addSlider(data, activeRange, name, swidth) {
 
         var that = this;
         //add range slider row content
@@ -187,27 +201,27 @@ class CSVGatingList {
             .sliderBottom()
             .min(d3.min(data))
             .max(d3.max(data))
-            .width(swidth-60)//.tickFormat(d3.format("s"))
+            .width(swidth - 60)//.tickFormat(d3.format("s"))
             .fill('orange')
             .ticks(5)
             .default(activeRange)
             .handle(
-              d3.symbol()
-                .type(d3.symbolCircle)
-                .size(100))
+                d3.symbol()
+                    .type(d3.symbolCircle)
+                    .size(100))
             .tickValues([]).on('onchange', range => {
-                console.log('trigger gating event');
+                // console.log('trigger gating event');
                 let packet = {name: name, dataRange: range};
                 this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, packet);
-                console.log('gating event triggered');
-        });
+                // console.log('gating event triggered');
+            });
         this.sliders.set(name, sliderSimple);
 
         //create the slider svg and call the slider
         var gSimple = d3
             .select('#csv_gating-slider_' + name)
             .append('svg')
-            .attr('class' , 'svgslider')
+            .attr('class', 'svgslider')
             .attr('width', swidth)
             .attr('height', 30)
             .append('g')
@@ -216,16 +230,16 @@ class CSVGatingList {
 
         //slider value to be displayed closer to the slider than default
         d3.selectAll('.parameter-value').select('text')
-            .attr("y",10);
+            .attr("y", 10);
 
         return sliderSimple;
     };
 }
 
-window.addEventListener("resize", function(){
+window.addEventListener("resize", function () {
     //reinitialize slider on window change..(had some bug updating with via d3 update)
-    if (csv_gatingList){
-        csv_gatingList.sliders.forEach(function(slider, name){
+    if (csv_gatingList) {
+        csv_gatingList.sliders.forEach(function (slider, name) {
             d3.select('div#csv_gating-slider_' + name).select('svg').remove();
             csv_gatingList.addSlider(csv_gatingList.imageBitRange, slider.value(), name,
                 document.getElementById("csv_gating_list").getBoundingClientRect().width);
