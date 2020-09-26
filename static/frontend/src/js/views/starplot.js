@@ -6,223 +6,328 @@ class Starplot {
     }
 
     init(visData) {
-        this.margin = {top: 10, right: 10, bottom: 100, left: 40},
+        this.visData = visData;
+        this.margin = {top: 40, right: 20, bottom: 60, left: 20},
             this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
 
-
-        this.visData = visData;
-        this.config = {
-            radius: 5,
+        this.cfg = {
             w: this.width,
             h: this.height,
-            factor: 1,
-            factorLegend: .85,
-            levels: 3,
-            radians: 2 * Math.PI,
-            opacityArea: 0.5,
-            ToRight: 5,
-            TranslateX: 80,
-            TranslateY: 30,
-            ExtraWidthX: 100,
-            ExtraWidthY: 100,
-            color: d3.scaleOrdinal().range(["#6F257F", "#CA0D59"])
+            margin: this.margin,
+            levels: 1,				//How many levels or inner circles should there be drawn
+            maxValue: 0.5,
+            labelFactor: 1.25, 	//How much farther than the radius of the outer circle should the labels be placed
+            wrapWidth: 300, 		//The number of pixels after which a label needs to be given a new line
+            opacityArea: 0.35, 	//The opacity of the area of the blob
+            dotRadius: 2, 			//The size of the colored circles of each blog
+            opacityCircles: 0.1, 	//The opacity of the circles of each blob
+            strokeWidth: 2, 		//The width of the stroke around each blob
+            roundStrokes: false,	//If true the area and stroke will follow a round path (cardinal-closed)
+            color: d3.schemeCategory10	//Color function
         };
 
     }
 
     draw(cluster) {
         const self = this;
-        // self.svgSelector.style.display = "block";
-        let chartData = _.get(self.visData, `[${cluster}].clusterSummary.weighted_contribution`, {});
-        let chartDataArray = _.toPairs(chartData);
-        let phenotypes = _.keys(chartData);
-        self.config.maxValue = _.max(Object.keys(chartData), function (o) {
-            return o;
-        });
-        self.config.maxValue = 100;
+        // // self.svgSelector.style.display = "block";
+        let clusterData = _.get(self.visData, `[${cluster}].clusterSummary.weighted_contribution`, {});
+        let chartData = _.toPairs(clusterData);
+        self.cfg.maxValue = _.max(_.values(clusterData));
 
-        let allAxis = _.values(chartData);
-        var total = allAxis.length;
-        var radius = self.config.factor * Math.min(self.config.w / 2, self.config.h / 2);
-        var Format = d3.format('%');
-        this.parent.select("svg").remove();
+        chartData = _.map(chartData, ([axis, value]) => {
+            return {axis: axis, value: value}
+        })
+        // let phenotypes = _.keys(chartData);
+        // self.config.maxValue = _.max(_.values(chartData));
+        // chartData = [
+        //     [//iPhone
+        //         {axis: "Battery Life", value: 0.22},
+        //         {axis: "Brand", value: 0.28},
+        //         {axis: "Contract Cost", value: 0.29},
+        //         {axis: "Design And Quality", value: 0.17},
+        //         {axis: "Have Internet Connectivity", value: 0.22},
+        //         {axis: "Large Screen", value: 0.02},
+        //         {axis: "Price Of Device", value: 0.21},
+        //         {axis: "To Be A Smartphone", value: 0.50}
+        //     ]
+        // ];
+        let maxValue = self.cfg.maxValue;
+        let allAxis = _.keys(clusterData)	//Names of each axis
+        let total = allAxis.length;			//The number of different axes
+        let radius = Math.min(self.cfg.w / 2, self.cfg.h / 2)	//Radius of the outermost circle
 
-        let g = this.parent
-            .append("svg")
-            .attr("width", self.config.w + self.config.ExtraWidthX)
-            .attr("height", self.config.h + self.config.ExtraWidthY)
-            .append("g")
-            .attr("transform", "translate(" + self.config.TranslateX + "," + self.config.TranslateY + ")");
+        let angleSlice = Math.PI * 2 / total;		//The width in radians of each "slice"
+        let format = d3.format(",.2f");
+        //Scale for the radius
+        let rScale = d3.scaleLinear()
+            .range([0, radius])
+            .domain([0, maxValue]);
 
-        var tooltip;
+        /////////////////////////////////////////////////////////
+        //////////// Create the container SVG and g /////////////
+        /////////////////////////////////////////////////////////
 
-        //Circular segments
-        for (var j = 0; j < self.config.levels; j++) {
-            var levelFactor = self.config.factor * radius * ((j + 1) / self.config.levels);
-            g.selectAll(".levels")
-                .data(chartDataArray)
-                .enter()
-                .append("svg:line")
-                .attr("x1", function (d, i) {
-                    return levelFactor * (1 - self.config.factor * Math.sin(i * self.config.radians / total));
-                })
-                .attr("y1", function (d, i) {
-                    return levelFactor * (1 - self.config.factor * Math.cos(i * self.config.radians / total));
-                })
-                .attr("x2", function (d, i) {
-                    return levelFactor * (1 - self.config.factor * Math.sin((i + 1) * self.config.radians / total));
-                })
-                .attr("y2", function (d, i) {
-                    return levelFactor * (1 - self.config.factor * Math.cos((i + 1) * self.config.radians / total));
-                })
-                .attr("class", "line")
-                .style("stroke", "grey")
-                .style("stroke-opacity", "0.75")
-                .style("stroke-width", "0.3px")
-                .attr("transform", "translate(" + (self.config.w / 2 - levelFactor) + ", " + (self.config.h / 2 - levelFactor) + ")");
-        }
+        //Remove whatever chart with the same id/class was present before
+        d3.select(`#${self.id}`).select("svg").remove();
+
+        var svg = d3.select(`#${self.id}`).append("svg")
+            .attr("width", self.cfg.w + self.cfg.margin.left + self.cfg.margin.right)
+            .attr("height", self.cfg.h + self.cfg.margin.top + self.cfg.margin.bottom)
+            .attr("class", "radar" + self.id);
+        //Append a g element
+        var g = svg.append("g")
+            .attr("transform", "translate(" + (self.cfg.w / 2 + self.cfg.margin.left) + "," + (self.cfg.h / 2 + self.cfg.margin.top) + ")");
+
+        /////////////////////////////////////////////////////////
+        ////////// Glow filter for some extra pizzazz ///////////
+        /////////////////////////////////////////////////////////
+
+        //Filter for the outside glow
+        var filter = g.append('defs').append('filter').attr('id', 'glow'),
+            feGaussianBlur = filter.append('feGaussianBlur').attr('stdDeviation', '2.5').attr('result', 'coloredBlur'),
+            feMerge = filter.append('feMerge'),
+            feMergeNode_1 = feMerge.append('feMergeNode').attr('in', 'coloredBlur'),
+            feMergeNode_2 = feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+        /////////////////////////////////////////////////////////
+        /////////////// Draw the Circular grid //////////////////
+        /////////////////////////////////////////////////////////
+
+        //Wrapper for the grid & axes
+        var axisGrid = g.append("g").attr("class", "axisWrapper");
+
+        //Draw the background circles
+        axisGrid.selectAll(".levels")
+            .data(d3.range(1, (self.cfg.levels + 1)).reverse())
+            .enter()
+            .append("circle")
+            .attr("class", "gridCircle")
+            .attr("r", function (d, i) {
+                return radius / self.cfg.levels * d;
+            })
+            .style("fill", "#CDCDCD")
+            .style("stroke", "#CDCDCD")
+            .style("fill-opacity", self.cfg.opacityCircles)
+            .style("filter", "url(#glow)");
 
         //Text indicating at what % each level is
-        for (var j = 0; j < self.config.levels; j++) {
-            var levelFactor = self.config.factor * radius * ((j + 1) / self.config.levels);
-            g.selectAll(".levels")
-                .data([1]) //dummy data
-                .enter()
-                .append("svg:text")
-                .attr("x", function (d) {
-                    return levelFactor * (1 - self.config.factor * Math.sin(0));
-                })
-                .attr("y", function (d) {
-                    return levelFactor * (1 - self.config.factor * Math.cos(0));
-                })
-                .attr("class", "legend")
-                .style("font-family", "sans-serif")
-                .style("font-size", "10px")
-                .attr("transform", "translate(" + (self.config.w / 2 - levelFactor + self.config.ToRight) + ", " + (self.config.h / 2 - levelFactor) + ")")
-                .attr("fill", "#737373")
-        }
+        axisGrid.selectAll(".axisLabel")
+            .data(d3.range(1, (self.cfg.levels + 1)).reverse())
+            .enter().append("text")
+            .attr("class", "axisLabel")
+            .attr("x", 4)
+            .attr("y", function (d) {
+                return -d * radius / self.cfg.levels;
+            })
+            .attr("dy", "0.4em")
+            .style("font-size", "10px")
+            .attr("fill", "#737373")
+            .text(function (d, i) {
+                return format(maxValue * d / self.cfg.levels);
+            });
 
-        let series = 0;
+        /////////////////////////////////////////////////////////
+        //////////////////// Draw the axes //////////////////////
+        /////////////////////////////////////////////////////////
 
-        var axis = g.selectAll(".axis")
-            .data(chartDataArray)
+        //Create the straight lines radiating outward from the center
+        var axis = axisGrid.selectAll(".axis")
+            .data(allAxis)
             .enter()
             .append("g")
             .attr("class", "axis");
-
+        //Append the lines
         axis.append("line")
-            .attr("x1", self.config.w / 2)
-            .attr("y1", self.config.h / 2)
+            .attr("x1", 0)
+            .attr("y1", 0)
             .attr("x2", function (d, i) {
-                return self.config.w / 2 * (1 - self.config.factor * Math.sin(i * self.config.radians / total));
+                return rScale(maxValue * 1.1) * Math.cos(angleSlice * i - Math.PI / 2);
             })
             .attr("y2", function (d, i) {
-                return self.config.h / 2 * (1 - self.config.factor * Math.cos(i * self.config.radians / total));
+                return rScale(maxValue * 1.1) * Math.sin(angleSlice * i - Math.PI / 2);
             })
             .attr("class", "line")
-            .style("stroke", "grey")
-            .style("stroke-width", "1px");
+            .style("stroke", "white")
+            .style("stroke-width", "2px");
 
+        //Append the labels at each axis
         axis.append("text")
             .attr("class", "legend")
-            .text(function (d) {
-                return d[0]
-            })
-            .style("font-family", "sans-serif")
             .style("font-size", "11px")
             .attr("text-anchor", "middle")
-            .attr("dy", "1.5em")
-            .attr("transform", function (d, i) {
-                return "translate(0, -10)"
-            })
+            .attr("dy", "0.35em")
             .attr("x", function (d, i) {
-                return self.config.w / 2 * (1 - self.config.factorLegend * Math.sin(i * self.config.radians / total)) - 60 * Math.sin(i * self.config.radians / total);
+                return rScale(maxValue * self.cfg.labelFactor) * Math.cos(angleSlice * i - Math.PI / 2);
             })
             .attr("y", function (d, i) {
-                return self.config.h / 2 * (1 - Math.cos(i * self.config.radians / total)) - 20 * Math.cos(i * self.config.radians / total);
+                return rScale(maxValue * self.cfg.labelFactor) * Math.sin(angleSlice * i - Math.PI / 2);
+            })
+            .text(function (d) {
+                return d
+            })
+            .call(wrap, self.cfg.wrapWidth);
+
+        /////////////////////////////////////////////////////////
+        ///////////// Draw the radar chart blobs ////////////////
+        /////////////////////////////////////////////////////////
+
+        //The radial line function
+        var radarLine = d3.lineRadial().curve(d3.curveCardinalClosed)
+            .radius(function (d) {
+                return rScale(d.value);
+            })
+            .angle(function (d, i) {
+                return i * angleSlice;
             });
 
-        let dataValues = [];
-        g.selectAll(".nodes")
-            .data(chartDataArray, function (j, i) {
-                dataValues.push([
-                    self.config.w / 2 * (1 - (parseFloat(Math.max(j[1], 0)) / self.config.maxValue) * self.config.factor * Math.sin(i * self.config.radians / total)),
-                    self.config.h / 2 * (1 - (parseFloat(Math.max(j[1], 0)) / self.config.maxValue) * self.config.factor * Math.cos(i * self.config.radians / total))
-                ]);
-            });
-        dataValues.push(dataValues[0]);
-        g.selectAll(".area")
-            .data([dataValues])
-            .enter()
-            .append("polygon")
-            .attr("class", "radar-chart-serie" + series)
-            .style("stroke-width", "2px")
-            .style("stroke", self.config.color(series))
-            .attr("points", function (d) {
-                var str = "";
-                for (var pti = 0; pti < d.length; pti++) {
-                    str = str + d[pti][0] + "," + d[pti][1] + " ";
-                }
-                return str;
+
+        //Create a wrapper for the blobs
+        var blobWrapper = g.selectAll(".radarWrapper")
+            .data([chartData])
+            .enter().append("g")
+            .attr("class", "radarWrapper");
+
+        //Append the backgrounds
+        blobWrapper
+            .append("path")
+            .attr("class", "radarArea")
+            .attr("d", function (d, i) {
+                return radarLine(d);
             })
-            .style("fill", function (j, i) {
-                return self.config.color(series)
+            .style("fill", function (d, i) {
+                return self.cfg.color[i];
             })
-            .style("fill-opacity", self.config.opacityArea)
-            .on('mouseover', function (d) {
-                z = "polygon." + d3.select(this).attr("class");
-                g.selectAll("polygon")
-                    .transition(200)
+            .style("fill-opacity", self.cfg.opacityArea)
+            .on('mouseover', function (d, i) {
+                //Dim all blobs
+                d3.selectAll(".radarArea")
+                    .transition().duration(200)
                     .style("fill-opacity", 0.1);
-                g.selectAll(z)
-                    .transition(200)
-                    .style("fill-opacity", .7);
+                //Bring back the hovered over blob
+                d3.select(this)
+                    .transition().duration(200)
+                    .style("fill-opacity", 0.7);
             })
             .on('mouseout', function () {
-                g.selectAll("polygon")
-                    .transition(200)
-                    .style("fill-opacity", self.config.opacityArea);
+                //Bring back all blobs
+                d3.selectAll(".radarArea")
+                    .transition().duration(200)
+                    .style("fill-opacity", self.cfg.opacityArea);
             });
 
-        //
-        // var tooltip = d3.select("body").append("div").attr("class", "toolTip");
-        // g.selectAll(".nodes")
-        //     .data(allAxis).enter()
-        //     .append("svg:circle")
-        //     .attr("class", "radar-chart-serie" + series)
-        //     .attr('r', self.config.radius)
-        //     .attr("alt", function (j) {
-        //         return Math.max(j, 0)
-        //     })
-        //     .attr("cx", function (j, i) {
-        //         dataValues.push([
-        //             self.config.w / 2 * (1 - (parseFloat(Math.max(j, 0)) / self.config.maxValue) * self.config.factor * Math.sin(i * self.config.radians / total)),
-        //             self.config.h / 2 * (1 - (parseFloat(Math.max(j, 0)) / self.config.maxValue) * self.config.factor * Math.cos(i * self.config.radians / total))
-        //         ]);
-        //         return self.config.w / 2 * (1 - (Math.max(j, 0) / self.config.maxValue) * self.config.factor * Math.sin(i * self.config.radians / total));
-        //     })
-        //     .attr("cy", function (j, i) {
-        //         return self.config.h / 2 * (1 - (Math.max(j, 0) / self.config.maxValue) * self.config.factor * Math.cos(i * self.config.radians / total));
-        //     })
-        //     .attr("data-id", function (j) {
-        //         return j.area
-        //     })
-        //     .style("fill", "#fff")
-        //     .style("stroke-width", "2px")
-        //     .style("stroke", self.config.color(series)).style("fill-opacity", .9)
-        //     .on('mouseover', function (d) {
-        //         console.log(d.area)
-        //         tooltip
-        //             .style("left", d3.event.pageX - 40 + "px")
-        //             .style("top", d3.event.pageY - 80 + "px")
-        //             .style("display", "inline-block")
-        //             .html((d.area) + "<br><span>" + (d.value) + "</span>");
-        //     })
-        //     .on("mouseout", function (d) {
-        //         tooltip.style("display", "none");
-        //     });
-        //
-        // series++;
+        //Create the outlines
+        blobWrapper.append("path")
+            .attr("class", "radarStroke")
+            .attr("d", function (d, i) {
+                return radarLine(d);
+            })
+            .style("stroke-width", self.cfg.strokeWidth + "px")
+            .style("stroke", function (d, i) {
+                return self.cfg.color[i];
+            })
+            .style("fill", "none")
+            .style("filter", "url(#glow)");
+
+        //Append the circles
+        blobWrapper.selectAll(".radarCircle")
+            .data(function (d, i) {
+                return d;
+            })
+            .enter().append("circle")
+            .attr("class", "radarCircle")
+            .attr("r", self.cfg.dotRadius)
+            .attr("cx", function (d, i) {
+                return rScale(d.value) * Math.cos(angleSlice * i - Math.PI / 2);
+            })
+            .attr("cy", function (d, i) {
+                return rScale(d.value) * Math.sin(angleSlice * i - Math.PI / 2);
+            })
+            .style("fill", function (d, i, j) {
+                return self.cfg.color[j];
+            })
+            .style("fill-opacity", 0.8);
+
+        /////////////////////////////////////////////////////////
+        //////// Append invisible circles for tooltip ///////////
+        /////////////////////////////////////////////////////////
+
+        //Wrapper for the invisible circles on top
+        var blobCircleWrapper = g.selectAll(".radarCircleWrapper")
+            .data([chartData])
+            .enter().append("g")
+            .attr("class", "radarCircleWrapper");
+
+        //Append a set of invisible circles on top for the mouseover pop-up
+        blobCircleWrapper.selectAll(".radarInvisibleCircle")
+            .data(function (d, i) {
+                return d;
+            })
+            .enter().append("circle")
+            .attr("class", "radarInvisibleCircle")
+            .attr("r", self.cfg.dotRadius * 1.5)
+            .attr("cx", function (d, i) {
+                return rScale(d.value) * Math.cos(angleSlice * i - Math.PI / 2);
+            })
+            .attr("cy", function (d, i) {
+                return rScale(d.value) * Math.sin(angleSlice * i - Math.PI / 2);
+            })
+            .style("fill", "none")
+            .style("pointer-events", "all")
+            .on("mouseover", function (d, i) {
+                let newX = parseFloat(d3.select(this).attr('cx')) - 10;
+                let newY = parseFloat(d3.select(this).attr('cy')) - 10;
+
+                tooltip
+                    .attr('x', newX)
+                    .attr('y', newY)
+                    .text(format(d.value))
+                    .transition().duration(200)
+                    .style('opacity', 1);
+            })
+            .on("mouseout", function () {
+                tooltip.transition().duration(200)
+                    .style("opacity", 0);
+            });
+
+        //Set up the small tooltip for when you hover over a circle
+        var tooltip = g.append("text")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        /////////////////////////////////////////////////////////
+        /////////////////// Helper Function /////////////////////
+        /////////////////////////////////////////////////////////
+
+        //Taken from http://bl.ocks.org/mbostock/7555321
+        //Wraps SVG text
+        function wrap(text, width) {
+            text.each(function () {
+                var text = d3.select(this),
+                    words = text.text().split(/\s+/).reverse(),
+                    word,
+                    line = [],
+                    lineNumber = 0,
+                    lineHeight = 1.4, // ems
+                    y = text.attr("y"),
+                    x = text.attr("x"),
+                    dy = parseFloat(text.attr("dy")),
+                    tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
+
+                while (word = words.pop()) {
+                    line.push(word);
+                    tspan.text(line.join(" "));
+                    if (tspan.node().getComputedTextLength() > width) {
+                        line.pop();
+                        tspan.text(line.join(" "));
+                        line = [word];
+                        tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                    }
+                }
+            });
+        }//wrap
+
     }
+
 };
