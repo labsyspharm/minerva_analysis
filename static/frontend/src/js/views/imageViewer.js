@@ -100,7 +100,7 @@ class ImageViewer {
         /********************************************************************************************* Create overlays*/
 
         // Instantiate Csv Gating Overlay
-        that.csvGatingOverlay = new CsvGatingOverlay(that.viewer);
+        that.csvGatingOverlay = new CsvGatingOverlay(that.viewer, that);
 
 
         /* TODO - unused

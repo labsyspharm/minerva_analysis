@@ -195,3 +195,39 @@ def get_color_scheme(datasource, refresh):
 
     pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
     return color_scheme
+
+
+def get_rect_cells(datasource, rect, channels):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    # Construct query
+    x = (rect[0] * 2 + rect[2]) / 2
+    y = (rect[1] * 2 + rect[3]) / 2
+    r = ((rect[2] / 2) ** 2 + (rect[3] / 2) ** 2) ** 0.5
+
+    # Query (limit r)
+    # TODO - filtering
+    print(r)
+    if r <= 600:
+        index = ball_tree.query_radius([[x, y]], r=r)
+        neighbors = index[0]
+        try:
+            neighborhood = []
+            for neighbor in neighbors:
+                row = database.iloc[[neighbor]]
+                obj = row.to_dict(orient='records')[0]
+                obj['id'] = str(neighbor)
+                if 'phenotype' not in obj:
+                    obj['phenotype'] = ''
+                neighborhood.append(obj)
+            return neighborhood
+        except:
+            return {}
+    else:
+        return {}

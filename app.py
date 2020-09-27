@@ -460,6 +460,20 @@ def get_num_cells_in_circle():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_rect_cells', methods=['GET'])
+def get_rect_cells():
+
+    # Parse (rect - [x, y, w, h, deg], channels [string])
+    datasource = request.args.get('datasource')
+    rect = [float(x) for x in request.args.get('rect').split(',')]
+    channels = request.args.get('channels')
+
+    # Retrieve cells - FIXME: Too slow - jam is stalling image loading
+    resp = dataFilter.get_rect_cells(datasource, rect, channels)
+    print('Neighborhood size:', len(resp))
+    return serialize_and_submit_json(resp)
+
+
 def serialize_and_submit_json(data):
     response = app.response_class(
         response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),
