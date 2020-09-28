@@ -6,6 +6,7 @@
 export class CsvGatingOverlay {
 
     // Vars
+    channels = {};
     data = [];
     data_requested = false;
     force_update = false;
@@ -14,15 +15,16 @@ export class CsvGatingOverlay {
     rect = null;
     rect_frame = null;
 
-    // Channels
-    channels = {};
+    // Tools
+    coord_scale_x = d3.scaleLinear();
+    coord_scale_y = d3.scaleLinear();
 
     // Configs
     configs = {
-        radius: 50,
+        radius: 3,
         px_ratio: 2,
-        frame_padding: 0.5,
-        rect_r_max: 1200
+        frame_padding: 0.25,
+        rect_r_max: 1000
     }
 
     /**
@@ -250,7 +252,6 @@ export class CsvGatingOverlay {
                     // Wait for json
                     promise.json().then(d => {
                         this.data = d;
-                        console.log(d)
 
                         this.redraw(ctx)
 
@@ -276,20 +277,47 @@ export class CsvGatingOverlay {
         const h = this.overlay._containerHeight * this.configs.px_ratio;
         const r = this.configs.radius * this.configs.px_ratio;
 
-        // Place in
+        // Update scale
+        this.coord_scale_x.domain([this.rect.x, this.rect.x + this.rect.width]).range([0, w]);
+        this.coord_scale_y.domain([this.rect.y, this.rect.y + this.rect.height]).range([0, h]);
+        console.log(this.data)
+        console.log(this.rect)
+
+        // Clear rect
         requestAnimationFrame(() => {
-
-            // Clear rect
             ctx.clearRect(0, 0, w, h);
-
-            // Draw circles - placeholder
-            ctx.strokeStyle = `white`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2);
-            ctx.stroke();
-
         });
+
+        //
+        this.data.forEach(d => {
+            if (d.hasOwnProperty('CellPosition_X') && d.hasOwnProperty('CellPosition_Y')) {
+                if (d.CellPosition_X >= this.rect.x && d.CellPosition_X <= this.rect.x + this.rect.width) {
+                    if (d.CellPosition_Y >= this.rect.y && d.CellPosition_Y <= this.rect.y + this.rect.height) {
+
+                        ctx.save();
+
+                        // Place in
+                        requestAnimationFrame(() => {
+
+                            // Get coords
+                            const x = this.coord_scale_x(d.CellPosition_X)
+                            const y = this.coord_scale_y(d.CellPosition_Y)
+
+                            // Draw circles - placeholder
+                            ctx.strokeStyle = `blue`;
+                            ctx.fillStyle = "red";
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.arc(x, y, r, 0, Math.PI * 2);
+                            ctx.stroke();
+                            ctx.fill();
+                        });
+
+                        ctx.restore();
+                    }
+                }
+            }
+        })
     }
 
     /**
@@ -310,7 +338,9 @@ export class CsvGatingOverlay {
         });
 
         // String with rect frame padding to pass to server
-        const rect_adj = this.rect_frame.x1 + ',' + this.rect_frame.y1 + ',' + this.rect_frame.r;
+        const rect_adj = (this.rect_frame.x1 + this.rect_frame.width / 2) + ','
+            + (this.rect_frame.y1 + this.rect_frame.height / 2) + ','
+            + this.rect_frame.r;
 
         return fetch(`/get_rect_cells?` + new URLSearchParams({
             datasource: datasource,
