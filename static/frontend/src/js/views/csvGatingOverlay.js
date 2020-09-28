@@ -230,9 +230,7 @@ export class CsvGatingOverlay {
 
         // If outside of rect_frame
         const inside = this.rect_frame_check();
-        console.log('INSIDE?', inside)
         if (!inside || !this.data_requested || this.force_update) {
-            console.log('Ding')
 
             // Reset force update
             this.force_update = false;
@@ -241,9 +239,9 @@ export class CsvGatingOverlay {
             this.rect_frame = this.rect_frame_make();
 
             // Only submit query if under radius max
-            console.log('RF radius', this.rect_frame.r)
+            console.log('Radius', this.rect_frame.r)
             if (this.rect_frame.r <= this.configs.rect_r_max) {
-                console.log('Dong')
+                console.log('Requesting data from server...')
 
                 // Request channel cells
                 this.data_requested = true;
@@ -260,6 +258,9 @@ export class CsvGatingOverlay {
                 }).catch(err => console.log(err));
 
             }
+        } else if (inside && this.data_requested) {
+
+            this.redraw(ctx)
         }
 
     }
@@ -280,8 +281,7 @@ export class CsvGatingOverlay {
         // Update scale
         this.coord_scale_x.domain([this.rect.x, this.rect.x + this.rect.width]).range([0, w]);
         this.coord_scale_y.domain([this.rect.y, this.rect.y + this.rect.height]).range([0, h]);
-        console.log(this.data)
-        console.log(this.rect)
+        console.log('Cells to draw:', this.data.length)
 
         // Clear rect
         requestAnimationFrame(() => {
