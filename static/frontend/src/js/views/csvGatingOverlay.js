@@ -6,8 +6,10 @@
 export class CsvGatingOverlay {
 
     // Vars
-    image_size = null;
+    data = [];
+    data_requested = false;
     force_update = false;
+    image_size = null;
     overlay = null;
     rect = null;
     rect_frame = null;
@@ -19,7 +21,8 @@ export class CsvGatingOverlay {
     configs = {
         radius: 50,
         px_ratio: 2,
-        frame_padding: 0.5
+        frame_padding: 0.5,
+        rect_r_max: 1200
     }
 
     /**
@@ -45,7 +48,7 @@ export class CsvGatingOverlay {
 
         // Build overlay and attach event
         this.overlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
-            onRedraw: e => this.redraw(e)
+            onRedraw: e => this.evaluate(e)
         });
 
         // Add id
@@ -65,15 +68,6 @@ export class CsvGatingOverlay {
      */
     add_events() {
 
-        this.viewer.addHandler('animation-start', () => {
-            this.animating = true;
-        });
-        this.viewer.addHandler('animation', () => {
-            this.animating = true;
-        });
-        this.viewer.addHandler('animation-finish', () => {
-            this.animating = false;
-        });
     }
 
     /**
@@ -158,14 +152,10 @@ export class CsvGatingOverlay {
 
             // Check x
             if (this.rect.x >= this.rect_frame.x1 &&
-                this.rect.x <= this.rect_frame.x2 &&
-                this.rect.x + this.rect.width >= this.rect_frame.x3 &&
                 this.rect.x + this.rect.width <= this.rect_frame.x4) {
 
                 // Check y
                 if (this.rect.y >= this.rect_frame.y1 &&
-                    this.rect.y <= this.rect_frame.y2 &&
-                    this.rect.y + this.rect.height >= this.rect_frame.y3 &&
                     this.rect.y + this.rect.height <= this.rect_frame.y4) {
 
                     // Inside
@@ -186,11 +176,11 @@ export class CsvGatingOverlay {
     rect_frame_make() {
 
         // Calc padding
-        const xPad = Math.abs(this.rect.x - this.rect.width * this.configs.frame_padding);
-        const yPad = Math.abs(this.rect.y - this.rect.height * this.configs.frame_padding);
+        const xPad = Math.abs(this.rect.width * this.configs.frame_padding);
+        const yPad = Math.abs(this.rect.height * this.configs.frame_padding);
 
         // Return padding
-        return {
+        const rect_frame = {
             x1: this.rect.x - xPad < 0 ? 0 : this.rect.x - xPad,
             x2: this.rect.x,
             x3: this.rect.x + this.rect.width,
@@ -204,6 +194,16 @@ export class CsvGatingOverlay {
                 ? this.image_size.y
                 : this.rect.y + this.rect.height + yPad,
         }
+
+        // Get r (radius)
+        rect_frame.width = rect_frame.x4 - rect_frame.x1;
+        rect_frame.height = rect_frame.y4 - rect_frame.y1;
+        const a = rect_frame.width / 2;
+        const b = rect_frame.height / 2;
+        rect_frame.r = Math.sqrt(a ** 2 + b ** 2);
+
+        // Return
+        return rect_frame;
     }
 
     /**
@@ -211,7 +211,7 @@ export class CsvGatingOverlay {
      *
      * @param e
      */
-    redraw(e) {
+    evaluate(e) {
 
         // Check image bounds if does not exists
         if (!this.image_size) {
@@ -220,9 +220,6 @@ export class CsvGatingOverlay {
 
         // Get context
         const ctx = e.context;
-        const w = this.overlay._containerWidth * this.configs.px_ratio;
-        const h = this.overlay._containerHeight * this.configs.px_ratio;
-        const r = this.configs.radius * this.configs.px_ratio
 
         // Get image in viewport rect (pos and dims)
         const bounds = this.viewer.viewport.getBounds();
@@ -231,41 +228,68 @@ export class CsvGatingOverlay {
 
         // If outside of rect_frame
         const inside = this.rect_frame_check();
-        if (!inside || this.force_update) {
+        console.log('INSIDE?', inside)
+        if (!inside || !this.data_requested || this.force_update) {
+            console.log('Ding')
 
             // Reset force update
             this.force_update = false;
 
-            // Place ins
-            requestAnimationFrame(() => {
+            // Save rect (as prev)
+            this.rect_frame = this.rect_frame_make();
 
-                // Clear rect
-                ctx.clearRect(0, 0, w, h);
-
-                // Save rect (as prev)
-                this.rect_frame = this.rect_frame_make();
+            // Only submit query if under radius max
+            console.log('RF radius', this.rect_frame.r)
+            if (this.rect_frame.r <= this.configs.rect_r_max) {
+                console.log('Dong')
 
                 // Request channel cells
+                this.data_requested = true;
                 this.request_ids().then(promise => {
 
                     // Wait for json
                     promise.json().then(d => {
+                        this.data = d;
                         console.log(d)
 
-                        // Draw circles - placeholder
-                        ctx.strokeStyle = `white`;
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2);
-                        ctx.stroke();
+                        this.redraw(ctx)
 
                     }).catch(err => console.log(err));
 
                 }).catch(err => console.log(err));
 
-            });
+            }
         }
 
+    }
+
+    /**
+     * @function redraw
+     *
+     * @param ctx
+     *
+     */
+    redraw(ctx) {
+
+        // Get dims
+        const w = this.overlay._containerWidth * this.configs.px_ratio;
+        const h = this.overlay._containerHeight * this.configs.px_ratio;
+        const r = this.configs.radius * this.configs.px_ratio;
+
+        // Place in
+        requestAnimationFrame(() => {
+
+            // Clear rect
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw circles - placeholder
+            ctx.strokeStyle = `white`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2);
+            ctx.stroke();
+
+        });
     }
 
     /**
@@ -276,7 +300,6 @@ export class CsvGatingOverlay {
     async request_ids() {
 
         // Rect vars
-        let rect_vars = [this.rect.x, this.rect.y, this.rect.width, this.rect.height];
         let channel_vars = [];
         let range_min_vars = [];
         let range_max_vars = [];
@@ -284,15 +307,14 @@ export class CsvGatingOverlay {
             channel_vars.push(c[0]);
             range_min_vars.push(c[1][0]);
             range_max_vars.push(c[1][1]);
-        })
-        rect_vars = rect_vars.length === 0 ? null : rect_vars;
-        channel_vars = channel_vars.length === 0 ? null : channel_vars;
-        range_min_vars = range_min_vars.length === 0 ? null : range_min_vars;
-        range_max_vars = range_max_vars.length === 0 ? null : range_max_vars;
+        });
+
+        // String with rect frame padding to pass to server
+        const rect_adj = this.rect_frame.x1 + ',' + this.rect_frame.y1 + ',' + this.rect_frame.r;
 
         return fetch(`/get_rect_cells?` + new URLSearchParams({
             datasource: datasource,
-            rect: rect_vars,
+            rect: rect_adj,
             channels: channel_vars
         }));
     }

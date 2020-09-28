@@ -206,28 +206,19 @@ def get_rect_cells(datasource, rect, channels):
     if datasource != source:
         load_ball_tree(datasource)
 
-    # Construct query
-    x = (rect[0] * 2 + rect[2]) / 2
-    y = (rect[1] * 2 + rect[3]) / 2
-    r = ((rect[2] / 2) ** 2 + (rect[3] / 2) ** 2) ** 0.5
-
-    # Query (limit r)
-    # TODO - filtering
-    print(r)
-    if r <= 600:
-        index = ball_tree.query_radius([[x, y]], r=r)
-        neighbors = index[0]
-        try:
-            neighborhood = []
-            for neighbor in neighbors:
-                row = database.iloc[[neighbor]]
-                obj = row.to_dict(orient='records')[0]
-                obj['id'] = str(neighbor)
-                if 'phenotype' not in obj:
-                    obj['phenotype'] = ''
-                neighborhood.append(obj)
-            return neighborhood
-        except:
-            return {}
-    else:
+    # Query
+    index = ball_tree.query_radius([[rect[0], rect[1]]], r=rect[2])
+    print('Query size:', len(index[0]))
+    neighbors = index[0]
+    try:
+        neighborhood = []
+        for neighbor in neighbors:
+            row = database.iloc[[neighbor]]
+            obj = row.to_dict(orient='records')[0]
+            obj['id'] = str(neighbor)
+            if 'phenotype' not in obj:
+                obj['phenotype'] = ''
+            neighborhood.append(obj)
+        return neighborhood
+    except:
         return {}

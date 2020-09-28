@@ -463,7 +463,7 @@ def get_num_cells_in_circle():
 @app.route('/get_rect_cells', methods=['GET'])
 def get_rect_cells():
 
-    # Parse (rect - [x, y, w, h, deg], channels [string])
+    # Parse (rect - [x, y, r], channels [string])
     datasource = request.args.get('datasource')
     rect = [float(x) for x in request.args.get('rect').split(',')]
     channels = request.args.get('channels')
