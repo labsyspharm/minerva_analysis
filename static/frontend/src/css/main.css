@@ -456,8 +456,9 @@ label {
 }
 
 .legend {
-    font-family: 'Raleway', sans-serif;
     fill: #333333;
+    font-size: 6pt;
+    text-anchor: middle;
 }
 
 .tooltip {
