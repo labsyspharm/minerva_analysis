@@ -56,8 +56,8 @@ async function init(conf) {
 
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    // cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
-    // cellInformation.draw();
+    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
+    cellInformation.draw();
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
@@ -133,7 +133,9 @@ const refreshColors = async () => {
 eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 const gatingBrushEnd = async (packet) => {
-    let test = ''
+    let gatedCellIds = await dataLayer.getGatedCellIds(packet);
+    dataLayer.addAllToCurrentSelection(gatedCellIds);
+    updateSeaDragonSelection();
 }
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 

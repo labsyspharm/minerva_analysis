@@ -15,7 +15,8 @@ class CSVGatingList {
     }
 
     selectChannel(name) {
-        this.selections[name] = {};
+
+        this.selections[this.dataLayer.getFullChannelName(name)] = {};
     }
 
     async init() {
@@ -145,7 +146,7 @@ class CSVGatingList {
 
             //gating not active
         } else {
-            delete this.selections[name];
+            delete this.selections[this.dataLayer.getFullChannelName(name)];
             parent.classList.remove("active")
             svgCol.style.display = "none";
 
@@ -193,7 +194,7 @@ class CSVGatingList {
                     .size(100))
             .tickValues([])
             .on('end', range => {
-                self.selections[name] = range;
+                self.selections[self.dataLayer.getFullChannelName(name)] = range;
                 let packet = self.selections;
                 this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, packet);
             });

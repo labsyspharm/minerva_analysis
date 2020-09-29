@@ -222,3 +222,16 @@ def get_rect_cells(datasource, rect, channels):
         return neighborhood
     except:
         return {}
+
+
+def get_gated_cells(datasource, filter):
+    global database
+    global source
+    global ball_tree
+    query_string = ''
+    for key, value in filter.items():
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+    query = database.query(query_string)
+    return {}
