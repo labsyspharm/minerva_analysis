@@ -14,6 +14,7 @@ export class CsvGatingOverlay {
     overlay = null;
     rect = null;
     rect_frame = null;
+    show_download_panel = false;
 
     // Tools
     coord_scale_x = d3.scaleLinear();
@@ -59,8 +60,11 @@ export class CsvGatingOverlay {
         // Add events
         this.add_events();
 
+        // Respond to download icon click
+        this.add_events_download();
+
         // Respond to channel list clicks
-        this.add_linked_events();
+        this.add_events_linked();
     }
 
     /**
@@ -73,13 +77,33 @@ export class CsvGatingOverlay {
     }
 
     /**
-     * @function add_linked_events
+     * @function add_events_download
+     *
+     */
+    add_events_download() {
+
+        // Get download button
+        const downloadButton = document.querySelector('#gating_download');
+
+        // Add event
+        downloadButton.addEventListener('click', e => {
+
+            // Toggle visibility variable
+            this.show_download_panel = !this.show_download_panel;
+
+
+
+        });
+    }
+
+    /**
+     * @function add_events_linked
      *
      * TODO - add in slider matching
      *
      * ref
      */
-    add_linked_events() {
+    add_events_linked() {
 
         // Add events to channel
         const channelListContent = document.querySelectorAll('.channel-list-content');
@@ -166,6 +190,9 @@ export class CsvGatingOverlay {
                 }
             }
         }
+
+        // Turn off data request (refresh)
+        this.data_requested = false;
 
         // Outside
         return false;

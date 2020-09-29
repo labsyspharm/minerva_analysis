@@ -46,7 +46,7 @@
             <li class="nav-item dropdown">
                 <span class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown"
                       aria-haspopup="true" aria-expanded="false">
-                  Data Sources
+                    Data Sources
                 </span>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     {% for datasource in data.datasources %}
@@ -108,13 +108,17 @@
             </div>
 
             <div class="col-lg-3" id="csv_channel_list_wrapper">
+                <div id="gating_download_panel"></div>
                 <div id="lowRow3" class="row">
                     <div id="boxHeading3" class="col-auto mr-auto">
                         <span class="box-heading">CSV Gating</span>
                     </div>
+                    <div class="col-auto" id="download-gating-header-div">
+                        <span id="gating_download" class="selected-channels-header">&#8623;</span>
+                    </div>
                 </div>
                 <div id="csv_gating_list">
-                    <div class="row">
+                    <div id="csv_gating_row" class="row">
                         <div class="col-auto">
                             <div class="lds-ellipsis" id="csv_gating_list_loader">
                                 <div></div>
