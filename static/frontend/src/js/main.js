@@ -108,7 +108,7 @@ const actionImageClickedMultiSel = (d) => {
         // console.log(d.selectedItem.length);
         dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
-    cellInformation.selectCell(d.selectedItem);
+    // cellInformation.selectCell(d.selectedItem);
     updateSeaDragonSelection();
     d3.select('body').style('cursor', 'default');
 }
@@ -132,6 +132,13 @@ const refreshColors = async () => {
 }
 eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
+const gatingBrushEnd = async (packet) => {
+    let gatedCellIds = await dataLayer.getGatedCellIds(packet);
+    dataLayer.addAllToCurrentSelection(gatedCellIds);
+    updateSeaDragonSelection();
+}
+eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
+
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection() {
@@ -139,10 +146,12 @@ function updateSeaDragonSelection() {
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
-    if (_.size(selection) == 0) {
-        document.getElementById("cell_wrapper").style.display = "none";
-    } else {
-        document.getElementById("cell_wrapper").style.display = "none";
+    if (document.getElementById("cell_wrapper")) {
+        if (_.size(selection) == 0) {
+            document.getElementById("cell_wrapper").style.display = "none";
+        } else {
+            document.getElementById("cell_wrapper").style.display = "none";
+        }
     }
     seaDragonViewer.updateSelection(selectionHashMap);
 }

@@ -15,9 +15,11 @@ import Mark from 'mark.js'
 import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert'
+import {promisify} from 'util';
+
 import * as OpenSeadragon from 'openseadragon';
-import {ViewerManager} from './views/viewerManager';
-import {CsvGatingOverlay} from './views/CsvGatingOverlay';
+// import {ViewerManager} from './views/viewerManager';
+// import {CsvGatingOverlay} from './views/CsvGatingOverlay';
 
 window.convert = convert;
 window.$ = $;
@@ -28,6 +30,7 @@ window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
-window.ViewerManager = ViewerManager;
-window.CsvGatingOverlay = CsvGatingOverlay;
+window.promisify = promisify;
+// window.ViewerManager = ViewerManager;
+// window.CsvGatingOverlay = CsvGatingOverlay;
 

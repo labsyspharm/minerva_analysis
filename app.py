@@ -460,9 +460,22 @@ def get_num_cells_in_circle():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_gated_cell_ids', methods=['GET'])
+def get_gated_cell_ids():
+    datasource = request.args.get('datasource')
+    filter = json.loads(request.args.get('filter'))
+    resp = dataFilter.get_gated_cells(datasource, filter)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_database_description', methods=['GET'])
+def get_database_description():
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_database_description(datasource)
+    return serialize_and_submit_json(resp)
+
 @app.route('/get_rect_cells', methods=['GET'])
 def get_rect_cells():
-
     # Parse (rect - [x, y, r], channels [string])
     datasource = request.args.get('datasource')
     rect = [float(x) for x in request.args.get('rect').split(',')]
@@ -485,4 +498,4 @@ def serialize_and_submit_json(data):
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     # 100 GB file Max
-    serve(app, host='0.0.0.0', port=8000,max_request_body_size=107374182400)
+    serve(app, host='0.0.0.0', port=8000, max_request_body_size=107374182400)

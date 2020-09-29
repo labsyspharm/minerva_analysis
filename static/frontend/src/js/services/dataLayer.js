@@ -95,6 +95,30 @@ class DataLayer {
         }
     }
 
+    async getGatedCellIds(filter) {
+        try {
+            let response = await fetch('/get_gated_cell_ids?' + new URLSearchParams({
+                filter: JSON.stringify(filter),
+                datasource: datasource
+            }))
+            let cellIds = await response.json();
+            return cellIds;
+        } catch (e) {
+            console.log("Error Getting Gated Cell Ids", e);
+        }
+    }
+    async getDatabaseDescription() {
+        try {
+            let response = await fetch('/get_database_description?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let description = await response.json();
+            return description;
+        } catch (e) {
+            console.log("Error Getting DB Description", e);
+        }
+    }
+
     async getNeighborhood(maxDistance, selectedCell) {
         try {
             let pointX = selectedCell[this.x];

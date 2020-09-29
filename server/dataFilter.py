@@ -35,6 +35,7 @@ def load_db(datasource, reload=False):
         if idField != 'none' and idField is not None:
             index_col = idField
     database = pd.read_csv(csvPath, index_col=index_col)
+    database['id'] = database.index
     source = datasource
 
 
@@ -81,7 +82,6 @@ def query_for_closest_cell(x, y, datasource):
         try:
             row = database.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
-            obj['id'] = str(index[0][0])
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             return obj
@@ -129,7 +129,7 @@ def get_phenotypes(datasource):
         return ['']
 
 
-def get_neighborhood(x, y, datasource, r=100):
+def get_neighborhood(x, y, datasource, r=100, fields=None):
     global database
     global source
     global ball_tree
@@ -138,14 +138,19 @@ def get_neighborhood(x, y, datasource, r=100):
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
     try:
-        neighborhood = []
-        for neighbor in neighbors:
-            row = database.iloc[[neighbor]]
-            obj = row.to_dict(orient='records')[0]
-            obj['id'] = str(neighbor)
-            if 'phenotype' not in obj:
-                obj['phenotype'] = ''
-            neighborhood.append(obj)
+        if fields and len(fields) > 0:
+            fields.append('id') if 'id' not in fields else fields
+            if len(fields) > 1:
+                neighborhood = database.iloc[neighbors][fields].to_dict(orient='records')
+            else:
+                neighborhood = database.iloc[neighbors][fields].to_dict()
+        else:
+            neighborhood = database.iloc[neighbors].to_dict(orient='records')
+        # for neighbor in neighbors:
+        #     row = database.iloc[[neighbor]]
+        #     obj = row.to_dict(orient='records')[0]
+        #     # obj['id'] = str(neighbor)
+
         return neighborhood
     except:
         return {}
@@ -222,3 +227,33 @@ def get_rect_cells(datasource, rect, channels):
         return neighborhood
     except:
         return {}
+
+
+def get_gated_cells(datasource, filter):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    query_string = ''
+    for key, value in filter.items():
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+    query = database.query(query_string)[['id']].to_dict(orient='records')
+    return query
+
+
+def get_database_description(datasource):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    return database.describe().to_dict()
