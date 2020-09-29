@@ -56,8 +56,8 @@ async function init(conf) {
 
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
-    cellInformation.draw();
+    // cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
+    // cellInformation.draw();
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
@@ -108,7 +108,7 @@ const actionImageClickedMultiSel = (d) => {
         // console.log(d.selectedItem.length);
         dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
-    cellInformation.selectCell(d.selectedItem);
+    // cellInformation.selectCell(d.selectedItem);
     updateSeaDragonSelection();
     d3.select('body').style('cursor', 'default');
 }
@@ -146,10 +146,12 @@ function updateSeaDragonSelection() {
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
-    if (_.size(selection) == 0) {
-        document.getElementById("cell_wrapper").style.display = "none";
-    } else {
-        document.getElementById("cell_wrapper").style.display = "none";
+    if (document.getElementById("cell_wrapper")) {
+        if (_.size(selection) == 0) {
+            document.getElementById("cell_wrapper").style.display = "none";
+        } else {
+            document.getElementById("cell_wrapper").style.display = "none";
+        }
     }
     seaDragonViewer.updateSelection(selectionHashMap);
 }

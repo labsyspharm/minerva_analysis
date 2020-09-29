@@ -233,10 +233,27 @@ def get_gated_cells(datasource, filter):
     global database
     global source
     global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
     query_string = ''
     for key, value in filter.items():
         if query_string != '':
             query_string += ' and '
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
-    query = database.query(query_string)
-    return {}
+    query = database.query(query_string)[['id']].to_dict(orient='records')
+    return query
+
+
+def get_database_description(datasource):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    return database.describe().to_dict()

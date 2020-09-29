@@ -107,6 +107,17 @@ class DataLayer {
             console.log("Error Getting Gated Cell Ids", e);
         }
     }
+    async getDatabaseDescription() {
+        try {
+            let response = await fetch('/get_database_description?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let description = await response.json();
+            return description;
+        } catch (e) {
+            console.log("Error Getting DB Description", e);
+        }
+    }
 
     async getNeighborhood(maxDistance, selectedCell) {
         try {

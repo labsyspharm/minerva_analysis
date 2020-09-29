@@ -468,6 +468,12 @@ def get_gated_cell_ids():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_database_description', methods=['GET'])
+def get_database_description():
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_database_description(datasource)
+    return serialize_and_submit_json(resp)
+
 @app.route('/get_rect_cells', methods=['GET'])
 def get_rect_cells():
     # Parse (rect - [x, y, r], channels [string])

@@ -9,19 +9,19 @@ class CSVGatingList {
         this.ranges = {};
         this.sliders = new Map();
         var that = this;
-        this.imageBitRange = [0, 65536];
+        // this.imageBitRange = [0, 65536];
 
         this.container = d3.select("#csv_gating_list");
     }
 
     selectChannel(name) {
-
-        this.selections[this.dataLayer.getFullChannelName(name)] = {};
+        this.selections[this.dataLayer.getFullChannelName(name)] = this.sliders.get(name).value();
     }
 
     async init() {
         // this.rainbow.hide();
         this.columns = await this.dataLayer.getChannelNames(true);
+        this.databaseDescription = await this.dataLayer.getDatabaseDescription();
         // Hide the Loader
         document.getElementById('csv_gating_list_loader').style.display = "none";
         let gating_list = document.getElementById("csv_gating_list");
@@ -73,35 +73,11 @@ class CSVGatingList {
             svgCol.classList.add("col-svg-wrapper");
             row.appendChild(svgCol);
 
-            // let colorLabel = document.createElement("span");
-            // colorLabel.textContent = "Color:";
-            // svgCol.appendChild(colorLabel);
 
             let svg = d3.select(svgCol)
                 .append("svg")
                 .attr("width", 30)
                 .attr("height", 15)
-            // svg.selectAll("circle")
-            //     .data([{"color": "black", "name": column}, {"color": "white", "name": column}])
-            //     .enter().append("rect")
-            //     .attr("class", "color-transfer")
-            //     .attr("cursor", "pointer")
-            //     .attr("stroke", "#757575")
-            //     .attr("fill", d => d.color)
-            //     .attr("width", "10")
-            //     .attr("height", "10")
-            //     .attr("rx", "2")
-            //     .attr("ry", "2")
-            //     .attr("x", d => {
-            //         if (d.color == "black") {
-            //             return 3;
-            //         } else { //black
-            //             return 17;
-            //         }
-            //     })
-            //     .attr("y", "2")
-            //     .on('pointerup', showPicker);
-            //<rect class="color-transfer" cursor="pointer" stroke="#757575" fill="black" width="10" height="10" rx="2" ry="2" x="-5" y="4.725680443548387" transform="translate(65,0)"></rect>
             svgCol.style.display = "none";
 
             let gatingName = document.createElement("span");
@@ -112,7 +88,9 @@ class CSVGatingList {
             list.appendChild(listItemParentDiv);
 
             //add and hide gating sliders (will be visible when gating is active)
-            this.addSlider(this.imageBitRange, this.imageBitRange, column, document.getElementById("csv_gating_list").getBoundingClientRect().width);
+            const fullName = this.dataLayer.getFullChannelName(column)
+            const sliderRange = [this.databaseDescription[fullName].min, this.databaseDescription[fullName].max]
+            this.addSlider(sliderRange, sliderRange, column, document.getElementById("csv_gating_list").getBoundingClientRect().width);
             d3.select('div#csv_gating-slider_' + column).style('display', "none");
         });
     }
