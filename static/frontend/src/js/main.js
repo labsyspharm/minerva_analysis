@@ -132,6 +132,11 @@ const refreshColors = async () => {
 }
 eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
+const gatingBrushEnd = async (packet) => {
+    let test = ''
+}
+eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
+
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection() {

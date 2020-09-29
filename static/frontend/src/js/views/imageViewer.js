@@ -100,7 +100,7 @@ class ImageViewer {
         /********************************************************************************************* Create overlays*/
 
         // Instantiate Csv Gating Overlay
-        that.csvGatingOverlay = new CsvGatingOverlay(that.viewer, that);
+        // that.csvGatingOverlay = new CsvGatingOverlay(that.viewer, that);
 
 
         /* TODO - unused
@@ -120,7 +120,7 @@ class ImageViewer {
                     d.forEach(function (xVal, i) {
                         if (i === 0) {
                             context.moveTo(d[i].x, d[i].y);
-                        } else {
+                        } else  {
                             context.lineTo(d[i].x, d[i].y);
                         }
                     });

@@ -4,35 +4,18 @@ class CSVGatingList {
         this.config = config;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
-        this.selections = [];
+        this.selections = {};
         this.maxSelections = 1000;
         this.ranges = {};
         this.sliders = new Map();
         var that = this;
         this.imageBitRange = [0, 65536];
 
-        //  create a color picker
-        // this.rainbow = rainbow();
-        // this.colorTransferHandle = null;
-        // d3.select(document.body)//add it to body
-        //     .call(this.rainbow
-        //         .on('save', (color, x) => {
-        //             let data = this.colorTransferHandle.datum();
-        //             let packet = {
-        //                 name: data.name,  // cell name :  string
-        //                 type: data.color,         // white, black :  string
-        //                 color,     // parse using d3.rgb(color) : https://github.com/d3/d3-color#rgb
-        //             };
-        //             this.eventHandler.trigger(CSVGatingList.events.COLOR_TRANSFER_CHANGE, packet);
-        //             this.colorTransferHandle.style('fill', color);
-        //         })
-        //         .on('close', () => this.colorTransferHandle = null));
-
         this.container = d3.select("#csv_gating_list");
     }
 
     selectChannel(name) {
-        this.selections.push(name);
+        this.selections[name] = {};
     }
 
     async init() {
@@ -124,7 +107,6 @@ class CSVGatingList {
             gatingName.classList.add("gating-name");
             gatingName.textContent = column;
             nameCol.appendChild(gatingName);
-
             listItemParentDiv.addEventListener("click", e => this.abstract_click(e, svgCol));
             list.appendChild(listItemParentDiv);
 
@@ -163,7 +145,7 @@ class CSVGatingList {
 
             //gating not active
         } else {
-            this.selections = _.remove(this.selections, name);
+            delete this.selections[name];
             parent.classList.remove("active")
             svgCol.style.display = "none";
 
@@ -195,7 +177,7 @@ class CSVGatingList {
      */
     addSlider(data, activeRange, name, swidth) {
 
-        var that = this;
+        const self = this;
         //add range slider row content
         var sliderSimple = d3.slider
             .sliderBottom()
@@ -209,11 +191,11 @@ class CSVGatingList {
                 d3.symbol()
                     .type(d3.symbolCircle)
                     .size(100))
-            .tickValues([]).on('onchange', range => {
-                // console.log('trigger gating event');
-                let packet = {name: name, dataRange: range};
+            .tickValues([])
+            .on('end', range => {
+                self.selections[name] = range;
+                let packet = self.selections;
                 this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, packet);
-                // console.log('gating event triggered');
             });
         this.sliders.set(name, sliderSimple);
 
