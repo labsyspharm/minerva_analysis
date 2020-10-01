@@ -108,13 +108,29 @@
             </div>
 
             <div class="col-lg-3" id="csv_channel_list_wrapper">
-                <div id="gating_download_panel"></div>
+                <div id="gating_download_panel">
+                    <a id="gating_exit">&#10006;</a>
+                    <label>Download gated channel ranges:
+                        <span class="download_flex">
+                            <input type="text" autocomplete="false" spellcheck="false"
+                                   value="{{ data.datasources[0] }}_gated_channel_ranges.csv">
+                            <a id="download_gated_channel_ranges" class="download_button">&#8679;</a>
+                        </span>
+                    </label>
+                    <label>Download gated cells encodings:
+                        <span class="download_flex">
+                            <input type="text" autocomplete="false" spellcheck="false"
+                                   value="{{ data.datasources[0] }}_gated_cells_encodings.csv">
+                            <a id="download_gated_cells_encodings" class="download_button">&#8679;</a>
+                        </span>
+                    </label>
+                </div>
                 <div id="lowRow3" class="row">
                     <div id="boxHeading3" class="col-auto mr-auto">
                         <span class="box-heading">CSV Gating</span>
                     </div>
                     <div class="col-auto" id="download-gating-header-div">
-                        <span id="gating_download" class="selected-channels-header">&#8623;</span>
+                        <span id="gating_download_icon" class="selected-channels-header">&#8623;</span>
                     </div>
                 </div>
                 <div id="csv_gating_list">

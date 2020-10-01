@@ -23,6 +23,8 @@ class ImageViewer {
         //this.rgbPlugin = {}; // reads rgb colors from mouse position
         this.canvasOverlay = {}; // canvas overlay
 
+        // For gating render
+        this.outlines = true;
 
         // ==========
         // local data
@@ -75,7 +77,7 @@ class ImageViewer {
 
     init() {
 
-        console.log('[seaDragonViewer::init]');
+        // console.log('[seaDragonViewer::init]');
 
         var that = this;
         //Hide Loader
@@ -268,7 +270,7 @@ class ImageViewer {
                 // save tile in tileCache
                 seaDragonViewer.tileCache[tile.url] = tile_png;
             } else {
-                console.log('[TILE LOADED]: buffer UNDEFINED');
+                // console.log('[TILE LOADED]: buffer UNDEFINED');
             }
         }
     }
@@ -334,7 +336,7 @@ class ImageViewer {
         var channelTile = seaDragonViewer.tileCache[channelTileAdr];
 
         if (channelTile == null) {
-            console.log("No Channel Either");
+            // console.log("No Channel Either");
             await addTile(channelTileAdr);
             channelTile = seaDragonViewer.tileCache[channelTileAdr];
         }
@@ -353,7 +355,7 @@ class ImageViewer {
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !seaDragonViewer.noLabel) {
-            console.log("Missing Label Tile", labelTileAdr)
+            // console.log("Missing Label Tile", labelTileAdr)
             await addTile(labelTileAdr);
             labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
@@ -417,9 +419,49 @@ class ImageViewer {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
                         let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         if (color != undefined) {
-                            pixels[i] = color[0];
-                            pixels[i + 1] = color[1];
-                            pixels[i + 2] = color[2];
+
+                            /************************ new */
+                            // Init grid and tests (4 pts v 8 working for now)
+                            const grid = [
+                                i - 4,
+                                i + 4,
+                                i - inputTile.width * 4,
+                                i + inputTile.width * 4
+                            ];
+                            const test = [
+                                i % (inputTile.width * 4) !== 0,
+                                i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
+                                i >= inputTile.width * 4,
+                                i < inputTile.width * 4 * (inputTile.height - 1)
+                            ];
+
+                            // If outline
+                            this.outlines = true;
+                            if (this.outlines) {
+                                // Iterate grid
+                                for (let j = 0; j < grid.length; j++) {
+                                    // if pass test (not on tile border)
+                                    if (test[j]) {
+                                        // Neighbor label value
+                                        const altLabelValue = ((labelTileData[grid[j]] * 65536)
+                                            + (labelTileData[grid[j] + 1] * 256) + labelTileData[grid[j] + 2]) - 1;
+                                        const altLabelValueStr = altLabelValue.toString();
+                                        // Color
+                                        if (altLabelValueStr !== labelValueStr) {
+                                            pixels[i] = color[2];
+                                            pixels[i + 1] = color[1];
+                                            pixels[i + 2] = color[0];
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                pixels[i] = color[0];
+                                pixels[i + 1] = color[1];
+                                pixels[i + 2] = color[2];
+                            }
+                            /************************ newend */
                         }
                     }
                 }
@@ -472,7 +514,7 @@ class ImageViewer {
             var channelTile = seaDragonViewer.tileCache[channelTileAdr];
 
             if (channelTile == null) {
-                console.log("No Channel Either");
+                // console.log("No Channel Either");
                 await addTile(channelTileAdr);
                 channelTile = seaDragonViewer.tileCache[channelTileAdr];
             }
@@ -488,7 +530,7 @@ class ImageViewer {
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !seaDragonViewer.noLabel) {
-            console.log("Missing Label Tile", labelTileAdr)
+            // console.log("Missing Label Tile", labelTileAdr)
             await addTile(labelTileAdr);
             labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
@@ -550,9 +592,49 @@ class ImageViewer {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
                         let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         if (color != undefined) {
-                            pixels[i] = color[0];
-                            pixels[i + 1] = color[1];
-                            pixels[i + 2] = color[2];
+
+                            /************************ new */
+                            // Init grid and tests (4 pts v 8 working for now)
+                            const grid = [
+                                i - 4,
+                                i + 4,
+                                i - inputTile.width * 4,
+                                i + inputTile.width * 4
+                            ];
+                            const test = [
+                                i % (inputTile.width * 4) !== 0,
+                                i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
+                                i >= inputTile.width * 4,
+                                i < inputTile.width * 4 * (inputTile.height - 1)
+                            ];
+
+                            // If outline
+                            this.outlines = true;
+                            if (this.outlines) {
+                                // Iterate grid
+                                for (let j = 0; j < grid.length; j++) {
+                                    // if pass test (not on tile border)
+                                    if (test[j]) {
+                                        // Neighbor label value
+                                        const altLabelValue = ((labelTileData[grid[j]] * 65536)
+                                            + (labelTileData[grid[j] + 1] * 256) + labelTileData[grid[j] + 2]) - 1;
+                                        const altLabelValueStr = altLabelValue.toString();
+                                        // Color
+                                        if (altLabelValueStr !== labelValueStr) {
+                                            pixels[i] = color[2];
+                                            pixels[i + 1] = color[1];
+                                            pixels[i + 2] = color[0];
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                pixels[i] = color[0];
+                                pixels[i + 1] = color[1];
+                                pixels[i + 2] = color[2];
+                            }
+                            /************************ newend */
                         }
                     }
                 }
@@ -565,20 +647,20 @@ class ImageViewer {
     }
 
     updateSelection(selection) {
-        console.log('seaDragon: update selection event received');
+        // console.log('seaDragon: update selection event received');
         this.selection = selection;
         seaDragonViewer.forceRepaint();
     }
 
     updateData(data) {
-        console.log('seaDragon: update subset event received');
+        // console.log('seaDragon: update subset event received');
         this.data = data;
         seaDragonViewer.forceRepaint();
     }
 
 
     updateChannelRange(name, tfmin, tfmax) {
-        console.log('updating TF range');
+        // console.log('updating TF range');
 
         var channelIdx = imageChannels[name];
 
@@ -599,7 +681,7 @@ class ImageViewer {
 // color: "rgb(177, 0, 255)"
 // type: "right"
     updateChannelColors(name, color, type) {
-        console.log('seaDragon: update channel colors event received ');
+        // console.log('seaDragon: update channel colors event received ');
 
         var channelIdx = imageChannels[name];
 
@@ -626,23 +708,23 @@ class ImageViewer {
 
         var channelIdx = imageChannels[name];
 
-        console.log('seaDragon: update active channels event received. channel ', channelIdx);
+        // console.log('seaDragon: update active channels event received. channel ', channelIdx);
 
         if (selection.length == 0) {
-            console.log('nothing selected - keep showing last image');
+            // console.log('nothing selected - keep showing last image');
             // return;
         } else if (selection.length == 1) {
 
-            console.log('1 channel selected');
+            // console.log('1 channel selected');
         } else {
-            console.log('multiple channels selected');
+            // console.log('multiple channels selected');
         }
 
         if (status == true) {
-            console.log('channel added');
+            // console.log('channel added');
             addChannel(channelIdx);
         } else {
-            console.log('channel removed');
+            // console.log('channel removed');
             removeChannel(channelIdx);
         }
 
@@ -652,14 +734,14 @@ class ImageViewer {
 //mode is a string: 'show-subset', 'show-selection'
     updateRenderingMode(mode) {
 
-        console.log('seaDragonViewer: rendering mode change event received. mode ' + mode);
+        // console.log('seaDragonViewer: rendering mode change event received. mode ' + mode);
 
         if (mode == 'show-subset') {
             this.show_subset = !this.show_subset;
         }
         if (mode == 'show-selection') {
             this.show_selection = !this.show_selection;
-            console.log(this.show_selection);
+            // console.log(this.show_selection);
         }
 
         seaDragonViewer.forceRepaint();
@@ -858,7 +940,7 @@ function evaluateTF(val, tf) {
 async function addTile(path) {
     const promiseWrapper = new Promise((resolve, reject) => {
         function addTileResponse(success, error) {
-            console.log("Emergency Added Tile:", path);
+            // console.log("Emergency Added Tile:", path);
             resolve();
         }
 

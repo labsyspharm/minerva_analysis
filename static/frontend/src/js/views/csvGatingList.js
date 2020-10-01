@@ -12,6 +12,11 @@ class CSVGatingList {
         // this.imageBitRange = [0, 65536];
 
         this.container = d3.select("#csv_gating_list");
+
+        // Download vars
+        this.download_panel_visible = false;
+        this.download_input1 = null;
+        this.download_input2 = null;
     }
 
     selectChannel(name) {
@@ -93,6 +98,9 @@ class CSVGatingList {
             this.addSlider(sliderRange, sliderRange, column, document.getElementById("csv_gating_list").getBoundingClientRect().width);
             d3.select('div#csv_gating-slider_' + column).style('display', "none");
         });
+
+        // Add events
+        this.add_events();
     }
 
     /**
@@ -145,6 +153,39 @@ class CSVGatingList {
             this.eventHandler.trigger(CSVGatingList.events.GATING_CHANNELS_CHANGE, packet);
 
         }
+    }
+
+    /**
+     * @function add_events
+     *
+     */
+    add_events() {
+
+        // Els
+        const gating_download_icon = document.querySelector('#gating_download_icon');
+        const gating_download_panel = document.querySelector('#gating_download_panel');
+        const gating_exit = document.querySelector('#gating_exit');
+        const download_gated_channel_ranges = document.querySelector('#download_gated_channel_ranges');
+        const download_gated_cells_encodings = document.querySelector('#download_gated_cells_encodings');
+
+        // Events
+        gating_download_icon.addEventListener('click', () => {
+            // Update class var
+            this.download_panel_visible = !this.download_panel_visible;
+            // Condition to update download panel visibility
+            if (this.download_panel_visible) {
+                gating_download_panel.style.visibility = 'visible';
+            } else {
+                gating_download_panel.style.visibility = 'hidden';
+            }
+        });
+        gating_exit.addEventListener('click', () => {
+            // Update class var
+            this.download_panel_visible = !this.download_panel_visible;
+            // Hide download panel
+            gating_download_panel.style.visibility = 'hidden';
+        });
+
     }
 
     /*

@@ -91,10 +91,50 @@
 }
 
 #gating_download_panel {
-    background-color: rgba(192, 192, 192, 1);
-    padding: 20px;
+    background-color: rgba(224, 224, 224, 1);
+    padding: 35px 10px 30px 10px;
     position: absolute;
     top: 19px;
     width: 98%;
+    visibility: hidden;
     z-index: 100;
+}
+
+#gating_download_panel #gating_exit {
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: lighter;
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+
+#gating_download_panel label {
+    font-size: 12px;
+    width: 100%;
+}
+
+#gating_download_panel .download_flex {
+    display: flex;
+    flex-flow: row wrap;
+    margin: 10px 0 5px 0;
+    width: 100%;
+}
+
+#gating_download_panel .download_flex input[type=text] {
+    background-color: white;
+    border: none;
+    border-radius: 1px;
+    color: darkblue;
+    font-size: 10px;
+    padding: 5px;
+    width: 85%;
+}
+
+#gating_download_panel .download_button {
+    color: black;
+    cursor: pointer;
+    font-size: 18px;
+    margin: 0 0 0 7px;
+    transform: rotate(180deg);
 }
