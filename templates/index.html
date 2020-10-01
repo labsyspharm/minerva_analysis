@@ -112,16 +112,16 @@
                     <a id="gating_exit">&#10006;</a>
                     <label>Download gated channel ranges:
                         <span class="download_flex">
-                            <input type="text" autocomplete="false" spellcheck="false"
+                            <input id="download_input1" type="text" autocomplete="false" spellcheck="false"
                                    value="{{ data.datasources[0] }}_gated_channel_ranges.csv">
                             <a id="download_gated_channel_ranges" class="download_button">&#8679;</a>
                         </span>
                     </label>
-                    <label>Download gated cells encodings:
+                    <label>Download gated cell encodings:
                         <span class="download_flex">
-                            <input type="text" autocomplete="false" spellcheck="false"
-                                   value="{{ data.datasources[0] }}_gated_cells_encodings.csv">
-                            <a id="download_gated_cells_encodings" class="download_button">&#8679;</a>
+                            <input id="download_input2" type="text" autocomplete="false" spellcheck="false"
+                                   value="{{ data.datasources[0] }}_gated_cell_encodings.csv">
+                            <a id="download_gated_cell_encodings" class="download_button">&#8679;</a>
                         </span>
                     </label>
                 </div>
@@ -144,6 +144,11 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                <div id="gating_controls_panel">
+                    <label>Draw outlines
+                        <input id="gating_controls_outlines" type="checkbox">
+                    </label>
                 </div>
                 <!--svg width="150" height="0" id="cell_legend"></svg>
                 <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors"-->

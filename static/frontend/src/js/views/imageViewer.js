@@ -24,7 +24,7 @@ class ImageViewer {
         this.canvasOverlay = {}; // canvas overlay
 
         // For gating render
-        this.outlines = true;
+        this.outlines = false;
 
         // ==========
         // local data
@@ -114,7 +114,7 @@ class ImageViewer {
             filters: {
                 //items: seaDragonViewer.viewer.world.getItemAt(0), //seaDragonViewer.viewer.world.getItemCount() - 1),
                 processors:
-                seaDragonViewer.renderTFWithLabels
+                seaDragonViewer.renderTFWithLabels.bind(this)
             }
         });
 
@@ -436,7 +436,6 @@ class ImageViewer {
                             ];
 
                             // If outline
-                            this.outlines = true;
                             if (this.outlines) {
                                 // Iterate grid
                                 for (let j = 0; j < grid.length; j++) {
@@ -609,7 +608,6 @@ class ImageViewer {
                             ];
 
                             // If outline
-                            this.outlines = true;
                             if (this.outlines) {
                                 // Iterate grid
                                 for (let j = 0; j < grid.length; j++) {
@@ -815,7 +813,7 @@ function activateTFRendering() {
             //  loadMode: 'sync',
             filters: {
                 processors: //OpenSeadragon.Filters.BRIGHTNESS(200), ImageViewer.myfilter
-                seaDragonViewer.renderTFWithLabels
+                seaDragonViewer.renderTFWithLabels.bind(this)
             }
         });
     } else {

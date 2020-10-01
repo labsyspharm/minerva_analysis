@@ -166,9 +166,14 @@ class CSVGatingList {
         const gating_download_panel = document.querySelector('#gating_download_panel');
         const gating_exit = document.querySelector('#gating_exit');
         const download_gated_channel_ranges = document.querySelector('#download_gated_channel_ranges');
-        const download_gated_cells_encodings = document.querySelector('#download_gated_cells_encodings');
+        const download_gated_cell_encodings = document.querySelector('#download_gated_cell_encodings');
+        const download_input1 = document.querySelector('#download_input1');
+        const download_input2 = document.querySelector('#download_input2');
+        const gating_controls_outlines = document.querySelector('#gating_controls_outlines')
 
-        // Events
+        // Events ::
+
+        // Open / close download panel
         gating_download_icon.addEventListener('click', () => {
             // Update class var
             this.download_panel_visible = !this.download_panel_visible;
@@ -179,12 +184,32 @@ class CSVGatingList {
                 gating_download_panel.style.visibility = 'hidden';
             }
         });
+
+        // Close download panel
         gating_exit.addEventListener('click', () => {
             // Update class var
             this.download_panel_visible = !this.download_panel_visible;
             // Hide download panel
             gating_download_panel.style.visibility = 'hidden';
         });
+
+        // Download gated channel ranges
+        download_gated_channel_ranges.addEventListener('click', () => {
+            console.log(download_input1.value);
+            // TODO - frontend download
+        })
+
+        // Download gated channel ranges
+        download_gated_cell_encodings.addEventListener('click', () => {
+            console.log(download_input2.value);
+            // TODO - backend download
+        })
+
+        // Toggle outlined / filled cell selections
+        gating_controls_outlines.addEventListener('change', e => {
+            seaDragonViewer.outlines = e.target.checked;
+            seaDragonViewer.forceRepaint();
+        })
 
     }
 
