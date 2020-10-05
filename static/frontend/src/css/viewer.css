@@ -148,6 +148,10 @@
     z-index: 100;
 }
 
+#gating_controls_panel{
+    background-color: white;
+}
+
 #gating_controls_panel label {
     align-items: center;
     display: flex;
