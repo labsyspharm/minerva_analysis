@@ -24,7 +24,7 @@ class ImageViewer {
         this.canvasOverlay = {}; // canvas overlay
 
         // For gating render
-        this.outlines = false;
+        this.outlines = true;
 
         // ==========
         // local data
@@ -335,10 +335,15 @@ class ImageViewer {
         var channelTileAdr = tile.url.replace(somePath, channelPath);
         var channelTile = seaDragonViewer.tileCache[channelTileAdr];
 
-        if (channelTile == null) {
+        if (channelTile === null || !channelTile) {
             // console.log("No Channel Either");
             await addTile(channelTileAdr);
             channelTile = seaDragonViewer.tileCache[channelTileAdr];
+
+            // FIXME : clearing errors from console but watch for side effects
+            if (channelTile === null || !channelTile) {
+                return;
+            }
         }
         var channelTileData = channelTile.data;
 
@@ -512,10 +517,15 @@ class ImageViewer {
             var channelTileAdr = tileurl.replace(somePath, channelPath);
             var channelTile = seaDragonViewer.tileCache[channelTileAdr];
 
-            if (channelTile == null) {
+            if (channelTile === null || !channelTile) {
                 // console.log("No Channel Either");
                 await addTile(channelTileAdr);
                 channelTile = seaDragonViewer.tileCache[channelTileAdr];
+
+                // FIXME : clearing errors from console but watch for side effects
+                if (channelTile === null || !channelTile) {
+                    return;
+                }
             }
 
             channelsTileData.push(channelTile.data);

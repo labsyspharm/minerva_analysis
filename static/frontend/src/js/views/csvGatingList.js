@@ -8,10 +8,16 @@ class CSVGatingList {
         this.maxSelections = 1000;
         this.ranges = {};
         this.sliders = new Map();
-        var that = this;
         // this.imageBitRange = [0, 65536];
 
         this.container = d3.select("#csv_gating_list");
+
+        // Gating vars
+        this.global_channel_list = channelList;
+        this.global_image_channels = imageChannels;
+        this.gating_default_range = [0, 65536];
+        this.gating_channels = this.init_gating_channels();
+        this.gating_list = null;
 
         // Download vars
         this.download_panel_visible = false;
@@ -29,10 +35,10 @@ class CSVGatingList {
         this.databaseDescription = await this.dataLayer.getDatabaseDescription();
         // Hide the Loader
         document.getElementById('csv_gating_list_loader').style.display = "none";
-        let gating_list = document.getElementById("csv_gating_list");
+        this.gating_list = document.getElementById("csv_gating_list");
         let list = document.createElement("ul");
         list.classList.add("list-group")
-        gating_list.appendChild(list)
+        this.gating_list.appendChild(list)
         // Will show the picker when you click on a color rect
         let showPicker = () => {
             this.colorTransferHandle = d3.select(d3.event.target);
@@ -101,6 +107,26 @@ class CSVGatingList {
 
         // Add events
         this.add_events();
+        this.add_events_linked();
+    }
+
+    /**
+     * @function init_gating_channels
+     *
+     * @return obj
+     */
+    init_gating_channels() {
+
+        // Init
+        const obj = {};
+
+        // Iterate to create fields
+        for (let key in this.global_image_channels) {
+            obj[key] = this.gating_default_range;
+        }
+
+        // Return
+        return obj;
     }
 
     /**
@@ -111,34 +137,53 @@ class CSVGatingList {
      */
     abstract_click(event, svgCol) {
 
-        // IF you clicked on the svg, ignore this behavior
+        // Define this
+        const self = this;
+
+        // If you clicked on the svg, ignore this behavior
         if (event.target.closest("svg")) {
             return;
         }
+
+        // Get info
         let parent = event.target.closest(".list-group-item");
         let name = parent.querySelector('.gating-name').textContent;
         let status = !parent.classList.contains("active");
+
+        // If active - else inactive
         if (status) {
-            //Don't add gating is the max are selected
+
+            // Clear everything
+            clearOut();
+
+            // Don't add gating is the max are selected
             if (_.size(this.selections) >= this.maxSelections) {
                 return;
             }
-            parent.classList.add("active");
-            svgCol.style.display = "block";
-            this.selectChannel(name);
 
-            //add range slider row content
+            // Update properties and add slider
+            d3.select(parent).classed("active", true);
+            svgCol.style.display = "block";
             d3.select('div#csv_gating-slider_' + name).style('display', "block")
 
-            //gating not active
-        } else {
-            delete this.selections[this.dataLayer.getFullChannelName(name)];
-            parent.classList.remove("active")
-            svgCol.style.display = "none";
+            // Add channel
+            this.selectChannel(name);
 
-            //hide range slider row content
-            d3.select('div#csv_gating-slider_' + name).style('display', "none");
+        } else {
+            clearOut();
         }
+
+        // Abstracted clearing
+        function clearOut() {
+
+            // Delete from active selections and deactivate
+            self.selections = {};
+            d3.select(self.gating_list).selectAll(".active")
+                .classed('active', false);
+            d3.selectAll('.gating-svg-wrapper').style('display', "none");
+            d3.selectAll('.csv_gating-slider').style('display', "none");
+        }
+
 
         let selectionsHeaderDiv = document.getElementById("csv_selected-gatings-header-div");
         if (selectionsHeaderDiv) {
@@ -195,13 +240,28 @@ class CSVGatingList {
 
         // Download gated channel ranges
         download_gated_channel_ranges.addEventListener('click', () => {
-            console.log(download_input1.value);
-            // TODO - frontend download
+
+            // Format at csv
+            const rows = [['channel_name', 'gated_min', 'gated_max']];
+            for (let key in this.gating_channels) {
+                rows.push([key, this.gating_channels[key][0], this.gating_channels[key][1]]);
+            }
+            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+
+            // Download - ref. https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", download_input1.value);
+            document.body.appendChild(link);
+            link.click();
+
         })
 
         // Download gated channel ranges
         download_gated_cell_encodings.addEventListener('click', () => {
             console.log(download_input2.value);
+            console.log(this.gating_channels)
             // TODO - backend download
         })
 
@@ -210,6 +270,47 @@ class CSVGatingList {
             seaDragonViewer.outlines = e.target.checked;
             seaDragonViewer.forceRepaint();
         })
+
+    }
+
+    /**
+     * @function add_events_linked
+     *
+     */
+    add_events_linked() {
+
+        // Add events to channel
+        const channelListContent = document.querySelectorAll('.channel-list-content');
+        const gatingListContent = document.querySelectorAll('.gating-list-content');
+
+        // Attach
+        const attach = (targets, matches, target_class, match_class, global) => {
+            targets.forEach(cLC => {
+                cLC.addEventListener('click', e => {
+
+                    // If event target is not an svg el (from slider)
+                    const svgEls = ['path']
+                    if (!svgEls.includes(e.target.tagName)) {
+
+                        // Get channel name
+                        const name = e.target.querySelector(`.${target_class}`).innerText;
+
+                        // Find match el in gating list
+                        const match = Array.from(matches).find(
+                            gLC => gLC.querySelector(`.${match_class}`).innerText === name);
+
+                        // Emulate click to trigger event in csvGatingList.js
+                        if (match && !Array.from(match.classList).includes('active')) {
+                            const fakeEvent = {target: match};
+                            const svgCol = match.querySelector('.col-svg-wrapper')
+                            global.abstract_click(fakeEvent, svgCol);
+                        }
+                    }
+                });
+            });
+        }
+        attach(gatingListContent, channelListContent, 'gating-name', 'channel-name',
+            this.global_channel_list);
 
     }
 
@@ -238,9 +339,13 @@ class CSVGatingList {
                     .size(100))
             .tickValues([])
             .on('end', range => {
+                // For interaction
                 self.selections[self.dataLayer.getFullChannelName(name)] = range;
                 let packet = self.selections;
                 this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, packet);
+
+                // For records
+                this.gating_channels[self.dataLayer.getFullChannelName(name)] = range;
             });
         this.sliders.set(name, sliderSimple);
 
