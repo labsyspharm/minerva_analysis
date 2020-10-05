@@ -41,7 +41,7 @@ class CSVGatingList {
         this.gating_list.appendChild(list)
         // Will show the picker when you click on a color rect
         let showPicker = () => {
-            this.colorTransferHandle = d3.select(d3.event.target);
+            this.colorTransfrHandle = d3.select(d3.event.target);
             let color = this.colorTransferHandle.style('fill');
             let hsl = d3.hsl(color);
             this.rainbow.show(d3.event.clientX, d3.event.clientY);
@@ -184,7 +184,7 @@ class CSVGatingList {
             d3.selectAll('.csv_gating-slider').style('display', "none");
         }
 
-
+        //
         let selectionsHeaderDiv = document.getElementById("csv_selected-gatings-header-div");
         if (selectionsHeaderDiv) {
             if (_.size(this.selections) >= this.maxSelections) {
@@ -195,6 +195,8 @@ class CSVGatingList {
             let packet = {selections: this.selections, name, status};
             // console.log('gatings_change', packet);
             document.getElementById("csv_num-selected-gatings").textContent = _.size(this.selections);
+
+            // Trigger event
             this.eventHandler.trigger(CSVGatingList.events.GATING_CHANNELS_CHANGE, packet);
 
         }
