@@ -474,6 +474,7 @@ def get_database_description():
     resp = dataFilter.get_database_description(datasource)
     return serialize_and_submit_json(resp)
 
+
 @app.route('/get_rect_cells', methods=['GET'])
 def get_rect_cells():
     # Parse (rect - [x, y, r], channels [string])
@@ -485,6 +486,18 @@ def get_rect_cells():
     resp = dataFilter.get_rect_cells(datasource, rect, channels)
     print('Neighborhood size:', len(resp))
     return serialize_and_submit_json(resp)
+
+
+@app.route('/download_gating_csv', methods=['POST'])
+def download_gating_csv():
+    datasource = request.form['datasource']
+    filter = json.loads(request.form['filter'])
+    csv = dataFilter.download_gating_csv(datasource, filter)
+    return Response(
+        csv.to_csv(index=False),
+        mimetype="text/csv",
+        headers={"Content-disposition":
+                     "attachment; filename=gating_csv.csv"})
 
 
 def serialize_and_submit_json(data):

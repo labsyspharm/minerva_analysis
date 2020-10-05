@@ -208,6 +208,8 @@ class CSVGatingList {
      */
     add_events() {
 
+        const self = this;
+
         // Els
         const gating_download_icon = document.querySelector('#gating_download_icon');
         const gating_download_panel = document.querySelector('#gating_download_panel');
@@ -264,7 +266,7 @@ class CSVGatingList {
         download_gated_cell_encodings.addEventListener('click', () => {
             console.log(download_input2.value);
             console.log(this.gating_channels)
-            // TODO - backend download
+            self.dataLayer.downloadGatingCSV(self.selections)
         })
 
         // Toggle outlined / filled cell selections

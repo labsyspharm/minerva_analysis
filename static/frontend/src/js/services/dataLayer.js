@@ -80,6 +80,27 @@ class DataLayer {
         }
     }
 
+    downloadGatingCSV(selections) {
+        let form = document.createElement("form");
+        form.action = "/download_gating_csv";
+        form.method = "post";
+        let filterElement = document.createElement("input");
+        filterElement.type = "hidden";
+        filterElement.value = JSON.stringify(selections);
+        filterElement.name = "filter";
+        form.appendChild(filterElement);
+
+        let datasourceElement = document.createElement("input");
+        datasourceElement.type = "hidden";
+        datasourceElement.value = datasource;
+        datasourceElement.name = "datasource";
+        form.appendChild(datasourceElement);
+        document.body.appendChild(form);
+        form.submit()
+
+
+    }
+
 
     async getNearestCell(point_x, point_y) {
         try {
@@ -107,6 +128,7 @@ class DataLayer {
             console.log("Error Getting Gated Cell Ids", e);
         }
     }
+
     async getDatabaseDescription() {
         try {
             let response = await fetch('/get_database_description?' + new URLSearchParams({

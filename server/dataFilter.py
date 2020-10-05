@@ -120,6 +120,8 @@ def get_phenotypes(datasource):
         phenotype_field = config[datasource]['featureData'][0]['phenotype']
     except KeyError:
         phenotype_field = 'phenotype'
+    except TypeError:
+        phenotype_field = 'phenotype'
 
     if datasource != source:
         load_ball_tree(datasource)
@@ -245,6 +247,38 @@ def get_gated_cells(datasource, filter):
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
     query = database.query(query_string)[['id']].to_dict(orient='records')
     return query
+
+
+def download_gating_csv(datasource, filter):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    query_string = ''
+    columns = []
+    for key, value in filter.items():
+        columns.append(key)
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+    ids = database.query(query_string)[['id']].to_numpy().flatten()
+    if 'idField' in config[datasource]['featureData'][0]:
+        idField = config[datasource]['featureData'][0]['idField']
+    else:
+        idField = "CellID"
+    columns.append(idField)
+
+    csv = pd.DataFrame(np.zeros((database.shape[0], len(columns))))
+    csv.columns = columns
+    csv[idField] = database['id']
+    for key, value in filter.items():
+        csv.loc[csv[idField].isin(ids), key] = 1
+
+    return csv
 
 
 def get_database_description(datasource):
