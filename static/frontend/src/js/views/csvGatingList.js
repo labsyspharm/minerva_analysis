@@ -5,7 +5,7 @@ class CSVGatingList {
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.selections = {};
-        this.maxSelections = 1000;
+        this.maxSelections = 1;
         this.ranges = {};
         this.sliders = new Map();
         var that = this;
