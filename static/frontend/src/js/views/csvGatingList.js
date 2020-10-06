@@ -171,7 +171,11 @@ class CSVGatingList {
             this.selectChannel(name);
 
         } else {
+            // Clear panel visibility
             clearOut();
+
+            // Trigger viewer cleanse
+            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         }
 
         // Abstracted clearing
