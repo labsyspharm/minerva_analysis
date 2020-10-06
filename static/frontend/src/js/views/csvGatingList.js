@@ -271,7 +271,7 @@ class CSVGatingList {
         download_gated_cell_encodings.addEventListener('click', () => {
             console.log(download_input2.value);
             console.log(this.gating_channels)
-            self.dataLayer.downloadGatingCSV(self.selections)
+            self.dataLayer.downloadGatingCSV(this.gating_channels)
         })
 
         // Toggle outlined / filled cell selections
