@@ -27,6 +27,7 @@ class CSVGatingList {
 
     selectChannel(name) {
         this.selections[this.dataLayer.getFullChannelName(name)] = this.sliders.get(name).value();
+        this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
     }
 
     async init() {
