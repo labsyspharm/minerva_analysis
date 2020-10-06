@@ -7,16 +7,17 @@ class Scatterplot {
 
     async init(visData) {
         const self = this;
-        // this.colorMap = await dataLayer.getColorScheme(true, 'cluster');
         this.visData = visData;
         let data = this.visData.data;
-        let schemeCategory10 = d3.schemeCategory10
+        let colorScheme = d3.scaleSequential(d3.interpolateInferno)
+            .domain([0, _.size(this.visData.clusters) + 2])
         this.colorMap = _.map(this.visData.clusters, cluster => {
             let obj = {}
-            obj.hex = schemeCategory10[cluster];
+            obj.hex = colorScheme(cluster + 1);
             obj.rgba = webglColor(obj.hex);
-            obj.grayRgb = d3.color(d3.interpolateGreys((cluster + 5) / (_.size(self.visData.clusters) + 10)));
-            obj.grayRgba = [obj.grayRgb.r / 255.0, obj.grayRgb.g / 255.0, obj.grayRgb.b / 255.0, 0.8];
+            // Per https://tannerhelland.com/2011/10/01/grayscale-image-algorithm-vb6.html
+            let grayScale = (obj.rgba[0] * 0.3 + obj.rgba[1] * 0.59 + obj.rgba[2] * 0.11)
+            obj.grayRgba = [grayScale, grayScale, grayScale, 0.8];
             return obj;
         })
         const xScale = d3.scaleLinear().domain([visData.xMin, visData.xMax]);
@@ -212,6 +213,7 @@ class Scatterplot {
         };
         redraw();
     }
+
 
 }
 

@@ -3,6 +3,7 @@ class Starplot {
         this.id = id;
         this.parent = d3.select(`#${id}`)
         this.colorScheme = colorScheme;
+        this.selector = document.getElementById(id)
     }
 
     init(visData) {
@@ -31,7 +32,8 @@ class Starplot {
 
     draw(cluster) {
         const self = this;
-        // // self.svgSelector.style.display = "block";
+        self.selector.style.display = "block";
+
         let clusterData = _.get(self.visData, `[${cluster}].clusterSummary.weighted_contribution`, {});
         let chartData = _.toPairs(clusterData);
         self.cfg.maxValue = _.max(_.values(clusterData));
@@ -327,6 +329,11 @@ class Starplot {
             });
         }//wrap
 
+    }
+
+    hide() {
+        const self = this;
+        self.selector.style.display = "none";
     }
 
 };
