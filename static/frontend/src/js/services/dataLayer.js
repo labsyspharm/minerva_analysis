@@ -98,7 +98,6 @@ class DataLayer {
         document.body.appendChild(form);
         form.submit()
 
-
     }
 
 
