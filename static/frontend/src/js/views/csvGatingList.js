@@ -498,15 +498,15 @@ class CSVGatingList {
             .curve(d3.curveMonotoneX)
 
 
-        gSimple.call(sliderSimple);
         gSimple.selectAll('.distribution_line')
             .data([histogramData])
             .enter()
             .append('path')
             .attr('d', line)
             .attr('class', 'distribution_line')
-            .attr('transform', 'translate(0,-10)')
+            .attr('transform', 'translate(0,-12)')
             .attr('fill', 'none')
+        gSimple.call(sliderSimple);
 
 
         //slider value to be displayed closer to the slider than default

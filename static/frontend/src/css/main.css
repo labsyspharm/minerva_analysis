@@ -437,6 +437,10 @@ label {
     fill: none;
 }
 
+line.track {
+    stroke-width: 4px !important;
+}
+
 
 #drag-and-drop-text {
     font-size: 30pt;
