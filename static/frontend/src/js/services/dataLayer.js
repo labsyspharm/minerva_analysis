@@ -153,6 +153,20 @@ class DataLayer {
         }
     }
 
+    async submitGatingUpload(formData) {
+        try {
+            formData.append('datasource', datasource);
+            let response = await fetch('/upload_gates', {
+                method: "POST",
+                body: formData
+            })
+            let cell = await response.json();
+            return cell;
+        } catch (e) {
+            console.log("Error Getting Submitting Form Upload", e);
+        }
+    }
+
     async getGatedCellIds(filter) {
         try {
             let response = await fetch('/get_gated_cell_ids?' + new URLSearchParams({

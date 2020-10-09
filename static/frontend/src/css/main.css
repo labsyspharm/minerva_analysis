@@ -451,6 +451,10 @@ label {
     display: none;
 }
 
+#arrow-upload-form, #arrow-upload-form * {
+    display: none
+}
+
 /*#csv_gating_list * {*/
 /*    pointer-events: none;*/
 /*}*/

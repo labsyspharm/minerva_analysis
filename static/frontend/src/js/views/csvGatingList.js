@@ -114,7 +114,6 @@ class CSVGatingList {
         });
 
 
-        // Add events
         var dropzone = new Dropzone("#csv_gating_list", {
             url: "/upload_gates",
             clickable: false,
@@ -128,7 +127,34 @@ class CSVGatingList {
             return self.apply_gates()
         });
 
+        // Adding upload when you press on the up arrow
+        let arrow = document.getElementById('gating_upload_arrow')
 
+        function performClick(elemId) {
+
+        }
+
+        arrow.onclick = function () {
+            let elem = document.getElementById('gating-upload-from-arrow');
+            if (elem && document.createEvent) {
+                let evt = document.createEvent("MouseEvents");
+                evt.initEvent("click", true, false);
+                elem.dispatchEvent(evt);
+            }
+        }
+        document.getElementById("gating-upload-from-arrow").onchange = async function () {
+            if (document.getElementById("gating-upload-from-arrow").files) {
+                let file = document.getElementById("gating-upload-from-arrow").files[0]
+                let formData = new FormData();
+                formData.append("file", file);
+                await self.dataLayer.submitGatingUpload(formData);
+                document.getElementById("gating-upload-from-arrow").value = []
+                await self.apply_gates()
+            }
+        }
+
+
+        // Adding dropzone for CSV_Gating_List
         let parent = document.getElementById('csv_gating_list');
         let rect = parent.getBoundingClientRect();
         parent.addEventListener("dragover", (ev) => {
@@ -147,7 +173,7 @@ class CSVGatingList {
             document.getElementById('drag-and-drop-info').style.display = "none";
         })
 
-
+        // Add events
         self.add_events();
         self.add_events_linked();
     }
