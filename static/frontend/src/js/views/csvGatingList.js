@@ -5,7 +5,7 @@ class CSVGatingList {
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.selections = {};
-        this.maxSelections = 1;
+        this.maxSelections = 4;
         this.ranges = {};
         this.sliders = new Map();
         // this.imageBitRange = [0, 65536];
@@ -27,6 +27,11 @@ class CSVGatingList {
 
     selectChannel(name) {
         this.selections[this.dataLayer.getFullChannelName(name)] = this.sliders.get(name).value();
+        this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+    }
+
+    removeChannel(name) {
+        delete this.selections[this.dataLayer.getFullChannelName(name)];
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
     }
 
@@ -157,7 +162,7 @@ class CSVGatingList {
         if (status) {
 
             // Clear everything
-            clearOut();
+            // clearOut();
 
             // Don't add gating is the max are selected
             if (_.size(this.selections) >= this.maxSelections) {
@@ -174,13 +179,22 @@ class CSVGatingList {
 
         } else {
             // Clear panel visibility
-            clearOut();
+            // clearOut();
+
+            // Remove channel and rerender
+            this.removeChannel(name);
+
+            // Hide
+            d3.select(parent).classed("active", false);
+            svgCol.style.display = "none";
+            d3.select('div#csv_gating-slider_' + name).style('display', "none")
 
             // Trigger viewer cleanse
             this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         }
 
         // Abstracted clearing
+        /*
         function clearOut() {
 
             // Delete from active selections and deactivate
@@ -190,6 +204,7 @@ class CSVGatingList {
             d3.selectAll('.gating-svg-wrapper').style('display', "none");
             d3.selectAll('.csv_gating-slider').style('display', "none");
         }
+        */
 
         //
         let selectionsHeaderDiv = document.getElementById("csv_selected-gatings-header-div");
