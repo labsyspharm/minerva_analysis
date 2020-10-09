@@ -50,14 +50,14 @@
                 </span>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     {% for datasource in data.datasources %}
-                        <div class="row justify-content-between">
-                            <div class="col-4 navbar-datasource">
-                                <a class href="/{{ datasource }}">{{ datasource }}</a>
-                            </div>
-                            <div class="col-4 navbar-datasource-edit-button">
-                                <a href="/edit_config/{{ datasource }}"><span class="fas fa-pencil-alt"></span></a>
-                            </div>
+                    <div class="row justify-content-between">
+                        <div class="col-4 navbar-datasource">
+                            <a class href="/{{ datasource }}">{{ datasource }}</a>
                         </div>
+                        <div class="col-4 navbar-datasource-edit-button">
+                            <a href="/edit_config/{{ datasource }}"><span class="fas fa-pencil-alt"></span></a>
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
             </li>
@@ -68,95 +68,101 @@
     </div>
 </nav>
 {% if data.datasource %}
-    <div id="container" class="container">
-        <div id="row" class="row">
+<div id="container" class="container">
+    <div id="row" class="row">
 
-            <div class="col-sm-3" id="channel_list_wrapper">
-                <div id="lowRow1" class="row">
-                    <div id="boxHeading1" class="col-auto mr-auto">
-                        <span class="box-heading">Channels</span>
-                    </div>
-                    <div class="col-auto" id="selected-channels-header-div">
-                        <span class="selected-channels-header" id="num-selected-channels">0</span>
-                        <span class="selected-channels-header">of 4 (Max) Selected</span>
-                    </div>
+        <div class="col-sm-3" id="channel_list_wrapper">
+            <div id="lowRow1" class="row">
+                <div id="boxHeading1" class="col-auto mr-auto">
+                    <span class="box-heading">Channels</span>
                 </div>
-                <div id="channel_list">
-                    <div class="row">
-                        <div class="col-auto">
-                            <div class="lds-ellipsis" id="channel_list_loader">
-                            </div>
+                <div class="col-auto" id="selected-channels-header-div">
+                    <span class="selected-channels-header" id="num-selected-channels">0</span>
+                    <span class="selected-channels-header">of 4 (Max) Selected</span>
+                </div>
+            </div>
+            <div id="channel_list">
+                <div class="row">
+                    <div class="col-auto">
+                        <div class="lds-ellipsis" id="channel_list_loader">
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-sm-7" id="openseadragon_wrapper">
-                <div id="lowRow2" class="row">
-                    <div id="boxHeading2" class="col-auto mr-auto">
-                        <span class="box-heading">Viewer</span>
-                    </div>
+        <div class="col-sm-7" id="openseadragon_wrapper">
+            <div id="lowRow2" class="row">
+                <div id="boxHeading2" class="col-auto mr-auto">
+                    <span class="box-heading">Viewer</span>
                 </div>
-                <div id="openseadragon">
-                    <div class="row">
-                        <div class="col-auto">
-                            <div class="lds-ellipsis" id="openseadragon_loader">
-                            </div>
+            </div>
+            <div id="openseadragon">
+                <div class="row">
+                    <div class="col-auto">
+                        <div class="lds-ellipsis" id="openseadragon_loader">
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-lg-3" id="csv_channel_list_wrapper">
-                <div id="gating_download_panel">
-                    <a id="gating_exit">&#10006;</a>
-                    <label>Download gated channel ranges:
-                        <span class="download_flex">
+        <div class="col-lg-3" id="csv_channel_list_wrapper">
+            <div id="gating_download_panel">
+                <a id="gating_exit">&#10006;</a>
+                <label>Download gated channel ranges:
+                    <span class="download_flex">
                             <input id="download_input1" type="text" autocomplete="false" spellcheck="false"
                                    value="{{ data.datasources[0] }}_gated_channel_ranges.csv">
                             <a id="download_gated_channel_ranges" class="download_button">&#8679;</a>
                         </span>
-                    </label>
-                    <label>Download gated cell encodings:
-                        <span class="download_flex">
+                </label>
+                <label>Download gated cell encodings:
+                    <span class="download_flex">
                             <input id="download_input2" type="text" autocomplete="false" spellcheck="false"
                                    value="{{ data.datasources[0] }}_gated_cell_encodings.csv">
                             <a id="download_gated_cell_encodings" class="download_button">&#8679;</a>
                         </span>
-                    </label>
+                </label>
+            </div>
+            <div id="lowRow3" class="row">
+                <div id="boxHeading3" class="col-auto mr-auto">
+                    <span class="box-heading">CSV Gating</span>
                 </div>
-                <div id="lowRow3" class="row">
-                    <div id="boxHeading3" class="col-auto mr-auto">
-                        <span class="box-heading">CSV Gating</span>
-                    </div>
-                    <div class="col-auto" id="download-gating-header-div">
-                        <span id="gating_download_icon" class="selected-channels-header">&#8623;</span>
-                    </div>
+
+                <div class="col-auto" id="download-gating-header-div">
+                    <span id="gating_download_icon" class="selected-channels-header">&#8595;</span>
                 </div>
-                <div id="csv_gating_list">
-                    <div id="csv_gating_row" class="row">
-                        <div class="col-auto">
-                            <div class="lds-ellipsis" id="csv_gating_list_loader">
-                                <div></div>
-                                <div></div>
-                                <div></div>
-                                <div></div>
-                            </div>
+            </div>
+
+            <div id="csv_gating_list">
+                <div id="csv_gating_row" class="row">
+                    <div class="col-auto">
+                        <div class="lds-ellipsis" id="csv_gating_list_loader">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
                         </div>
                     </div>
                 </div>
-                <div id="gating_controls_panel">
-                    <label>Draw outlines
-                        <input id="gating_controls_outlines" type="checkbox" checked>
-                    </label>
+                <div id="drag-and-drop-info">
+                    <div class="d-flex justify-content-md-center align-items-center vh-100">
+                        <span id="drag-and-drop-text">Drag and Drop A Gating CSV File</span>
+                    </div>
                 </div>
-                <!--svg width="150" height="0" id="cell_legend"></svg>
-                <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors"-->
             </div>
-
+            <div id="gating_controls_panel">
+                <label>Draw outlines
+                    <input id="gating_controls_outlines" type="checkbox" checked>
+                </label>
+            </div>
+            <!--svg width="150" height="0" id="cell_legend"></svg>
+            <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors"-->
         </div>
-    </div>
-    <script src="../static/frontend/src/js/main.js"></script>
-{% endif %}
 
+    </div>
+</div>
+<script src="../static/frontend/src/js/main.js"></script>
+{% endif %}
 </body>

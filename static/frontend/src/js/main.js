@@ -39,6 +39,7 @@ d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
 async function init(conf) {
     // console.log('initialize system');
     config = conf;
+
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;

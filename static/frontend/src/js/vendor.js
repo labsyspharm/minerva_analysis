@@ -15,6 +15,7 @@ import Mark from 'mark.js'
 import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert'
+import Dropzone from 'dropzone'
 
 import * as OpenSeadragon from 'openseadragon';
 // import {ViewerManager} from './views/viewerManager';
@@ -29,6 +30,7 @@ window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
+window.Dropzone = Dropzone;
 // window.ViewerManager = ViewerManager;
 // window.CsvGatingOverlay = CsvGatingOverlay;
 

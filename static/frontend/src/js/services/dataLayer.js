@@ -80,15 +80,21 @@ class DataLayer {
         }
     }
 
-    downloadGatingCSV(selections) {
+    downloadGatingCSV(channels, selections, fullCsv = false) {
         let form = document.createElement("form");
         form.action = "/download_gating_csv";
         form.method = "post";
-        let filterElement = document.createElement("input");
-        filterElement.type = "hidden";
-        filterElement.value = JSON.stringify(selections);
-        filterElement.name = "filter";
-        form.appendChild(filterElement);
+        let selectionsElement = document.createElement("input");
+        selectionsElement.type = "hidden";
+        selectionsElement.value = JSON.stringify(selections);
+        selectionsElement.name = "filter";
+        form.appendChild(selectionsElement);
+
+        let channelsElement = document.createElement("input");
+        channelsElement.type = "hidden";
+        channelsElement.value = JSON.stringify(channels);
+        channelsElement.name = "channels";
+        form.appendChild(channelsElement);
 
         let datasourceElement = document.createElement("input");
         datasourceElement.type = "hidden";

@@ -249,7 +249,7 @@ def get_gated_cells(datasource, filter):
     return query
 
 
-def download_gating_csv(datasource, filter):
+def download_gating_csv(datasource, filter, channels):
     global database
     global source
     global ball_tree
@@ -272,11 +272,15 @@ def download_gating_csv(datasource, filter):
         idField = "CellID"
     columns.append(idField)
 
-    csv = pd.DataFrame(np.zeros((database.shape[0], len(columns))))
-    csv.columns = columns
+    csv = database.copy()
+
     csv[idField] = database['id']
-    for key, value in filter.items():
-        csv.loc[csv[idField].isin(ids), key] = 1
+    for channel in channels:
+        if channel in filter:
+            csv.loc[csv[idField].isin(ids), key] = 1
+            csv.loc[~csv[idField].isin(ids), key] = 0
+        else:
+            csv[channel] = 0
 
     return csv
 

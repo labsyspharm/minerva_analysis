@@ -436,3 +436,21 @@ label {
     stroke: rgba(130, 130, 130, 0.5);
     fill: none;
 }
+
+
+#drag-and-drop-text {
+    font-size: 30pt;
+    text-align: center;
+}
+
+#drag-and-drop-info {
+    display: none;
+}
+
+.dz-preview, .dz-file-preview {
+    display: none;
+}
+
+/*#csv_gating_list * {*/
+/*    pointer-events: none;*/
+/*}*/

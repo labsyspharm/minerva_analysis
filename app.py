@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response, jsonify
+from flask import Flask, render_template, request, Response, jsonify, abort
 from server import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
 import os
 import csv
@@ -475,6 +475,20 @@ def get_database_description():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/upload_gates', methods=['POST'])
+def upload_gates():
+    file = request.files['file']
+    if file.filename.endswith('.csv') == False:
+        abort(422)
+    datasource = request.form['datasource']
+    save_path = Path(os.path.join(os.getcwd())) / "static" / "data" / datasource
+    if save_path.is_dir() == False:
+        abort(422)
+
+    filename = 'uploaded_gates.csv'
+    file.save(Path(save_path / filename))
+
+
 @app.route('/get_rect_cells', methods=['GET'])
 def get_rect_cells():
     # Parse (rect - [x, y, r], channels [string])
@@ -492,7 +506,8 @@ def get_rect_cells():
 def download_gating_csv():
     datasource = request.form['datasource']
     filter = json.loads(request.form['filter'])
-    csv = dataFilter.download_gating_csv(datasource, filter)
+    channels = json.loads(request.form['channels'])
+    csv = dataFilter.download_gating_csv(datasource, filter, channels)
     return Response(
         csv.to_csv(index=False),
         mimetype="text/csv",

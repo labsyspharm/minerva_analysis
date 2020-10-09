@@ -37,24 +37,27 @@ class CSVGatingList {
 
     async init() {
         // this.rainbow.hide();
-        this.columns = await this.dataLayer.getChannelNames(true);
-        this.databaseDescription = await this.dataLayer.getDatabaseDescription();
+        const self = this;
+        self.columns = await self.dataLayer.getChannelNames(true);
+        self.databaseDescription = await self.dataLayer.getDatabaseDescription();
+        document.getElementById('drag-and-drop-info').style.display = "none";
         // Hide the Loader
         document.getElementById('csv_gating_list_loader').style.display = "none";
-        this.gating_list = document.getElementById("csv_gating_list");
+        self.gating_list = document.getElementById("csv_gating_list");
         let list = document.createElement("ul");
         list.classList.add("list-group")
-        this.gating_list.appendChild(list)
-        this.sliderWidth = document.getElementById("csv_gating_list").getBoundingClientRect().width;
+        list.setAttribute("id", "gating_list_ul")
+        self.gating_list.appendChild(list)
+        self.sliderWidth = document.getElementById("csv_gating_list").getBoundingClientRect().width;
         // Will show the picker when you click on a color rect
         let showPicker = () => {
-            this.colorTransfrHandle = d3.select(d3.event.target);
-            let color = this.colorTransferHandle.style('fill');
+            self.colorTransfrHandle = d3.select(d3.event.target);
+            let color = self.colorTransferHandle.style('fill');
             let hsl = d3.hsl(color);
-            this.rainbow.show(d3.event.clientX, d3.event.clientY);
+            self.rainbow.show(d3.event.clientX, d3.event.clientY);
         };
         // Draws rows in the gating list
-        _.each(this.columns, column => {
+        _.each(self.columns, column => {
             // div for each row in gating list
             let listItemParentDiv = document.createElement("div");
             listItemParentDiv.classList.add("list-group-item");
@@ -102,20 +105,49 @@ class CSVGatingList {
             gatingName.classList.add("gating-name");
             gatingName.textContent = column;
             nameCol.appendChild(gatingName);
-            listItemParentDiv.addEventListener("click", e => this.abstract_click(e, svgCol));
+            listItemParentDiv.addEventListener("click", e => self.abstract_click(e, svgCol));
             list.appendChild(listItemParentDiv);
 
             //add and hide gating sliders (will be visible when gating is active)
-            const fullName = this.dataLayer.getFullChannelName(column)
-            const sliderRange = [this.databaseDescription[fullName].min, this.databaseDescription[fullName].max]
-            this.addSlider(sliderRange, sliderRange, column, this.sliderWidth);
+            const fullName = self.dataLayer.getFullChannelName(column)
+            const sliderRange = [self.databaseDescription[fullName].min, self.databaseDescription[fullName].max]
+            self.addSlider(sliderRange, sliderRange, column, self.sliderWidth);
             d3.select('div#csv_gating-slider_' + column).style('display', "none");
         });
 
 
         // Add events
-        this.add_events();
-        this.add_events_linked();
+        var dropzone = new Dropzone("#csv_gating_list", {
+            url: "/upload_gates",
+            clickable: false,
+            disablePreview: true,
+            createImageThumbnails: false
+        });
+        dropzone.on("sending", function (file, xhr, formData) {
+            formData.append("datasource", datasource);
+        });
+
+        let parent = document.getElementById('csv_gating_list');
+        let rect = parent.getBoundingClientRect();
+        parent.addEventListener("dragover", (ev) => {
+            document.getElementById('gating_list_ul').style.display = "none";
+            document.getElementById('drag-and-drop-info').style.display = "block";
+        })
+        parent.addEventListener("dragleave", (ev) => {
+            if (ev.x > rect.left + rect.width || ev.x < rect.left
+                || ev.y > rect.top + rect.height || ev.y < rect.top) {
+                document.getElementById('gating_list_ul').style.display = "block";
+                document.getElementById('drag-and-drop-info').style.display = "none";
+            }
+        })
+        parent.addEventListener("drop", (ev) => {
+            document.getElementById('gating_list_ul').style.display = "block";
+            document.getElementById('drag-and-drop-info').style.display = "none";
+        })
+
+
+        self.add_events();
+        self.add_events_linked();
     }
 
     /**
@@ -266,29 +298,28 @@ class CSVGatingList {
 
         // Download gated channel ranges
         download_gated_channel_ranges.addEventListener('click', () => {
-
-            // Format at csv
-            const rows = [['channel_name', 'gated_min', 'gated_max']];
-            for (let key in this.gating_channels) {
-                rows.push([key, this.gating_channels[key][0], this.gating_channels[key][1]]);
-            }
-            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-
-            // Download - ref. https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", download_input1.value);
-            document.body.appendChild(link);
-            link.click();
+            let test = ''
+            self.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, false);
+            // // Format at csv
+            // const rows = [['channel_name', 'gated_min', 'gated_max']];
+            // for (let key in this.gating_channels) {
+            //     rows.push([key, this.gating_channels[key][0], this.gating_channels[key][1]]);
+            // }
+            // const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+            //
+            // // Download - ref. https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
+            // const encodedUri = encodeURI(csvContent);
+            // const link = document.createElement("a");
+            // link.setAttribute("href", encodedUri);
+            // link.setAttribute("download", download_input1.value);
+            // document.body.appendChild(link);
+            // link.click();
 
         })
 
         // Download gated channel ranges
         download_gated_cell_encodings.addEventListener('click', () => {
-            console.log(download_input2.value);
-            console.log(this.gating_channels)
-            self.dataLayer.downloadGatingCSV(this.gating_channels)
+            self.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, true);
         })
 
         // Toggle outlined / filled cell selections
@@ -421,22 +452,31 @@ class CSVGatingList {
 
 
         return sliderSimple;
-    };
+    }
+    ;
 }
 
-window.addEventListener("resize", function () {
-    //reinitialize slider on window change..(had some bug updating with via d3 update)
-    if (csv_gatingList) {
-        csv_gatingList.sliders.forEach(function (slider, name) {
-            d3.select('div#csv_gating-slider_' + name).select('svg').remove();
-            csv_gatingList.addSlider(csv_gatingList.imageBitRange, slider.value(), name,
-                document.getElementById("csv_gating_list").getBoundingClientRect().width);
-        });
-    }
-});
+window
+    .addEventListener(
+        "resize"
+        ,
+
+        function () {
+            //reinitialize slider on window change..(had some bug updating with via d3 update)
+            if (csv_gatingList) {
+                csv_gatingList.sliders.forEach(function (slider, name) {
+                    d3.select('div#csv_gating-slider_' + name).select('svg').remove();
+                    csv_gatingList.addSlider(csv_gatingList.imageBitRange, slider.value(), name,
+                        document.getElementById("csv_gating_list").getBoundingClientRect().width);
+                });
+            }
+        }
+    )
+;
 
 //static vars
-CSVGatingList.events = {
+CSVGatingList
+    .events = {
     GATING_BRUSH_MOVE: "GATING_BRUSH_MOVE",
     GATING_BRUSH_END: "GATING_BRUSH_END",
     GATING_COLOR_TRANSFER_CHANGE_MOVE: "GATING_TRANSFER_CHANGE_MOVE",
