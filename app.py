@@ -487,6 +487,8 @@ def upload_gates():
 
     filename = 'uploaded_gates.csv'
     file.save(Path(save_path / filename))
+    resp = jsonify(success=True)
+    return resp
 
 
 @app.route('/get_rect_cells', methods=['GET'])
@@ -507,12 +509,27 @@ def download_gating_csv():
     datasource = request.form['datasource']
     filter = json.loads(request.form['filter'])
     channels = json.loads(request.form['channels'])
-    csv = dataFilter.download_gating_csv(datasource, filter, channels)
+    fullCsv = json.loads(request.form['fullCsv'])
+    if fullCsv:
+        csv = dataFilter.download_gating_csv(datasource, filter, channels)
+    else:
+        csv = dataFilter.download_gates(datasource, filter, channels)
     return Response(
         csv.to_csv(index=False),
         mimetype="text/csv",
         headers={"Content-disposition":
                      "attachment; filename=gating_csv.csv"})
+
+
+@app.route('/get_uploaded_gating_csv_values', methods=['GET'])
+def get_gating_csv_values():
+    datasource = request.args.get('datasource')
+    file_path = Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / 'uploaded_gates.csv'
+    if file_path.is_file() == False:
+        abort(422)
+    csv = pd.read_csv(file_path)
+    obj = csv.to_dict(orient='records')
+    return serialize_and_submit_json(obj)
 
 
 def serialize_and_submit_json(data):

@@ -9,16 +9,13 @@ class CSVGatingList {
         this.ranges = {};
         this.sliders = new Map();
         // this.imageBitRange = [0, 65536];
-
         this.container = d3.select("#csv_gating_list");
-
         // Gating vars
         this.global_channel_list = channelList;
         this.global_image_channels = imageChannels;
         this.gating_default_range = [0, 65536];
         this.gating_channels = this.init_gating_channels();
         this.gating_list = null;
-
         // Download vars
         this.download_panel_visible = false;
         this.download_input1 = null;
@@ -109,8 +106,9 @@ class CSVGatingList {
             list.appendChild(listItemParentDiv);
 
             //add and hide gating sliders (will be visible when gating is active)
-            const fullName = self.dataLayer.getFullChannelName(column)
-            const sliderRange = [self.databaseDescription[fullName].min, self.databaseDescription[fullName].max]
+            const fullName = self.dataLayer.getFullChannelName(column);
+            const sliderRange = [self.databaseDescription[fullName].min, self.databaseDescription[fullName].max];
+            self.gating_channels[fullName] = sliderRange;
             self.addSlider(sliderRange, sliderRange, column, self.sliderWidth);
             d3.select('div#csv_gating-slider_' + column).style('display', "none");
         });
@@ -126,6 +124,10 @@ class CSVGatingList {
         dropzone.on("sending", function (file, xhr, formData) {
             formData.append("datasource", datasource);
         });
+        dropzone.on("queuecomplete", function (file, xhr, formData) {
+            return self.apply_gates()
+        });
+
 
         let parent = document.getElementById('csv_gating_list');
         let rect = parent.getBoundingClientRect();
@@ -150,6 +152,38 @@ class CSVGatingList {
         self.add_events_linked();
     }
 
+    async apply_gates() {
+        const self = this;
+        let gates = await self.dataLayer.getUploadedGatingCsvValues()
+        _.each(gates, col => {
+            let shortName = self.dataLayer.getShortChannelName(col.channel);
+            if (self.sliders.get(shortName)) {
+                self.sliders.get(shortName).value([col.gate_start, col.gate_end]);
+                this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
+                if (col.gate_active) {
+                    // IF the channel isn't active, make it so
+                    if (!self.selections[col.channel]) {
+                        let selector = `#csv_gating-slider_${shortName}`;
+                        document.querySelector(selector).click();
+                    }
+                    self.selections[col.channel] = [col.gate_start, col.gate_end];
+
+                    // For records
+
+                } else {
+                    // If channel is currently active, but shouldn't be, update it
+                    if (self.selections[col.channel]) {
+                        let selector = `#csv_gating-slider_${shortName}`;
+                        document.querySelector(selector).click();
+                    }
+                    delete this.selections[col.channel];
+                }
+            }
+        })
+        this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+
+    }
+
     /**
      * @function init_gating_channels
      *
@@ -162,6 +196,7 @@ class CSVGatingList {
 
         // Iterate to create fields
         for (let key in this.global_image_channels) {
+
             obj[key] = this.gating_default_range;
         }
 
@@ -350,17 +385,19 @@ class CSVGatingList {
                     if (!svgEls.includes(e.target.tagName)) {
 
                         // Get channel name
-                        const name = e.target.querySelector(`.${target_class}`).innerText;
+                        const name = _.get(e.target.querySelector(`.${target_class}`), 'innerText');
 
                         // Find match el in gating list
-                        const match = Array.from(matches).find(
-                            gLC => gLC.querySelector(`.${match_class}`).innerText === name);
+                        if (name) {
+                            const match = Array.from(matches).find(
+                                gLC => gLC.querySelector(`.${match_class}`).innerText === name);
 
-                        // Emulate click to trigger event in csvGatingList.js
-                        if (match && !Array.from(match.classList).includes('active')) {
-                            const fakeEvent = {target: match};
-                            const svgCol = match.querySelector('.col-svg-wrapper')
-                            global.abstract_click(fakeEvent, svgCol);
+                            // Emulate click to trigger event in csvGatingList.js
+                            if (match && !Array.from(match.classList).includes('active')) {
+                                const fakeEvent = {target: match};
+                                const svgCol = match.querySelector('.col-svg-wrapper')
+                                global.abstract_click(fakeEvent, svgCol);
+                            }
                         }
                     }
                 });

@@ -231,7 +231,7 @@ def get_rect_cells(datasource, rect, channels):
         return {}
 
 
-def get_gated_cells(datasource, filter):
+def get_gated_cells(datasource, gates):
     global database
     global source
     global ball_tree
@@ -241,15 +241,17 @@ def get_gated_cells(datasource, filter):
         load_ball_tree(datasource)
 
     query_string = ''
-    for key, value in filter.items():
+    for key, value in gates.items():
         if query_string != '':
             query_string += ' and '
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+    if query_string == None or query_string == "":
+        return []
     query = database.query(query_string)[['id']].to_dict(orient='records')
     return query
 
 
-def download_gating_csv(datasource, filter, channels):
+def download_gating_csv(datasource, gates, channels):
     global database
     global source
     global ball_tree
@@ -260,7 +262,7 @@ def download_gating_csv(datasource, filter, channels):
 
     query_string = ''
     columns = []
-    for key, value in filter.items():
+    for key, value in gates.items():
         columns.append(key)
         if query_string != '':
             query_string += ' and '
@@ -276,12 +278,33 @@ def download_gating_csv(datasource, filter, channels):
 
     csv[idField] = database['id']
     for channel in channels:
-        if channel in filter:
+        if channel in gates:
             csv.loc[csv[idField].isin(ids), key] = 1
             csv.loc[~csv[idField].isin(ids), key] = 0
         else:
             csv[channel] = 0
 
+    return csv
+
+
+def download_gates(datasource, gates, channels):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+    arr = []
+    for key, value in channels.items():
+        arr.append([key, value[0], value[1]])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'gate_start', 'gate_end']
+    csv['gate_active'] = False
+    for channel in gates:
+        csv.loc[csv['channel'] == channel, 'gate_active'] = True
+        csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
+        csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
     return csv
 
 

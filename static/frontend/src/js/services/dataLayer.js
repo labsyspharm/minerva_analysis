@@ -80,10 +80,30 @@ class DataLayer {
         }
     }
 
+    async getUploadedGatingCsvValues() {
+        try {
+            let response = await fetch('/get_uploaded_gating_csv_values?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Uploaded Gates", e);
+        }
+    }
+
     downloadGatingCSV(channels, selections, fullCsv = false) {
         let form = document.createElement("form");
         form.action = "/download_gating_csv";
+
         form.method = "post";
+
+        let fullCsvElemment = document.createElement("input");
+        fullCsvElemment.type = "hidden";
+        fullCsvElemment.value = _.toString(fullCsv);
+        fullCsvElemment.name = "fullCsv";
+        form.appendChild(fullCsvElemment);
+
         let selectionsElement = document.createElement("input");
         selectionsElement.type = "hidden";
         selectionsElement.value = JSON.stringify(selections);
