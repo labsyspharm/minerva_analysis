@@ -40,6 +40,7 @@ class CSVGatingList {
         let list = document.createElement("ul");
         list.classList.add("list-group")
         this.gating_list.appendChild(list)
+        this.sliderWidth = document.getElementById("csv_gating_list").getBoundingClientRect().width;
         // Will show the picker when you click on a color rect
         let showPicker = () => {
             this.colorTransfrHandle = d3.select(d3.event.target);
@@ -102,9 +103,10 @@ class CSVGatingList {
             //add and hide gating sliders (will be visible when gating is active)
             const fullName = this.dataLayer.getFullChannelName(column)
             const sliderRange = [this.databaseDescription[fullName].min, this.databaseDescription[fullName].max]
-            this.addSlider(sliderRange, sliderRange, column, document.getElementById("csv_gating_list").getBoundingClientRect().width);
+            this.addSlider(sliderRange, sliderRange, column, this.sliderWidth);
             d3.select('div#csv_gating-slider_' + column).style('display', "none");
         });
+
 
         // Add events
         this.add_events();
@@ -333,6 +335,8 @@ class CSVGatingList {
     addSlider(data, activeRange, name, swidth) {
 
         const self = this;
+        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
+
         //add range slider row content
         var sliderSimple = d3.slider
             .sliderBottom()
@@ -352,7 +356,6 @@ class CSVGatingList {
                 self.selections[self.dataLayer.getFullChannelName(name)] = range;
                 let packet = self.selections;
                 this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, packet);
-
                 // For records
                 this.gating_channels[self.dataLayer.getFullChannelName(name)] = range;
             });
@@ -363,15 +366,44 @@ class CSVGatingList {
             .select('#csv_gating-slider_' + name)
             .append('svg')
             .attr('class', 'svgslider')
+            .attr('id', '#csv_gating-slider_svg_' + name)
             .attr('width', swidth)
             .attr('height', 30)
             .append('g')
-            .attr('transform', 'translate(20,10)');
+            .attr('transform', 'translate(20,13)');
+        let xScale = d3.scaleLinear()
+            .domain([0, _.max(_.map(histogramData, e => e.x))]) // input
+            .range([0, swidth - 60])
+
+        let yScale = d3.scaleLinear()
+            .domain([_.max(_.map(histogramData, e => e.y)), 0])
+            .range([0, 10])
+
+        let line = d3.line()
+            .x(d => {
+                return xScale(d.x)
+            })
+            .y(d => {
+                return yScale(d.y)
+            })
+            .curve(d3.curveMonotoneX)
+
+
         gSimple.call(sliderSimple);
+        gSimple.selectAll('.distribution_line')
+            .data([histogramData])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'distribution_line')
+            .attr('transform', 'translate(0,-10)')
+            .attr('fill', 'none')
+
 
         //slider value to be displayed closer to the slider than default
         d3.selectAll('.parameter-value').select('text')
             .attr("y", 10);
+
 
         return sliderSimple;
     };

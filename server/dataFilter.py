@@ -289,5 +289,16 @@ def get_database_description(datasource):
     # Load if not loaded
     if datasource != source:
         load_ball_tree(datasource)
-
-    return database.describe().to_dict()
+    description = database.describe().to_dict()
+    for column in description:
+        [hist, bin_edges] = np.histogram(database[column].to_numpy(), bins=50, density=True)
+        midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+        description[column]['histogram'] = {}
+        dat = []
+        for i in range(len(hist)):
+            obj = {}
+            obj['x'] = midpoints[i]
+            obj['y'] = hist[i]
+            dat.append(obj)
+        description[column]['histogram'] = dat
+    return description

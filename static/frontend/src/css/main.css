@@ -145,7 +145,7 @@ body {
 #channel_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
-    height:50px;
+    height: 50px;
 }
 
 #channel_list .list-group {
@@ -160,7 +160,7 @@ body {
 #csv_gating_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
-    height:50px;
+    height: 50px;
 }
 
 #csv_gating_list .list-group {
@@ -179,7 +179,7 @@ body {
     cursor: move;
 }
 
-.slider text{
+.slider text {
     margin-top: -10px;
     font-size: 8px;
 }
@@ -430,4 +430,9 @@ label {
     stroke: steelblue;
     stroke-width: 3px;
     vector-effect: non-scaling-stroke;
+}
+
+.distribution_line {
+    stroke: rgba(130, 130, 130, 0.5);
+    fill: none;
 }

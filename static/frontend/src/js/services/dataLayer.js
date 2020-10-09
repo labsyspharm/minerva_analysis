@@ -101,6 +101,18 @@ class DataLayer {
 
     }
 
+    async getColumnDistributions(columns) {
+        try {
+            let response = await fetch('/get_column_distributions?' + new URLSearchParams({
+                columns: columns,
+                datasource: datasource
+            }))
+            let distributions = await response.json();
+            return distributions;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
 
     async getNearestCell(point_x, point_y) {
         try {
