@@ -333,8 +333,15 @@ class ImageViewer {
         var channelTileAdr = tile.url.replace(somePath, channelPath);
         var channelTile = seaDragonViewer.tileCache[channelTileAdr];
 
-        if (channelTile == null) {
-            return;
+        if (channelTile === null || !channelTile) {
+            // console.log("No Channel Either");
+            await addTile(channelTileAdr);
+            channelTile = seaDragonViewer.tileCache[channelTileAdr];
+
+            // FIXME : clearing errors from console but watch for side effects
+            if (channelTile === null || !channelTile) {
+                return;
+            }
         }
         var channelTileData = channelTile.data;
 
@@ -351,8 +358,8 @@ class ImageViewer {
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !seaDragonViewer.noLabel) {
-            console.log("Missing Label Tile", labelTileAdr)
-            const loaded = await addTile(labelTileAdr);
+            // console.log("Missing Label Tile", labelTileAdr)
+            await addTile(labelTileAdr);
             labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
         // check if there is a label present
@@ -469,8 +476,14 @@ class ImageViewer {
             var channelTileAdr = tileurl.replace(somePath, channelPath);
             var channelTile = seaDragonViewer.tileCache[channelTileAdr];
 
-            if (channelTile == null) {
-                return;
+            if (channelTile === null || !channelTile) {
+                // console.log("No Channel Either");
+                await addTile(channelTileAdr);
+                channelTile = seaDragonViewer.tileCache[channelTileAdr];
+                // FIXME : clearing errors from console but watch for side effects
+                if (channelTile === null || !channelTile) {
+                    return;
+                }
             }
 
             channelsTileData.push(channelTile.data);
@@ -484,8 +497,8 @@ class ImageViewer {
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !seaDragonViewer.noLabel) {
-            console.log("Missing Label Tile", labelTileAdr)
-            const loaded = await addTile(labelTileAdr);
+            // console.log("Missing Label Tile", labelTileAdr)
+            await addTile(labelTileAdr);
             labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
 
@@ -852,30 +865,21 @@ function evaluateTF(val, tf) {
 }
 
 async function addTile(path) {
-
-    function addTileResponse(success, error) {
-        if (error) {
-            console.log("Error Adding Tile:", error)
+    const promiseWrapper = new Promise((resolve, reject) => {
+        function addTileResponse(success, error) {
+            // console.log("Emergency Added Tile:", path);
+            resolve();
         }
-        console.log("Emergency Added Tile:", path)
-    }
 
-    const options = {
-        src: path,
-        loadWithAjax: true,
-        crossOriginPolicy: false,
-        ajaxWithCredentials: false,
-        callback: addTileResponse
-    }
-    return new Promise(resolve => {
-        return seaDragonViewer.viewer.imageLoader.addJob(options)
+        const options = {
+            src: path,
+            loadWithAjax: true,
+            crossOriginPolicy: false,
+            ajaxWithCredentials: false,
+            callback: addTileResponse
+        }
+        seaDragonViewer.viewer.imageLoader.addJob(options)
     })
-        .then(response => {
-            return Promise.resolve()
-        })
-        .catch(err => {
-            return Promise.resolve()
-        })
-
+    return Promise.all([promiseWrapper])
 
 }

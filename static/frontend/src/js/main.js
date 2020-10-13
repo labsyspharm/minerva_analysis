@@ -62,7 +62,6 @@ async function init(conf) {
     starplot = new Starplot('barchart_display', colorScheme);
     clusterData = await dataLayer.getClusterCells()
     starplot.init(clusterData);
-
 }
 
 //feature color map changed in ridge plot
@@ -159,11 +158,11 @@ function updateSeaDragonSelection(showCellInfoPanel = false) {
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
-    if (showCellInfoPanel) {
-        document.getElementById("cell_wrapper").style.display = "block";
-    } else {
-        document.getElementById("cell_wrapper").style.display = "none";
-    }
+    // if (showCellInfoPanel) {
+    //     document.getElementById("cell_wrapper").style.display = "block";
+    // } else {
+    //     document.getElementById("cell_wrapper").style.display = "none";
+    // }
     seaDragonViewer.updateSelection(selectionHashMap);
 }
 

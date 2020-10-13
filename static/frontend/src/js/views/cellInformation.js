@@ -56,7 +56,7 @@ class CellInformation {
         let docHeight = 20 + _.size(this.phenotypes) * (size + 5);
         let colorMap = this.colorScheme.colorMap;
         let data = _.map(this.phenotypes, phenotype => {
-            return {'phenotype': phenotype, 'color': `#${colorMap[phenotype].hex}`};
+            return {'phenotype': phenotype, 'color': `${colorMap[phenotype].hex}`};
         })
         document.getElementById('cell_legend').setAttribute("height", `${docHeight}px`);
 
@@ -88,7 +88,7 @@ class CellInformation {
                 return 10 + i * (size + 5) + (size / 2)
             }) // 100 is where the first dot appears. 25 is the distance between dots
             .style("fill", d => {
-                return d.color;
+                return '#000000';
             })
             .text(d => {
                 let phenotype = d.phenotype;
@@ -118,7 +118,7 @@ class CellInformation {
 
     fillCellIcon(phenotype) {
         let path = _.first(document.getElementById("cell_icon").getElementsByTagName('path'));
-        path.setAttribute('style', `fill: #${this.colorScheme.colorMap[phenotype].hex}`);
+        path.setAttribute('style', `fill: ${this.colorScheme.colorMap[phenotype].hex}`);
     }
 }
 

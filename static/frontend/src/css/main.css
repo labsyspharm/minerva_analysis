@@ -117,7 +117,7 @@ body {
 }
 
 #cell_wrapper {
-    display: none;
+    display: block;
 }
 
 #compute_neighborhood_button {
