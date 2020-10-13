@@ -88,10 +88,9 @@ class ImageViewer {
 
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
-
         /************************************************************************************* Lensing Implementation */
 
-        // Get filters data
+            // Get filters data
         const dataLoad = LensingFiltersExt.getFilters(this);
 
         // Instantiate viewer
@@ -107,7 +106,6 @@ class ImageViewer {
         that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
 
         /******************************************************************************************** Back to normal  */
-
         /* TODO - unused
         // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
         this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
@@ -195,10 +193,11 @@ class ImageViewer {
         const coords = this.viewer.viewport.imageToViewportCoordinates(x, y);
         const lowerBounds = this.viewer.viewport.imageToViewportCoordinates(width, height);
         const box1 = new OpenSeadragon.Rect(coords.x, coords.y, lowerBounds.x, lowerBounds.y);
+
         // Apply to all viewers
         this.viewerManagers.forEach(vM => {
             vM.viewer.viewport.fitBounds(box1);
-        })
+        });
     }
 
     // =================================================================================================================

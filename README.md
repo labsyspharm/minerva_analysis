@@ -22,5 +22,5 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 * I've included the windows libvips binary in the package for convenience.
 #### 6. Start the Server
 * Navigate to your project root folder and run your server with `waitress`
-* `python app.py` or `waitress-serve --listen=*:5000 app:app`
+* `python app.py` or `waitress-serve --listen=*:5006 app:app`
 

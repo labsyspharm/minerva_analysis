@@ -13,7 +13,7 @@ export class LensingFiltersExt {
 
         const imageViewer = _imageViewer;
 
-        /////////////////////////////////////////////////////////////////////////////////////// Data load 2 - rgb filter
+        /////////////////////////////////////////////////////////////////////////////////////// Data load 1 - rgb filter
         const data_colors = [
             {
                 index: 0,
@@ -389,7 +389,6 @@ export class LensingFiltersExt {
                             dataLayer.getNeighborhood(newRad, pos[0], pos[1]).then(arr => {
                                 const stop = performance.now()
                                 const time = stop - start;
-                                console.log(arr.length, time)
 
                                 // Loaded
                                 dataLoad2.config.filterCode.settings.loading = false;
