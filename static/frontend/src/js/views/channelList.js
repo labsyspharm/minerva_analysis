@@ -196,10 +196,10 @@ class ChannelList {
                 .type(d3.symbolCircle)
                 .size(100))
             .tickValues([]).on('onchange', range => {
-                console.log('trigger gating event');
+                // console.log('trigger gating event');
                 let packet = {name: name, dataRange: range};
                 this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-                console.log('gating event triggered');
+                // console.log('gating event triggered');
         });
         this.sliders.set(name, sliderSimple);
 

@@ -40,7 +40,7 @@ def convertTifToPyramid(channel_img, destFile, isLabelImg):
         if not isLabelImg:
             image.dzsave(destFile, tile_size=128, overlap=2, suffix='.png')
         else:
-            image.dzsave(destFile, tile_size=128, overlap=2, region_shrink='mode', suffix='.png')
+            image.dzsave(destFile, tile_size=128, overlap=2, region_shrink='nearest', suffix='.png')
 
 
 def convertOmeTiff(filePath, fileName, isLabelImg=False):

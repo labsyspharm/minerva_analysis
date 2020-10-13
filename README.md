@@ -19,9 +19,8 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 ##### Mac/Linux Users:
 *  Install the `libvips` CLI w/ homebrew for macOS, `brew install libvips`. Linux users, see instructions on the [libvips page](https://libvips.github.io/libvips/install.html)
 ##### Windows Users:
-* Install `pyvips` with pip, `pip install pyvips`. I've included the windows libvips binary in the package for convenience.
+* I've included the windows libvips binary in the package for convenience.
 #### 6. Start the Server
-* Navigate to your project root folder and run your server `python-m flask run`  / `python.exe -m flask run`
-* The tool is by default available http://127.0.0.1:5000/ 
-
+* Navigate to your project root folder and run your server with `waitress`
+* `python app.py` or `waitress-serve --listen=*:5006 app:app`
 

@@ -89,6 +89,7 @@ class ImageViewer {
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
+
         /************************************************************************************* Lensing Implementation */
 
             // Get filters data
@@ -106,7 +107,7 @@ class ImageViewer {
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
 
-        /************************************************************************************* Create viewer managers */
+        /*** Moving on */
 
         /* TODO - unused
         // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
@@ -196,10 +197,11 @@ class ImageViewer {
         const coords = this.viewer.viewport.imageToViewportCoordinates(x, y);
         const lowerBounds = this.viewer.viewport.imageToViewportCoordinates(width, height);
         const box1 = new OpenSeadragon.Rect(coords.x, coords.y, lowerBounds.x, lowerBounds.y);
+
         // Apply to all viewers
         this.viewerManagers.forEach(vM => {
             vM.viewer.viewport.fitBounds(box1);
-        })
+        });
     }
 
     // =================================================================================================================
