@@ -16,9 +16,9 @@ import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert'
 import * as OpenSeadragon from 'openseadragon';
+import {ViewerManager} from './views/viewerManager';
 import * as Lensing from 'lensing';
-import {ViewerManager} from './viewerManager'
-import {LensingFiltersExt} from './lensingFiltersExt'
+import {LensingFiltersExt} from './lensingFiltersExt';
 
 window.convert = convert;
 window.$ = $;

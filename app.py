@@ -3,6 +3,7 @@ from server import mostFrequentLongestSubstring, fullConversion, pre_normalizati
 import os
 import csv
 from pathlib import Path
+from waitress import serve
 from time import time
 from scipy.spatial import cKDTree
 import numpy as np
@@ -11,6 +12,7 @@ import json
 import orjson
 
 app = Flask(__name__)
+
 config_json_path = Path("static/data") / "config.json"
 
 
@@ -468,4 +470,5 @@ def serialize_and_submit_json(data):
 
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.run(debug=True, use_reloader=True)
+    # 100 GB file Max
+    serve(app, host='0.0.0.0', port=8000,max_request_body_size=107374182400)

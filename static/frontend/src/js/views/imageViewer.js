@@ -106,14 +106,13 @@ class ImageViewer {
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
 
-        /************************************************************************************* Create viewer managers */
+        /******************************************************************************************** Back to normal  */
 
         /* TODO - unused
         // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
         this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
                 const context = opts.context;
-
                 //area selection polygon
                 if (that.selectionPolygonToDraw && that.selectionPolygonToDraw.length > 0) {
                     var d = that.selectionPolygonToDraw;
@@ -135,6 +134,7 @@ class ImageViewer {
                 }
             },
         });
+        */
 
         // Add event mouse handler (cell selection)
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
@@ -147,8 +147,6 @@ class ImageViewer {
                 const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
                 // Convert from viewport coordinates to image coordinates.
                 const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-                //var imagePoint = that.viewer.viewport.viewportToImageCoordinates(viewportPoint);
-                // // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
 
                 return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
                     .then(selectedItem => {
@@ -167,7 +165,6 @@ class ImageViewer {
                     })
             }
         });
-        */
 
     }
 
@@ -193,13 +190,15 @@ class ImageViewer {
      * @returns void
      */
     setViewPort(x, y, width, height) {
-        // Calc
+
+        // Calc from main viewer
         const coords = this.viewer.viewport.imageToViewportCoordinates(x, y);
         const lowerBounds = this.viewer.viewport.imageToViewportCoordinates(width, height);
         const box1 = new OpenSeadragon.Rect(coords.x, coords.y, lowerBounds.x, lowerBounds.y);
-        // Apply
-        this.viewer.viewport.fitBounds(box1);
-        this.viewer.lensing.viewer_aux.viewport.fitBounds(box1);
+        // Apply to all viewers
+        this.viewerManagers.forEach(vM => {
+            vM.viewer.viewport.fitBounds(box1);
+        })
     }
 
     // =================================================================================================================
@@ -302,14 +301,15 @@ class ImageViewer {
      * @param dragging
      */
     drawCellRadius(radius, selection, dragging = false) {
+
         let x = selection[dataLayer.x];
         let y = selection[dataLayer.y];
-        let imagePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x, y);
-        let circlePoint = seaDragonViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(x + _.toNumber(radius), y);
+        let imagePoint = this.viewer.world.getItemAt(0).imageToViewportCoordinates(x, y);
+        let circlePoint = this.viewer.world.getItemAt(0).imageToViewportCoordinates(x + _.toNumber(radius), y);
         let viewportRadius = Math.abs(circlePoint.x - imagePoint.x);
         let overlay = seaDragonViewer.viewer.svgOverlay();
         let fade = 0;
-        // when dragging the bar, don't fade out
+        // When dragging the bar, don't fade out
         if (dragging) {
             fade = 1;
         }
@@ -347,10 +347,10 @@ class ImageViewer {
      */
     forceRepaint() {
         // Refilter, redraw
-        seaDragonViewer.viewer.forceRefilter();
-        seaDragonViewer.viewer.forceRedraw();
-        seaDragonViewer.viewer.lensing.viewer_aux.forceRefilter();
-        seaDragonViewer.viewer.lensing.viewer_aux.forceRedraw();
+        this.viewerManagers.forEach(vM => {
+            vM.viewer.forceRefilter();
+            vM.viewer.forceRedraw();
+        });
     }
 
     /**
@@ -364,9 +364,7 @@ class ImageViewer {
      */
     updateActiveChannels(name, selection, status) {
 
-        var channelIdx = imageChannels[name];
-
-        // console.log('seaDragon: update active channels event received. channel ', channelIdx);
+        const channelIdx = imageChannels[name];
 
         if (selection.length === 0) {
             // console.log('nothing selected - keep showing last image');
@@ -378,16 +376,16 @@ class ImageViewer {
         }
 
         if (status) {
-            // console.log('channel added');
-            this.viewerManagerVMain.add_channel(channelIdx);
-            this.viewerManagerVAuxi.add_channel(channelIdx);
+            this.viewerManagers.forEach(vM => {
+                vM.channel_add(channelIdx);
+            });
         } else {
-            // console.log('channel removed');
-            this.viewerManagerVMain.removeChannel(channelIdx);
-            this.viewerManagerVAuxi.removeChannel(channelIdx);
+            this.viewerManagers.forEach(vM => {
+                vM.channel_remove(channelIdx);
+            });
         }
 
-        seaDragonViewer.forceRepaint();
+        this.forceRepaint();
     }
 
     /**
@@ -401,7 +399,6 @@ class ImageViewer {
      */
     updateChannelRange(name, tfmin, tfmax) {
 
-        // console.log('updating TF range');
         const channelIdx = imageChannels[name];
 
         const min = tfmin;
@@ -425,21 +422,12 @@ class ImageViewer {
      */
     updateChannelColors(name, color, type) {
 
-        /*
-        example:
-        name: "DNA4_Hoechst33342_12Nuclei"
-        color: "rgb(177, 0, 255)"
-        type: "right"
-        */
-
-        // console.log('seaDragon: update channel colors event received ');
-
         const channelIdx = imageChannels[name];
 
-        const min = seaDragonViewer.channelTF[channelIdx].min;
-        const max = seaDragonViewer.channelTF[channelIdx].max;
-        let rgb1 = seaDragonViewer.channelTF[channelIdx].start_color;
-        let rgb2 = seaDragonViewer.channelTF[channelIdx].end_color;
+        const min = this.channelTF[channelIdx].min;
+        const max = this.channelTF[channelIdx].max;
+        let rgb1 = this.channelTF[channelIdx].start_color;
+        let rgb2 = this.channelTF[channelIdx].end_color;
         if (type === "black") {
             rgb1 = color;
         } else {
@@ -447,8 +435,8 @@ class ImageViewer {
         }
         const tf_def = this.createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
 
-        seaDragonViewer.channelTF[channelIdx] = tf_def;
-        seaDragonViewer.forceRepaint();
+        this.channelTF[channelIdx] = tf_def;
+        this.forceRepaint();
     }
 
     /**
@@ -459,9 +447,9 @@ class ImageViewer {
      * @returns void
      */
     updateData(data) {
-        // console.log('seaDragon: update subset event received');
+
         this.data = data;
-        seaDragonViewer.forceRepaint();
+        this.forceRepaint();
     }
 
     /**
@@ -473,19 +461,15 @@ class ImageViewer {
      */
     updateRenderingMode(mode) {
 
-        // mode is a string: 'show-subset', 'show-selection'
-
-        // console.log('seaDragonViewer: rendering mode change event received. mode ' + mode);
-
+        // Mode is a string: 'show-subset', 'show-selection'
         if (mode === 'show-subset') {
             this.show_subset = !this.show_subset;
         }
         if (mode === 'show-selection') {
             this.show_selection = !this.show_selection;
-            // console.log(this.show_selection);
         }
 
-        seaDragonViewer.forceRepaint();
+        this.forceRepaint();
 
     }
 
@@ -497,9 +481,8 @@ class ImageViewer {
      * @returns void
      */
     updateSelection(selection) {
-        // console.log('seaDragon: update selection event received');
         this.selection = selection;
-        seaDragonViewer.forceRepaint();
+        this.forceRepaint();
     }
 }
 
@@ -509,41 +492,6 @@ ImageViewer.events = {
     renderingMode: 'renderingMode'
 };
 
-
-// PUBLIC METHODS
-
-// Activates filtering plugin to draw images with applied TF
-function activateTFRendering() {
-
-    const tempSet = true;
-
-    //jojo
-    if (tempSet) {
-        // Filtering plugin
-        seaDragonViewer.viewer.setFilterOptions({
-            //  loadMode: 'sync',
-            filters: {
-                processors: //OpenSeadragon.Filters.BRIGHTNESS(200), ImageViewer.myfilter
-                seaDragonViewer.viewerManagerVMain.renderTFWithLabels
-            }
-        });
-        seaDragonViewer.viewer.lensing.viewer_aux.setFilterOptions({
-            filters: {
-                processors: seaDragonViewer.viewerManagerVAuxi.renderTFWithLabels
-            }
-        });
-
-    } else {
-        seaDragonViewer.viewer.setFilterOptions({
-            // loadMode: 'sync',
-            filters: {
-                processors: []
-            }
-        });
-    }
-}
-
-/* TODO - unused
 async function addTile(path) {
 
     function addTileResponse(success, error) {
@@ -572,4 +520,3 @@ async function addTile(path) {
         })
 
 }
-*/

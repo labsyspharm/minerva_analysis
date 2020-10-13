@@ -16,6 +16,7 @@ export class ViewerManager {
         this.viewer = _viewer;
         this.imageViewer = _imageViewer;
         this.viewer_name = _viewerName;
+        this.viewer_channels = {};
 
         this.init();
     }
@@ -40,12 +41,25 @@ export class ViewerManager {
     }
 
     /**
-     * @function addChannel
+     * @function add_handlers
+     * Adds relevant event handlers to the viewer
+     *
+     * @returns void
+     */
+    add_handlers() {
+
+        // Add event load handlers
+        this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind( this.imageViewer));
+        this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind( this.imageViewer));
+    }
+
+    /**
+     * @function channel_add
      * Add channel to multi-channel rendering
      *
      * @param srcIdx
      */
-    add_channel(srcIdx) {
+    channel_add(srcIdx) {
 
         // If already exists
         if ((srcIdx in this.imageViewer.currentChannels)) {
@@ -69,21 +83,39 @@ export class ViewerManager {
                 const sub_url = group[group.length - 2];
                 // Attach
                 this.imageViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
+                this.viewer_channels[srcIdx] = {"url": url, "sub_url": sub_url};
             }
         });
     }
 
     /**
-     * @function add_handlers
-     * Adds relevant event handlers to the viewer
+     * @function channel_remove
+     * Remove channel from multichannel rendering
      *
-     * @returns void
+     * @param srcIdx
      */
-    add_handlers() {
+    channel_remove(srcIdx) {
 
-        // Add event load handlers
-        this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind( this.imageViewer));
-        this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind( this.imageViewer));
+        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
+
+        const img_count = this.viewer.world.getItemCount();
+
+        // remove channel
+        if ((srcIdx in this.imageViewer.currentChannels)) {
+
+            // remove channel - first find it
+            for (let i = 0; i < img_count; i = i + 1) {
+                const url = this.viewer.world.getItemAt(i).source.tilesUrl;
+                if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
+
+                    this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
+
+                    delete this.imageViewer.currentChannels[srcIdx];
+                    delete this.viewer_channels[srcIdx];
+                    break;
+                }
+            }
+        }
     }
 
 
@@ -437,35 +469,6 @@ export class ViewerManager {
         context.putImageData(screenData, 0, 0);
         callback();
 
-    }
-
-    /**
-     * @function removeChannel
-     * Remove channel from multichannel rendering
-     *
-     * @param srcIdx
-     */
-    removeChannel(srcIdx) {
-
-        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
-
-        const img_count = this.viewer.world.getItemCount();
-
-        // remove channel
-        if ((srcIdx in this.imageViewer.currentChannels)) {
-
-            // remove channel - first find it
-            for (let i = 0; i < img_count; i = i + 1) {
-                const url = this.viewer.world.getItemAt(i).source.tilesUrl;
-                if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
-
-                    this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
-
-                    delete this.imageViewer.currentChannels[srcIdx];
-                    break;
-                }
-            }
-        }
     }
 
     /**

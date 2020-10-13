@@ -1,18 +1,12 @@
 <!doctype html>
 <head>
     <meta content="utf-8" http-equiv="encoding">
-    <!-- OpenSeadragon Imports-->
-    {#    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon.js"></script>#}
-    {#    <script src="/static/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>#}
-    {#    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-svg-overlay.js"></script>#}
-    {#    <script src="/static/external/openseadragon-bin-2.4.0/openseadragonrgb.js"></script>#}
-    {#    <script src="/static/external/openseadragon-bin-2.4.0/viaWebGL.js"></script>#}
-    {#    <script src="/static/external/openseadragon-bin-2.4.0/openSeadragonGL.js"></script>#}
 
-    <!-- STYLES -->
+    <!-- Styles -->
     <link rel="stylesheet" href="../static/frontend/src/css/main.css">
-    <link rel="stylesheet" href="../static/frontend/src/css/lensing.css">
+    <link rel="stylesheet" href="../static/frontend/src/css/viewer.css">
 
+    <!-- Flask variables -->
     <script src="../static/frontend/src/js/services/passVariablesToFrontend.js" type="text/javascript"></script>
     <script type="text/javascript">
         //<!--@formatter:off-->
@@ -20,13 +14,18 @@
         //<!--@formatter:on-->
     </script>
 
-    <!-- Webpack bundle -->
+    <!-- Webpack -->
     <script src="../static/frontend/dist/vendor_bundle.js"></script>
 
-    <!-- OSD Plugins -->
+    <!-- OpenSeadragon imports-->
+    <script src="/static/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>
+    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-svg-overlay.js"></script>
+    <script src="/static/external/openseadragon-bin-2.4.0/openseadragonrgb.js"></script>
+    <script src="/static/external/openseadragon-bin-2.4.0/viaWebGL.js"></script>
+    <script src="/static/external/openseadragon-bin-2.4.0/openSeadragonGL.js"></script>
     <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-filtering.js"></script>
 
-
+    <!-- Scripts -->
     <script src="../static/frontend/src/js/services/colorScheme.js"></script>
     <script src="../static/frontend/src/js/views/rainbow.js"></script>
     <script src="../static/frontend/src/js/services/dataLayer.js"></script>
@@ -34,9 +33,11 @@
     <script src="../static/frontend/src/js/views/cellInformation.js"></script>
     <script src="../static/frontend/src/js/views/imageViewer.js"></script>
     <script src="../static/frontend/src/js/services/simpleEventHandler.js"></script>
+
+    <title>CyCIF Viewer</title>
 </head>
+
 <body>
-<title>CyCIF Viewer - OLD</title>
 <nav id="topBar" class="navbar navbar-expand-sm navbar-light bg-light">
     <span id="title" class="navbar-brand mb-0 h1">CyCIF Viewer</span>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -68,8 +69,9 @@
 {% if data.datasource %}
     <div id="container" class="container">
         <div id="row" class="row">
+
             <div class="col-sm-3" id="channel_list_wrapper">
-                <div id="lowRow" class="row">
+                <div id="lowRow1" class="row">
                     <div id="boxHeading1" class="col-auto mr-auto">
                         <span class="box-heading">Channels</span>
                     </div>
@@ -87,8 +89,13 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-sm-7" id="openseadragon_wrapper">
-                <span id="boxHeading2">Viewer</span>
+                <div id="lowRow2" class="row">
+                    <div id="boxHeading2" class="col-auto mr-auto">
+                        <span class="box-heading">Viewer</span>
+                    </div>
+                </div>
                 <div id="openseadragon">
                     <div class="row">
                         <div class="col-auto">
@@ -98,6 +105,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-sm-2" id="cell_wrapper">
                 <span id="cell_label">Cell Information</span>
                 <div id="cell_display">
@@ -131,6 +139,7 @@
                 <svg width="150" height="0" id="cell_legend"></svg>
                 <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors">
             </div>
+
         </div>
     </div>
     <script src="../static/frontend/src/js/main.js"></script>

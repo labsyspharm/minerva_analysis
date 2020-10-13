@@ -6,7 +6,8 @@
 static/frontend/node_modules
 /.pnp
 .pnp.js
-
+*/.ipynb_checkpoints/
+*_bundle.js
 # testing
 /coverage
 
