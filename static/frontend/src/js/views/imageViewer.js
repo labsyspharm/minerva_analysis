@@ -493,29 +493,21 @@ ImageViewer.events = {
 
 async function addTile(path) {
 
-    function addTileResponse(success, error) {
-        if (error) {
-            console.log("Error Adding Tile:", error)
+    const promiseWrapper = new Promise((resolve, reject) => {
+        function addTileResponse(success, error) {
+            // console.log("Emergency Added Tile:", path);
+            resolve();
         }
-        // console.log("Emergency Added Tile:", path)
-    }
 
-    const options = {
-        src: path,
-        loadWithAjax: true,
-        crossOriginPolicy: false,
-        ajaxWithCredentials: false,
-        callback: addTileResponse
-    }
-    return new Promise(resolve => {
-        seaDragonViewer.viewer.lensing.viewer_aux.imageLoader.addJob(options)
-        return seaDragonViewer.viewer.imageLoader.addJob(options)
+        const options = {
+            src: path,
+            loadWithAjax: true,
+            crossOriginPolicy: false,
+            ajaxWithCredentials: false,
+            callback: addTileResponse
+        }
+        this.viewer.imageLoader.addJob(options)
     })
-        .then(response => {
-            return Promise.resolve()
-        })
-        .catch(err => {
-            return Promise.resolve()
-        })
+    return Promise.all([promiseWrapper])
 
 }
