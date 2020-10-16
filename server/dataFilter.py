@@ -319,7 +319,7 @@ def get_database_description(datasource):
         load_ball_tree(datasource)
     description = database.describe().to_dict()
     for column in description:
-            [hist, bin_edges] = np.histogram(database[column].to_numpy(), bins=50, density=True)
+        [hist, bin_edges] = np.histogram(database[column].to_numpy(), bins=50, density=True)
         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
         description[column]['histogram'] = {}
         dat = []
