@@ -4,7 +4,7 @@ import os
 
 # set Libvips path for windows. If mac, please run `brew install vips`
 if os.name == 'nt':
-    vipshome = os.path.dirname(os.path.abspath(__file__)) + r"\..\static\external\vips-8.10.1\bin"
+    vipshome = os.path.dirname(os.path.abspath(__file__)) + r"\..\static\external\vips-dev-8.10\bin"
     os.environ['PATH'] = vipshome + ';' + os.environ['PATH']
 
 import shutil
