@@ -1,0 +1,542 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define to open non-text files in binary mode */
+#undef BINARY_OPEN
+
+/* define to build deprecated components */
+#undef ENABLE_DEPRECATED
+
+/* define to enable load with libMagick */
+#undef ENABLE_MAGICKLOAD
+
+/* define to enable save with libMagick */
+#undef ENABLE_MAGICKSAVE
+
+/* always defined to indicate that i18n is enabled */
+#undef ENABLE_NLS
+
+/* The prefix for our gettext translation domains. */
+#undef GETTEXT_PACKAGE
+
+/* Domain for glib logging messages. */
+#undef G_LOG_DOMAIN
+
+/* Define to 1 if you have the `AcquireExceptionInfo' function. */
+#undef HAVE_ACQUIREEXCEPTIONINFO
+
+/* Define to 1 if you have the `AcquireImage' function. */
+#undef HAVE_ACQUIREIMAGE
+
+/* define to build analyze support. */
+#undef HAVE_ANALYZE
+
+/* have atan2() in libm. */
+#undef HAVE_ATAN2
+
+/* Define to 1 if you have the `atexit' function. */
+#undef HAVE_ATEXIT
+
+/* Define to 1 if you have the `bind_textdomain_codeset' function. */
+#undef HAVE_BIND_TEXTDOMAIN_CODESET
+
+/* Define to 1 if you have the `BlobToStringInfo' function. */
+#undef HAVE_BLOBTOSTRINGINFO
+
+/* have cbrt() in libm. */
+#undef HAVE_CBRT
+
+/* define if you have cfitsio installed. */
+#undef HAVE_CFITSIO
+
+/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
+   CoreFoundation framework. */
+#undef HAVE_CFLOCALECOPYCURRENT
+
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
+   the CoreFoundation framework. */
+#undef HAVE_CFPREFERENCESCOPYAPPVALUE
+
+/* define if your glib has checked multiply. */
+#undef HAVE_CHECKED_MUL
+
+/* define if your Magick has CMYColorspace. */
+#undef HAVE_CMYCOLORSPACE
+
+/* define if your glib has g_cond_init(). */
+#undef HAVE_COND_INIT
+
+/* define if your glib has g_date_time_format_iso8601(). */
+#undef HAVE_DATE_TIME_FORMAT_ISO8601
+
+/* Define to 1 if you have the `dcgettext' function. */
+#undef HAVE_DCGETTEXT
+
+/* Define to 1 if you have the <direct.h> header file. */
+#undef HAVE_DIRECT_H
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
+#undef HAVE_DOPRNT
+
+/* Define to 1 if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
+
+/* define if you have libexif >= 0.6 installed. */
+#undef HAVE_EXIF
+
+/* Define to 1 if you have the <expat.h> header file. */
+#undef HAVE_EXPAT_H
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* define if you have fftw3 installed. */
+#undef HAVE_FFTW
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* define if your GetImageMagick() takes three arguments. */
+#undef HAVE_GETIMAGEMAGICK3
+
+/* Define to 1 if you have the `getpagesize' function. */
+#undef HAVE_GETPAGESIZE
+
+/* Define if the GNU gettext() function is already present or preinstalled. */
+#undef HAVE_GETTEXT
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the `GetVirtualPixels' function. */
+#undef HAVE_GETVIRTUALPIXELS
+
+/* Define to 1 if you have the `getwd' function. */
+#undef HAVE_GETWD
+
+/* Define if you have giflib libraries and header files. */
+#undef HAVE_GIFLIB
+
+/* define if you have libgsf-1 installed. */
+#undef HAVE_GSF
+
+/* define if your libgsf supports deflate-level. */
+#undef HAVE_GSF_DEFLATE_LEVEL
+
+/* define if your libgsf supports zip64. */
+#undef HAVE_GSF_ZIP64
+
+/* define if your glib has g_str_to_ascii(). */
+#undef HAVE_G_STR_TO_ASCII
+
+/* define if your glib has g_win32_get_command_line(). */
+#undef HAVE_G_WIN32_GET_COMMAND_LINE
+
+/* define if your Magick has HCLpColorspace. */
+#undef HAVE_HCLPCOLORSPACE
+
+/* define if you have heif_image_handle_get_raw_color_profile. */
+#undef HAVE_HEIF_COLOR_PROFILE
+
+/* define if you have heif_context_add_exif_metadata. */
+#undef HAVE_HEIF_CONTEXT_ADD_EXIF_METADATA
+
+/* define if you have heif_context_set_primary_image. */
+#undef HAVE_HEIF_CONTEXT_SET_PRIMARY_IMAGE
+
+/* define if your libheif has decode support. */
+#undef HAVE_HEIF_DECODER
+
+/* define if you have heif_decoding_options.convert_hdr_to_8bit */
+#undef HAVE_HEIF_DECODING_OPTIONS_CONVERT_HDR_TO_8BIT
+
+/* define if your libheif has encode support. */
+#undef HAVE_HEIF_ENCODER
+
+/* define if you have heif_encoding_options_alloc. */
+#undef HAVE_HEIF_ENCODING_OPTIONS_ALLOC
+
+/* Define to 1 if you have the `heif_image_handle_get_raw_color_profile'
+   function. */
+#undef HAVE_HEIF_IMAGE_HANDLE_GET_RAW_COLOR_PROFILE
+
+/* have hypot() in libm. */
+#undef HAVE_HYPOT
+
+/* define if you have imagequant installed. */
+#undef HAVE_IMAGEQUANT
+
+/* define if you have ImagesToBlob. */
+#undef HAVE_IMAGESTOBLOB
+
+/* define if you have ImportImagePixels. */
+#undef HAVE_IMPORTIMAGEPIXELS
+
+/* Define to 1 if you have the `InheritException' function. */
+#undef HAVE_INHERITEXCEPTION
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <io.h> header file. */
+#undef HAVE_IO_H
+
+/* define if you have libjpeg installed. */
+#undef HAVE_JPEG
+
+/* Define to 1 if you have the `jpeg_c_bool_param_supported' function. */
+#undef HAVE_JPEG_C_BOOL_PARAM_SUPPORTED
+
+/* define if your libjpeg has extension parameters. */
+#undef HAVE_JPEG_EXT_PARAMS
+
+/* define if you have lcms2 installed. */
+#undef HAVE_LCMS2
+
+/* Define if your <locale.h> file defines LC_MESSAGES. */
+#undef HAVE_LC_MESSAGES
+
+/* define if you have libwebp/libwebpmux/libwebpdemux installed. */
+#undef HAVE_LIBWEBP
+
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define to 1 if you have the <locale.h> header file. */
+#undef HAVE_LOCALE_H
+
+/* define if you have libMagick6 installed. */
+#undef HAVE_MAGICK6
+
+/* define if you have libMagick7 installed. */
+#undef HAVE_MAGICK7
+
+/* Define to 1 if you have the `MagickCoreGenesis' function. */
+#undef HAVE_MAGICKCOREGENESIS
+
+/* Define to 1 if you have the <math.h> header file. */
+#undef HAVE_MATH_H
+
+/* define if you have matio installed. */
+#undef HAVE_MATIO
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memset' function. */
+#undef HAVE_MEMSET
+
+/* Define to 1 if you have the `mkstemp' function. */
+#undef HAVE_MKSTEMP
+
+/* Define to 1 if you have the `mktemp' function. */
+#undef HAVE_MKTEMP
+
+/* Define to 1 if you have a working `mmap' system call. */
+#undef HAVE_MMAP
+
+/* define if your glib has g_get_monotonic_time(). */
+#undef HAVE_MONOTONIC_TIME
+
+/* Define to 1 if you have the `munmap' function. */
+#undef HAVE_MUNMAP
+
+/* define if your glib has g_mutex_init(). */
+#undef HAVE_MUTEX_INIT
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
+/* Define if you have nifti libraries and header files. */
+#undef HAVE_NIFTI
+
+/* define if your magick has ImageInfo.number_scenes. */
+#undef HAVE_NUMBER_SCENES
+
+/* define if you have OpenEXR >=1.2.2 installed. */
+#undef HAVE_OPENEXR
+
+/* define if you have OpenSlide >= 3.3.0 installed. */
+#undef HAVE_OPENSLIDE
+
+/* define if you have OpenSlide >= 3.4.0 installed. */
+#undef HAVE_OPENSLIDE_3_4
+
+/* Define to 1 if you have the `OptimizeImageTransparency' function. */
+#undef HAVE_OPTIMIZEIMAGETRANSPARENCY
+
+/* Define to 1 if you have the `OptimizePlusImageLayers' function. */
+#undef HAVE_OPTIMIZEPLUSIMAGELAYERS
+
+/* define if you have orc-0.4.11 or later installed. */
+#undef HAVE_ORC
+
+/* define if your orc works with cf-protection. */
+#undef HAVE_ORC_CF_PROTECTION
+
+/* Define to 1 if you have the `orc_program_get_error' function. */
+#undef HAVE_ORC_PROGRAM_GET_ERROR
+
+/* define if you have pangoft2 installed. */
+#undef HAVE_PANGOFT2
+
+/* Define if you have pdfium libraries and header files. */
+#undef HAVE_PDFIUM
+
+/* define if you have libpng installed. */
+#undef HAVE_PNG
+
+/* Define to 1 if you have the `png_set_chunk_malloc_max' function. */
+#undef HAVE_PNG_SET_CHUNK_MALLOC_MAX
+
+/* define if you have poppler-glib >= 0.16.0 and cairo >= 1.2 installed. */
+#undef HAVE_POPPLER
+
+/* define to build ppm support. */
+#undef HAVE_PPM
+
+/* define if your glib has G_PRIVATE_INIT(). */
+#undef HAVE_PRIVATE_INIT
+
+/* have pthread_setattr_default_np(). */
+#undef HAVE_PTHREAD_DEFAULT_NP
+
+/* Define to 1 if you have the `putenv' function. */
+#undef HAVE_PUTENV
+
+/* define to build radiance support. */
+#undef HAVE_RADIANCE
+
+/* Define to 1 if you have the `rand' function. */
+#undef HAVE_RAND
+
+/* Define to 1 if you have the `random' function. */
+#undef HAVE_RANDOM
+
+/* Define to 1 if you have the `realpath' function. */
+#undef HAVE_REALPATH
+
+/* Define to 1 if you have the `ResetImageAttributeIterator' function. */
+#undef HAVE_RESETIMAGEATTRIBUTEITERATOR
+
+/* Define to 1 if you have the `ResetImageProfileIterator' function. */
+#undef HAVE_RESETIMAGEPROFILEITERATOR
+
+/* Define to 1 if you have the `ResetImagePropertyIterator' function. */
+#undef HAVE_RESETIMAGEPROPERTYITERATOR
+
+/* define if you have librsvg-2.0 >= 2.40.3 and cairo >= 1.2 installed. */
+#undef HAVE_RSVG
+
+/* Define to 1 if you have the `SetImageExtent' function. */
+#undef HAVE_SETIMAGEEXTENT
+
+/* Define to 1 if you have the `SetImageOption' function. */
+#undef HAVE_SETIMAGEOPTION
+
+/* Define to 1 if you have the `SetImageProperty' function. */
+#undef HAVE_SETIMAGEPROPERTY
+
+/* define if you have libspng installed. */
+#undef HAVE_SPNG
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
+
+/* Define to 1 if you have the `strchr' function. */
+#undef HAVE_STRCHR
+
+/* Define to 1 if you have the `strcspn' function. */
+#undef HAVE_STRCSPN
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strrchr' function. */
+#undef HAVE_STRRCHR
+
+/* Define to 1 if you have the `strspn' function. */
+#undef HAVE_STRSPN
+
+/* Define to 1 if you have the `sysconf' function. */
+#undef HAVE_SYSCONF
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#undef HAVE_SYS_FILE_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#undef HAVE_SYS_MMAN_H
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* define if your glib has g_thread_new(). */
+#undef HAVE_THREAD_NEW
+
+/* define if you have libtiff installed. */
+#undef HAVE_TIFF
+
+/* define if your libtiff has webp. */
+#undef HAVE_TIFF_COMPRESSION_WEBP
+
+/* define if your glib needs g_type_init(). */
+#undef HAVE_TYPE_INIT
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* define if your glib has g_value_get_schar(). */
+#undef HAVE_VALUE_GET_SCHAR
+
+/* Define to 1 if the system has the `vector_size' variable attribute */
+#undef HAVE_VAR_ATTRIBUTE_VECTOR_SIZE
+
+/* define if your C++ can mix vector and scalar arithmetic */
+#undef HAVE_VECTOR_ARITH
+
+/* define if your C++ can shuffle vectors */
+#undef HAVE_VECTOR_SHUFFLE
+
+/* Define to 1 if you have the `vprintf' function. */
+#undef HAVE_VPRINTF
+
+/* Define to 1 if you have the `vsnprintf' function. */
+#undef HAVE_VSNPRINTF
+
+/* Define to 1 if you have the <windows.h> header file. */
+#undef HAVE_WINDOWS_H
+
+/* define if you have zlib installed. */
+#undef HAVE_ZLIB
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* native win32 */
+#undef OS_WIN32
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* libexif includes don't need libexif prefix */
+#undef UNTAGGED_EXIF
+
+/* Version number of package */
+#undef VERSION
+
+/* default directory for ICC profiles */
+#undef VIPS_ICC_DIR
+
+/* configure-time library directory */
+#undef VIPS_LIBDIR
+
+/* native Mac OS X */
+#undef VIPS_OS_DARWIN
+
+/* configure-time install prefix */
+#undef VIPS_PREFIX
+
+/* Define if using the dmalloc debugging malloc package */
+#undef WITH_DMALLOC
+
+/* Define to 1 if the X Window System is missing or not being used. */
+#undef X_DISPLAY_MISSING
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef mode_t
+
+/* Define to `long int' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to the equivalent of the C99 'restrict' keyword, or to
+   nothing if this is not supported.  Do not define if restrict is
+   supported directly.  */
+#undef restrict
+/* Work around a bug in Sun C++: it does not support _Restrict or
+   __restrict__, even though the corresponding Sun C compiler ends up with
+   "#define restrict _Restrict" or "#define restrict __restrict__" in the
+   previous line.  Perhaps some future version of Sun C++ will work with
+   restrict; if so, hopefully it defines __RESTRICT like Sun C does.  */
+#if defined __SUNPRO_CC && !defined __RESTRICT
+# define _Restrict
+# define __restrict__
+#endif
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t

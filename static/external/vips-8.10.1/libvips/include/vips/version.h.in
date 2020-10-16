@@ -1,0 +1,36 @@
+/* Macros for the header version.
+ */
+
+#ifndef VIPS_VERSION_H
+#define VIPS_VERSION_H
+
+#define VIPS_VERSION		"@VIPS_VERSION@"
+#define VIPS_VERSION_STRING	"@VIPS_VERSION_STRING@"
+#define VIPS_MAJOR_VERSION	(@VIPS_MAJOR_VERSION@)
+#define VIPS_MINOR_VERSION	(@VIPS_MINOR_VERSION@)
+#define VIPS_MICRO_VERSION	(@VIPS_MICRO_VERSION@)
+
+/* The ABI version, as used for library versioning.
+ */
+#define VIPS_LIBRARY_CURRENT	(@LIBRARY_CURRENT@)
+#define VIPS_LIBRARY_REVISION	(@LIBRARY_REVISION@)
+#define VIPS_LIBRARY_AGE	(@LIBRARY_AGE@)
+
+#define VIPS_CONFIG		"@VIPS_CONFIG@"
+
+/** 
+ * VIPS_SONAME:
+ *
+ * The name of the shared object containing the vips library, for example
+ * "libvips.so.42", or "libvips-42.dll".
+ */
+
+#include "soname.h"
+
+/* Not really anything to do with versions, but this is a handy place to put
+ * it.
+ */
+#define VIPS_EXEEXT "@VIPS_EXEEXT@"
+#define VIPS_ENABLE_DEPRECATED @VIPS_ENABLE_DEPRECATED@
+
+#endif /*VIPS_VERSION_H*/
