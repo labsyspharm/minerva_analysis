@@ -36,6 +36,7 @@ def load_db(datasource, reload=False):
             index_col = idField
     database = pd.read_csv(csvPath, index_col=index_col)
     database['id'] = database.index
+    database = database.replace(-np.Inf, 0)
     source = datasource
 
 
@@ -318,7 +319,7 @@ def get_database_description(datasource):
         load_ball_tree(datasource)
     description = database.describe().to_dict()
     for column in description:
-        [hist, bin_edges] = np.histogram(database[column].to_numpy(), bins=50, density=True)
+            [hist, bin_edges] = np.histogram(database[column].to_numpy(), bins=50, density=True)
         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
         description[column]['histogram'] = {}
         dat = []
