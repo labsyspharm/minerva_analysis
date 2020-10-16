@@ -114,7 +114,7 @@ class ImageViewer {
             filters: {
                 //items: seaDragonViewer.viewer.world.getItemAt(0), //seaDragonViewer.viewer.world.getItemCount() - 1),
                 processors:
-                seaDragonViewer.renderTFWithLabels.bind(this)
+                    seaDragonViewer.renderTFWithLabels.bind(this)
             }
         });
 
@@ -422,17 +422,18 @@ class ImageViewer {
                 if (seaDragonViewer.show_selection) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        let color = [255, 255, 255];
                         if (color != undefined) {
 
                             /************************ new */
-                            // Init grid and tests (4 pts v 8 working for now)
+                                // Init grid and tests (4 pts v 8 working for now)
                             const grid = [
-                                i - 4,
-                                i + 4,
-                                i - inputTile.width * 4,
-                                i + inputTile.width * 4
-                            ];
+                                    i - 4,
+                                    i + 4,
+                                    i - inputTile.width * 4,
+                                    i + inputTile.width * 4
+                                ];
                             const test = [
                                 i % (inputTile.width * 4) !== 0,
                                 i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
@@ -459,8 +460,7 @@ class ImageViewer {
                                         }
                                     }
                                 }
-                            }
-                            else {
+                            } else {
                                 pixels[i] = color[0];
                                 pixels[i + 1] = color[1];
                                 pixels[i + 2] = color[2];
@@ -599,17 +599,18 @@ class ImageViewer {
                 if (seaDragonViewer.show_selection && seaDragonViewer.selection.size > 0) {
                     if (seaDragonViewer.selection.has(labelValueStr)) {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        let color = [255, 255, 255]
                         if (color != undefined) {
 
                             /************************ new */
-                            // Init grid and tests (4 pts v 8 working for now)
+                                // Init grid and tests (4 pts v 8 working for now)
                             const grid = [
-                                i - 4,
-                                i + 4,
-                                i - inputTile.width * 4,
-                                i + inputTile.width * 4
-                            ];
+                                    i - 4,
+                                    i + 4,
+                                    i - inputTile.width * 4,
+                                    i + inputTile.width * 4
+                                ];
                             const test = [
                                 i % (inputTile.width * 4) !== 0,
                                 i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
@@ -636,8 +637,7 @@ class ImageViewer {
                                         }
                                     }
                                 }
-                            }
-                            else {
+                            } else {
                                 pixels[i] = color[0];
                                 pixels[i + 1] = color[1];
                                 pixels[i + 2] = color[2];
@@ -823,7 +823,7 @@ function activateTFRendering() {
             //  loadMode: 'sync',
             filters: {
                 processors: //OpenSeadragon.Filters.BRIGHTNESS(200), ImageViewer.myfilter
-                seaDragonViewer.renderTFWithLabels.bind(this)
+                    seaDragonViewer.renderTFWithLabels.bind(this)
             }
         });
     } else {
