@@ -264,14 +264,16 @@ class ImageViewer {
         } else {
 
             // Full 24bit png handling: get buffer, parse it into png, save in cache
-            const buffer = new Buffer(event.tileRequest.response);
-            if (buffer) {
-                const tile = event.tile;
+            if (event.tileRequest) {
+                const buffer = new Buffer(event.tileRequest.response);
+                if (buffer) {
+                    const tile = event.tile;
 
-                // Save tile in tileCache
-                this.tileCache[tile.url] = PNG.sync.read(buffer, {colortype: 0});
-            } else {
-                // console.log('[TILE LOADED]: buffer UNDEFINED');
+                    // Save tile in tileCache
+                    this.tileCache[tile.url] = PNG.sync.read(buffer, {colortype: 0});
+                } else {
+                    // console.log('[TILE LOADED]: buffer UNDEFINED');
+                }
             }
         }
     }
@@ -506,7 +508,7 @@ async function addTile(path) {
             ajaxWithCredentials: false,
             callback: addTileResponse
         }
-        this.viewer.imageLoader.addJob(options)
+        seaDragonViewer.viewer.imageLoader.addJob(options)
     })
     return Promise.all([promiseWrapper])
 
