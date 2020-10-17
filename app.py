@@ -109,7 +109,7 @@ def edit_config_with_config_name(config_name):
         elem['displayName'] = config_data['featureData'][0]['yCoordinate']
         csvHeaders.append(elem)
         # Start with the required channels
-        channelFileNames.extend(['Segmentation', 'X Position', 'Y Position'])
+        channelFileNames.extend(['Area', 'X Position', 'Y Position'])
 
         for i in range(len(config_data['imageData'])):
             elem = config_data['imageData'][i]
@@ -146,7 +146,7 @@ def upload_file_page():
     current_task = "Uploading"
     datasetName = None
     csvName = ''
-    channelFileNames = ['ID', 'Segmentation', 'X Position', 'Y Position']
+    channelFileNames = ['ID', 'Area', 'X Position', 'Y Position']
     labelName = ''
     csvHeader = None
     if request.method == 'POST':
@@ -295,7 +295,7 @@ def channel():
                               'NucleusArea', 'CellPosition_X', 'CellPosition_Y']
     test_data['datasetName'] = 'channelConfigs'
     test_data['substring'] = mostFrequentLongestSubstring.find_substring(test_data['csvHeader'])
-    test_data['channelFileNames'] = ['ID', 'Segmentation', 'X Position', 'Y Position', 'channel_01', 'channel_02']
+    test_data['channelFileNames'] = ['ID', 'Area', 'X Position', 'Y Position', 'channel_01', 'channel_02']
     test_data['normCsvName'] = 'segResultsRF_norm.csv'
     test_data['csvName'] = 'segResultsRF.csv'
     test_data['labelName'] = 'nucleiLabelRF'
