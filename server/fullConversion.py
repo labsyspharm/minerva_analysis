@@ -37,10 +37,19 @@ def convertTifToPyramid(channel_img, destFile, isLabelImg):
         # Remove any existing directory with the name of the channel
         if os.path.exists(destFile):
             shutil.rmtree(destFile)
-        if not isLabelImg:
-            image.dzsave(destFile, tile_size=128, overlap=2, suffix='.png')
-        else:
-            image.dzsave(destFile, tile_size=128, overlap=2, region_shrink='nearest', suffix='.png')
+        try:
+            if not isLabelImg:
+                image.dzsave(destFile, tile_size=128, overlap=2, suffix='.png')
+            else:
+                image.dzsave(destFile, tile_size=128, overlap=2, region_shrink='nearest', suffix='.png')
+        except TypeError:
+            print('Retrying', destFile)
+            if os.path.exists(destFile):
+                shutil.rmtree(destFile)
+            if not isLabelImg:
+                image.dzsave(destFile, tile_size=128, overlap=2, suffix='.png')
+            else:
+                image.dzsave(destFile, tile_size=128, overlap=2, region_shrink='nearest', suffix='.png')
 
 
 def convertOmeTiff(filePath, fileName, isLabelImg=False):
