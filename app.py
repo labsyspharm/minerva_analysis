@@ -4,6 +4,8 @@ import os
 import csv
 from pathlib import Path
 from waitress import serve
+import shutil
+
 from time import time
 from scipy.spatial import cKDTree
 import numpy as np
@@ -65,6 +67,22 @@ def edit_config_with_request_object():
 @app.route('/edit_config/<string:config_name>')
 def edit_config_with_request_name(config_name):
     return edit_config_with_config_name(config_name)
+
+
+@app.route('/delete/<string:config_name>')
+def delete_with_datasource_name(config_name):
+    global config_json_path
+
+    path = str(Path('static/data') / config_name)
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    with open(config_json_path, "r+") as configJson:
+        config_data = json.load(configJson)
+        del config_data[config_name]
+        configJson.seek(0)  # <--- should reset file position to the beginning.
+        json.dump(config_data, configJson, indent=4)
+        configJson.truncate()
+    return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
 
 
 def edit_config_with_config_name(config_name):
