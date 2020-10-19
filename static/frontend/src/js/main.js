@@ -62,6 +62,7 @@ async function init(conf) {
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
+
 }
 
 //feature color map changed in ridge plot
