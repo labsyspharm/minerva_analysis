@@ -36,6 +36,7 @@ def load_db(datasource, reload=False):
             index_col = idField
     database = pd.read_csv(csvPath, index_col=index_col)
     database['id'] = database.index
+    database = database.replace(-np.Inf, 0)
     source = datasource
 
 
@@ -53,18 +54,19 @@ def load_ball_tree(datasource, reload=False):
     if datasource != source:
         load_db(datasource)
     pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "ball_tree.pickle")
-    # if os.path.isfile(pickled_kd_tree_path) and reload is False:
-    #     print("Pickled KD Tree Exists, Loading")
-    #     ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
-    # else:
-    print("Creating KD Tree")
-    xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
-    yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
-    csvPath = "." + config[datasource]['featureData'][0]['src']
-    raw_data = pd.read_csv(csvPath)
-    points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
-    ball_tree = BallTree(points, metric='euclidean')
-    pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
+    if os.path.isfile(pickled_kd_tree_path) and reload is False:
+        print("Pickled KD Tree Exists, Loading")
+        ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
+    else:
+        print("Creating KD Tree")
+        xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
+        print('X', xCoordinate)
+        yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
+        csvPath = "." + config[datasource]['featureData'][0]['src']
+        raw_data = pd.read_csv(csvPath)
+        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+        ball_tree = BallTree(points, metric='euclidean')
+        pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
 
 def query_for_closest_cell(x, y, datasource):
@@ -118,6 +120,8 @@ def get_phenotypes(datasource):
     try:
         phenotype_field = config[datasource]['featureData'][0]['phenotype']
     except KeyError:
+        phenotype_field = 'phenotype'
+    except TypeError:
         phenotype_field = 'phenotype'
 
     if datasource != source:
@@ -199,3 +203,130 @@ def get_color_scheme(datasource, refresh):
 
     pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
     return color_scheme
+
+
+def get_rect_cells(datasource, rect, channels):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    # Query
+    index = ball_tree.query_radius([[rect[0], rect[1]]], r=rect[2])
+    print('Query size:', len(index[0]))
+    neighbors = index[0]
+    try:
+        neighborhood = []
+        for neighbor in neighbors:
+            row = database.iloc[[neighbor]]
+            obj = row.to_dict(orient='records')[0]
+            obj['id'] = str(neighbor)
+            if 'phenotype' not in obj:
+                obj['phenotype'] = ''
+            neighborhood.append(obj)
+        return neighborhood
+    except:
+        return {}
+
+
+def get_gated_cells(datasource, gates):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    query_string = ''
+    for key, value in gates.items():
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+    if query_string == None or query_string == "":
+        return []
+    query = database.query(query_string)[['id']].to_dict(orient='records')
+    return query
+
+
+def download_gating_csv(datasource, gates, channels):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    query_string = ''
+    columns = []
+    for key, value in gates.items():
+        columns.append(key)
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+    ids = database.query(query_string)[['id']].to_numpy().flatten()
+    if 'idField' in config[datasource]['featureData'][0]:
+        idField = config[datasource]['featureData'][0]['idField']
+    else:
+        idField = "CellID"
+    columns.append(idField)
+
+    csv = database.copy()
+
+    csv[idField] = database['id']
+    for channel in channels:
+        if channel in gates:
+            csv.loc[csv[idField].isin(ids), key] = 1
+            csv.loc[~csv[idField].isin(ids), key] = 0
+        else:
+            csv[channel] = 0
+
+    return csv
+
+
+def download_gates(datasource, gates, channels):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+    arr = []
+    for key, value in channels.items():
+        arr.append([key, value[0], value[1]])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'gate_start', 'gate_end']
+    csv['gate_active'] = False
+    for channel in gates:
+        csv.loc[csv['channel'] == channel, 'gate_active'] = True
+        csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
+        csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
+    return csv
+
+
+def get_database_description(datasource):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+    description = database.describe().to_dict()
+    for column in description:
+        [hist, bin_edges] = np.histogram(database[column].to_numpy(), bins=50, density=True)
+        midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+        description[column]['histogram'] = {}
+        dat = []
+        for i in range(len(hist)):
+            obj = {}
+            obj['x'] = midpoints[i]
+            obj['y'] = hist[i]
+            dat.append(obj)
+        description[column]['histogram'] = dat
+    return description

@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, Response, jsonify
+from flask import Flask, render_template, request, Response, jsonify, abort
 from server import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
 import os
 import csv
 from pathlib import Path
 from waitress import serve
+import shutil
+
 from time import time
 from scipy.spatial import cKDTree
 import numpy as np
@@ -67,6 +69,22 @@ def edit_config_with_request_name(config_name):
     return edit_config_with_config_name(config_name)
 
 
+@app.route('/delete/<string:config_name>')
+def delete_with_datasource_name(config_name):
+    global config_json_path
+
+    path = str(Path('static/data') / config_name)
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    with open(config_json_path, "r+") as configJson:
+        config_data = json.load(configJson)
+        del config_data[config_name]
+        configJson.seek(0)  # <--- should reset file position to the beginning.
+        json.dump(config_data, configJson, indent=4)
+        configJson.truncate()
+    return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
+
+
 def edit_config_with_config_name(config_name):
     data = {}
     global config_json_path
@@ -109,7 +127,7 @@ def edit_config_with_config_name(config_name):
         elem['displayName'] = config_data['featureData'][0]['yCoordinate']
         csvHeaders.append(elem)
         # Start with the required channels
-        channelFileNames.extend(['Segmentation', 'X Position', 'Y Position'])
+        channelFileNames.extend(['Area', 'X Position', 'Y Position'])
 
         for i in range(len(config_data['imageData'])):
             elem = config_data['imageData'][i]
@@ -146,7 +164,7 @@ def upload_file_page():
     current_task = "Uploading"
     datasetName = None
     csvName = ''
-    channelFileNames = ['ID', 'Segmentation', 'X Position', 'Y Position']
+    channelFileNames = ['ID', 'Area', 'X Position', 'Y Position']
     labelName = ''
     csvHeader = None
     if request.method == 'POST':
@@ -295,7 +313,7 @@ def channel():
                               'NucleusArea', 'CellPosition_X', 'CellPosition_Y']
     test_data['datasetName'] = 'channelConfigs'
     test_data['substring'] = mostFrequentLongestSubstring.find_substring(test_data['csvHeader'])
-    test_data['channelFileNames'] = ['ID', 'Segmentation', 'X Position', 'Y Position', 'channel_01', 'channel_02']
+    test_data['channelFileNames'] = ['ID', 'Area', 'X Position', 'Y Position', 'channel_01', 'channel_02']
     test_data['normCsvName'] = 'segResultsRF_norm.csv'
     test_data['csvName'] = 'segResultsRF.csv'
     test_data['labelName'] = 'nucleiLabelRF'
@@ -460,6 +478,78 @@ def get_num_cells_in_circle():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_gated_cell_ids', methods=['GET'])
+def get_gated_cell_ids():
+    datasource = request.args.get('datasource')
+    filter = json.loads(request.args.get('filter'))
+    resp = dataFilter.get_gated_cells(datasource, filter)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_database_description', methods=['GET'])
+def get_database_description():
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_database_description(datasource)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/upload_gates', methods=['POST'])
+def upload_gates():
+    file = request.files['file']
+    if file.filename.endswith('.csv') == False:
+        abort(422)
+    datasource = request.form['datasource']
+    save_path = Path(os.path.join(os.getcwd())) / "static" / "data" / datasource
+    if save_path.is_dir() == False:
+        abort(422)
+
+    filename = 'uploaded_gates.csv'
+    file.save(Path(save_path / filename))
+    resp = jsonify(success=True)
+    return resp
+
+
+@app.route('/get_rect_cells', methods=['GET'])
+def get_rect_cells():
+    # Parse (rect - [x, y, r], channels [string])
+    datasource = request.args.get('datasource')
+    rect = [float(x) for x in request.args.get('rect').split(',')]
+    channels = request.args.get('channels')
+
+    # Retrieve cells - FIXME: Too slow - jam is stalling image loading
+    resp = dataFilter.get_rect_cells(datasource, rect, channels)
+    print('Neighborhood size:', len(resp))
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/download_gating_csv', methods=['POST'])
+def download_gating_csv():
+    datasource = request.form['datasource']
+    filter = json.loads(request.form['filter'])
+    channels = json.loads(request.form['channels'])
+    fullCsv = json.loads(request.form['fullCsv'])
+    if fullCsv:
+        csv = dataFilter.download_gating_csv(datasource, filter, channels)
+    else:
+        csv = dataFilter.download_gates(datasource, filter, channels)
+    return Response(
+        csv.to_csv(index=False),
+        mimetype="text/csv",
+        headers={"Content-disposition":
+                     "attachment; filename=gating_csv.csv"})
+
+
+@app.route('/get_uploaded_gating_csv_values', methods=['GET'])
+def get_gating_csv_values():
+    datasource = request.args.get('datasource')
+    file_path = Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / 'uploaded_gates.csv'
+    if file_path.is_file() == False:
+        abort(422)
+    csv = pd.read_csv(file_path)
+    obj = csv.to_dict(orient='records')
+    return serialize_and_submit_json(obj)
+
+
 def serialize_and_submit_json(data):
     response = app.response_class(
         response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),
@@ -471,4 +561,4 @@ def serialize_and_submit_json(data):
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     # 100 GB file Max
-    serve(app, host='0.0.0.0', port=8000,max_request_body_size=107374182400)
+    serve(app, host='0.0.0.0', port=8000, max_request_body_size=107374182400)
