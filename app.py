@@ -468,6 +468,14 @@ def get_gated_cell_ids():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_gated_cell_ids_and_centroids', methods=['GET'])
+def get_gated_cell_ids_and_centroids():
+    datasource = request.args.get('datasource')
+    filter = json.loads(request.args.get('filter'))
+    resp = dataFilter.get_gated_cells_centroids(datasource, filter)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_database_description', methods=['GET'])
 def get_database_description():
     datasource = request.args.get('datasource')

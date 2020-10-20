@@ -446,6 +446,9 @@ class CSVGatingList {
         const self = this;
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
 
+        // If no data
+        if (!data) return
+
         //add range slider row content
         var sliderSimple = d3.slider
             .sliderBottom()

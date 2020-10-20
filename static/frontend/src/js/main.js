@@ -134,8 +134,9 @@ const refreshColors = async () => {
 eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 const gatingBrushEnd = async (packet) => {
-    let gatedCellIds = await dataLayer.getGatedCellIds(packet);
-    dataLayer.addAllToCurrentSelection(gatedCellIds);
+    // let gatedCellIds = await dataLayer.getGatedCellIds(packet);
+    let gatedCellIdsAndCentroids = await dataLayer.getGatedCellIdsAndCentroids(packet);
+    dataLayer.addAllToCurrentSelection(gatedCellIdsAndCentroids);
     updateSeaDragonSelection();
 }
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
@@ -155,6 +156,9 @@ function updateSeaDragonSelection() {
         }
     }
     seaDragonViewer.updateSelection(selectionHashMap);
+
+    // Gating overlay
+    seaDragonViewer.csvGatingOverlay.evaluate();
 }
 
 //feature range selection changed in ridge plot

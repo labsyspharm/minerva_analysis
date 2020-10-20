@@ -100,6 +100,9 @@ class ImageViewer {
         that.viewer.addHandler('tile-loaded', this.tileLoaded);
         that.viewer.addHandler('tile-unloaded', this.tileUnloaded);
 
+        // Add overlay
+        this.csvGatingOverlay = new CsvGatingOverlay(this.viewer, this);
+
         // ==================
         // init Plugins
         // ==================

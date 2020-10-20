@@ -19,7 +19,7 @@ import Dropzone from 'dropzone'
 
 import * as OpenSeadragon from 'openseadragon';
 // import {ViewerManager} from './views/viewerManager';
-// import {CsvGatingOverlay} from './views/CsvGatingOverlay';
+import {CsvGatingOverlay} from './views/CsvGatingOverlay';
 
 window.convert = convert;
 window.$ = $;
@@ -32,5 +32,5 @@ window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
 window.Dropzone = Dropzone;
 // window.ViewerManager = ViewerManager;
-// window.CsvGatingOverlay = CsvGatingOverlay;
+window.CsvGatingOverlay = CsvGatingOverlay;
 
