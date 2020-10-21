@@ -180,9 +180,9 @@ class DataLayer {
         }
     }
 
-    async getGatedCellIdsAndCentroids(filter) {
+    async getGatedCellIdsCustom(filter) {
         try {
-            let response = await fetch('/get_gated_cell_ids_and_centroids?' + new URLSearchParams({
+            let response = await fetch('/get_gated_cell_ids_custom?' + new URLSearchParams({
                 filter: JSON.stringify(filter),
                 datasource: datasource
             }))

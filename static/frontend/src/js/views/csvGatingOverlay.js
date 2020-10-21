@@ -30,16 +30,19 @@ export class CsvGatingOverlay {
     range = [[], []];
     run_count = 0;
 
+    // Configs
+    configs = {
+        radius: [1, 12],
+        px_ratio: 2,
+    }
+
     // Tools
     coord_scale_x = d3.scaleLinear();
     coord_scale_y = d3.scaleLinear();
-    r_scale = d3.scaleSqrt();
-
-    // Configs
-    configs = {
-        radius: [1, 7],
-        px_ratio: 2,
-    }
+    r_scale = d3.scalePow().exponent(0.5)
+        .range(this.configs.radius);
+    channel_scale = d3.scaleLinear()
+        .range([-Math.PI / 2, Math.PI * 3 / 2]);
 
     /**
      * @constructor
@@ -53,6 +56,7 @@ export class CsvGatingOverlay {
         this.image_viewer = _imageViewer;
         this.global_channel_list = channelList;
         this.global_gating_list = csv_gatingList;
+        this.global_data_layer = dataLayer;
 
         this.init();
     }
@@ -137,8 +141,10 @@ export class CsvGatingOverlay {
             .range([0, w]);
         this.coord_scale_y.domain([this.range[0][1], this.range[1][1]])
             .range([0, h]);
-        this.r_scale.domain([this.viewer.viewport.getMinZoom(), this.viewer.viewport.getMaxZoom()])
-            .range(this.configs.radius);
+        this.r_scale.domain([this.viewer.viewport.getMinZoom(), this.viewer.viewport.getMaxZoom()]);
+
+        // Calc radius
+        const r = this.r_scale(this.viewer.viewport.getZoom()).toFixed(2);
 
 
         // Get cells in range
@@ -153,27 +159,65 @@ export class CsvGatingOverlay {
                 && values.CellPosition_Y >= this.range[0][1]
                 && values.CellPosition_Y <= this.range[1][1]
             ) {
+
+                // Get coords
+                const x = this.coord_scale_x(values.CellPosition_X);
+                const y = this.coord_scale_y(values.CellPosition_Y);
+
+                // Draw circles - placeholder
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3 * this.configs.px_ratio;
+
                 // Save context
-                // ctx.save();
+                ctx.save();
 
                 // Place in
-                // requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
 
-                    // Get coords
-                    const x = this.coord_scale_x(values.CellPosition_X);
-                    const y = this.coord_scale_y(values.CellPosition_Y);
+                    // Channel
+                    const gatingChannelIndices = [];
+                    this.global_channel_list.selections.forEach((c, i) => {
 
-                    // Draw circles - placeholder
-                    ctx.strokeStyle = 'white';
-                    ctx.fillStyle = 'red';
-                    ctx.lineWidth = 2 * this.configs.px_ratio;
-                    ctx.beginPath();
-                    ctx.arc(x, y, this.r_scale(this.viewer.viewport.getZoom()) * this.configs.px_ratio, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.fill();
-                // });
+                        for (let key in this.global_gating_list.selections) {
+                            if (this.global_data_layer.getShortChannelName(key) === c) {
 
-                // ctx.restore();
+                                // Define current channel
+                                const channel = this.global_gating_list.selections[key];
+
+                                if (values[key] >= channel[0] && values[key] <= channel[1]) {
+                                    gatingChannelIndices.push({
+                                        key: key,
+                                        value: values[key],
+                                        index: i + 1
+                                    });
+                                }
+
+                            }
+                        }
+
+                    });
+
+                    // Update scale
+                    this.channel_scale.domain([0, gatingChannelIndices.length]);
+
+                    // this.global_gating_list.forEach(c => {
+                    gatingChannelIndices.forEach((d, i) => {
+
+                        // Retrieve color (FIXME - need to integrate into viewer manager)
+                        // const rgb = evaluateTF(values[channel], this.image_viewer.channelTF[gatingChannelIndices[i]]);
+                        // ctx.fillStyle = `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
+                        ctx.fillStyle = this.image_viewer.channelTF[gatingChannelIndices[i].index].end_color;
+
+                        ctx.beginPath();
+                        ctx.arc(x, y, r * this.configs.px_ratio, this.channel_scale(i), this.channel_scale(i + 1));
+                        ctx.stroke();
+                        ctx.fill();
+
+                    });
+                });
+
+                ctx.restore();
+
             }
 
         }

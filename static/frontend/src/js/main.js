@@ -134,9 +134,13 @@ const refreshColors = async () => {
 eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 const gatingBrushEnd = async (packet) => {
+
+    // TODO - toggle these methods with centroids on/off ui
     // let gatedCellIds = await dataLayer.getGatedCellIds(packet);
-    let gatedCellIdsAndCentroids = await dataLayer.getGatedCellIdsAndCentroids(packet);
-    dataLayer.addAllToCurrentSelection(gatedCellIdsAndCentroids);
+    let gatedCells = await dataLayer.getGatedCellIdsCustom(packet);
+
+    dataLayer.addAllToCurrentSelection(gatedCells);
+
     updateSeaDragonSelection();
 }
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);

@@ -252,7 +252,7 @@ def get_gated_cells(datasource, gates):
     return query
 
 
-def get_gated_cells_centroids(datasource, gates):
+def get_gated_cells_custom(datasource, gates):
     global database
     global source
     global ball_tree
@@ -262,13 +262,15 @@ def get_gated_cells_centroids(datasource, gates):
         load_ball_tree(datasource)
 
     query_string = ''
+    query_keys = ['id', 'CellPosition_X', 'CellPosition_Y']
     for key, value in gates.items():
         if query_string != '':
-            query_string += ' and '
+            query_string += ' or '
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+        query_keys.append(key)
     if query_string == None or query_string == "":
         return []
-    query = database.query(query_string)[['id', 'CellPosition_X', 'CellPosition_Y']].to_dict(orient='records')
+    query = database.query(query_string)[query_keys].to_dict(orient='records')
     return query
 
 
