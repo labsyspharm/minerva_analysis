@@ -32,8 +32,9 @@ export class CsvGatingOverlay {
 
     // Configs
     configs = {
-        radius: [1, 12],
+        radius: [0, 15],
         px_ratio: 2,
+        stroke: 2
     }
 
     // Tools
@@ -166,7 +167,7 @@ export class CsvGatingOverlay {
 
                 // Draw circles - placeholder
                 ctx.strokeStyle = 'white';
-                ctx.lineWidth = 3 * this.configs.px_ratio;
+                ctx.lineWidth = this.configs.stroke * this.configs.px_ratio;
 
                 // Save context
                 ctx.save();
@@ -174,11 +175,12 @@ export class CsvGatingOverlay {
                 // Place in
                 requestAnimationFrame(() => {
 
-                    // Channel
+                    // Match to channel color
                     const gatingChannelIndices = [];
-                    this.global_channel_list.selections.forEach((c, i) => {
+                    for (let key in this.global_gating_list.selections) {
 
-                        for (let key in this.global_gating_list.selections) {
+                        this.global_channel_list.selections.forEach((c, i) => {
+
                             if (this.global_data_layer.getShortChannelName(key) === c) {
 
                                 // Define current channel
@@ -193,9 +195,9 @@ export class CsvGatingOverlay {
                                 }
 
                             }
-                        }
 
-                    });
+                        });
+                    }
 
                     // Update scale
                     this.channel_scale.domain([0, gatingChannelIndices.length]);
