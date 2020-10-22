@@ -1,3 +1,4 @@
+import shutil
 from PIL import Image
 import timeit
 import os
@@ -7,7 +8,6 @@ if os.name == 'nt':
     vipshome = os.path.dirname(os.path.abspath(__file__)) + r"\..\static\external\vips-dev-8.10\bin"
     os.environ['PATH'] = vipshome + ';' + os.environ['PATH']
 
-import shutil
 from pathlib import Path
 import pyvips
 import numpy as np

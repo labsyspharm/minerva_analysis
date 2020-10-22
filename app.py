@@ -1,4 +1,7 @@
-from flask import Flask, render_template, request, Response, jsonify, abort
+from flask import Flask, render_template, request, Response, jsonify, abort, send_file
+import io
+from PIL import Image
+
 from server import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
 import os
 import csv
@@ -28,6 +31,7 @@ def image_viewer(datasource):
     datasources = get_config_names()
     if datasource not in datasources:
         datasource = ''
+
     # if datasource != '':
     #     test = load_database(datasource)
     return render_template('index.html', data={'datasource': datasource, 'datasources': datasources})
@@ -548,6 +552,39 @@ def get_gating_csv_values():
     csv = pd.read_csv(file_path)
     obj = csv.to_dict(orient='records')
     return serialize_and_submit_json(obj)
+
+
+@app.route('/generated/data/<string:datasource>/<string:dzi>')
+def generate_dzi(datasource, dzi):
+    xml = '''<?xml version="1.0" encoding="UTF-8"?>
+                <Image xmlns="http://schemas.microsoft.com/deepzoom/2008"
+                  Format="png"
+                  Overlap="2"
+                  TileSize="128"
+                  >
+                  <Size 
+                    Height="7335"
+                    Width="2540"
+                  />
+                </Image>
+                '''
+    return Response(xml, mimetype='text/xml')
+
+
+# E.G /generated/data/melanoma/channel_00_files/13/16_18.png
+@app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
+def generate_png(datasource, channel, level, tile):
+    png = dataFilter.generate_png(datasource, channel, level, tile)
+    file_object = io.BytesIO()
+    # write PNG in file-object
+    try:
+        png.save(file_object, 'PNG')
+    except AttributeError:
+        Image.fromarray(png).save(file_object, 'PNG')
+    # move to beginning of file so `send_file()` it will read from start
+    file_object.seek(0)
+
+    return send_file(file_object, mimetype='image/PNG')
 
 
 def serialize_and_submit_json(data):

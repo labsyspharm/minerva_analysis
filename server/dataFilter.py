@@ -6,13 +6,22 @@ import requests
 import json
 import os
 from pathlib import Path
+import pyvips
+from skimage.io import imread
+
 import time
 import pickle
+import tifffile as tf
+from PIL import Image
+import re
 
 ball_tree = None
 database = None
 source = None
 config = None
+tiff = None
+seg = None
+channels = None
 
 
 def init(datasource):
@@ -330,3 +339,73 @@ def get_database_description(datasource):
             dat.append(obj)
         description[column]['histogram'] = dat
     return description
+
+
+def generate_png(datasource, channel, level, tile):
+    global database
+    global source
+    global tiff
+    global seg
+    global channels
+    segmentation = False
+
+    if tiff is None or seg is None or channel is None:
+        channels = tf.imread('static/data/C/2_C1_b.ome.tif', is_ome=True)
+        seg = tf.imread('static/data/C/nucleiMask.tif', is_ome=True)
+    try:
+        channel_num = int(re.match(r".*(\d+)_files", channel).groups()[0])
+        tiff = channels
+    except AttributeError:
+        segmentation = True
+        tiff = seg
+
+    format_to_dtype = {
+        'uchar': np.uint8,
+        'char': np.int8,
+        'ushort': np.uint16,
+        'short': np.int16,
+        'uint': np.uint32,
+        'int': np.int32,
+        'float': np.float32,
+        'double': np.float64,
+        'complex': np.complex64,
+        'dpcomplex': np.complex128,
+    }
+
+    # test = pyvips.Image.new_from_file('static/data/C/2_C1_b.ome.tif', n=channel_num + 1)
+    #
+    # test_arr = np.ndarray(buffer=test.write_to_memory(), dtype=format_to_dtype[test.format],
+    #                       shape=[test.height, test.width])
+    width = tiff.shape[-2]
+    height = tiff.shape[-1]
+
+    max_level = int(np.ceil(np.log2(np.max([width, height]))))
+    [col, row] = tile.replace('.png', '').split('_')
+    tile_region = 128 * 2 ** (max_level - int(level))
+    padding = 2 ** (max_level - int(level) + 1)
+    # padding = 2
+    tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, width])]
+    tile_range_col = [max([int(col) * tile_region - padding, 0]), min([(int(col) + 1) * tile_region + padding, height])]
+    if segmentation is True:
+        image = tiff[tile_range_row[0]:tile_range_row[1], tile_range_col[0]:tile_range_col[1]]
+    else:
+        image = tiff[channel_num, tile_range_row[0]:tile_range_row[1], tile_range_col[0]:tile_range_col[1]]
+    scale_factor = 2 ** (max_level - int(level))
+
+    if tile_region > 128:
+        resized_shape = (
+            int(np.ceil(image.shape[1] / scale_factor)), int(np.ceil(image.shape[0] / scale_factor)))
+        if segmentation is False:
+            image = Image.fromarray(image).resize(resized_shape, Image.BILINEAR)
+        else:
+            image = Image.fromarray(image).resize(resized_shape, Image.NEAREST)
+
+    # compare = imread('static/data/' + datasource + '/' + channel + '/' + level + '/' + tile)
+    # compare_raw = compare[:, :, 0] * 65536 + compare[:, :, 1] * 256 + compare[:, :, 2]
+    image = np.array(image)
+    # equals = np.array_equal(compare_raw, np.array(image))
+    imgR = ((image >> 16) % 256).astype('uint8')
+    imgG = ((image >> 8) % 256).astype('uint8')  # high bits
+    imgB = (image % 256).astype('uint8')  # low bits
+    channel_img = np.dstack((imgR, imgG, imgB))
+    return channel_img
