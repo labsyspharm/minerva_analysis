@@ -19,7 +19,6 @@ ball_tree = None
 database = None
 source = None
 config = None
-tiff = None
 seg = None
 channels = None
 
@@ -344,20 +343,16 @@ def get_database_description(datasource):
 def generate_png(datasource, channel, level, tile):
     global database
     global source
-    global tiff
-    global seg
-    global channels
+    global config
+    if config is None:
+        load_config()
     segmentation = False
+    channel_num = 0
 
-    if tiff is None or seg is None or channel is None:
-        channels = tf.imread('static/data/C/2_C1_b.ome.tif', is_ome=True)
-        seg = tf.imread('static/data/C/nucleiMask.tif', is_ome=True)
     try:
         channel_num = int(re.match(r".*(\d+)_files", channel).groups()[0])
-        tiff = channels
     except AttributeError:
         segmentation = True
-        tiff = seg
 
     format_to_dtype = {
         'uchar': np.uint8,
@@ -371,39 +366,73 @@ def generate_png(datasource, channel, level, tile):
         'complex': np.complex64,
         'dpcomplex': np.complex128,
     }
+    dtype_to_format = {
+        'uint8': 'uchar',
+        'int8': 'char',
+        'uint16': 'ushort',
+        'int16': 'short',
+        'uint32': 'uint',
+        'int32': 'int',
+        'float32': 'float',
+        'float64': 'double',
+        'complex64': 'complex',
+        'complex128': 'dpcomplex',
+    }
 
-    # test = pyvips.Image.new_from_file('static/data/C/2_C1_b.ome.tif', n=channel_num + 1)
-    #
-    # test_arr = np.ndarray(buffer=test.write_to_memory(), dtype=format_to_dtype[test.format],
-    #                       shape=[test.height, test.width])
-    width = tiff.shape[-2]
-    height = tiff.shape[-1]
+    height = config[datasource]['height']
+    width = config[datasource]['width']
+    n_channels = config[datasource]['channels']
 
     max_level = int(np.ceil(np.log2(np.max([width, height]))))
     [col, row] = tile.replace('.png', '').split('_')
     tile_region = 128 * 2 ** (max_level - int(level))
     padding = 2 ** (max_level - int(level) + 1)
     # padding = 2
-    tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, width])]
-    tile_range_col = [max([int(col) * tile_region - padding, 0]), min([(int(col) + 1) * tile_region + padding, height])]
+    tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, height])]
+    tile_range_col = [max([int(col) * tile_region - padding, 0]), min([(int(col) + 1) * tile_region + padding, width])]
     if segmentation is True:
-        image = tiff[tile_range_row[0]:tile_range_row[1], tile_range_col[0]:tile_range_col[1]]
+        img = pyvips.Image.new_from_file('static/data/C/nucleiMask.tif', n=-1)
     else:
-        image = tiff[channel_num, tile_range_row[0]:tile_range_row[1], tile_range_col[0]:tile_range_col[1]]
-    scale_factor = 2 ** (max_level - int(level))
+        img = pyvips.Image.new_from_file('static/data/C/2_C1_b.ome.tif', n=n_channels)
+    region = pyvips.Region.new(img)
 
-    if tile_region > 128:
-        resized_shape = (
-            int(np.ceil(image.shape[1] / scale_factor)), int(np.ceil(image.shape[0] / scale_factor)))
-        if segmentation is False:
-            image = Image.fromarray(image).resize(resized_shape, Image.BILINEAR)
+    crop_height = tile_range_row[1] - tile_range_row[0]
+    crop_width = tile_range_col[1] - tile_range_col[0]
+    # test_img = np.ndarray(buffer=test, dtype=format_to_dtype[img.format], shape=[height, width])
+    # region = pyvips.Region.new(img)
+    # crop = region.fetch(2500, 3180, 20, 20)
+    # crop_img = np.ndarray(buffer=crop, dtype=format_to_dtype[img.format], shape=[20, 20])
+    #
+    # portion = test_img[3180:3200, 2500:2520]
+    # # (3188, 2502)
+
+    image_buffer = region.fetch(channel_num * height + tile_range_col[0], tile_range_row[0], crop_width, crop_height)
+    image = np.ndarray(buffer=image_buffer, dtype=format_to_dtype[img.format], shape=[crop_height, crop_width])
+
+    def numpy2vips(a):
+        h, w = a.shape
+        linear = a.reshape(w * h)
+        vi = pyvips.Image.new_from_memory(linear.data, w, h, 1,
+                                          dtype_to_format[str(a.dtype)])
+        return vi
+
+    pv_image = numpy2vips(image)
+    scale_factor = 2 ** (max_level - int(level))
+    # If I'm resizing
+    if scale_factor != 1:
+        if segmentation:
+            shrink = pv_image.reduce(scale_factor, scale_factor, kernel="nearest")
         else:
-            image = Image.fromarray(image).resize(resized_shape, Image.NEAREST)
+            shrink = pv_image.reduce(scale_factor, scale_factor, kernel="linear")
+        image = np.ndarray(buffer=shrink.write_to_memory(),
+                           dtype=format_to_dtype[shrink.format],
+                           shape=[shrink.height, shrink.width])
 
     # compare = imread('static/data/' + datasource + '/' + channel + '/' + level + '/' + tile)
     # compare_raw = compare[:, :, 0] * 65536 + compare[:, :, 1] * 256 + compare[:, :, 2]
-    image = np.array(image)
     # equals = np.array_equal(compare_raw, np.array(image))
+    # test = np.abs(compare_raw - image)
+
     imgR = ((image >> 16) % 256).astype('uint8')
     imgG = ((image >> 8) % 256).astype('uint8')  # high bits
     imgB = (image % 256).astype('uint8')  # low bits
