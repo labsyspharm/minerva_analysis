@@ -344,6 +344,8 @@ def generate_png(datasource, channel, level, tile):
     global database
     global source
     global config
+    global seg
+    global channels
     if config is None:
         load_config()
     segmentation = False
@@ -381,7 +383,11 @@ def generate_png(datasource, channel, level, tile):
 
     height = config[datasource]['height']
     width = config[datasource]['width']
-    n_channels = config[datasource]['channels']
+    n_channels = config[datasource]['num_channels']
+    if seg is None:
+        seg = pyvips.Image.new_from_file(config[datasource]['segmentation'], n=-1)
+    if channels is None:
+        channels = pyvips.Image.new_from_file(config[datasource]['channels'], n=n_channels)
 
     max_level = int(np.ceil(np.log2(np.max([width, height]))))
     [col, row] = tile.replace('.png', '').split('_')
@@ -391,9 +397,9 @@ def generate_png(datasource, channel, level, tile):
     tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, height])]
     tile_range_col = [max([int(col) * tile_region - padding, 0]), min([(int(col) + 1) * tile_region + padding, width])]
     if segmentation is True:
-        img = pyvips.Image.new_from_file('static/data/C/nucleiMask.tif', n=-1)
+        img = seg
     else:
-        img = pyvips.Image.new_from_file('static/data/C/2_C1_b.ome.tif', n=n_channels)
+        img = channels
     region = pyvips.Region.new(img)
 
     crop_height = tile_range_row[1] - tile_range_row[0]
@@ -438,3 +444,22 @@ def generate_png(datasource, channel, level, tile):
     imgB = (image % 256).astype('uint8')  # low bits
     channel_img = np.dstack((imgR, imgG, imgB))
     return channel_img
+
+
+def get_dzi_xml(datasource):
+    global config
+    if config is None:
+        load_config()
+    xml = '''<?xml version="1.0" encoding="UTF-8"?>
+                <Image xmlns="http://schemas.microsoft.com/deepzoom/2008"
+                  Format="png"
+                  Overlap="2"
+                  TileSize="128"
+                  >
+                  <Size 
+                    Height="{height}"
+                    Width="{width}"
+                  />
+                </Image>
+                '''.format(height=config[datasource]['height'], width=config[datasource]['width'])
+    return xml

@@ -556,18 +556,7 @@ def get_gating_csv_values():
 
 @app.route('/generated/data/<string:datasource>/<string:dzi>')
 def generate_dzi(datasource, dzi):
-    xml = '''<?xml version="1.0" encoding="UTF-8"?>
-                <Image xmlns="http://schemas.microsoft.com/deepzoom/2008"
-                  Format="png"
-                  Overlap="2"
-                  TileSize="128"
-                  >
-                  <Size 
-                    Height="7335"
-                    Width="2540"
-                  />
-                </Image>
-                '''
+    xml = dataFilter.get_dzi_xml(datasource)
     return Response(xml, mimetype='text/xml')
 
 
