@@ -220,7 +220,7 @@ def upload_file_page():
                     channel_files = request.files.getlist("channel_files")
                     if len(channel_files) == 0:
                         raise Exception("Please Upload a Channel File")
-                    if any('.ome' in file.filename for file in channel_files):
+                    if any('.ome' in file.filename for file in channel_files) or len(channel_files) == 1 :
                         if len(channel_files) > 1:
                             raise Exception("Please Only Upload One Channel .ome.tif ")
                         else:
