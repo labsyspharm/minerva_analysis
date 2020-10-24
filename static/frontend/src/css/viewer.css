@@ -140,26 +140,24 @@
 }
 
 #gating_controls_panel {
+    background-color: white;
     border-top: 1px solid rgba(224, 224, 224, 1);
     bottom: -19px;
+    display: flex;
+    flex-flow: row wrap;
     padding: 5px 10px 0 10px;
     position: absolute;
     width: 98%;
     z-index: 100;
 }
 
-#gating_controls_panel{
-    background-color: white;
-}
-
 #gating_controls_panel label {
     align-items: center;
     display: flex;
     font-size: 11px;
-    width: 100%;
 }
 
 #gating_controls_panel input {
     height: 11px;
-    margin: 1px 0 0 5px;
+    margin: 1px 10px 0 5px;
 }

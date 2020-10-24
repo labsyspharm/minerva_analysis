@@ -261,6 +261,7 @@ def get_gated_cells_custom(datasource, gates):
     if datasource != source:
         load_ball_tree(datasource)
 
+    # Query
     query_string = ''
     query_keys = ['id', 'CellPosition_X', 'CellPosition_Y']
     for key, value in gates.items():
@@ -271,6 +272,10 @@ def get_gated_cells_custom(datasource, gates):
     if query_string == None or query_string == "":
         return []
     query = database.query(query_string)[query_keys].to_dict(orient='records')
+    # TODO - likely lighter / less costly
+    # query = database.query(query_string)[query_keys].to_dict('split')
+    # del query['index']
+
     return query
 
 

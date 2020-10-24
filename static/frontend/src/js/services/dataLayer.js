@@ -182,11 +182,15 @@ class DataLayer {
 
     async getGatedCellIdsCustom(filter) {
         try {
+            // const start = performance.now()
             let response = await fetch('/get_gated_cell_ids_custom?' + new URLSearchParams({
                 filter: JSON.stringify(filter),
                 datasource: datasource
             }))
             let cellIds = await response.json();
+            // const end = performance.now()
+            // console.log(end - start)
+            // console.log(cellIds)
             return cellIds;
         } catch (e) {
             console.log("Error Getting Gated Cell Ids", e);

@@ -3,6 +3,11 @@ import "regenerator-runtime/runtime.js";
 /**
  * @class CsvGatingOverlay
  *
+ * TODO:
+ *  1. Query only for add / remove channels; filter for gating adjustments
+ *  2. Stall animation triggered draw iterations when awaiting query
+ *  3. Make code more modular (move out of main) - maybe keep in imageViewer and csvGatingList
+ *
  */
 
 export class CsvGatingOverlay {
@@ -18,8 +23,6 @@ export class CsvGatingOverlay {
         height: 0,
         degrees: 0
     };
-    image_size = null;
-    processing = false;
     viewer_rect = {
         x: 0,
         y: 0,
@@ -28,7 +31,7 @@ export class CsvGatingOverlay {
         degrees: 0
     };
     range = [[], []];
-    run_count = 0;
+    run_balancer = 0;
 
     // Configs
     configs = {
@@ -109,17 +112,13 @@ export class CsvGatingOverlay {
             [this.image_rect.x + this.image_rect.width, this.image_rect.y + this.image_rect.height]
         ];
 
-        // If not processing
-        if (!this.processing) {
-
-            // Update processing status
-            this.processing = true;
+        // If run balancer evens out (strategy for getting last request -
+        // run_balancer++ in csvGatingList, run_balancer-- in main
+        // FIXME - would be better to nest all references for gating in gating plugin packages
+        if (this.run_balancer === 0) {
 
             // Draw
             this.draw();
-
-            // Update processing status
-            this.processing = false;
 
         }
 
@@ -147,6 +146,8 @@ export class CsvGatingOverlay {
         // Calc radius
         const r = this.r_scale(this.viewer.viewport.getZoom()).toFixed(2);
 
+        // Iteration ID (run count)
+        const scopeID = this.run_count;
 
         // Get cells in range
         for (let k of this.image_viewer.selection.keys()) {

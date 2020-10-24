@@ -137,6 +137,7 @@ const gatingBrushEnd = async (packet) => {
 
     // TODO - toggle these methods with centroids on/off ui
     // let gatedCellIds = await dataLayer.getGatedCellIds(packet);
+    console.log(packet)
     let gatedCells = await dataLayer.getGatedCellIdsCustom(packet);
 
     dataLayer.addAllToCurrentSelection(gatedCells);
@@ -161,7 +162,8 @@ function updateSeaDragonSelection() {
     }
     seaDragonViewer.updateSelection(selectionHashMap);
 
-    // Gating overlay
+    // Gating overlay (and query decrementor)
+    seaDragonViewer.csvGatingOverlay.run_balancer--;
     seaDragonViewer.csvGatingOverlay.evaluate();
 }
 

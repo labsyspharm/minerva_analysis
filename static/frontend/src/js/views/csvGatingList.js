@@ -23,12 +23,24 @@ class CSVGatingList {
     }
 
     selectChannel(name) {
+        // For overlay (and query incrementor)
+        seaDragonViewer.csvGatingOverlay.run_balancer++;
+
+        // Add
         this.selections[this.dataLayer.getFullChannelName(name)] = this.sliders.get(name).value();
+
+        // Trigger
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
     }
 
     removeChannel(name) {
+        // For overlay (and query incrementor)
+        seaDragonViewer.csvGatingOverlay.run_balancer++;
+
+        // Delete
         delete this.selections[this.dataLayer.getFullChannelName(name)];
+
+        // Trigger
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
     }
 
