@@ -31,6 +31,8 @@ def load_db(datasource, reload=False):
     global database
     global source
     global config
+    global seg
+    global channels
     if source is datasource and database is not None and reload is False:
         return
     load_config()
@@ -46,6 +48,9 @@ def load_db(datasource, reload=False):
     database['id'] = database.index
     database = database.replace(-np.Inf, 0)
     source = datasource
+    seg = pyvips.Image.new_from_file(config[datasource]['segmentation'], n=-1)
+    n_channels = config[datasource]['num_channels']
+    channels = pyvips.Image.new_from_file(config[datasource]['channels'], n=n_channels)
 
 
 def load_config():
@@ -350,7 +355,7 @@ def generate_png(datasource, channel, level, tile):
         load_config()
     segmentation = False
     channel_num = 0
-
+    start = time.time()
     try:
         channel_num = int(re.match(r".*(\d+)_files", channel).groups()[0])
     except AttributeError:
@@ -380,18 +385,14 @@ def generate_png(datasource, channel, level, tile):
         'complex64': 'complex',
         'complex128': 'dpcomplex',
     }
-
+    print('1', time.time() - start)
+    start = time.time()
     height = config[datasource]['height']
     width = config[datasource]['width']
-    n_channels = config[datasource]['num_channels']
-    if seg is None:
-        seg = pyvips.Image.new_from_file(config[datasource]['segmentation'], n=-1)
-    if channels is None:
-        channels = pyvips.Image.new_from_file(config[datasource]['channels'], n=n_channels)
 
     max_level = int(np.ceil(np.log2(np.max([width, height]))))
     [col, row] = tile.replace('.png', '').split('_')
-    tile_region = 128 * 2 ** (max_level - int(level))
+    tile_region = 256 * 2 ** (max_level - int(level))
     padding = 2 ** (max_level - int(level) + 1)
     # padding = 2
     tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, height])]
@@ -400,20 +401,19 @@ def generate_png(datasource, channel, level, tile):
         img = seg
     else:
         img = channels
+    start = time.time()
     region = pyvips.Region.new(img)
 
     crop_height = tile_range_row[1] - tile_range_row[0]
     crop_width = tile_range_col[1] - tile_range_col[0]
-    # test_img = np.ndarray(buffer=test, dtype=format_to_dtype[img.format], shape=[height, width])
-    # region = pyvips.Region.new(img)
-    # crop = region.fetch(2500, 3180, 20, 20)
-    # crop_img = np.ndarray(buffer=crop, dtype=format_to_dtype[img.format], shape=[20, 20])
-    #
-    # portion = test_img[3180:3200, 2500:2520]
-    # # (3188, 2502)
-
-    image_buffer = region.fetch(channel_num * height + tile_range_col[0], tile_range_row[0], crop_width, crop_height)
+    print('2', time.time() - start)
+    start = time.time()
+    image_buffer = region.fetch(tile_range_col[0], channel_num * height + tile_range_row[0], crop_width, crop_height)
+    print('3', time.time() - start)
+    start = time.time()
     image = np.ndarray(buffer=image_buffer, dtype=format_to_dtype[img.format], shape=[crop_height, crop_width])
+    print('4', time.time() - start)
+    start = time.time()
 
     def numpy2vips(a):
         h, w = a.shape
@@ -423,8 +423,12 @@ def generate_png(datasource, channel, level, tile):
         return vi
 
     pv_image = numpy2vips(image)
+    print('5', time.time() - start)
+    start = time.time()
     scale_factor = 2 ** (max_level - int(level))
     # If I'm resizing
+    print('6', time.time() - start)
+    start = time.time()
     if scale_factor != 1:
         if segmentation:
             shrink = pv_image.reduce(scale_factor, scale_factor, kernel="nearest")
@@ -438,11 +442,13 @@ def generate_png(datasource, channel, level, tile):
     # compare_raw = compare[:, :, 0] * 65536 + compare[:, :, 1] * 256 + compare[:, :, 2]
     # equals = np.array_equal(compare_raw, np.array(image))
     # test = np.abs(compare_raw - image)
-
+    print('7', time.time() - start)
+    start = time.time()
     imgR = ((image >> 16) % 256).astype('uint8')
     imgG = ((image >> 8) % 256).astype('uint8')  # high bits
     imgB = (image % 256).astype('uint8')  # low bits
     channel_img = np.dstack((imgR, imgG, imgB))
+    print('8', time.time() - start)
     return channel_img
 
 
@@ -454,7 +460,7 @@ def get_dzi_xml(datasource):
                 <Image xmlns="http://schemas.microsoft.com/deepzoom/2008"
                   Format="png"
                   Overlap="2"
-                  TileSize="128"
+                  TileSize="256"
                   >
                   <Size 
                     Height="{height}"
