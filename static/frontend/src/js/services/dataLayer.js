@@ -1,4 +1,4 @@
-//todo add crossfilter stuff here... build some filters and sorters for individual and combined dimensions
+//todo add crossfilter stuff here... build some lensingFilters and sorters for individual and combined dimensions
 
 class DataLayer {
 

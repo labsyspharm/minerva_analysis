@@ -69,6 +69,16 @@ export class ViewerManager {
         // Get dzi path
         const src = this.imageViewer.config["imageData"][srcIdx]["src"];
 
+        // Find name
+        let name = '';
+        let name_short = '';
+        for (let k in imageChannels) {
+            if (imageChannels.hasOwnProperty(k) && imageChannels[k] === srcIdx) {
+                name = k;
+                name_short = dataLayer.getShortChannelName(k);
+            }
+        }
+
         // Add tiled image
         this.viewer.addTiledImage({
             tileSource: src,
@@ -83,7 +93,7 @@ export class ViewerManager {
                 const sub_url = group[group.length - 2];
                 // Attach
                 this.imageViewer.currentChannels[srcIdx] = {"url": url, "sub_url": sub_url};
-                this.viewer_channels[srcIdx] = {"url": url, "sub_url": sub_url};
+                this.viewer_channels[srcIdx] = {"url": url, "sub_url": sub_url, 'name': name, 'short_name': name_short};
             }
         });
     }

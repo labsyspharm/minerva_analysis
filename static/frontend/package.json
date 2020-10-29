@@ -13,7 +13,7 @@
     "buffer": "^5.6.0",
     "color-convert": "^2.0.1",
     "css-loader": "^3.6.0",
-    "d3": "^5.16.0",
+    "d3": "^6.2.0",
     "d3-simple-slider": "latest",
     "expose-loader": "^1.0.0",
     "file-loader": "^6.0.0",
@@ -27,11 +27,13 @@
     "openseadragon": "^2.4.2",
     "pngjs": "^5.0.0",
     "popper.js": "^1.16.1",
+    "regenerator-runtime": "^0.13.7",
     "sortablejs": "^1.10.2",
     "style-loader": "^1.2.1"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
+    "@babel/plugin-transform-runtime": "^7.12.1",
     "@babel/preset-env": "^7.11.5",
     "babel-loader": "^8.1.0",
     "webpack": "^4.44.2",

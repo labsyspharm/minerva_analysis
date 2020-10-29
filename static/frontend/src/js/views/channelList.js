@@ -45,11 +45,11 @@ class ChannelList {
         list.classList.add("list-group")
         channel_list.appendChild(list)
         // Will show the picker when you click on a color rect
-        let showPicker = () => {
-            this.colorTransferHandle = d3.select(d3.event.target);
+        let showPicker = e => {
+            this.colorTransferHandle = d3.select(e.target);
             let color = this.colorTransferHandle.style('fill');
             let hsl = d3.hsl(color);
-            this.rainbow.show(d3.event.clientX, d3.event.clientY);
+            this.rainbow.show(e.clientX, e.clientY);
         };
         // Draws rows in the channel list
         _.each(this.columns, column => {

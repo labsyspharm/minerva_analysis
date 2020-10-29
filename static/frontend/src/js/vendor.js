@@ -5,6 +5,7 @@ import 'jquery'
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'pngjs'
+import {regeneratorRuntime} from "regenerator-runtime";
 import * as d3 from 'd3';
 import * as slider from 'd3-simple-slider';
 import 'lodash'
@@ -18,7 +19,7 @@ import convert from 'color-convert'
 import * as OpenSeadragon from 'openseadragon';
 import {ViewerManager} from './views/viewerManager';
 import * as Lensing from 'lensing';
-import {LensingFiltersExt} from './lensingFiltersExt';
+import {LensingFiltersExt} from './views/lensingFiltersExt';
 
 window.convert = convert;
 window.$ = $;

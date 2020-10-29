@@ -22,23 +22,23 @@
 			hue=360, sat=0.5, lum=0.5,
 			gradient = 'linear-gradient(180deg,red,#ff0,#0f0,#0ff,#00f,#f0f,red)',
 			hueDrag = d3.drag()
-	        .on("drag", ()=>{
-	            hueHandleMoved(d3.event.y);
+	        .on("drag", (e)=>{
+	            hueHandleMoved(e.y);
 	        })
-	        .on("end", ()=>{
-	            hueHandleEnd(d3.event.y);
+	        .on("end", (e)=>{
+	            hueHandleEnd(e.y);
 			}),
 			slDrag = d3.drag()
-	        .on("drag", ()=>{
-	            slHandleMoved(d3.event);
+	        .on("drag", (e)=>{
+	            slHandleMoved(e);
 	        })
-	        .on("end", ()=>{
-	            slHandleEnd(d3.event);
+	        .on("end", (e)=>{
+	            slHandleEnd(e);
 			}),
 			drag = d3.drag()
-				.on("drag", ()=>{
-					let dx = d3.event.dx;
-					let dy = d3.event.dy;
+				.on("drag", (e)=>{
+					let dx = e.dx;
+					let dy = e.dy;
 					container
 					.style('left', parseInt(container.style('left'), 10) + dx+'px')
 					.style('top', parseInt(container.style('top'), 10) + dy+'px');
@@ -260,13 +260,13 @@
 			picker.hide();
 	        listeners.apply("save", this, [d3.hsl(hue, sat, lum),...arguments]);
 		}
-	    function clickHueBar(){
-			let loc = d3.mouse(this)[1];
+	    function clickHueBar(e){
+			let loc = d3.pointer(e)[1];
 	        updateHueHandle(loc);
 	        listeners.apply("handleend", this, [d3.hsl(hue, sat, lum),loc,'hue',...arguments]);
 		}
-		function clickSlArea(){
-			let loc = d3.mouse(this);
+		function clickSlArea(e){
+			let loc = d3.pointer(e);
 			loc = {x:loc[0], y:loc[1]};
 			updateSlHandle(loc);
 	        listeners.apply("handleend", this, [d3.hsl(hue, sat, lum),loc,'sl',...arguments]);

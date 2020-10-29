@@ -52,6 +52,7 @@ class ImageViewer {
             const end_color = d3.rgb(255, 255, 255);
 
             const tf_def = this.createTFArray(0, 65535, start_color, end_color, this.numTFBins);
+            tf_def.name = this.config['imageData'][i].name;
 
             this.channelTF.push(tf_def);
         }
@@ -90,7 +91,7 @@ class ImageViewer {
         that.viewer = OpenSeadragon(viewer_config);
         /************************************************************************************* Lensing Implementation */
 
-            // Get filters data
+            // Get lensingFilters data
         const dataLoad = LensingFiltersExt.getFilters(this);
 
         // Instantiate viewer
@@ -407,6 +408,7 @@ class ImageViewer {
         const rgb1 = this.channelTF[channelIdx].start_color;
         const rgb2 = this.channelTF[channelIdx].end_color;
         const tf_def = this.createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
+        tf_def.name = dataLayer.getShortChannelName(name);
 
         this.channelTF[channelIdx] = tf_def;
         this.forceRepaint();
@@ -435,6 +437,7 @@ class ImageViewer {
             rgb2 = color;
         }
         const tf_def = this.createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
+        tf_def.name = dataLayer.getShortChannelName(name);
 
         this.channelTF[channelIdx] = tf_def;
         this.forceRepaint();
