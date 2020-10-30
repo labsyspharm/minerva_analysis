@@ -54,13 +54,13 @@
      * @param {Object} options The options
      * @param {OpenSeadragon.Viewer} options.viewer The viewer to attach this
      * plugin to.
-     * @param {String} [options.loadMode='async'] Set to sync to have the filters
-     * applied synchronously. It will only work if the filters are all synchronous.
-     * Note that depending on how complex the filters are, it may also hang the browser.
-     * @param {Object[]} options.filters The filters to apply to the images.
-     * @param {OpenSeadragon.TiledImage[]} options.filters[x].items The tiled images
+     * @param {String} [options.loadMode='async'] Set to sync to have the lensingFilters
+     * applied synchronously. It will only work if the lensingFilters are all synchronous.
+     * Note that depending on how complex the lensingFilters are, it may also hang the browser.
+     * @param {Object[]} options.lensingFilters The lensingFilters to apply to the images.
+     * @param {OpenSeadragon.TiledImage[]} options.lensingFilters[x].items The tiled images
      * on which to apply the filter.
-     * @param {function|function[]} options.filters[x].processors The processing
+     * @param {function|function[]} options.lensingFilters[x].processors The processing
      * function(s) to apply to the images. The parameters of this function are
      * the context to modify and a callback to call upon completion.
      */
@@ -76,7 +76,7 @@
         this.viewer.addHandler('tile-drawing', tileDrawingHandler);
 
         // filterIncrement allows to determine whether a tile contains the
-        // latest filters results.
+        // latest lensingFilters results.
         this.filterIncrement = 0;
 
         setOptions(this, options);
@@ -222,7 +222,7 @@
 
     function addItemToReset(item, itemsToReset) {
         if (itemsToReset.indexOf(item) >= 0) {
-            throw new Error('An item can not have filters ' +
+            throw new Error('An item can not have lensingFilters ' +
                 'assigned multiple times.');
         }
         itemsToReset.push(item);
