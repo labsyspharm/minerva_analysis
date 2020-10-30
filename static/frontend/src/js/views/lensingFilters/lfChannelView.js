@@ -147,8 +147,20 @@ export class LfChannelView {
                             const mainManager = this.image_viewer.viewerManagerVMain;
                             const auxiManager = this.image_viewer.viewerManagerVAuxi;
 
-                            // Update viewer channels
-                            for (let k in mainManager.viewer_channels) {
+                            // If multi channel
+                            if (Object.keys(auxiManager.viewer_channels).length > 1) {
+
+                                // Update viewer channels
+                                for (let k in mainManager.viewer_channels) {
+
+                                    // Reduce to single channel
+                                    if (auxiManager.viewer_channels[k].short_name === this.vars.currentChannel) {
+                                        auxiManager.viewer_channels = {};
+                                        auxiManager.viewer_channels[`${k}`] = mainManager.viewer_channels[k];
+                                        auxiManager.force_repaint();
+                                        break;
+                                    }
+                                }
 
                             }
 
@@ -220,7 +232,10 @@ export class LfChannelView {
                                                         if (channels.includes(d)) return 'rgba(255, 255, 255, 1)';
                                                         return 'rgba(255, 255, 255, 0)';
                                                     })
-                                                    .attr('stroke-width', 0.5);
+                                                    .attr('stroke-width', () => {
+                                                        if (d === vis.vars.currentChannel) return 1.5;
+                                                        return 0.5;
+                                                    });
                                                 labelG.append('text')
                                                     .attr('class', 'viewfinder_charts_g_chart_g_text')
                                                     .attr('x', vis.vars.config_colorR * 2)
@@ -253,6 +268,11 @@ export class LfChannelView {
 
                         },
                         destroy: () => {
+
+                            // Re-establish channels
+                            this.image_viewer.viewerManagerVAuxi.viewer_channels =
+                                this.image_viewer.viewerManagerVMain.viewer_channels;
+                            this.image_viewer.viewerManagerVAuxi.force_repaint();
 
                             // Remove
                             this.vars.el_radialExtG.remove();

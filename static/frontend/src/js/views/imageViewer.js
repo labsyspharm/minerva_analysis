@@ -106,6 +106,11 @@ class ImageViewer {
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
 
+        /********************************************************************************************** Emulate click */
+
+        // Click first from channel list
+        // document.querySelector('.channel-list-content').click();
+
         /******************************************************************************************** Back to normal  */
         /* TODO - unused
         // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
