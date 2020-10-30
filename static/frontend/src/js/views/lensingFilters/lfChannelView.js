@@ -14,12 +14,38 @@ export class LfChannelView {
         config_channelExtH: 30,
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
         config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 30},
-        currentChannel: '',
+        currentChannel: {
+            name: '',
+            index: 0
+        },
         el_boxExtG: null,
         el_cellsG: null,
         el_chartsG: null,
         el_radialExtG: null,
         el_textReportG: null,
+        el_toggleNoteG: null,
+        forceUpdate: false,
+        keydown: e => {
+            if (e.key === 'C') {
+
+                // Access auxi viewer manager (lensing instance)
+                const mainManager = this.image_viewer.viewerManagerVMain;
+                const auxiManager = this.image_viewer.viewerManagerVAuxi;
+
+                // Get keys
+                const keys = Object.keys(mainManager.viewer_channels);
+                keys.forEach((k, i) => {
+                    if (+k === this.vars.currentChannel.index) {
+                        if (i < keys.length - 1) {
+                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[i + 1]].short_name;
+                        } else {
+                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[0]].short_name;
+                        }
+                        this.vars.forceUpdate = true;
+                    }
+                });
+            }
+        }
     };
 
     /**
@@ -124,11 +150,46 @@ export class LfChannelView {
                                 .attr('font-weight', 'lighter')
                                 .text('Channel view')
 
+                            this.vars.el_toggleNoteG = this.vars.el_boxExtG.append('g')
+                                .attr('class', 'viewfinder_toggle_note_g')
+                                .style('transform', `translate(${this.vars.config_boxW
+                                - this.vars.config_boxMargin.right}px, ${this.vars.config_boxMargin.top * 3}px)`);
+                            this.vars.el_toggleNoteG.append('text')
+                                .attr('class', 'viewfinder_toggle_note_g_char')
+                                .attr('x', 15)
+                                .attr('y', 0)
+                                .attr('text-anchor', 'end')
+                                .attr('dominant-baseline', 'hanging')
+                                .attr('fill', 'white')
+                                .attr('font-family', 'sans-serif')
+                                .attr('font-size', 14)
+                                .attr('font-weight', 'lighter')
+                                .style('transform', 'rotate(90deg)')
+                                .html('&#10234;');
+                            this.vars.el_toggleNoteG.append('text')
+                                .attr('class', 'viewfinder_toggle_note_g_char')
+                                .attr('x', -15)
+                                .attr('y', 2)
+                                .attr('text-anchor', 'end')
+                                .attr('dominant-baseline', 'hanging')
+                                .attr('fill', 'rgba(255, 255, 255, 0.9)')
+                                .attr('font-family', 'sans-serif')
+                                .attr('font-size', 8)
+                                .attr('font-style', 'italic')
+                                .attr('font-weight', 'lighter')
+                                .html('SHIFT C');
+
+
                             // Append chartG
                             this.vars.el_chartsG = this.vars.el_boxExtG.append('g')
                                 .attr('class', 'viewfinder_charts_g')
                                 .style('transform', `translate(${this.vars.config_chartsMargin.left}px, 
                                     ${this.vars.config_chartsMargin.top}px)`);
+
+                            // Add listener
+                            this.vars.keydown = this.vars.keydown.bind(this)
+                            document.addEventListener('keydown', this.vars.keydown);
+
 
                         },
                         wrangle: () => {
@@ -137,10 +198,11 @@ export class LfChannelView {
                             const channels = this.channel_list.selections;
 
                             // Manually set current channel FIXME
-                            if (channels.length > 0) {
-                                this.vars.currentChannel = channels[0];
-                            } else {
-                                this.vars.currentChannel = '';
+                            if (channels.length === 0) {
+                                this.vars.currentChannel.name = '';
+                            }
+                            if (channels.length > 0 && this.vars.currentChannel.name === '') {
+                                this.vars.currentChannel.name = channels[0];
                             }
 
                             // Access auxi viewer manager (lensing instance)
@@ -148,15 +210,19 @@ export class LfChannelView {
                             const auxiManager = this.image_viewer.viewerManagerVAuxi;
 
                             // If multi channel
-                            if (Object.keys(auxiManager.viewer_channels).length > 1) {
+                            if (Object.keys(auxiManager.viewer_channels).length > 1 || this.vars.forceUpdate) {
+
+                                // Undo force status
+                                this.vars.forceUpdate = false;
 
                                 // Update viewer channels
                                 for (let k in mainManager.viewer_channels) {
 
                                     // Reduce to single channel
-                                    if (auxiManager.viewer_channels[k].short_name === this.vars.currentChannel) {
+                                    if (mainManager.viewer_channels[k].short_name === this.vars.currentChannel.name) {
                                         auxiManager.viewer_channels = {};
                                         auxiManager.viewer_channels[`${k}`] = mainManager.viewer_channels[k];
+                                        this.vars.currentChannel.index = +k;
                                         auxiManager.force_repaint();
                                         break;
                                     }
@@ -219,35 +285,35 @@ export class LfChannelView {
                                                 .style('transform', `translateY(${i * vis.vars.config_channelExtH +
                                                 vis.vars.config_boxH}px)`);
 
-                                                // Label g
-                                                const labelG = g.append('g')
-                                                    .attr('class', 'viewfinder_charts_g_chart_g_label_g');
+                                            // Label g
+                                            const labelG = g.append('g')
+                                                .attr('class', 'viewfinder_charts_g_chart_g_label_g');
 
-                                                // Append label
-                                                labelG.append('circle')
-                                                    .attr('class', 'viewfinder_charts_g_chart_g_circle')
-                                                    .attr('r', vis.vars.config_colorR)
-                                                    .attr('fill', getChannelColor(d, vis.vars.cellIntensityRange[1]))
-                                                    .attr('stroke', () => {
-                                                        if (channels.includes(d)) return 'rgba(255, 255, 255, 1)';
-                                                        return 'rgba(255, 255, 255, 0)';
-                                                    })
-                                                    .attr('stroke-width', () => {
-                                                        if (d === vis.vars.currentChannel) return 1.5;
-                                                        return 0.5;
-                                                    });
-                                                labelG.append('text')
-                                                    .attr('class', 'viewfinder_charts_g_chart_g_text')
-                                                    .attr('x', vis.vars.config_colorR * 2)
-                                                    .attr('y', vis.vars.config_colorR / 4)
-                                                    .attr('fill', 'rgba(255, 255, 255, 0.95)')
-                                                    .attr('font-family', 'sans-serif')
-                                                    .attr('font-size', 9)
-                                                    .attr('text-anchor', 'start')
-                                                    .attr('dominant-baseline', 'middle')
-                                                    .text(d);
+                                            // Append label
+                                            labelG.append('circle')
+                                                .attr('class', 'viewfinder_charts_g_chart_g_circle')
+                                                .attr('r', vis.vars.config_colorR)
+                                                .attr('fill', getChannelColor(d, vis.vars.cellIntensityRange[1]))
+                                                .attr('stroke', () => {
+                                                    if (channels.includes(d)) return 'rgba(255, 255, 255, 1)';
+                                                    return 'rgba(255, 255, 255, 0)';
+                                                })
+                                                .attr('stroke-width', () => {
+                                                    if (d === vis.vars.currentChannel.name) return 1.5;
+                                                    return 0.5;
+                                                });
+                                            labelG.append('text')
+                                                .attr('class', 'viewfinder_charts_g_chart_g_text')
+                                                .attr('x', vis.vars.config_colorR * 2)
+                                                .attr('y', vis.vars.config_colorR / 4)
+                                                .attr('fill', 'rgba(255, 255, 255, 0.95)')
+                                                .attr('font-family', 'sans-serif')
+                                                .attr('font-size', 9)
+                                                .attr('text-anchor', 'start')
+                                                .attr('dominant-baseline', 'middle')
+                                                .text(d);
                                         }),
-                                    update => update.each(function(d, i) {
+                                    update => update.each(function (d, i) {
                                         const g = d3.select(this)
                                             .style('transform', `translateY(${i * vis.vars.config_channelExtH +
                                             vis.vars.config_boxH}px)`);
@@ -261,6 +327,10 @@ export class LfChannelView {
                                             .attr('stroke', () => {
                                                 if (channels.includes(d)) return 'rgba(255, 255, 255, 1)';
                                                 return 'rgba(255, 255, 255, 0)';
+                                            })
+                                            .attr('stroke-width', () => {
+                                                if (d === vis.vars.currentChannel.name) return 1.5;
+                                                return 0.5;
                                             });
                                     })
                                 );
@@ -268,6 +338,9 @@ export class LfChannelView {
 
                         },
                         destroy: () => {
+
+                            // Remove handler
+                            document.removeEventListener('keydown', this.vars.keydown);
 
                             // Re-establish channels
                             this.image_viewer.viewerManagerVAuxi.viewer_channels =
