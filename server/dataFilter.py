@@ -352,7 +352,7 @@ def generate_png(datasource, channel, level, tile):
     global seg
     global channels
     if config is None:
-        load_config()
+        load_db(datasource)
     segmentation = False
     channel_num = 0
     start = time.time()
@@ -392,7 +392,7 @@ def generate_png(datasource, channel, level, tile):
 
     max_level = int(np.ceil(np.log2(np.max([width, height]))))
     [col, row] = tile.replace('.png', '').split('_')
-    tile_region = 256 * 2 ** (max_level - int(level))
+    tile_region = 128 * 2 ** (max_level - int(level))
     padding = 2 ** (max_level - int(level) + 1)
     # padding = 2
     tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, height])]
@@ -402,41 +402,43 @@ def generate_png(datasource, channel, level, tile):
     else:
         img = channels
     start = time.time()
-    region = pyvips.Region.new(img)
+    # region = pyvips.Region.new(img)
 
     crop_height = tile_range_row[1] - tile_range_row[0]
     crop_width = tile_range_col[1] - tile_range_col[0]
     print('2', time.time() - start)
     start = time.time()
-    image_buffer = region.fetch(tile_range_col[0], channel_num * height + tile_range_row[0], crop_width, crop_height)
-    print('3', time.time() - start)
-    start = time.time()
-    image = np.ndarray(buffer=image_buffer, dtype=format_to_dtype[img.format], shape=[crop_height, crop_width])
-    print('4', time.time() - start)
-    start = time.time()
 
-    def numpy2vips(a):
-        h, w = a.shape
-        linear = a.reshape(w * h)
-        vi = pyvips.Image.new_from_memory(linear.data, w, h, 1,
-                                          dtype_to_format[str(a.dtype)])
-        return vi
-
-    pv_image = numpy2vips(image)
-    print('5', time.time() - start)
-    start = time.time()
+    image_buffer = img.crop(tile_range_col[0], channel_num * height + tile_range_row[0], crop_width, crop_height)
+    # print('3', time.time() - start)
+    # start = time.time()
+    # image = np.ndarray(buffer=image_buffer, dtype=format_to_dtype[img.format], shape=[crop_height, crop_width])
+    # print('4', time.time() - start)
+    # start = time.time()
+    #
+    # def numpy2vips(a):
+    #     h, w = a.shape
+    #     linear = a.reshape(w * h)
+    #     vi = pyvips.Image.new_from_memory(linear.data, w, h, 1,
+    #                                       dtype_to_format[str(a.dtype)])
+    #     return vi
+    #
+    shrink = image_buffer
+    # print('5', time.time() - start)
+    # start = time.time()
     scale_factor = 2 ** (max_level - int(level))
     # If I'm resizing
     print('6', time.time() - start)
     start = time.time()
     if scale_factor != 1:
         if segmentation:
-            shrink = pv_image.reduce(scale_factor, scale_factor, kernel="nearest")
+            shrink = shrink.reduce(scale_factor, scale_factor, kernel="nearest")
         else:
-            shrink = pv_image.reduce(scale_factor, scale_factor, kernel="linear")
-        image = np.ndarray(buffer=shrink.write_to_memory(),
-                           dtype=format_to_dtype[shrink.format],
-                           shape=[shrink.height, shrink.width])
+            shrink = shrink.reduce(scale_factor, scale_factor, kernel="linear")
+
+    image = np.ndarray(buffer=shrink.write_to_memory(),
+                       dtype=format_to_dtype[shrink.format],
+                       shape=[shrink.height, shrink.width])
 
     # compare = imread('static/data/' + datasource + '/' + channel + '/' + level + '/' + tile)
     # compare_raw = compare[:, :, 0] * 65536 + compare[:, :, 1] * 256 + compare[:, :, 2]
@@ -460,7 +462,7 @@ def get_dzi_xml(datasource):
                 <Image xmlns="http://schemas.microsoft.com/deepzoom/2008"
                   Format="png"
                   Overlap="2"
-                  TileSize="256"
+                  TileSize="128"
                   >
                   <Size 
                     Height="{height}"
