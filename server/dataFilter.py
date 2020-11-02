@@ -392,7 +392,7 @@ def generate_png(datasource, channel, level, tile):
 
     max_level = int(np.ceil(np.log2(np.max([width, height]))))
     [col, row] = tile.replace('.png', '').split('_')
-    tile_region = 128 * 2 ** (max_level - int(level))
+    tile_region = 1024 * 2 ** (max_level - int(level))
     padding = 2 ** (max_level - int(level) + 1)
     # padding = 2
     tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, height])]
@@ -428,17 +428,21 @@ def generate_png(datasource, channel, level, tile):
     # start = time.time()
     scale_factor = 2 ** (max_level - int(level))
     # If I'm resizing
-    print('6', time.time() - start)
+    print('5', time.time() - start)
     start = time.time()
     if scale_factor != 1:
         if segmentation:
             shrink = shrink.reduce(scale_factor, scale_factor, kernel="nearest")
         else:
             shrink = shrink.reduce(scale_factor, scale_factor, kernel="linear")
-
+    print('6', time.time() - start)
+    start = time.time()
     image = np.ndarray(buffer=shrink.write_to_memory(),
                        dtype=format_to_dtype[shrink.format],
                        shape=[shrink.height, shrink.width])
+
+    # region = pyvips.Region.new(shrink).fetch(0, 0, shrink.width, shrink.height)
+    # image = np.ndarray(buffer=region, dtype=format_to_dtype[shrink.format], shape=[shrink.height, shrink.width])
 
     # compare = imread('static/data/' + datasource + '/' + channel + '/' + level + '/' + tile)
     # compare_raw = compare[:, :, 0] * 65536 + compare[:, :, 1] * 256 + compare[:, :, 2]
@@ -462,7 +466,7 @@ def get_dzi_xml(datasource):
                 <Image xmlns="http://schemas.microsoft.com/deepzoom/2008"
                   Format="png"
                   Overlap="2"
-                  TileSize="128"
+                  TileSize="1024"
                   >
                   <Size 
                     Height="{height}"
