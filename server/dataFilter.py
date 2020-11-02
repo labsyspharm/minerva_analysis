@@ -34,7 +34,7 @@ def load_db(datasource, reload=False):
         idField = config[datasource]['featureData'][0]['idField']
         if idField != 'none' and idField is not None:
             index_col = idField
-    database = pd.read_csv(csvPath, index_col=index_col)
+    database = pd.read_csv(csvPath)
     database['id'] = database.index
     database = database.replace(-np.Inf, 0)
     source = datasource
@@ -149,10 +149,6 @@ def get_neighborhood(x, y, datasource, r=100, fields=None):
                 neighborhood = database.iloc[neighbors][fields].to_dict()
         else:
             neighborhood = database.iloc[neighbors].to_dict(orient='records')
-        # for neighbor in neighbors:
-        #     row = database.iloc[[neighbor]]
-        #     obj = row.to_dict(orient='records')[0]
-        #     # obj['id'] = str(neighbor)
 
         return neighborhood
     except:
