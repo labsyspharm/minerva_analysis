@@ -39,12 +39,8 @@ def load_db(datasource, reload=False):
     if reload:
         load_ball_tree(datasource, reload=reload)
     csvPath = "." + config[datasource]['featureData'][0]['src']
-    index_col = None
-    if 'idField' in config[datasource]['featureData'][0]:
-        idField = config[datasource]['featureData'][0]['idField']
-        if idField != 'none' and idField is not None:
-            index_col = idField
-    database = pd.read_csv(csvPath, index_col=index_col)
+    database = pd.read_csv(csvPath)
+    database = pd.read_csv(csvPath)
     database['id'] = database.index
     database = database.replace(-np.Inf, 0)
     source = datasource
@@ -96,6 +92,7 @@ def query_for_closest_cell(x, y, datasource):
         try:
             row = database.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
+            obj['id'] = str(index[0][0])
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             return obj
@@ -392,7 +389,7 @@ def generate_png(datasource, channel, level, tile):
 
     max_level = int(np.ceil(np.log2(np.max([width, height]))))
     [col, row] = tile.replace('.png', '').split('_')
-    tile_region = 1024 * 2 ** (max_level - int(level))
+    tile_region = 512 * 2 ** (max_level - int(level))
     padding = 2 ** (max_level - int(level) + 1)
     # padding = 2
     tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, height])]
@@ -466,7 +463,7 @@ def get_dzi_xml(datasource):
                 <Image xmlns="http://schemas.microsoft.com/deepzoom/2008"
                   Format="png"
                   Overlap="2"
-                  TileSize="1024"
+                  TileSize="512"
                   >
                   <Size 
                     Height="{height}"

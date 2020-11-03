@@ -82,6 +82,7 @@ class ImageViewer {
             loadTilesWithAjax: true,
             immediateRender: false,
             maxImageCacheCount: 400,
+            timeout: 90000,
             preload: true,
             homeFillsViewer: true,
             visibilityRatio: 1.0
