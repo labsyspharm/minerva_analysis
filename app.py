@@ -408,6 +408,14 @@ def get_nearest_cell():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_channel_cell_ids', methods=['GET'])
+def get_channel_cell_ids():
+    datasource = request.args.get('datasource')
+    filter = json.loads(request.args.get('filter'))
+    resp = dataFilter.get_channel_cells(datasource, filter)
+    return serialize_and_submit_json(resp)
+
+
 # Gets a row based on the index
 @app.route('/get_database_row', methods=['GET'])
 def get_database_row():

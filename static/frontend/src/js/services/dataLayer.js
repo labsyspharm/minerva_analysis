@@ -42,6 +42,19 @@ class DataLayer {
         }
     }
 
+    async getChannelCellIds(sels) {
+        try {
+            let response = await fetch('/get_channel_cell_ids?' + new URLSearchParams({
+                filter: JSON.stringify(sels),
+                datasource: datasource
+            }))
+            let cellIds = await response.json();
+            return cellIds;
+        } catch (e) {
+            console.log("Error Getting Channel Cell Ids", e);
+        }
+    }
+
     async getChannelNames(shortNames = true) {
         try {
             let response = await fetch('/get_channel_names?' + new URLSearchParams({

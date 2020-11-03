@@ -486,12 +486,15 @@ class ImageViewer {
      * @function updateSelection
      *
      * @param selection
+     * @param repaint
      *
      * @returns void
      */
-    updateSelection(selection) {
+    updateSelection(selection, repaint = true) {
         this.selection = selection;
-        this.forceRepaint();
+
+        if (repaint) this.forceRepaint();
+
     }
 }
 
