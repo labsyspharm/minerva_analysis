@@ -9,12 +9,12 @@ export class LfNearestCell {
     vars = {
         cellChannels: [],
         cellIntensityRange: [0, 65536],
+        config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
         config_boxW: 240,
         config_boxH: 240,
         config_channelR: 3,
         config_chartR0: 15,
         config_chartR1: 65,
-        config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
         config_nucleusMargin: {top: 0, right: 0, bottom: 20, left: 20},
         config_nucleusR: 15,
         el_boxExtG: null,
@@ -344,7 +344,6 @@ export class LfNearestCell {
                             aux function :: getChannelColor
                              */
                             function getChannelColor(name, value) {
-
 
                                 if (channels.includes(name)) {
                                     // Find channel TF

@@ -49,6 +49,12 @@ class ChannelList {
         this.sel[dataLayer.getFullChannelName(name)] = this.imageBitRange;
 
         // Trigger
+        // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
+    }
+
+    triggerChannelSelect() {
+
+        // Trigger
         this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
     }
 

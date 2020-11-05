@@ -74,6 +74,9 @@ export class LfSegmentationOutlines {
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
                             vf.els.svg.attr('opacity', 0);
 
+                            // Trigger channel list data request
+                            this.channel_list.triggerChannelSelect();
+
                             // Show outlines
                             this.image_viewer.viewerManagerVAuxi.show_sel = true;
                             this.image_viewer.viewerManagerVAuxi.force_repaint();
