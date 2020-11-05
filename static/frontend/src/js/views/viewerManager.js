@@ -49,8 +49,8 @@ export class ViewerManager {
     add_handlers() {
 
         // Add event load handlers
-        this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind( this.imageViewer));
-        this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind( this.imageViewer));
+        this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind(this.imageViewer));
+        this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind(this.imageViewer));
     }
 
     /**
@@ -68,17 +68,26 @@ export class ViewerManager {
 
         // Get dzi path
         const src = this.imageViewer.config["imageData"][srcIdx]["src"];
-
+        let maxLevel = 5;
         // Add tiled image
         this.viewer.addTiledImage({
-            tileSource: src,
+            tileSource: {
+                height: this.imageViewer.config['height'],
+                width: this.imageViewer.config['width'],
+                maxLevel: maxLevel,
+                tileWidth: 1024,
+                tileHeight: 1024,
+                getTileUrl: function (level, x, y) {
+                    return `${src}${maxLevel - level}/${x}_${y}.png`
+                }
+            },
             // index: 0,
             opacity: 1,
             preload: true,
             success: () => {
                 // Define url and suburl
                 const itemidx = this.viewer.world.getItemCount() - 1;
-                const url = this.viewer.world.getItemAt(itemidx).source.tilesUrl;
+                const url = src;
                 const group = url.split("/");
                 const sub_url = group[group.length - 2];
                 // Attach
@@ -150,12 +159,23 @@ export class ViewerManager {
 
         // Load label image in background if it exists
         if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] !== '') {
+            let url = this.imageViewer.config["imageData"][0]["src"];
+            let maxLevel = 0;
             this.viewer.addTiledImage({
-                tileSource: this.imageViewer.config["imageData"][0]["src"],
+                tileSource: {
+                    height: this.imageViewer.config['height'],
+                    width: this.imageViewer.config['width'],
+                    maxLevel: maxLevel,
+                    tileWidth: 1024,
+                    tileHeight: 1024,
+                    getTileUrl: function (level, x, y) {
+                        return `${url}${maxLevel - level}/${x}_${y}.png`
+                    }
+                },
                 index: 0,
                 opacity: 1,
                 success: () => {
-                    const url0 = this.viewer.world.getItemAt(0).source.tilesUrl;
+                    const url0 = url
                     this.imageViewer.labelChannel["url"] = url0;
                     const group = url0.split("/");
                     this.imageViewer.labelChannel["sub_url"] = group[group.length - 2];

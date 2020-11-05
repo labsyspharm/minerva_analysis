@@ -563,7 +563,7 @@ def generate_dzi(datasource, dzi):
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
-    png = dataFilter.generate_png(datasource, channel, level, tile)
+    png = dataFilter.generate_zarr_png(datasource, channel, level, tile)
     file_object = io.BytesIO()
     # write PNG in file-object
     try:

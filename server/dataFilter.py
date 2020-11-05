@@ -14,6 +14,7 @@ import pickle
 import tifffile as tf
 from PIL import Image
 import re
+import zarr
 
 ball_tree = None
 database = None
@@ -33,6 +34,8 @@ def load_db(datasource, reload=False):
     global config
     global seg
     global channels
+    global segmentation_data
+    global channel_data
     if source is datasource and database is not None and reload is False:
         return
     load_config()
@@ -44,9 +47,12 @@ def load_db(datasource, reload=False):
     database['id'] = database.index
     database = database.replace(-np.Inf, 0)
     source = datasource
-    seg = pyvips.Image.new_from_file(config[datasource]['segmentation'], n=-1)
-    n_channels = config[datasource]['num_channels']
-    channels = pyvips.Image.new_from_file(config[datasource]['channels'], n=n_channels)
+
+    segmentation_io = tf.TiffFile(config[datasource]['segmentation'], is_ome=False)
+    segmentation_data = zarr.open(segmentation_io.series[0].aszarr())
+    # # seg = pyvips.Image.new_from_file(config[datasource]['segmentation'], n=-1)
+    # n_channels = config[datasource]['num_channels']
+    # # channels = pyvips.Image.new_from_file(config[datasource]['channels'], n=n_channels)
 
 
 def load_config():
@@ -452,6 +458,36 @@ def generate_png(datasource, channel, level, tile):
     imgB = (image % 256).astype('uint8')  # low bits
     channel_img = np.dstack((imgR, imgG, imgB))
     print('8', time.time() - start)
+    return channel_img
+
+
+def generate_zarr_png(datasource, channel, level, tile):
+    if config is None:
+        load_db(datasource)
+    global segmentation_data
+    [tx, ty] = tile.replace('.png', '').split('_')
+    tx = int(tx)
+    ty = int(ty)
+    level = int(level)
+    tilesize = 1024
+    ix = tx * tilesize
+    iy = ty * tilesize
+    segmentation = False
+    try:
+        channel_num = int(re.match(r".*(\d+)", channel).groups()[0])
+    except AttributeError:
+        segmentation = True
+    channel_io = tf.TiffFile(config[datasource]['channels'], is_ome=False)
+    channel_data = zarr.open(channel_io.series[0].aszarr())
+    if segmentation:
+        image = segmentation_data[iy:iy + tilesize, ix:ix + tilesize]
+    else:
+        image = channel_data[level][channel_num, iy:iy + tilesize, ix:ix + tilesize]
+
+    imgR = ((image >> 16) % 256).astype('uint8')
+    imgG = ((image >> 8) % 256).astype('uint8')  # high bits
+    imgB = (image % 256).astype('uint8')  # low bits∂
+    channel_img = np.dstack((imgR, imgG, imgB))
     return channel_img
 
 
