@@ -29,9 +29,7 @@ function channelMatch(data) {
         middleList.innerHTML += `<div class="list-group-item arrow-between-columns">⟶</div>`
     });
 
-    let headers = _.get(data, 'csvHeader', [])
-    console.log(data)
-    console.log('Simon', _.get(data, 'new', false))
+    let headers = _.get(data, 'csvHeader', []);
     if (_.get(data, 'new', false)) {
         let val;
 

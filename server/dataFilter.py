@@ -41,7 +41,6 @@ def load_db(datasource, reload=False):
         load_ball_tree(datasource, reload=reload)
     csvPath = "." + config[datasource]['featureData'][0]['src']
     database = pd.read_csv(csvPath)
-    database = pd.read_csv(csvPath)
     database['id'] = database.index
     database = database.replace(-np.Inf, 0)
     source = datasource
