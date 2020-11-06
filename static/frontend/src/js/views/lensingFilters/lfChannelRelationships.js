@@ -14,7 +14,7 @@ export class LfChannelRelationships {
         config_boxH: 240,
         config_channelR: 21,
         config_channelsR: 3,
-        config_chartR: 50,
+        config_chartR: 45,
         config_offsetText: 20,
         config_offsetCirc: 40,
         currentChannel: {

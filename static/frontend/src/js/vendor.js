@@ -7,7 +7,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'pngjs'
 import {regeneratorRuntime} from "regenerator-runtime";
 import * as d3 from 'd3';
-import * as slider from 'd3-simple-slider';
+import {sliderBottom} from 'd3-simple-slider';
 import 'lodash'
 import 'jquery-form'
 import '@fortawesome/fontawesome-free/js/all'
@@ -24,7 +24,7 @@ import {LensingFiltersExt} from './views/lensingFiltersExt';
 window.convert = convert;
 window.$ = $;
 window.d3 = d3;
-window.d3.slider = slider;
+window.d3.sliderBottom = sliderBottom;
 window.PNG = PNG;
 window.Buffer = Buffer;
 window.Sortable = Sortable;

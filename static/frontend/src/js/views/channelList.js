@@ -96,7 +96,7 @@ class ChannelList {
             nameCol.classList.add("channel-col");
             row.appendChild(nameCol);
 
-            // column within row that cintains the slider for the channel
+            // column within row that Contains the slider for the channel
             let sliderCol = document.createElement("div");
             sliderCol.classList.add("col-md-12");
             sliderCol.classList.add("channel-slider");
@@ -211,8 +211,7 @@ class ChannelList {
 
         var that = this;
         //add range slider row content
-        var sliderSimple = d3.slider
-            .sliderBottom()
+        var sliderSimple = d3.sliderBottom()
             .min(d3.min(data))
             .max(d3.max(data))
             .width(swidth - 60)//.tickFormat(d3.format("s"))
@@ -222,12 +221,11 @@ class ChannelList {
             .handle(
                 d3.symbol()
                     .type(d3.symbolCircle)
-                    .size(100))
+                    .size(100)
+            )
             .tickValues([]).on('onchange', range => {
-                // console.log('trigger gating event');
                 let packet = {name: name, dataRange: range};
                 this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-                // console.log('gating event triggered');
             });
         this.sliders.set(name, sliderSimple);
 
