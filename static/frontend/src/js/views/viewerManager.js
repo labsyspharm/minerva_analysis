@@ -87,6 +87,7 @@ export class ViewerManager {
             success: () => {
                 // Define url and suburl
                 const itemidx = this.viewer.world.getItemCount() - 1;
+                this.viewer.world.getItemAt(itemidx).source['channelUrl'] = src
                 const url = src;
                 const group = url.split("/");
                 const sub_url = group[group.length - 2];
@@ -114,7 +115,7 @@ export class ViewerManager {
 
             // remove channel - first find it
             for (let i = 0; i < img_count; i = i + 1) {
-                const url = this.viewer.world.getItemAt(i).source.tilesUrl;
+                const url = this.viewer.world.getItemAt(i).source['channelUrl'];
                 if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
 
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
@@ -176,6 +177,7 @@ export class ViewerManager {
                 opacity: 1,
                 success: () => {
                     const url0 = url
+                    this.viewer.world.getItemAt(0).source['channelUrl'] = url;
                     this.imageViewer.labelChannel["url"] = url0;
                     const group = url0.split("/");
                     this.imageViewer.labelChannel["sub_url"] = group[group.length - 2];

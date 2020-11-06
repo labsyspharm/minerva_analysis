@@ -78,7 +78,7 @@ class ImageViewer {
             id: "openseadragon",
             prefixUrl: "/static/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
-            imageLoaderLimit: 4,
+            imageLoaderLimit: 2,
             loadTilesWithAjax: true,
             immediateRender: false,
             maxImageCacheCount: 400,
