@@ -364,7 +364,10 @@ def generate_zarr_png(datasource, channel, level, tile):
     if segmentation:
         tile = seg[level][iy:iy + tilesize, ix:ix + tilesize]
     else:
-        tile = channels[level][channel_num, iy:iy + tilesize, ix:ix + tilesize]
+        if isinstance(channels, zarr.Array):
+            tile = channels[channel_num, iy:iy + tilesize, ix:ix + tilesize]
+        else:
+            tile = channels[level][channel_num, iy:iy + tilesize, ix:ix + tilesize]
 
     imgR = ((tile >> 16) % 256).astype('uint8')
     imgG = ((tile >> 8) % 256).astype('uint8')  # high bits
@@ -379,8 +382,12 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
     if isLabelImg == False:
         channel_io = tf.TiffFile(str(filePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
-        channel_info['maxLevel'] = len(channels)
-        shape = channels[0].shape
+        if isinstance(channels, zarr.Array):
+            channel_info['maxLevel'] = 1
+            shape = channels.shape
+        else:
+            channel_info['maxLevel'] = len(channels)
+            shape = channels[0].shape
         channel_info['height'] = shape[1]
         channel_info['width'] = shape[2]
         channel_info['num_channels'] = shape[0]
@@ -396,15 +403,21 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         directory = Path(dataDirectory + "/" + filePath.name + ".zarr")
         store = zarr.DirectoryStore(directory)
         g = zarr.group(store=store, overwrite=True)
-        for i in range(len(channels)):
-            shape = channels[i].shape
-            shape = (shape[-2], shape[-1])
-            chunks = channels[i].chunks
+        if isinstance(channels, zarr.Array):
+            data = zarr.array(seg)
+            chunks = channels.chunks
             chunks = (chunks[-2], chunks[-1])
-            data = seg
-            print(shape)
-            data = np.array(Image.fromarray(data).resize((shape[-1], shape[-2]), Image.NEAREST))
-            print(np.shape(data))
-            data = zarr.array(data)
-            g.create_dataset(str(i), data=data, shape=shape, chunks=chunks, dtype=seg.dtype)
+            g.create_dataset('0', data=data, shape=seg.shape, chunks=chunks, dtype=seg.dtype)
+        else:
+            for i in range(len(channels)):
+                shape = channels[i].shape
+                shape = (shape[-2], shape[-1])
+                chunks = channels[i].chunks
+                chunks = (chunks[-2], chunks[-1])
+                data = seg
+                print(shape)
+                data = np.array(Image.fromarray(data).resize((shape[-1], shape[-2]), Image.NEAREST))
+                print(np.shape(data))
+                data = zarr.array(data)
+                g.create_dataset(str(i), data=data, shape=shape, chunks=chunks, dtype=seg.dtype)
         return {'segmentation': str(directory)}
