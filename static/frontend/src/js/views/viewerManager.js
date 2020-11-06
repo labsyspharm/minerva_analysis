@@ -160,7 +160,7 @@ export class ViewerManager {
         // Load label image in background if it exists
         if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] !== '') {
             let url = this.imageViewer.config["imageData"][0]["src"];
-            let maxLevel = 0;
+            let maxLevel = 5;
             this.viewer.addTiledImage({
                 tileSource: {
                     height: this.imageViewer.config['height'],
