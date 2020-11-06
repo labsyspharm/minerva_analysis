@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
-from server import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
+from server import mostFrequentLongestSubstring, pre_normalization, dataFilter
 import os
 import csv
 from pathlib import Path
@@ -214,14 +214,14 @@ def upload_file_page():
                     # Process Channel File
 
                     current_task = "Converting OME-TIFF Channels (This Will Take a While)"
-                    channel_info = fullConversion.convertOmeTiff(channelFile, isLabelImg=False)
+                    channel_info = dataFilter.convertOmeTiff(channelFile, isLabelImg=False)
                     channelFileNames.extend(channel_info['channel_names'])
                     completed_task += 1
 
                     current_task = "Converting Segmentation Mask"
-                    label_info = fullConversion.convertOmeTiff(labelFile, channelFilePath=channelFile,
-                                                               dataDirectory=file_path,
-                                                               isLabelImg=True)
+                    label_info = dataFilter.convertOmeTiff(labelFile, channelFilePath=channelFile,
+                                                           dataDirectory=file_path,
+                                                           isLabelImg=True)
                     completed_task += 1
 
                     current_task = total_tasks

@@ -6,7 +6,6 @@ import requests
 import json
 import os
 from pathlib import Path
-import pyvips
 from skimage.io import imread
 
 import time
@@ -49,10 +48,6 @@ def load_db(datasource, reload=False):
     seg = zarr.load(config[datasource]['segmentation'])
     channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
     channels = zarr.open(channel_io.series[0].aszarr())
-
-    # # seg = pyvips.Image.new_from_file(config[datasource]['segmentation'], n=-1)
-    # n_channels = config[datasource]['num_channels']
-    # # channels = pyvips.Image.new_from_file(config[datasource]['channels'], n=n_channels)
 
 
 def load_config():
@@ -377,3 +372,40 @@ def generate_zarr_png(datasource, channel, level, tile):
     imgB = (tile % 256).astype('uint8')  # low bits∂
     channel_img = np.dstack((imgR, imgG, imgB))
     return channel_img
+
+
+def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
+    channel_info = {}
+    channelNames = []
+    if isLabelImg == False:
+        channel_io = tf.TiffFile(str(filePath), is_ome=False)
+        channels = zarr.open(channel_io.series[0].aszarr())
+        channel_info['maxLevel'] = len(channels)
+        shape = channels[0].shape
+        channel_info['height'] = shape[1]
+        channel_info['width'] = shape[2]
+        channel_info['num_channels'] = shape[0]
+        for i in range(shape[0]):
+            channelName = re.sub(r'\.ome|\.tiff|\.tif|\.png', '', filePath.name) + "_" + str(i)
+            channelNames.append(channelName)
+        channel_info['channel_names'] = channelNames
+        return channel_info
+    else:
+        channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
+        channels = zarr.open(channel_io.series[0].aszarr())
+        seg = tf.imread(filePath, is_ome=False)
+        directory = Path(dataDirectory + "/" + filePath.name + ".zarr")
+        store = zarr.DirectoryStore(directory)
+        g = zarr.group(store=store, overwrite=True)
+        for i in range(len(channels)):
+            shape = channels[i].shape
+            shape = (shape[-2], shape[-1])
+            chunks = channels[i].chunks
+            chunks = (chunks[-2], chunks[-1])
+            data = seg
+            print(shape)
+            data = np.array(Image.fromarray(data).resize((shape[-1], shape[-2]), Image.NEAREST))
+            print(np.shape(data))
+            data = zarr.array(data)
+            g.create_dataset(str(i), data=data, shape=shape, chunks=chunks, dtype=seg.dtype)
+        return {'segmentation': str(directory)}
