@@ -30,6 +30,57 @@ function channelMatch(data) {
     });
 
     let headers = _.get(data, 'csvHeader', [])
+    console.log(data)
+    console.log('Simon', _.get(data, 'new', false))
+    if (_.get(data, 'new', false)) {
+        let val;
+
+        // Y Position
+        let yIndex = _.findIndex(headers, e => {
+            let str = _.get(e, 'fullName') || e;
+            return str == 'CellPosition_Y' || str == 'Y_centroid'
+        });
+        if (yIndex != -1) {
+            val = headers[yIndex]
+            _.pullAt(headers, [yIndex])
+            headers = _.concat(val, headers)
+        }
+
+        // X Position
+        let xIndex = _.findIndex(headers, e => {
+            let str = _.get(e, 'fullName') || e;
+            return str == 'CellPosition_X' || str == 'X_centroid'
+        });
+        if (xIndex != -1) {
+            val = headers[xIndex]
+            _.pullAt(headers, [xIndex])
+            headers = _.concat(val, headers)
+        }
+
+        // Area Position
+        // X Position
+        let areaIndex = _.findIndex(headers, e => {
+            let str = _.get(e, 'fullName') || e;
+            return str == 'NucleusArea' || str == 'Area'
+        });
+        if (areaIndex != -1) {
+            val = headers[areaIndex]
+            _.pullAt(headers, [areaIndex])
+            headers = _.concat(val, headers)
+        }
+
+        // CellId Position
+        let cellIdIndex = _.findIndex(headers, e => {
+            let str = _.get(e, 'fullName') || e;
+            return str == 'CellID';
+        });
+        if (cellIdIndex != -1) {
+            val = headers[cellIdIndex]
+            _.pullAt(headers, [cellIdIndex])
+            headers = _.concat(val, headers)
+        }
+
+    }
 
     _.each(headers, (header, i) => {
         let fullName = _.get(header, 'fullName') || header;
@@ -57,7 +108,8 @@ function channelMatch(data) {
         }
     });
     let normalizeCsvName = _.get(data, 'normCsvName');
-    if (normalizeCsvName && normalizeCsvName != '') {
+    let normalizeCsv = _.get(data, 'normalize_csv', true);
+    if ((normalizeCsvName && normalizeCsvName != '') || normalizeCsv == false) {
         $('#normalize-csv').prop('checked', false)
         $('.normalize-label').hide();
         $('.normalize-checkbox').hide();

@@ -24,19 +24,19 @@
                 </span>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     {% for datasource in data.datasources %}
-                    <div class="row justify-content-between">
-                        <div class="col-4 navbar-datasource">
-                            <a class href="/{{datasource}}">{{datasource}}</a>
-                        </div>
-                        <div class="col-4 navbar-datasource-edit-button">
-                            <div class="row datasource-edit-row">
-                                <a href="/edit_config/{{ datasource }}"><span class="fas fa-pencil-alt"></span></a>
-                                <a href="/delete/{{datasource}}" class="delete-button"
-                                   onclick="return confirm('Are you sure you want to delete this dataset?');"><span
-                                        class="fas fa-trash"></span></a>
+                        <div class="row justify-content-between">
+                            <div class="col-4 navbar-datasource">
+                                <a class href="/{{ datasource }}">{{ datasource }}</a>
+                            </div>
+                            <div class="col-4 navbar-datasource-edit-button">
+                                <div class="row datasource-edit-row">
+                                    <a href="/edit_config/{{ datasource }}"><span class="fas fa-pencil-alt"></span></a>
+                                    <a href="/delete/{{ datasource }}" class="delete-button"
+                                       onclick="return confirm('Are you sure you want to delete this dataset?');"><span
+                                            class="fas fa-trash"></span></a>
+                                </div>
                             </div>
                         </div>
-                    </div>
                     {% endfor %}
                 </div>
             </li>
@@ -55,7 +55,7 @@
                 <form action="/upload" method="POST" enctype="multipart/form-data">
                     <div class="row">
                         <div class="col-3">
-                            <label for="name">Data Endpoint Names:</label>
+                            <label for="name">Dataset Name:</label>
                         </div>
                         <div class="col-auto">
                             <input type="text" id="name" name="name"><br><br>
@@ -63,18 +63,18 @@
                     </div>
                     <div class="row">
                         <div class="col-3">
-                            <label for="channel_files">Channel File(s):</label>
+                            <label for="channel_file">Channel File Path:</label>
                         </div>
                         <div class="col-auto">
-                            <input type="file" id="channel_files" name="channel_files" multiple><br><br>
+                            <input type="text" id="channel_file" name="channel_file"><br><br>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-3">
-                            <label for="channel_files">Segmentation File:</label>
+                            <label for="label_file">Segmentation File Path:</label>
                         </div>
                         <div class="col-auto">
-                            <input type="file" id="label_file" name="label_file" multiple><br><br>
+                            <input type="text" id="label_file" name="label_file"><br><br>
                         </div>
                     </div>
                     <div class="row">

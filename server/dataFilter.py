@@ -47,7 +47,7 @@ def load_db(datasource, reload=False):
     database = database.replace(-np.Inf, 0)
     source = datasource
     seg = zarr.load(config[datasource]['segmentation'])
-    channel_io = tf.TiffFile(config[datasource]['channels'], is_ome=False)
+    channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
     channels = zarr.open(channel_io.series[0].aszarr())
 
     # # seg = pyvips.Image.new_from_file(config[datasource]['segmentation'], n=-1)
@@ -348,119 +348,6 @@ def get_database_description(datasource):
     return description
 
 
-def generate_png(datasource, channel, level, tile):
-    global database
-    global source
-    global config
-    global seg
-    global channels
-    if config is None:
-        load_db(datasource)
-    segmentation = False
-    channel_num = 0
-    start = time.time()
-    try:
-        channel_num = int(re.match(r".*(\d+)_files", channel).groups()[0])
-    except AttributeError:
-        segmentation = True
-
-    format_to_dtype = {
-        'uchar': np.uint8,
-        'char': np.int8,
-        'ushort': np.uint16,
-        'short': np.int16,
-        'uint': np.uint32,
-        'int': np.int32,
-        'float': np.float32,
-        'double': np.float64,
-        'complex': np.complex64,
-        'dpcomplex': np.complex128,
-    }
-    dtype_to_format = {
-        'uint8': 'uchar',
-        'int8': 'char',
-        'uint16': 'ushort',
-        'int16': 'short',
-        'uint32': 'uint',
-        'int32': 'int',
-        'float32': 'float',
-        'float64': 'double',
-        'complex64': 'complex',
-        'complex128': 'dpcomplex',
-    }
-    print('1', time.time() - start)
-    start = time.time()
-    height = config[datasource]['height']
-    width = config[datasource]['width']
-
-    max_level = int(np.ceil(np.log2(np.max([width, height]))))
-    [col, row] = tile.replace('.png', '').split('_')
-    tile_region = 512 * 2 ** (max_level - int(level))
-    padding = 2 ** (max_level - int(level) + 1)
-    # padding = 2
-    tile_range_row = [max([int(row) * tile_region - padding, 0]), min([(int(row) + 1) * tile_region + padding, height])]
-    tile_range_col = [max([int(col) * tile_region - padding, 0]), min([(int(col) + 1) * tile_region + padding, width])]
-    if segmentation is True:
-        img = seg
-    else:
-        img = channels
-    start = time.time()
-    # region = pyvips.Region.new(img)
-
-    crop_height = tile_range_row[1] - tile_range_row[0]
-    crop_width = tile_range_col[1] - tile_range_col[0]
-    print('2', time.time() - start)
-    start = time.time()
-
-    image_buffer = img.crop(tile_range_col[0], channel_num * height + tile_range_row[0], crop_width, crop_height)
-    # print('3', time.time() - start)
-    # start = time.time()
-    # image = np.ndarray(buffer=image_buffer, dtype=format_to_dtype[img.format], shape=[crop_height, crop_width])
-    # print('4', time.time() - start)
-    # start = time.time()
-    #
-    # def numpy2vips(a):
-    #     h, w = a.shape
-    #     linear = a.reshape(w * h)
-    #     vi = pyvips.Image.new_from_memory(linear.data, w, h, 1,
-    #                                       dtype_to_format[str(a.dtype)])
-    #     return vi
-    #
-    shrink = image_buffer
-    # print('5', time.time() - start)
-    # start = time.time()
-    scale_factor = 2 ** (max_level - int(level))
-    # If I'm resizing
-    print('5', time.time() - start)
-    start = time.time()
-    if scale_factor != 1:
-        if segmentation:
-            shrink = shrink.reduce(scale_factor, scale_factor, kernel="nearest")
-        else:
-            shrink = shrink.reduce(scale_factor, scale_factor, kernel="linear")
-    print('6', time.time() - start)
-    start = time.time()
-    image = np.ndarray(buffer=shrink.write_to_memory(),
-                       dtype=format_to_dtype[shrink.format],
-                       shape=[shrink.height, shrink.width])
-
-    # region = pyvips.Region.new(shrink).fetch(0, 0, shrink.width, shrink.height)
-    # image = np.ndarray(buffer=region, dtype=format_to_dtype[shrink.format], shape=[shrink.height, shrink.width])
-
-    # compare = imread('static/data/' + datasource + '/' + channel + '/' + level + '/' + tile)
-    # compare_raw = compare[:, :, 0] * 65536 + compare[:, :, 1] * 256 + compare[:, :, 2]
-    # equals = np.array_equal(compare_raw, np.array(image))
-    # test = np.abs(compare_raw - image)
-    print('7', time.time() - start)
-    start = time.time()
-    imgR = ((image >> 16) % 256).astype('uint8')
-    imgG = ((image >> 8) % 256).astype('uint8')  # high bits
-    imgB = (image % 256).astype('uint8')  # low bits
-    channel_img = np.dstack((imgR, imgG, imgB))
-    print('8', time.time() - start)
-    return channel_img
-
-
 def generate_zarr_png(datasource, channel, level, tile):
     if config is None:
         load_db(datasource)
@@ -490,22 +377,3 @@ def generate_zarr_png(datasource, channel, level, tile):
     imgB = (tile % 256).astype('uint8')  # low bits∂
     channel_img = np.dstack((imgR, imgG, imgB))
     return channel_img
-
-
-def get_dzi_xml(datasource):
-    global config
-    if config is None:
-        load_config()
-    xml = '''<?xml version="1.0" encoding="UTF-8"?>
-                <Image xmlns="http://schemas.microsoft.com/deepzoom/2008"
-                  Format="png"
-                  Overlap="2"
-                  TileSize="512"
-                  >
-                  <Size 
-                    Height="{height}"
-                    Width="{width}"
-                  />
-                </Image>
-                '''.format(height=config[datasource]['height'], width=config[datasource]['width'])
-    return xml
