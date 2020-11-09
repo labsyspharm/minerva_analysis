@@ -188,16 +188,10 @@ def upload_file_page():
 
                     # labelFile = request.files.getlist("label_file")
                     labelFile = request.form.get('label_file')
-                    if Path(labelFile).is_file() is False:
-                        labelFile += ".tif"
                     labelFile = Path(labelFile)
-
                     labelName = os.path.splitext(labelFile.name)[0]
 
                     channelFile = request.form.get('channel_file')
-                    if Path(channelFile).is_file() is False:
-                        channelFile += ".ome.tif"
-
                     channelFile = Path(channelFile)
 
                     total_tasks = 2
