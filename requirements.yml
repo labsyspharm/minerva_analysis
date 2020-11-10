@@ -16,8 +16,3 @@ dependencies:
 - pip:
   - pyvips==2.1.8
   - opencv-python==4.4.0.*
-<<<<<<< HEAD
-=======
-
-
->>>>>>> b442f31e25f33f6fd7adcae80b42cc97aa21f53b
