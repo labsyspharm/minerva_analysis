@@ -1,12 +1,7 @@
-<<<<<<< HEAD
-from flask import Flask, render_template, request, Response, jsonify, abort
-from server import mostFrequentLongestSubstring, fullConversion, pre_normalization, dataFilter
-=======
 from flask import Flask, render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
 from server import mostFrequentLongestSubstring, pre_normalization, dataFilter
->>>>>>> 4b02e36ef4841803872cf7895d475f6207aff486
 import os
 import csv
 from pathlib import Path
@@ -131,8 +126,6 @@ def edit_config_with_config_name(config_name):
         if 'num_channels' in config_data:
             data['num_channels'] = config_data['num_channels']
 
-
-
         csvHeaders = []
         channelFileNames = []
         if 'idField' in config_data['featureData'][0]:
@@ -231,47 +224,6 @@ def upload_file_page():
                             reader = csv.DictReader(infile)
                             csvHeader = reader.fieldnames
 
-<<<<<<< HEAD
-                    #  Process Label
-                    for file in labelFile:
-                        # Upload Label
-                        name, ext = os.path.splitext(file.filename)
-                        path_str = str(Path(file_path) / file.filename)
-                        file.save(path_str)
-                        # Converting Label
-                        current_task = "Converting Label File"
-                        fullConversion.convertChannel(path_str, True)
-                        os.remove(path_str)  # remove the raw file after converting it
-                        labelName = name
-                        completed_task += 1
-
-                    # Process Channel Files
-                    channel_files = request.files.getlist("channel_files")
-                    if len(channel_files) == 0:
-                        raise Exception("Please Upload a Channel File")
-                    if any('.ome' in file.filename for file in channel_files) or len(channel_files) == 1 :
-                        if len(channel_files) > 1:
-                            raise Exception("Please Only Upload One Channel .ome.tif ")
-                        else:
-                            path_str = str(Path(file_path) / channel_files[0].filename)
-                            channel_files[0].save(path_str)
-                            current_task = "Converting OME-TIFF Channels (This Will Take a While)"
-                            channelFileNames.extend(fullConversion.convertOmeTiff(file_path, channel_files[0].filename,
-                                                                                  False))
-                            os.remove(path_str)  # remove the raw file after converting it
-                            completed_task += 1
-                    else:
-                        for file_number in range(len(channel_files)):
-                            file = channel_files[file_number]
-                            path_str = str(Path(file_path) / file.filename)
-                            file.save(path_str)
-                            os.remove(path_str)  # remove the raw file after converting it
-                            current_task = "Converting Channel 1 of " + str(len(channel_files))
-                            fullConversion.convertChannel(path_str, False)
-                            name, ext = os.path.splitext(file.filename)
-                            channelFileNames.append(name)
-                            completed_task += 1
-=======
                     # Process Channel File
 
                     current_task = "Converting OME-TIFF Channels (This Will Take a While)"
@@ -285,7 +237,6 @@ def upload_file_page():
                                                            isLabelImg=True)
                     completed_task += 1
 
->>>>>>> 4b02e36ef4841803872cf7895d475f6207aff486
                     current_task = total_tasks
                     current_task = 'Complete'
                     config_data = {}
@@ -627,8 +578,6 @@ def get_gating_csv_values():
     return serialize_and_submit_json(obj)
 
 
-<<<<<<< HEAD
-=======
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
@@ -645,7 +594,6 @@ def generate_png(datasource, channel, level, tile):
     return send_file(file_object, mimetype='image/PNG')
 
 
->>>>>>> 4b02e36ef4841803872cf7895d475f6207aff486
 def serialize_and_submit_json(data):
     response = app.response_class(
         response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),
