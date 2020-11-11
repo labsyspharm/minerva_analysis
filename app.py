@@ -207,10 +207,18 @@ def upload_file_page():
 
                     # labelFile = request.files.getlist("label_file")
                     labelFile = request.form.get('label_file')
+                    if labelFile.startswith('"'):
+                        labelFile = labelFile[1:]
+                    if labelFile.endswith('"'):
+                        labelFile = labelFile[:-1]
                     labelFile = Path(labelFile)
                     labelName = os.path.splitext(labelFile.name)[0]
 
                     channelFile = request.form.get('channel_file')
+                    if channelFile.startswith('"'):
+                        channelFile = labelFile[1:]
+                    if channelFile.endswith('"'):
+                        channelFile = labelFile[:-1]
                     channelFile = Path(channelFile)
 
                     total_tasks = 2
