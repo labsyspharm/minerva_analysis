@@ -126,8 +126,6 @@ def edit_config_with_config_name(config_name):
         if 'num_channels' in config_data:
             data['num_channels'] = config_data['num_channels']
 
-
-
         csvHeaders = []
         channelFileNames = []
         if 'idField' in config_data['featureData'][0]:
@@ -209,10 +207,18 @@ def upload_file_page():
 
                     # labelFile = request.files.getlist("label_file")
                     labelFile = request.form.get('label_file')
+                    if labelFile.startswith('"'):
+                        labelFile = labelFile[1:]
+                    if labelFile.endswith('"'):
+                        labelFile = labelFile[:-1]
                     labelFile = Path(labelFile)
                     labelName = os.path.splitext(labelFile.name)[0]
 
                     channelFile = request.form.get('channel_file')
+                    if channelFile.startswith('"'):
+                        channelFile = channelFile[1:]
+                    if channelFile.endswith('"'):
+                        channelFile = channelFile[:-1]
                     channelFile = Path(channelFile)
 
                     total_tasks = 2
