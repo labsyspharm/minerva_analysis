@@ -89,12 +89,14 @@ class ImageViewer {
             id: "openseadragon",
             prefixUrl: "/static/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
-            defaultZoomLevel: 1.2,
+            imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 1000, // default is 200, had to set up for loading two layers (labels and image)
-            preload: true
-            //debugMode:  true,
+            maxImageCacheCount: 400,
+            timeout: 90000,
+            preload: true,
+            homeFillsViewer: true,
+            visibilityRatio: 1.0
         });
 
         that.viewer.addHandler('tile-loaded', this.tileLoaded);
