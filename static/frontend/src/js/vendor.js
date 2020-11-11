@@ -18,7 +18,7 @@ import convert from 'color-convert'
 import Dropzone from 'dropzone'
 
 import * as OpenSeadragon from 'openseadragon';
-// import {ViewerManager} from './views/viewerManager';
+import {ViewerManager} from './views/viewerManager';
 // import {CsvGatingOverlay} from './views/CsvGatingOverlay';
 
 window.convert = convert;
@@ -31,6 +31,6 @@ window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
 window.Dropzone = Dropzone;
-// window.ViewerManager = ViewerManager;
+window.ViewerManager = ViewerManager;
 // window.CsvGatingOverlay = CsvGatingOverlay;
 
