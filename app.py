@@ -95,7 +95,6 @@ def edit_config_with_config_name(config_name):
         config_data = config_csv[config_name]
         data['datasetName'] = config_name
         # test_data['channelFileNames'] = ['channel_01', 'channel_02']
-        data['normCsvName'] = config_data['clusterData']
         data['csvName'] = config_data['featureData'][0]['src'].split("/")[-1]
 
         if 'shapes' in config_data:
@@ -106,6 +105,28 @@ def edit_config_with_config_name(config_name):
 
         if 'normalization' in config_data['featureData'][0]:
             data['normalization'] = config_data['featureData'][0]['normalization']
+
+        if 'clusterData' in config_data:
+            data['normCsvName'] = config_data['clusterData']
+
+        if 'maxLevel' in config_data:
+            data['maxLevel'] = config_data['maxLevel']
+        if 'height' in config_data:
+            data['height'] = config_data['height']
+
+        if 'width' in config_data:
+            data['width'] = config_data['width']
+
+        if 'segmentation' in config_data:
+            data['segmentation'] = config_data['segmentation']
+
+        if 'channelFile' in config_data:
+            data['channelFile'] = config_data['channelFile']
+
+        if 'num_channels' in config_data:
+            data['num_channels'] = config_data['num_channels']
+
+
 
         csvHeaders = []
         channelFileNames = []
@@ -133,7 +154,7 @@ def edit_config_with_config_name(config_name):
 
         for i in range(len(config_data['imageData'])):
             elem = config_data['imageData'][i]
-            channelName = elem['src'].split("/")[-1]
+            channelName = elem['src'].split("/")[-2]
             header = {}
             header['fullName'] = elem['fullname']
             header['displayName'] = elem['name']

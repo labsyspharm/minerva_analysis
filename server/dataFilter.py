@@ -369,11 +369,11 @@ def generate_zarr_png(datasource, channel, level, tile):
         else:
             tile = channels[level][channel_num, iy:iy + tilesize, ix:ix + tilesize]
 
-    imgR = ((tile >> 16) % 256).astype('uint8')
-    imgG = ((tile >> 8) % 256).astype('uint8')  # high bits
-    imgB = (tile % 256).astype('uint8')  # low bits∂
-    channel_img = np.dstack((imgR, imgG, imgB))
-    return channel_img
+
+
+    tile = np.ascontiguousarray(tile, dtype='uint32')
+    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
+    return png
 
 
 def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
