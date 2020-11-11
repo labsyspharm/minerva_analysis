@@ -6,13 +6,21 @@ import requests
 import json
 import os
 from pathlib import Path
+from skimage.io import imread
+
 import time
 import pickle
+import tifffile as tf
+from PIL import Image
+import re
+import zarr
 
 ball_tree = None
 database = None
 source = None
 config = None
+seg = None
+channels = None
 
 
 def init(datasource):
@@ -23,21 +31,22 @@ def load_db(datasource, reload=False):
     global database
     global source
     global config
+    global seg
+    global channels
+
     if source is datasource and database is not None and reload is False:
         return
     load_config()
     if reload:
         load_ball_tree(datasource, reload=reload)
     csvPath = "." + config[datasource]['featureData'][0]['src']
-    index_col = None
-    if 'idField' in config[datasource]['featureData'][0]:
-        idField = config[datasource]['featureData'][0]['idField']
-        if idField != 'none' and idField is not None:
-            index_col = idField
-    database = pd.read_csv(csvPath, index_col=index_col)
+    database = pd.read_csv(csvPath)
     database['id'] = database.index
     database = database.replace(-np.Inf, 0)
     source = datasource
+    seg = zarr.load(config[datasource]['segmentation'])
+    channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
+    channels = zarr.open(channel_io.series[0].aszarr())
 
 
 def load_config():
@@ -83,6 +92,7 @@ def query_for_closest_cell(x, y, datasource):
         try:
             row = database.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
+            obj['id'] = str(index[0][0])
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             return obj
@@ -330,3 +340,84 @@ def get_database_description(datasource):
             dat.append(obj)
         description[column]['histogram'] = dat
     return description
+
+
+def generate_zarr_png(datasource, channel, level, tile):
+    if config is None:
+        load_db(datasource)
+    global segmentation_data
+    global channels
+    global seg
+    [tx, ty] = tile.replace('.png', '').split('_')
+    tx = int(tx)
+    ty = int(ty)
+    level = int(level)
+    tilesize = 1024
+    ix = tx * tilesize
+    iy = ty * tilesize
+    segmentation = False
+    try:
+        channel_num = int(re.match(r".*(\d+)", channel).groups()[0])
+    except AttributeError:
+        segmentation = True
+
+    if segmentation:
+        tile = seg[level][iy:iy + tilesize, ix:ix + tilesize]
+    else:
+        if isinstance(channels, zarr.Array):
+            tile = channels[channel_num, iy:iy + tilesize, ix:ix + tilesize]
+        else:
+            tile = channels[level][channel_num, iy:iy + tilesize, ix:ix + tilesize]
+
+
+
+    tile = np.ascontiguousarray(tile, dtype='uint32')
+    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
+    return png
+
+
+def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
+    channel_info = {}
+    channelNames = []
+    if isLabelImg == False:
+        channel_io = tf.TiffFile(str(filePath), is_ome=False)
+        channels = zarr.open(channel_io.series[0].aszarr())
+        if isinstance(channels, zarr.Array):
+            channel_info['maxLevel'] = 1
+            shape = channels.shape
+        else:
+            channel_info['maxLevel'] = len(channels)
+            shape = channels[0].shape
+        channel_info['height'] = shape[1]
+        channel_info['width'] = shape[2]
+        channel_info['num_channels'] = shape[0]
+        for i in range(shape[0]):
+            channelName = re.sub(r'\.ome|\.tiff|\.tif|\.png', '', filePath.name) + "_" + str(i)
+            channelNames.append(channelName)
+        channel_info['channel_names'] = channelNames
+        return channel_info
+    else:
+        channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
+        channels = zarr.open(channel_io.series[0].aszarr())
+        seg = tf.imread(filePath, is_ome=False)
+        directory = Path(dataDirectory + "/" + filePath.name + ".zarr")
+        store = zarr.DirectoryStore(directory)
+        g = zarr.group(store=store, overwrite=True)
+        if isinstance(channels, zarr.Array):
+            data = zarr.array(seg)
+            chunks = channels.chunks
+            chunks = (chunks[-2], chunks[-1])
+            g.create_dataset('0', data=data, shape=seg.shape, chunks=chunks, dtype=seg.dtype)
+        else:
+            for i in range(len(channels)):
+                shape = channels[i].shape
+                shape = (shape[-2], shape[-1])
+                chunks = channels[i].chunks
+                chunks = (chunks[-2], chunks[-1])
+                data = seg
+                print(shape)
+                data = np.array(Image.fromarray(data).resize((shape[-1], shape[-2]), Image.NEAREST))
+                print(np.shape(data))
+                data = zarr.array(data)
+                g.create_dataset(str(i), data=data, shape=shape, chunks=chunks, dtype=seg.dtype)
+        return {'segmentation': str(directory)}
