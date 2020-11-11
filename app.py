@@ -216,9 +216,9 @@ def upload_file_page():
 
                     channelFile = request.form.get('channel_file')
                     if channelFile.startswith('"'):
-                        channelFile = labelFile[1:]
+                        channelFile = channelFile[1:]
                     if channelFile.endswith('"'):
-                        channelFile = labelFile[:-1]
+                        channelFile = channelFile[:-1]
                     channelFile = Path(channelFile)
 
                     total_tasks = 2
