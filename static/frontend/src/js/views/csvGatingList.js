@@ -385,8 +385,7 @@ class CSVGatingList {
 
         // Toggle outlined / filled cell selections
         gating_controls_outlines.addEventListener('change', e => {
-            seaDragonViewer.outlines = e.target.checked;
-            seaDragonViewer.forceRepaint();
+            seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
         })
 
     }
@@ -443,12 +442,13 @@ class CSVGatingList {
      */
     addSlider(data, activeRange, name, swidth) {
 
+        if (!data) return;
+
         const self = this;
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
 
         //add range slider row content
-        var sliderSimple = d3.slider
-            .sliderBottom()
+        var sliderSimple = d3.sliderBottom()
             .min(d3.min(data))
             .max(d3.max(data))
             .width(swidth - 60)//.tickFormat(d3.format("s"))

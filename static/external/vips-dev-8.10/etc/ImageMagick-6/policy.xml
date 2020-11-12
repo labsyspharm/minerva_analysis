@@ -30,7 +30,7 @@
 
     <policy domain="path" rights="read" pattern="/repository/*" />
 
-  Lets prevent users from executing any image filters:
+  Lets prevent users from executing any image lensingFilters:
 
     <policy domain="filter" rights="none" pattern="*" />
 

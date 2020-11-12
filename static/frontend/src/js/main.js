@@ -141,9 +141,20 @@ const gatingBrushEnd = async (packet) => {
 }
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 
+// For channel select click event
+const channelSelect = async (sels) => {
+
+    let channelCells = await dataLayer.getChannelCellIds(sels);
+
+    dataLayer.addAllToCurrentSelection(channelCells);
+
+    updateSeaDragonSelection(false);
+}
+eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
+
 
 //current fast solution for seadragon updates
-function updateSeaDragonSelection() {
+function updateSeaDragonSelection(repaint = true) {
     let selection = dataLayer.getCurrentSelection();
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
@@ -155,7 +166,7 @@ function updateSeaDragonSelection() {
             document.getElementById("cell_wrapper").style.display = "none";
         }
     }
-    seaDragonViewer.updateSelection(selectionHashMap);
+    seaDragonViewer.updateSelection(selectionHashMap, repaint);
 }
 
 //feature range selection changed in ridge plot

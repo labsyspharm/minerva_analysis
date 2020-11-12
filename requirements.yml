@@ -17,4 +17,3 @@ dependencies:
   - pip:
       - opencv-python==4.4.0.*
 
-
