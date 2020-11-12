@@ -1,23 +1,18 @@
 channels:
-- conda-forge
+  - conda-forge
 dependencies:
-- Flask=1.1.2
-- numpy
-- orjson
-- pandas
-- pillow=7.0.0
-- requests
-- scikit-learn=0.20.2
-- scikit-image=0.14.2
-- scipy
-- tifffile
-- waitress
-- pip
-- pip:
-  - pyvips==2.1.8
-  - opencv-python==4.4.0.*
-<<<<<<< HEAD
-=======
-
-
->>>>>>> b442f31e25f33f6fd7adcae80b42cc97aa21f53b
+  - Flask=1.1.2
+  - numpy
+  - orjson
+  - pandas
+  - pillow=8.0.0
+  - requests
+  - scikit-learn=0.20.2
+  - scikit-image=0.14.2
+  - scipy
+  - tifffile=2020.10.1
+  - waitress
+  - zarr
+  - pip
+  - pip:
+      - opencv-python==4.4.0.*

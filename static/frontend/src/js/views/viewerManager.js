@@ -81,16 +81,28 @@ export class ViewerManager {
             }
         }
 
+        let maxLevel = this.imageViewer.config['maxLevel'] - 1;
+
         // Add tiled image
         this.viewer.addTiledImage({
-            tileSource: src,
+            tileSource: {
+                height: this.imageViewer.config['height'],
+                width: this.imageViewer.config['width'],
+                maxLevel: maxLevel,
+                tileWidth: 1024,
+                tileHeight: 1024,
+                getTileUrl: function (level, x, y) {
+                    return `${src}${maxLevel - level}/${x}_${y}.png`
+                }
+            },
             // index: 0,
             opacity: 1,
             preload: true,
             success: () => {
                 // Define url and suburl
                 const itemidx = this.viewer.world.getItemCount() - 1;
-                const url = this.viewer.world.getItemAt(itemidx).source.tilesUrl;
+                this.viewer.world.getItemAt(itemidx).source['channelUrl'] = src
+                const url = src;
                 const group = url.split("/");
                 const sub_url = group[group.length - 2];
                 // Attach
@@ -117,7 +129,7 @@ export class ViewerManager {
 
             // remove channel - first find it
             for (let i = 0; i < img_count; i = i + 1) {
-                const url = this.viewer.world.getItemAt(i).source.tilesUrl;
+                const url = this.viewer.world.getItemAt(i).source['channelUrl'];
                 if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
 
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
@@ -174,12 +186,24 @@ export class ViewerManager {
 
         // Load label image in background if it exists
         if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] !== '') {
+            let url = this.imageViewer.config["imageData"][0]["src"];
+            let maxLevel = this.imageViewer.config['maxLevel'] - 1;
             this.viewer.addTiledImage({
-                tileSource: this.imageViewer.config["imageData"][0]["src"],
+                tileSource: {
+                    height: this.imageViewer.config['height'],
+                    width: this.imageViewer.config['width'],
+                    maxLevel: maxLevel,
+                    tileWidth: 1024,
+                    tileHeight: 1024,
+                    getTileUrl: function (level, x, y) {
+                        return `${url}${maxLevel - level}/${x}_${y}.png`
+                    }
+                },
                 index: 0,
                 opacity: 1,
                 success: () => {
-                    const url0 = this.viewer.world.getItemAt(0).source.tilesUrl;
+                    const url0 = url
+                    this.viewer.world.getItemAt(0).source['channelUrl'] = url;
                     this.imageViewer.labelChannel["url"] = url0;
                     const group = url0.split("/");
                     this.imageViewer.labelChannel["sub_url"] = group[group.length - 2];
