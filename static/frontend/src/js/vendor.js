@@ -5,8 +5,9 @@ import 'jquery'
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'pngjs'
+import {regeneratorRuntime} from "regenerator-runtime";
 import * as d3 from 'd3';
-import * as slider from 'd3-simple-slider';
+import {sliderBottom} from 'd3-simple-slider';
 import 'lodash'
 import 'jquery-form'
 import '@fortawesome/fontawesome-free/js/all'
@@ -16,21 +17,20 @@ import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert'
 import Dropzone from 'dropzone'
-
 import * as OpenSeadragon from 'openseadragon';
-// import {ViewerManager} from './views/viewerManager';
 import {CsvGatingOverlay} from './views/CsvGatingOverlay';
+import {ViewerManager} from './views/viewerManager';
 
 window.convert = convert;
 window.$ = $;
 window.d3 = d3;
-window.d3.slider = slider;
+window.d3.sliderBottom = sliderBottom;
 window.PNG = PNG;
 window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
 window.Dropzone = Dropzone;
-// window.ViewerManager = ViewerManager;
 window.CsvGatingOverlay = CsvGatingOverlay;
+window.ViewerManager = ViewerManager;
 
