@@ -52,6 +52,7 @@ class ImageViewer {
             const end_color = d3.rgb(255, 255, 255);
 
             const tf_def = this.createTFArray(0, 65535, start_color, end_color, this.numTFBins);
+            tf_def.name = this.config['imageData'][i].name;
 
             this.channelTF.push(tf_def);
         }
@@ -99,14 +100,17 @@ class ImageViewer {
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain);
 
-        /************************************************************************************* Create viewer managers */
+        /********************************************************************************************** Emulate click */
 
+        // Click first from channel list
+        // document.querySelector('.channel-list-content').click();
+
+        /******************************************************************************************** Back to normal  */
         /* TODO - unused
         // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
         this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
                 const context = opts.context;
-
                 //area selection polygon
                 if (that.selectionPolygonToDraw && that.selectionPolygonToDraw.length > 0) {
                     var d = that.selectionPolygonToDraw;
@@ -189,10 +193,11 @@ class ImageViewer {
         const coords = this.viewer.viewport.imageToViewportCoordinates(x, y);
         const lowerBounds = this.viewer.viewport.imageToViewportCoordinates(width, height);
         const box1 = new OpenSeadragon.Rect(coords.x, coords.y, lowerBounds.x, lowerBounds.y);
+
         // Apply to all viewers
         this.viewerManagers.forEach(vM => {
             vM.viewer.viewport.fitBounds(box1);
-        })
+        });
     }
 
     // =================================================================================================================
@@ -259,14 +264,16 @@ class ImageViewer {
         } else {
 
             // Full 24bit png handling: get buffer, parse it into png, save in cache
-            const buffer = new Buffer(event.tileRequest.response);
-            if (buffer) {
-                const tile = event.tile;
+            if (event.tileRequest) {
+                const buffer = new Buffer(event.tileRequest.response);
+                if (buffer) {
+                    const tile = event.tile;
 
-                // Save tile in tileCache
-                this.tileCache[tile.url] = PNG.sync.read(buffer, {colortype: 0});
-            } else {
-                // console.log('[TILE LOADED]: buffer UNDEFINED');
+                    // Save tile in tileCache
+                    this.tileCache[tile.url] = PNG.sync.read(buffer, {colortype: 0});
+                } else {
+                    // console.log('[TILE LOADED]: buffer UNDEFINED');
+                }
             }
         }
     }
@@ -400,6 +407,7 @@ class ImageViewer {
         const rgb1 = this.channelTF[channelIdx].start_color;
         const rgb2 = this.channelTF[channelIdx].end_color;
         const tf_def = this.createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
+        tf_def.name = dataLayer.getShortChannelName(name);
 
         this.channelTF[channelIdx] = tf_def;
         this.forceRepaint();
@@ -428,6 +436,7 @@ class ImageViewer {
             rgb2 = color;
         }
         const tf_def = this.createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
+        tf_def.name = dataLayer.getShortChannelName(name);
 
         this.channelTF[channelIdx] = tf_def;
         this.forceRepaint();
@@ -471,12 +480,15 @@ class ImageViewer {
      * @function updateSelection
      *
      * @param selection
+     * @param repaint
      *
      * @returns void
      */
-    updateSelection(selection) {
+    updateSelection(selection, repaint = true) {
         this.selection = selection;
-        this.forceRepaint();
+
+        if (repaint) this.forceRepaint();
+
     }
 }
 
@@ -488,29 +500,21 @@ ImageViewer.events = {
 
 async function addTile(path) {
 
-    function addTileResponse(success, error) {
-        if (error) {
-            console.log("Error Adding Tile:", error)
+    const promiseWrapper = new Promise((resolve, reject) => {
+        function addTileResponse(success, error) {
+            // console.log("Emergency Added Tile:", path);
+            resolve();
         }
-        // console.log("Emergency Added Tile:", path)
-    }
 
-    const options = {
-        src: path,
-        loadWithAjax: true,
-        crossOriginPolicy: false,
-        ajaxWithCredentials: false,
-        callback: addTileResponse
-    }
-    return new Promise(resolve => {
-        seaDragonViewer.viewer.lensing.viewer_aux.imageLoader.addJob(options)
-        return seaDragonViewer.viewer.imageLoader.addJob(options)
+        const options = {
+            src: path,
+            loadWithAjax: true,
+            crossOriginPolicy: false,
+            ajaxWithCredentials: false,
+            callback: addTileResponse
+        }
+        seaDragonViewer.viewer.imageLoader.addJob(options)
     })
-        .then(response => {
-            return Promise.resolve()
-        })
-        .catch(err => {
-            return Promise.resolve()
-        })
+    return Promise.all([promiseWrapper])
 
 }

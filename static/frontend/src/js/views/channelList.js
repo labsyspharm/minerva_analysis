@@ -9,7 +9,8 @@ class ChannelList {
         this.ranges = {};
         this.sliders = new Map();
         var that = this;
-        this.imageBitRange = [0,65536];
+        this.imageBitRange = [0, 65536];
+        this.sel = {};
 
         //  create a color picker
         this.rainbow = rainbow();
@@ -31,8 +32,30 @@ class ChannelList {
         this.container = d3.select("#channel_list");
     }
 
-    selectChannel(name) {
+    removeChannel(name) {
+
+        // Update selections
         this.selections.push(name);
+        delete this.sel[dataLayer.getFullChannelName(name)];
+
+        // Trigger
+        this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
+    }
+
+    selectChannel(name) {
+
+        // Update selections
+        this.selections.push(name);
+        this.sel[dataLayer.getFullChannelName(name)] = this.imageBitRange;
+
+        // Trigger
+        // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
+    }
+
+    triggerChannelSelect() {
+
+        // Trigger
+        this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
     }
 
     async init() {
@@ -45,11 +68,11 @@ class ChannelList {
         list.classList.add("list-group")
         channel_list.appendChild(list)
         // Will show the picker when you click on a color rect
-        let showPicker = () => {
-            this.colorTransferHandle = d3.select(d3.event.target);
+        let showPicker = e => {
+            this.colorTransferHandle = d3.select(e.target);
             let color = this.colorTransferHandle.style('fill');
             let hsl = d3.hsl(color);
-            this.rainbow.show(d3.event.clientX, d3.event.clientY);
+            this.rainbow.show(e.clientX, e.clientY);
         };
         // Draws rows in the channel list
         _.each(this.columns, column => {
@@ -73,7 +96,7 @@ class ChannelList {
             nameCol.classList.add("channel-col");
             row.appendChild(nameCol);
 
-            // column within row that cintains the slider for the channel
+            // column within row that Contains the slider for the channel
             let sliderCol = document.createElement("div");
             sliderCol.classList.add("col-md-12");
             sliderCol.classList.add("channel-slider");
@@ -139,16 +162,21 @@ class ChannelList {
                     }
                     parent.classList.add("active");
                     svgCol.style.display = "block";
+
+                    // Select channel
                     this.selectChannel(name);
 
                     //add range slider row content
                     d3.select('div#channel-slider_' + name).style('display', "block")
 
-                 //channel not active
+                    //channel not active
                 } else {
                     this.selections = _.remove(this.selections, name);
                     parent.classList.remove("active")
                     svgCol.style.display = "none";
+
+                    // Remove channel
+                    this.removeChannel(name);
 
                     //hide range slider row content
                     d3.select('div#channel-slider_' + name).style('display', "none");
@@ -179,35 +207,33 @@ class ChannelList {
     @name the name of the slider (used as part of the id)
     @swidth the pixel width of the slider
      */
-    addSlider(data, activeRange, name, swidth){
+    addSlider(data, activeRange, name, swidth) {
 
         var that = this;
         //add range slider row content
-        var sliderSimple = d3.slider
-            .sliderBottom()
+        var sliderSimple = d3.sliderBottom()
             .min(d3.min(data))
             .max(d3.max(data))
-            .width(swidth-60)//.tickFormat(d3.format("s"))
+            .width(swidth - 60)//.tickFormat(d3.format("s"))
             .fill('orange')
             .ticks(5)
             .default(activeRange)
             .handle(
-              d3.symbol()
-                .type(d3.symbolCircle)
-                .size(100))
+                d3.symbol()
+                    .type(d3.symbolCircle)
+                    .size(100)
+            )
             .tickValues([]).on('onchange', range => {
-                // console.log('trigger gating event');
                 let packet = {name: name, dataRange: range};
                 this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-                // console.log('gating event triggered');
-        });
+            });
         this.sliders.set(name, sliderSimple);
 
         //create the slider svg and call the slider
         var gSimple = d3
             .select('#channel-slider_' + name)
             .append('svg')
-            .attr('class' , 'svgslider')
+            .attr('class', 'svgslider')
             .attr('width', swidth)
             .attr('height', 30)
             .append('g')
@@ -216,16 +242,16 @@ class ChannelList {
 
         //slider value to be displayed closer to the slider than default
         d3.selectAll('.parameter-value').select('text')
-            .attr("y",10);
+            .attr("y", 10);
 
         return sliderSimple;
     };
 }
 
-window.addEventListener("resize", function(){
+window.addEventListener("resize", function () {
     //reinitialize slider on window change..(had some bug updating with via d3 update)
-    if (channelList){
-        channelList.sliders.forEach(function(slider, name){
+    if (channelList) {
+        channelList.sliders.forEach(function (slider, name) {
             d3.select('div#channel-slider_' + name).select('svg').remove();
             channelList.addSlider(channelList.imageBitRange, slider.value(), name,
                 document.getElementById("channel_list").getBoundingClientRect().width);
@@ -239,5 +265,6 @@ ChannelList.events = {
     BRUSH_END: "BRUSH_END",
     COLOR_TRANSFER_CHANGE_MOVE: "COLOR_TRANSFER_CHANGE_MOVE",
     COLOR_TRANSFER_CHANGE: "COLOR_TRANSFER_CHANGE",
-    CHANNELS_CHANGE: "CHANNELS_CHANGE"
+    CHANNELS_CHANGE: "CHANNELS_CHANGE",
+    CHANNEL_SELECT: "CHANNEL_SELECT"
 };

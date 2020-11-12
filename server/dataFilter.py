@@ -123,6 +123,28 @@ def get_channel_names(datasource, shortnames=True):
     return channel_names
 
 
+def get_channel_cells(datasource, channels):
+    global database
+    global source
+    global ball_tree
+
+    range = [0, 65536]
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    query_string = ''
+    for c in channels:
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(range[0]) + ' < ' + c + ' < ' + str(range[1])
+    if query_string == None or query_string == "":
+        return []
+    query = database.query(query_string)[['id']].to_dict(orient='records')
+    return query
+
+
 def get_phenotypes(datasource):
     global database
     global source

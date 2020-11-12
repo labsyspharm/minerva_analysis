@@ -70,4 +70,3 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 
 * Access the tool via `http://localhost:8000/`
 
-
