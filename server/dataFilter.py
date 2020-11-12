@@ -382,7 +382,6 @@ def generate_zarr_png(datasource, channel, level, tile):
         channel_num = int(re.match(r".*(\d+)", channel).groups()[0])
     except AttributeError:
         segmentation = True
-
     if segmentation:
         tile = seg[level][iy:iy + tilesize, ix:ix + tilesize]
     else:
@@ -390,8 +389,6 @@ def generate_zarr_png(datasource, channel, level, tile):
             tile = channels[channel_num, iy:iy + tilesize, ix:ix + tilesize]
         else:
             tile = channels[level][channel_num, iy:iy + tilesize, ix:ix + tilesize]
-
-
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
     png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]

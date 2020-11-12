@@ -82,9 +82,9 @@ class ImageViewer {
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 400,
+            maxImageCacheCount: 200,
             timeout: 90000,
-            preload: true,
+            preload: false,
             homeFillsViewer: true,
             visibilityRatio: 1.0
         };
