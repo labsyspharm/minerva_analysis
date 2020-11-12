@@ -89,8 +89,8 @@ export class ViewerManager {
                 height: this.imageViewer.config['height'],
                 width: this.imageViewer.config['width'],
                 maxLevel: maxLevel,
-                tileWidth: 1024,
-                tileHeight: 1024,
+                tileWidth: this.imageViewer.config['tileWidth'],
+                tileHeight: this.imageViewer.config['tileHeight'],
                 getTileUrl: function (level, x, y) {
                     return `${src}${maxLevel - level}/${x}_${y}.png`
                 }
@@ -193,8 +193,8 @@ export class ViewerManager {
                     height: this.imageViewer.config['height'],
                     width: this.imageViewer.config['width'],
                     maxLevel: maxLevel,
-                    tileWidth: 1024,
-                    tileHeight: 1024,
+                    tileWidth: this.imageViewer.config['tileWidth'],
+                    tileHeight: this.imageViewer.config['tileHeight'],
                     getTileUrl: function (level, x, y) {
                         return `${url}${maxLevel - level}/${x}_${y}.png`
                     }
@@ -359,7 +359,7 @@ export class ViewerManager {
                         let color = [255, 255, 255]
 
                         /************************ new */
-                        // Init grid and tests (4 pts v 8 working for now)
+                            // Init grid and tests (4 pts v 8 working for now)
                         const grid = [
                                 i - 4,
                                 i + 4,
@@ -542,7 +542,7 @@ export class ViewerManager {
                         let color = [255, 255, 255]
 
                         /************************ new */
-                        // Init grid and tests (4 pts v 8 working for now)
+                            // Init grid and tests (4 pts v 8 working for now)
                         const grid = [
                                 i - 4,
                                 i + 4,

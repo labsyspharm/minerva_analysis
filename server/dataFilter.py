@@ -374,21 +374,22 @@ def generate_zarr_png(datasource, channel, level, tile):
     tx = int(tx)
     ty = int(ty)
     level = int(level)
-    tilesize = 1024
-    ix = tx * tilesize
-    iy = ty * tilesize
+    tile_width = config[datasource]['tileWidth']
+    tile_height = config[datasource]['tileHeight']
+    ix = tx * tile_width
+    iy = ty * tile_height
     segmentation = False
     try:
         channel_num = int(re.match(r".*(\d+)", channel).groups()[0])
     except AttributeError:
         segmentation = True
     if segmentation:
-        tile = seg[level][iy:iy + tilesize, ix:ix + tilesize]
+        tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
     else:
         if isinstance(channels, zarr.Array):
-            tile = channels[channel_num, iy:iy + tilesize, ix:ix + tilesize]
+            tile = channels[channel_num, iy:iy + tile_height, ix:ix + tile_width]
         else:
-            tile = channels[level][channel_num, iy:iy + tilesize, ix:ix + tilesize]
+            tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
     png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
@@ -403,10 +404,15 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         channels = zarr.open(channel_io.series[0].aszarr())
         if isinstance(channels, zarr.Array):
             channel_info['maxLevel'] = 1
+            chunks = channels.chunks
             shape = channels.shape
         else:
             channel_info['maxLevel'] = len(channels)
             shape = channels[0].shape
+            chunks = channels[0].chunks
+        chunks = (chunks[-2], chunks[-1])
+        channel_info['tileHeight'] = chunks[0]
+        channel_info['tileWidth'] = chunks[1]
         channel_info['height'] = shape[1]
         channel_info['width'] = shape[2]
         channel_info['num_channels'] = shape[0]
