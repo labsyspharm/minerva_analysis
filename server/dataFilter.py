@@ -381,7 +381,6 @@ def generate_zarr_png(datasource, channel, level, tile):
     segmentation = False
     try:
         channel_num = int(re.match(r".*_(\d*).*", channel).groups()[0])
-        print("CN:", channel_num)
     except AttributeError:
         segmentation = True
     if segmentation:
