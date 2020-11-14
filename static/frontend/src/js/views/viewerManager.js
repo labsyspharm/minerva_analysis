@@ -269,10 +269,17 @@ export class ViewerManager {
         }
         const channelPath = this.imageViewer.currentChannels[channelIdx]["sub_url"];
         const channelTileAdr = tile.url.replace(somePath, channelPath);
-        const channelTile = this.imageViewer.tileCache[channelTileAdr];
+        let channelTile = this.imageViewer.tileCache[channelTileAdr];
 
         if (channelTile === null || !channelTile) {
-            return;
+            // console.log("No Channel Either");
+            await addTile(channelTileAdr);
+            channelTile = seaDragonViewer.tileCache[channelTileAdr];
+
+            // FIXME : clearing errors from console but watch for side effects
+            if (channelTile === null || !channelTile) {
+                return;
+            }
         }
         const channelTileData = channelTile.data;
         const tf = this.imageViewer.channelTF[channelIdx];
@@ -288,9 +295,9 @@ export class ViewerManager {
         let rgb = 0;
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        if (labelTile === null && !this.imageViewer.noLabel) {
-            const loaded = await addTile(labelTileAdr);
-            labelTile = this.imageViewer.tileCache[labelTileAdr];
+        if (labelTile == null && !seaDragonViewer.noLabel) {
+            await addTile(labelTileAdr);
+            labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
 
         // Check if there is a label present
@@ -460,10 +467,17 @@ export class ViewerManager {
 
             const channelPath = this.viewer_channels[channelIdx]["sub_url"];
             const channelTileAdr = tileurl.replace(somePath, channelPath);
-            const channelTile = this.imageViewer.tileCache[channelTileAdr];
+            let channelTile = this.imageViewer.tileCache[channelTileAdr];
 
-            if (channelTile == null) {
-                return;
+            if (channelTile === null || !channelTile) {
+                // console.log("No Channel Either");
+                await addTile(channelTileAdr);
+                channelTile = seaDragonViewer.tileCache[channelTileAdr];
+                // FIXME : clearing errors from console but watch for side effects
+                if (channelTile === null || !channelTile) {
+                    return;
+                }
+
             }
 
             channelsTileData.push(channelTile.data);
@@ -477,8 +491,8 @@ export class ViewerManager {
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !this.imageViewer.noLabel) {
-            const loaded = await addTile(labelTileAdr);
-            labelTile = this.imageViewer.tileCache[labelTileAdr];
+            await addTile(labelTileAdr);
+            labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
 
         // Init
