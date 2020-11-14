@@ -35,7 +35,6 @@ class ChannelList {
     removeChannel(name) {
 
         // Update selections
-        this.selections.push(name);
         delete this.sel[dataLayer.getFullChannelName(name)];
 
         // Trigger
@@ -171,7 +170,7 @@ class ChannelList {
 
                     //channel not active
                 } else {
-                    this.selections = _.remove(this.selections, name);
+                    this.selections = _.pull(this.selections, name);
                     parent.classList.remove("active")
                     svgCol.style.display = "none";
 
