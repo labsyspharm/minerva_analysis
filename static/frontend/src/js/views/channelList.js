@@ -108,6 +108,7 @@ class ChannelList {
             svgCol.classList.add("ml-auto");
             svgCol.classList.add("channel-col");
             svgCol.classList.add("channel-svg-wrapper");
+            svgCol.classList.add("col-svg-wrapper");
             row.appendChild(svgCol);
 
             let colorLabel = document.createElement("span");
@@ -146,57 +147,85 @@ class ChannelList {
             channelName.textContent = column;
             nameCol.appendChild(channelName);
 
-            listItemParentDiv.addEventListener("click", () => {
-                // IF you clicked on the svg, ignore this behavior
-                if (event.target.closest("svg")) {
-                    return;
-                }
-                let parent = event.target.closest(".list-group-item");
-                let name = parent.querySelector('.channel-name').textContent;
-                let status = !parent.classList.contains("active");
-                if (status) {
-                    //Don't add channel is the max are selected
-                    if (_.size(this.selections) >= this.maxSelections) {
-                        return;
-                    }
-                    parent.classList.add("active");
-                    svgCol.style.display = "block";
-
-                    // Select channel
-                    this.selectChannel(name);
-
-                    //add range slider row content
-                    d3.select('div#channel-slider_' + name).style('display', "block")
-
-                    //channel not active
-                } else {
-                    this.selections = _.pull(this.selections, name);
-                    parent.classList.remove("active")
-                    svgCol.style.display = "none";
-
-                    // Remove channel
-                    this.removeChannel(name);
-
-                    //hide range slider row content
-                    d3.select('div#channel-slider_' + name).style('display', "none");
-                }
-                let selectionsHeaderDiv = document.getElementById("selected-channels-header-div");
-                if (_.size(this.selections) >= this.maxSelections) {
-                    selectionsHeaderDiv.classList.add('bold-selections-header');
-                } else {
-                    selectionsHeaderDiv.classList.remove('bold-selections-header');
-                }
-                let packet = {selections: this.selections, name, status};
-                // console.log('channels_change', packet);
-                document.getElementById("num-selected-channels").textContent = _.size(this.selections);
-                this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
-            })
+            listItemParentDiv.addEventListener("click", e => this.abstract_click(e, svgCol));
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
             this.addSlider(this.imageBitRange, this.imageBitRange, column, document.getElementById("channel_list").getBoundingClientRect().width);
             d3.select('div#channel-slider_' + column).style('display', "none");
         });
+    }
+
+
+    /**
+     * @function abstract_click
+     *
+     * @param e
+     * @param svgCol
+     */
+    abstract_click(event, svgCol) {
+
+        // If you clicked on the svg, ignore this behavior
+        if (event.target.closest("svg")) {
+            return;
+        }
+
+        // Get info
+        let parent = event.target.closest(".list-group-item");
+        let name = parent.querySelector('.channel-name').textContent;
+        let status = !parent.classList.contains("active");
+
+        // If active - else inactive
+        if (status) {
+
+            // Clear everything
+            // clearOut();
+
+            // Don't add channel is the max are selected
+            if (_.size(this.selections) >= this.maxSelections) {
+                return;
+            }
+
+            // Update properties and add slider
+            d3.select(parent).classed("active", true);
+            svgCol.style.display = "block";
+            d3.select('div#channel-slider_' + name).style('display', "block")
+
+            // Add channel
+            this.selectChannel(name);
+
+        } else {
+            // Clear panel visibility
+            // clearOut();
+
+            // Remove channel and rerender
+            this.removeChannel(name);
+
+            // Hide
+            d3.select(parent).classed("active", false);
+            svgCol.style.display = "none";
+            d3.select('div#channel-slider_' + name).style('display', "none")
+
+            // Trigger viewer cleanse
+            this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, this.selections);
+        }
+
+        //
+        let selectionsHeaderDiv = document.getElementById("selected-channels-header-div");
+        if (selectionsHeaderDiv) {
+            if (_.size(this.selections) >= this.maxSelections) {
+                selectionsHeaderDiv.classList.add('bold-selections-header');
+            } else {
+                selectionsHeaderDiv.classList.remove('bold-selections-header');
+            }
+            let packet = {selections: this.selections, name, status};
+            // console.log('channels_change', packet);
+            document.getElementById("num-selected-channels").textContent = _.size(this.selections);
+
+            // Trigger event
+            this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
+
+        }
     }
 
     /*

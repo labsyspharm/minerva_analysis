@@ -99,7 +99,7 @@ class CSVGatingList {
             svgCol.style.display = "none";
 
             let gatingName = document.createElement("span");
-            gatingName.classList.add("gating-name");
+            gatingName.classList.add('gating-name');
             gatingName.textContent = column;
             nameCol.appendChild(gatingName);
             listItemParentDiv.addEventListener("click", e => self.abstract_click(e, svgCol));
@@ -407,10 +407,10 @@ class CSVGatingList {
 
                     // If event target is not an svg el (from slider)
                     const svgEls = ['path']
-                    if (!svgEls.includes(e.target.tagName)) {
+                    if (!svgEls.includes(e.currentTarget.tagName)) {
 
                         // Get channel name
-                        const name = _.get(e.target.querySelector(`.${target_class}`), 'innerText');
+                        const name = _.get(e.currentTarget.querySelector(`.${target_class}`), 'innerText');
 
                         // Find match el in gating list
                         if (name) {
