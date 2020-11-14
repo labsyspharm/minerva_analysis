@@ -38,7 +38,7 @@ class ChannelList {
         delete this.sel[dataLayer.getFullChannelName(name)];
 
         // Trigger
-        this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
+        // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
     }
 
     selectChannel(name) {
