@@ -197,6 +197,7 @@ class ChannelList {
         } else {
             // Clear panel visibility
             // clearOut();
+            this.selections = _.pull(this.selections, name);
 
             // Remove channel and rerender
             this.removeChannel(name);
@@ -207,7 +208,7 @@ class ChannelList {
             d3.select('div#channel-slider_' + name).style('display', "none")
 
             // Trigger viewer cleanse
-            this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, this.selections);
+            // this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, this.selections);
         }
 
         //
