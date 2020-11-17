@@ -449,9 +449,10 @@ class CSVGatingList {
 
         //add range slider row content
         var sliderSimple = d3.sliderBottom()
-            .min(d3.min(data))
-            .max(d3.max(data))
-            .width(swidth - 60)//.tickFormat(d3.format("s"))
+            .min(parseFloat(d3.min(data)))
+            .max(parseFloat(d3.max(data)))
+            .width(swidth - 60)
+            .tickFormat(d3.format(",.2f"))
             .fill('orange')
             .ticks(5)
             .default(activeRange)
@@ -527,10 +528,13 @@ window
 
         function () {
             //reinitialize slider on window change..(had some bug updating with via d3 update)
-            if (csv_gatingList) {
+            if (typeof csv_gatingList != "undefined" && csv_gatingList) {
                 csv_gatingList.sliders.forEach(function (slider, name) {
                     d3.select('div#csv_gating-slider_' + name).select('svg').remove();
-                    csv_gatingList.addSlider(csv_gatingList.gating_default_range, slider.value(), name,
+                    //add and hide gating sliders (will be visible when gating is active)
+                    let fullName = csv_gatingList.dataLayer.getFullChannelName(name);
+                    let sliderRange = [csv_gatingList.databaseDescription[fullName].min, csv_gatingList.databaseDescription[fullName].max];
+                    csv_gatingList.addSlider(sliderRange, slider.value(), name,
                         document.getElementById("csv_gating_list").getBoundingClientRect().width);
                 });
             }

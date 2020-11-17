@@ -279,7 +279,7 @@ class ChannelList {
 
 window.addEventListener("resize", function () {
     //reinitialize slider on window change..(had some bug updating with via d3 update)
-    if (channelList) {
+    if (typeof channelList != "undefined" && channelList) {
         channelList.sliders.forEach(function (slider, name) {
             d3.select('div#channel-slider_' + name).select('svg').remove();
             channelList.addSlider(channelList.imageBitRange, slider.value(), name,
