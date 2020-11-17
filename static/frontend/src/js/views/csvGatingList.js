@@ -519,6 +519,7 @@ class CSVGatingList {
     ;
 }
 
+//resize sliders, etc on window change
 window
     .addEventListener(
         "resize"
@@ -534,8 +535,22 @@ window
                 });
             }
         }
-    )
-;
+    );
+
+//hide gating control panel when scrolled down to access all channels..
+$(document).ready(function()
+{
+   $('#csv_gating_list').scroll(function()
+   {
+      var div = $(this);
+      if (div[0].scrollHeight - div.scrollTop() < div.height()+10)
+      {
+            $('#gating_controls_panel').hide();
+      }else{
+            $('#gating_controls_panel').show();
+      }
+   });
+});
 
 //static vars
 CSVGatingList
