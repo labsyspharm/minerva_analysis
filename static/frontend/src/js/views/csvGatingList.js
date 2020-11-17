@@ -529,7 +529,7 @@ window
             if (csv_gatingList) {
                 csv_gatingList.sliders.forEach(function (slider, name) {
                     d3.select('div#csv_gating-slider_' + name).select('svg').remove();
-                    csv_gatingList.addSlider(csv_gatingList.imageBitRange, slider.value(), name,
+                    csv_gatingList.addSlider(csv_gatingList.gating_default_range, slider.value(), name,
                         document.getElementById("csv_gating_list").getBoundingClientRect().width);
                 });
             }
