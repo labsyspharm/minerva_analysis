@@ -18,8 +18,6 @@ import 'node-fetch'
 import convert from 'color-convert'
 import * as OpenSeadragon from 'openseadragon';
 import {ViewerManager} from './views/viewerManager';
-import * as Lensing from 'lensing';
-import {LensingFiltersExt} from './views/lensingFiltersExt';
 
 window.convert = convert;
 window.$ = $;
@@ -30,7 +28,5 @@ window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
-window.Lensing = Lensing;
 window.ViewerManager = ViewerManager;
-window.LensingFiltersExt = LensingFiltersExt;
 

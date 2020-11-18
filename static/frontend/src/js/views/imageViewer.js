@@ -82,31 +82,23 @@ class ImageViewer {
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 400,
+            maxImageCacheCount: 200,
             timeout: 90000,
-            preload: true,
+            preload: false,
             homeFillsViewer: true,
             visibilityRatio: 1.0
         };
 
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
-        /************************************************************************************* Lensing Implementation */
-
-            // Get lensingFilters data
-        const dataLoad = LensingFiltersExt.getFilters(this);
-
-        // Instantiate viewer
-        that.viewer.lensing = Lensing.construct(OpenSeadragon, that.viewer, viewer_config, dataLoad);
 
         /************************************************************************************* Create viewer managers */
 
         // Instantiate viewer managers
         that.viewerManagerVMain = new ViewerManager(that, that.viewer, 'main');
-        that.viewerManagerVAuxi = new ViewerManager(that, that.viewer.lensing.viewer_aux, 'auxi');
 
         // Append to viewers
-        that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
+        that.viewerManagers.push(that.viewerManagerVMain);
 
         /********************************************************************************************** Emulate click */
 

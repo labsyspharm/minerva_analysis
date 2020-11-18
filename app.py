@@ -126,6 +126,12 @@ def edit_config_with_config_name(config_name):
         if 'num_channels' in config_data:
             data['num_channels'] = config_data['num_channels']
 
+        if 'tileHeight' in config_data:
+            data['tileHeight'] = config_data['tileHeight']
+
+        if 'tileWidth' in config_data:
+            data['tileWidth'] = config_data['tileWidth']
+
         csvHeaders = []
         channelFileNames = []
         if 'idField' in config_data['featureData'][0]:
@@ -265,6 +271,8 @@ def upload_file_page():
                     config_data['segmentation'] = label_info['segmentation']
 
                     config_data['num_channels'] = channel_info['num_channels']
+                    config_data['tileHeight'] = channel_info['tileHeight']
+                    config_data['tileWidth'] = channel_info['tileWidth']
 
                     config_data['datasetName'] = datasetName
                     config_data['channelFileNames'] = channelFileNames
@@ -398,6 +406,12 @@ def save_config():
 
             if 'num_channels' in originalData:
                 configData[datasetName]['num_channels'] = originalData['num_channels']
+
+            if 'tileWidth' in originalData:
+                configData[datasetName]['tileWidth'] = originalData['tileWidth']
+
+            if 'tileHeight' in originalData:
+                configData[datasetName]['tileHeight'] = originalData['tileHeight']
 
             if 'segmentation' in originalData:
                 configData[datasetName]['segmentation'] = originalData['segmentation']
@@ -597,16 +611,13 @@ def get_gating_csv_values():
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
+    now = time()
     png = dataFilter.generate_zarr_png(datasource, channel, level, tile)
     file_object = io.BytesIO()
     # write PNG in file-object
-    try:
-        png.save(file_object, 'PNG')
-    except AttributeError:
-        Image.fromarray(png).save(file_object, 'PNG')
+    Image.fromarray(png).save(file_object, 'PNG', compress_level=0)
     # move to beginning of file so `send_file()` it will read from start
     file_object.seek(0)
-
     return send_file(file_object, mimetype='image/PNG')
 
 
