@@ -6,6 +6,9 @@ import requests
 import json
 import os
 from pathlib import Path
+from ome_types import from_xml
+import orjson
+
 from skimage.io import imread
 
 import time
@@ -21,6 +24,7 @@ source = None
 config = None
 seg = None
 channels = None
+metadata = None
 
 
 def init(datasource):
@@ -33,6 +37,7 @@ def load_db(datasource, reload=False):
     global config
     global seg
     global channels
+    global metadata
 
     if source is datasource and database is not None and reload is False:
         return
@@ -46,6 +51,8 @@ def load_db(datasource, reload=False):
     source = datasource
     seg = zarr.load(config[datasource]['segmentation'])
     channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
+    xml = channel_io.pages[0].tags['ImageDescription'].value
+    metadata = from_xml(xml).images[0].pixels
     channels = zarr.open(channel_io.series[0].aszarr())
 
 
@@ -367,7 +374,6 @@ def get_database_description(datasource):
 def generate_zarr_png(datasource, channel, level, tile):
     if config is None:
         load_db(datasource)
-    global segmentation_data
     global channels
     global seg
     [tx, ty] = tile.replace('.png', '').split('_')
@@ -394,6 +400,13 @@ def generate_zarr_png(datasource, channel, level, tile):
     tile = np.ascontiguousarray(tile, dtype='uint32')
     png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
     return png
+
+
+def get_ome_metadata(datasource):
+    if config is None:
+        load_db(datasource)
+    global metadata
+    return metadata
 
 
 def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
