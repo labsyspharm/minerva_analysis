@@ -72,10 +72,10 @@ class Scatterplot {
         const zoom = d3
             .zoom()
             .scaleExtent([0.8, 10])
-            .on("zoom", () => {
+            .on("zoom", (event) => {
                 // update the scales based on current zoom
-                xScale.domain(d3.event.transform.rescaleX(xScaleOriginal).domain());
-                yScale.domain(d3.event.transform.rescaleY(yScaleOriginal).domain());
+                xScale.domain(event.transform.rescaleX(xScaleOriginal).domain());
+                yScale.domain(event.transform.rescaleY(yScaleOriginal).domain());
                 redraw();
             });
 
@@ -136,9 +136,9 @@ class Scatterplot {
                     .call(legend);
 
                 sel.select("d3fc-svg.plot-area")
-                    .on("measure.range", () => {
-                        xScaleOriginal.range([0, d3.event.detail.width]);
-                        yScaleOriginal.range([d3.event.detail.height, 0]);
+                    .on("measure.range", (event) => {
+                        xScaleOriginal.range([0, event.detail.width]);
+                        yScaleOriginal.range([event.detail.height, 0]);
                     })
                     .call(zoom)
                     .call(pointer)

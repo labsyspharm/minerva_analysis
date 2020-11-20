@@ -18,7 +18,7 @@
     "d3-simple-slider": "latest",
     "d3-svg-annotation": "^2.5.1",
     "d3-svg-legend": "^2.25.6",
-    "d3fc": "^15.0.10",
+    "d3fc": "^15.1.1",
     "expose-loader": "^1.0.0",
     "file-loader": "^6.0.0",
     "install": "^0.13.0",
