@@ -299,4 +299,16 @@ class DataLayer {
         return fullname;
     }
 
+    async getMetadata() {
+        try {
+            let response = await fetch('/get_ome_metadata?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Metadata", e);
+        }
+    }
+
 }
