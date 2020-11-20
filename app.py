@@ -25,7 +25,7 @@ def my_index():
     return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
 
 
-@app.route('/datasource/<string:datasource>')
+@app.route('/<string:datasource>')
 def image_viewer(datasource):
     datasources = get_config_names()
     if datasource not in datasources:

@@ -6,7 +6,8 @@ import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'pngjs';
 import * as d3base from 'd3';
-import * as slider from 'd3-simple-slider';
+import {sliderBottom} from 'd3-simple-slider';
+
 import {annotation} from 'd3-svg-annotation';
 import {legendColor} from 'd3-svg-legend'
 import colorbrewer from 'colorbrewer';
@@ -19,8 +20,11 @@ import $ from 'jquery';
 import 'node-fetch';
 import convert from 'color-convert';
 import * as fc from 'd3fc';
+import * as OpenSeadragon from 'openseadragon';
+import {ViewerManager} from './views/viewerManager';
 
-window.d3 = Object.assign(d3base, {legendColor, slider, annotation});
+
+window.d3 = Object.assign(d3base, {legendColor, sliderBottom, annotation});
 window.convert = convert;
 window.$ = $;
 window.d3 = d3;
