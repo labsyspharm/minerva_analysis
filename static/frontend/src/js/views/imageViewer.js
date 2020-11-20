@@ -83,7 +83,7 @@ class ImageViewer {
             maxZoomPixelRatio: 15,
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
-            immediateRender: false,
+            immediateRender: true,
             maxImageCacheCount: 100,
             timeout: 90000,
             preload: false,
@@ -273,6 +273,7 @@ class ImageViewer {
                     const tile = event.tile;
 
                     // Save tile in tileCache
+
                     this.addToTileCache(tile.url, PNG.sync.read(buffer, {colortype: 0}))
                 } else {
                     // console.log('[TILE LOADED]: buffer UNDEFINED');
@@ -297,7 +298,7 @@ class ImageViewer {
     removeTileFromCache(tileName) {
         if (this.tileCache.hasOwnProperty(tileName)) {
             console.log("Removing from Tile Cache");
-            delete this.tileCache[tileName]
+            this.tileCache[tileName] = null;
         }
     }
 
