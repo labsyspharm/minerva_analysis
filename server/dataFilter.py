@@ -422,7 +422,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         else:
             channel_info['maxLevel'] = len(channels)
             shape = channels[0].shape
-            chunks = channels[0].chunks
+            chunks = (1, 1024, 1024)
         chunks = (chunks[-2], chunks[-1])
         channel_info['tileHeight'] = chunks[0]
         channel_info['tileWidth'] = chunks[1]
