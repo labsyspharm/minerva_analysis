@@ -6,13 +6,25 @@ import requests
 import json
 import os
 from pathlib import Path
+from ome_types import from_xml
+import orjson
+
+from skimage.io import imread
+
 import time
 import pickle
+import tifffile as tf
+from PIL import Image
+import re
+import zarr
 
 ball_tree = None
 database = None
 source = None
 config = None
+seg = None
+channels = None
+metadata = None
 
 
 def init(datasource):
@@ -23,6 +35,10 @@ def load_db(datasource, reload=False):
     global database
     global source
     global config
+    global seg
+    global channels
+    global metadata
+
     if source is datasource and database is not None and reload is False:
         return
     load_config()
@@ -33,7 +49,13 @@ def load_db(datasource, reload=False):
     embedding = np.load(Path("static/data/Ton_378/embedding.npy"))
     database['id'] = database.index
     database['Cluster'] = embedding[:, 2].astype('int32').tolist()
+    database = database.replace(-np.Inf, 0)
     source = datasource
+    seg = zarr.load(config[datasource]['segmentation'])
+    channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
+    xml = channel_io.pages[0].tags['ImageDescription'].value
+    metadata = from_xml(xml).images[0].pixels
+    channels = zarr.open(channel_io.series[0].aszarr())
 
 
 def load_config():
@@ -110,6 +132,28 @@ def get_channel_names(datasource, shortnames=True):
     return channel_names
 
 
+def get_channel_cells(datasource, channels):
+    global database
+    global source
+    global ball_tree
+
+    range = [0, 65536]
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    query_string = ''
+    for c in channels:
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(range[0]) + ' < ' + c + ' < ' + str(range[1])
+    if query_string == None or query_string == "":
+        return []
+    query = database.query(query_string)[['id']].to_dict(orient='records')
+    return query
+
+
 def get_phenotypes(datasource):
     global database
     global source
@@ -117,6 +161,8 @@ def get_phenotypes(datasource):
     try:
         phenotype_field = config[datasource]['featureData'][0]['phenotype']
     except KeyError:
+        phenotype_field = 'phenotype'
+    except TypeError:
         phenotype_field = 'phenotype'
 
     if datasource != source:
@@ -127,7 +173,7 @@ def get_phenotypes(datasource):
         return ['']
 
 
-def get_neighborhood(x, y, datasource, r=100):
+def get_neighborhood(x, y, datasource, r=100, fields=None):
     global database
     global source
     global ball_tree
@@ -143,6 +189,19 @@ def get_neighborhood(x, y, datasource, r=100):
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             neighborhood.append(obj)
+        if fields and len(fields) > 0:
+            fields.append('id') if 'id' not in fields else fields
+            if len(fields) > 1:
+                neighborhood = database.iloc[neighbors][fields].to_dict(orient='records')
+            else:
+                neighborhood = database.iloc[neighbors][fields].to_dict()
+        else:
+            neighborhood = database.iloc[neighbors].to_dict(orient='records')
+        # for neighbor in neighbors:
+        #     row = database.iloc[[neighbor]]
+        #     obj = row.to_dict(orient='records')[0]
+        #     # obj['id'] = str(neighbor)
+
         return neighborhood
     except:
         return {}
@@ -264,3 +323,219 @@ def get_scatterplot_data():
         'clusters': np.unique(data[:, 2]).astype('int32').tolist()
     }
     return visData
+
+def get_rect_cells(datasource, rect, channels):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    # Query
+    index = ball_tree.query_radius([[rect[0], rect[1]]], r=rect[2])
+    print('Query size:', len(index[0]))
+    neighbors = index[0]
+    try:
+        neighborhood = []
+        for neighbor in neighbors:
+            row = database.iloc[[neighbor]]
+            obj = row.to_dict(orient='records')[0]
+            obj['id'] = str(neighbor)
+            if 'phenotype' not in obj:
+                obj['phenotype'] = ''
+            neighborhood.append(obj)
+        return neighborhood
+    except:
+        return {}
+
+
+def get_gated_cells(datasource, gates):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    query_string = ''
+    for key, value in gates.items():
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+    if query_string == None or query_string == "":
+        return []
+    query = database.query(query_string)[['id']].to_dict(orient='records')
+    return query
+
+
+def download_gating_csv(datasource, gates, channels):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+
+    query_string = ''
+    columns = []
+    for key, value in gates.items():
+        columns.append(key)
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+    ids = database.query(query_string)[['id']].to_numpy().flatten()
+    if 'idField' in config[datasource]['featureData'][0]:
+        idField = config[datasource]['featureData'][0]['idField']
+    else:
+        idField = "CellID"
+    columns.append(idField)
+
+    csv = database.copy()
+
+    csv[idField] = database['id']
+    for channel in channels:
+        if channel in gates:
+            csv.loc[csv[idField].isin(ids), key] = 1
+            csv.loc[~csv[idField].isin(ids), key] = 0
+        else:
+            csv[channel] = 0
+
+    return csv
+
+
+def download_gates(datasource, gates, channels):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+    arr = []
+    for key, value in channels.items():
+        arr.append([key, value[0], value[1]])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'gate_start', 'gate_end']
+    csv['gate_active'] = False
+    for channel in gates:
+        csv.loc[csv['channel'] == channel, 'gate_active'] = True
+        csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
+        csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
+    return csv
+
+
+def get_database_description(datasource):
+    global database
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource != source:
+        load_ball_tree(datasource)
+    description = database.describe().to_dict()
+    for column in description:
+        [hist, bin_edges] = np.histogram(database[column].to_numpy(), bins=50, density=True)
+        midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+        description[column]['histogram'] = {}
+        dat = []
+        for i in range(len(hist)):
+            obj = {}
+            obj['x'] = midpoints[i]
+            obj['y'] = hist[i]
+            dat.append(obj)
+        description[column]['histogram'] = dat
+    return description
+
+
+def generate_zarr_png(datasource, channel, level, tile):
+    if config is None:
+        load_db(datasource)
+    global channels
+    global seg
+    [tx, ty] = tile.replace('.png', '').split('_')
+    tx = int(tx)
+    ty = int(ty)
+    level = int(level)
+    tile_width = config[datasource]['tileWidth']
+    tile_height = config[datasource]['tileHeight']
+    ix = tx * tile_width
+    iy = ty * tile_height
+    segmentation = False
+    try:
+        channel_num = int(re.match(r".*_(\d*).*", channel).groups()[0])
+    except AttributeError:
+        segmentation = True
+    if segmentation:
+        tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
+    else:
+        if isinstance(channels, zarr.Array):
+            tile = channels[channel_num, iy:iy + tile_height, ix:ix + tile_width]
+        else:
+            tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
+
+    tile = np.ascontiguousarray(tile, dtype='uint32')
+    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
+    return png
+
+
+def get_ome_metadata(datasource):
+    if config is None:
+        load_db(datasource)
+    global metadata
+    return metadata
+
+
+def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
+    channel_info = {}
+    channelNames = []
+    if isLabelImg == False:
+        channel_io = tf.TiffFile(str(filePath), is_ome=False)
+        channels = zarr.open(channel_io.series[0].aszarr())
+        if isinstance(channels, zarr.Array):
+            channel_info['maxLevel'] = 1
+            chunks = channels.chunks
+            shape = channels.shape
+        else:
+            channel_info['maxLevel'] = len(channels)
+            shape = channels[0].shape
+            chunks = (1, 1024, 1024)
+        chunks = (chunks[-2], chunks[-1])
+        channel_info['tileHeight'] = chunks[0]
+        channel_info['tileWidth'] = chunks[1]
+        channel_info['height'] = shape[1]
+        channel_info['width'] = shape[2]
+        channel_info['num_channels'] = shape[0]
+        for i in range(shape[0]):
+            channelName = re.sub(r'\.ome|\.tiff|\.tif|\.png', '', filePath.name) + "_" + str(i)
+            channelNames.append(channelName)
+        channel_info['channel_names'] = channelNames
+        return channel_info
+    else:
+        channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
+        channels = zarr.open(channel_io.series[0].aszarr())
+        seg = tf.imread(filePath, is_ome=False)
+        directory = Path(dataDirectory + "/" + filePath.name + ".zarr")
+        store = zarr.DirectoryStore(directory)
+        g = zarr.group(store=store, overwrite=True)
+        if isinstance(channels, zarr.Array):
+            data = zarr.array(seg)
+            chunks = channels.chunks
+            chunks = (chunks[-2], chunks[-1])
+            g.create_dataset('0', data=data, shape=seg.shape, chunks=chunks, dtype=seg.dtype)
+        else:
+            for i in range(len(channels)):
+                shape = channels[i].shape
+                shape = (shape[-2], shape[-1])
+                chunks = channels[i].chunks
+                chunks = (chunks[-2], chunks[-1])
+                data = seg
+                print(shape)
+                data = np.array(Image.fromarray(data).resize((shape[-1], shape[-2]), Image.NEAREST))
+                print(np.shape(data))
+                data = zarr.array(data)
+                g.create_dataset(str(i), data=data, shape=shape, chunks=chunks, dtype=seg.dtype)
+        return {'segmentation': str(directory)}

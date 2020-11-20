@@ -18,21 +18,19 @@ import Mark from 'mark.js';
 import $ from 'jquery';
 import 'node-fetch';
 import convert from 'color-convert';
-import * as fc from  'd3fc'
+import * as fc from 'd3fc';
 
-window.d3 = Object.assign(d3base, {legendColor, slider, annotation})
-
-
+window.d3 = Object.assign(d3base, {legendColor, slider, annotation});
 window.convert = convert;
 window.$ = $;
 window.d3 = d3;
 window.fc = fc;
 window.colorbrewer = colorbrewer;
+window.d3.sliderBottom = sliderBottom;
 window.PNG = PNG;
 window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
-
-
-
+window.OpenSeadragon = OpenSeadragon;
+window.ViewerManager = ViewerManager;
 

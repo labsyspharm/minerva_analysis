@@ -1,4 +1,4 @@
-//todo add crossfilter stuff here... build some filters and sorters for individual and combined dimensions
+//todo add crossfilter stuff here... build some lensingFilters and sorters for individual and combined dimensions
 
 class DataLayer {
 
@@ -42,6 +42,19 @@ class DataLayer {
         }
     }
 
+    async getChannelCellIds(sels) {
+        try {
+            let response = await fetch('/get_channel_cell_ids?' + new URLSearchParams({
+                filter: JSON.stringify(sels),
+                datasource: datasource
+            }))
+            let cellIds = await response.json();
+            return cellIds;
+        } catch (e) {
+            console.log("Error Getting Channel Cell Ids", e);
+        }
+    }
+
     async getChannelNames(shortNames = true) {
         try {
             let response = await fetch('/get_channel_names?' + new URLSearchParams({
@@ -81,7 +94,6 @@ class DataLayer {
         }
     }
 
-
     async getNearestCell(point_x, point_y) {
         try {
             let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
@@ -96,15 +108,11 @@ class DataLayer {
         }
     }
 
-    async getNeighborhood(maxDistance, selectedCell) {
+    async getNeighborhood(maxDistance, x, y) {
         try {
-            let pointX = selectedCell[this.x];
-            let pointY = selectedCell[this.y];
-            let cellId = selectedCell.id;
             let response = await fetch('/get_neighborhood?' + new URLSearchParams({
-                point_x: pointX,
-                point_y: pointY,
-                cellId: cellId,
+                point_x: x,
+                point_y: y,
                 max_distance: maxDistance,
                 datasource: datasource
             }))
@@ -139,6 +147,10 @@ class DataLayer {
     }
 
 
+    async getNeighborhoodForCell(maxDistance, selectedCell) {
+        return this.getNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);
+    }
+
     getCurrentSelection() {
         return this.currentSelection;
     }
@@ -157,9 +169,9 @@ class DataLayer {
                 this.currentSelection.clear();
             }
 
-            console.log('current selection size:', this.currentSelection.size);
+            // console.log('current selection size:', this.currentSelection.size);
             if (this.currentSelection.size > 0) {
-                console.log('id: ', this.currentSelection.values().next().value.id);
+                // console.log('id: ', this.currentSelection.values().next().value.id);
             }
             return;
         }
@@ -172,18 +184,18 @@ class DataLayer {
         // add new item
         this.currentSelection.add(item);
 
-        console.log('current selection size:', this.currentSelection.size);
+        // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {
-            console.log('id: ', this.currentSelection.values().next().value.id);
+            // console.log('id: ', this.currentSelection.values().next().value.id);
         }
     }
 
 
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
-        console.log("update current selection")
+        // console.log("update current selection")
         var that = this;
         that.currentSelection = new Set(items);
-        console.log("update current selection done")
+        // console.log("update current selection done")
     }
 
     isImageFeature(key) {
@@ -212,6 +224,18 @@ class DataLayer {
             }
         });
         return fullname;
+    }
+
+    async getMetadata() {
+        try {
+            let response = await fetch('/get_ome_metadata?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Metadata", e);
+        }
     }
 
 }

@@ -8,9 +8,9 @@ class ColorScheme {
         this.colorMap = await this.dataLayer.getColorScheme();
     }
 
-    async refreshColorScheme() {
+    async refreshColorScheme(refresh) {
         try {
-            this.colorMap = await this.dataLayer.getColorScheme(true);
+            this.colorMap = await this.dataLayer.getColorScheme(refresh);
             console.log("Loaded Color Scheme");
         } catch (e) {
             console.log("Error Getting Color Palette", e)

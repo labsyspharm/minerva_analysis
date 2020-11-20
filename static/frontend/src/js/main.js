@@ -24,20 +24,20 @@ document.getElementById("openseadragon").addEventListener('contextmenu', event =
 
 
 //LOAD DATA
-console.log('loading config');
+// console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
 d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
-    console.log('loading data');
+    // console.log('loading data');
     this.config = config;
     init(config[datasource]).then(() => {
-        console.log("done loading data");
+        // console.log("done loading data");
     });
 });
 
 
 // init all views (datatable, seadragon viewer,...)
 async function init(conf) {
-    console.log('initialize system');
+    // console.log('initialize system');
     config = conf;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
@@ -46,7 +46,7 @@ async function init(conf) {
     //INIT DATA FILTER
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
-    console.log("Data Loaded");
+    // console.log("Data Loaded");
     channelList = new ChannelList(config, dataLayer, eventHandler);
     await channelList.init();
     colorScheme = new ColorScheme(dataLayer);
@@ -99,18 +99,18 @@ eventHandler.bind(ChannelList.events.CHANNELS_CHANGE, actionChannelsToRenderChan
 
 //image region or single cell selection (may needs to be combined with other selection events)
 const actionImageClickedMultiSel = (d) => {
-    console.log('actionImageClick3edMultSel');
+    // console.log('actionImageClick3edMultSel');
     d3.select('body').style('cursor', 'progress');
     // add newly clicked item to selection
-    console.log('add to selection');
+    // console.log('add to selection');
     if (!Array.isArray(d.selectedItem)) {
         dataLayer.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
     } else {
-        console.log(d.selectedItem.length);
+        // console.log(d.selectedItem.length);
         dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
     cellInformation.selectCell(d.selectedItem);
-    updateSeaDragonSelection(true);
+    updateSeaDragonSelection(true, true);
     d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
@@ -127,7 +127,7 @@ const selectCluster = async (cluster) => {
         starplot.hide();
         dataLayer.clearCurrentSelection();
     }
-    updateSeaDragonSelection(false);
+    updateSeaDragonSelection(false, false);
     d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(Scatterplot.events.selectCluster, selectCluster);
@@ -151,9 +151,20 @@ const refreshColors = async () => {
 }
 eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
+// For channel select click event
+const channelSelect = async (sels) => {
+
+    let channelCells = await dataLayer.getChannelCellIds(sels);
+
+    dataLayer.addAllToCurrentSelection(channelCells);
+
+    updateSeaDragonSelection(true, false);
+}
+eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
+
 
 //current fast solution for seadragon updates
-function updateSeaDragonSelection(showCellInfoPanel = false) {
+function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     let selection = dataLayer.getCurrentSelection();
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
@@ -164,13 +175,19 @@ function updateSeaDragonSelection(showCellInfoPanel = false) {
     //     document.getElementById("cell_wrapper").style.display = "none";
     // }
     seaDragonViewer.updateSelection(selectionHashMap);
+    if (_.size(selection) == 0) {
+        document.getElementById("cell_wrapper").style.display = "none";
+    } else {
+        document.getElementById("cell_wrapper").style.display = "none";
+    }
+    seaDragonViewer.updateSelection(selectionHashMap, repaint);
 }
 
 //feature range selection changed in ridge plot
 const actionFeatureGatingChange = (d) => {
-    console.log("gating event received");
+    // console.log("gating event received");
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
-    console.log("gating event executed");
+    // console.log("gating event executed");
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
@@ -178,7 +195,7 @@ eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 function displayNeighborhood(selectedCell, neighborhood) {
     dataLayer.addAllToCurrentSelection(neighborhood);
     dataLayer.addToCurrentSelection(selectedCell, false, false);
-    updateSeaDragonSelection(true);
+    updateSeaDragonSelection(true, true);
 }
 
 
