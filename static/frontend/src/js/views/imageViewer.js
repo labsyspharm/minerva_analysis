@@ -83,7 +83,7 @@ class ImageViewer {
             maxZoomPixelRatio: 15,
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
-            immediateRender: true,
+            immediateRender: false,
             maxImageCacheCount: 100,
             timeout: 90000,
             preload: false,
