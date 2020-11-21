@@ -47,7 +47,8 @@ class Scatterplot {
             .shapeHeight(10)
             .scale(legendColors)
             .on("cellclick", function (d) {
-                recolor(d);
+                let cluster = d3.select(this).data()[0]
+                recolor(cluster);
             });
 
         const createAnnotationData = datapoint => ({

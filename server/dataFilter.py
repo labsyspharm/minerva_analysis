@@ -46,7 +46,7 @@ def load_db(datasource, reload=False):
         load_ball_tree(datasource, reload=reload)
     csvPath = "." + config[datasource]['featureData'][0]['src']
     database = pd.read_csv(csvPath)
-    embedding = np.load(Path("static/data/Ton_378/embedding.npy"))
+    embedding = np.load(Path("." + config[datasource]['embedding']))
     database['id'] = database.index
     database['Cluster'] = embedding[:, 2].astype('int32').tolist()
     database = database.replace(-np.Inf, 0)
@@ -230,7 +230,7 @@ def get_color_scheme(datasource, refresh, label_field='phenotype'):
     if label_field == 'phenotype':
         labels = get_phenotypes(datasource)
     elif label_field == 'cluster':
-        labels = get_cluster_labels()
+        labels = get_cluster_labels(datasource)
 
     color_scheme = {}
     colors = ["#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059", "#FFDBE5", "#7A4900",
@@ -290,7 +290,7 @@ def get_cluster_cells(datasource):
         cluster_cells = database.loc[database['Cluster'] == cluster]
         indices = cluster_cells.index.values.tolist()
         cluster_cells = cluster_cells[['id', 'Cluster', 'phenotype']].to_dict(orient='records')
-        neighborhood_array = np.load(Path("static/data/Ton_378/neighborhood_array_complex.npy"))
+        neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
         cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
         summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
         phenotypes = database.phenotype.unique().tolist()
@@ -305,14 +305,16 @@ def get_cluster_cells(datasource):
     return obj
 
 
-def get_cluster_labels():
-    data = np.load(Path("static/data/Ton_378/embedding.npy"))
+def get_cluster_labels(datasource):
+    global config
+    data = np.load(Path("." + config[datasource]['embedding']))
     clusters = np.unique(data[:, 2])
     return clusters.astype('int32').tolist()
 
 
-def get_scatterplot_data():
-    data = np.load(Path("static/data/Ton_378/embedding.npy"))
+def get_scatterplot_data(datasource):
+    global config
+    data = np.load(Path("." + config[datasource]['embedding']))
     list_of_obs = [{'x': elem[0], 'y': elem[1], 'cluster': elem[2], 'id': id} for id, elem in enumerate(data)]
     visData = {
         'data': list_of_obs,
@@ -323,6 +325,7 @@ def get_scatterplot_data():
         'clusters': np.unique(data[:, 2]).astype('int32').tolist()
     }
     return visData
+
 
 def get_rect_cells(datasource, rect, channels):
     global database

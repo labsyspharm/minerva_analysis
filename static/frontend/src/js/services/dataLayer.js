@@ -138,7 +138,9 @@ class DataLayer {
 
     async getScatterplotData() {
         try {
-            let response = await fetch('/get_scatterplot_data')
+            let response = await fetch('/get_scatterplot_data?' + new URLSearchParams({
+                datasource: datasource
+            }))
             let scatterplotData = await response.json();
             return scatterplotData;
         } catch (e) {

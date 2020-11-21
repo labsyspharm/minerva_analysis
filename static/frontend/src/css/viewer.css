@@ -44,8 +44,6 @@
 #openseadragon_wrapper {
     padding: 0 0 0 6px;
     max-width: 80%;
-    min-width: 80%;
-    width: 80%;
 }
 
 #csv_channel_list_wrapper {
@@ -59,7 +57,7 @@
     position: relative;
 }
 
-#boxHeading1, #boxHeading2 , #boxHeading3 {
+#boxHeading1, #boxHeading2, #boxHeading3 {
     font-size: 13px;
     position: relative;
 }

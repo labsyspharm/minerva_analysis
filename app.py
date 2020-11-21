@@ -546,7 +546,8 @@ def get_num_cells_in_circle():
 
 @app.route('/get_scatterplot_data', methods=['GET'])
 def get_scatterplot_data():
-    resp = dataFilter.get_scatterplot_data()
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_scatterplot_data(datasource)
     return serialize_and_submit_json(resp)
 
 
