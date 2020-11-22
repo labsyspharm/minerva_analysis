@@ -5,10 +5,12 @@ from PIL import ImageColor
 import requests
 import json
 import os
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 from pathlib import Path
 from ome_types import from_xml
 import orjson
-
+from server import smallestenclosingcircle
 from skimage.io import imread
 
 import time
@@ -78,7 +80,6 @@ def load_ball_tree(datasource, reload=False):
     else:
         print("Creating KD Tree")
         xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
-        print('X', xCoordinate)
         yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
         csvPath = "." + config[datasource]['featureData'][0]['src']
         raw_data = pd.read_csv(csvPath)
@@ -352,6 +353,21 @@ def get_rect_cells(datasource, rect, channels):
         return neighborhood
     except:
         return {}
+
+
+def get_cells_in_polygon(datasource, points):
+    global config
+    point_tuples = [(e['x'], e['y']) for e in points]
+    (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
+    circle_neighbors = get_neighborhood(x, y, datasource, r=r)
+    polygon = Polygon(point_tuples)
+    xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
+    yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
+    neighbors_in_polygon = []
+    for neighbor in circle_neighbors:
+        if polygon.contains(Point(neighbor[xCoordinate], neighbor[yCoordinate])):
+            neighbors_in_polygon.append(neighbor)
+    return neighbors_in_polygon
 
 
 def get_gated_cells(datasource, gates):

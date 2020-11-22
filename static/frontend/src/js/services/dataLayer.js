@@ -135,6 +135,19 @@ class DataLayer {
         }
     }
 
+    async getCellsInPolygon(points) {
+        try {
+            let response = await fetch('/get_cells_in_polygon?' + new URLSearchParams({
+                datasource: datasource,
+                points: JSON.stringify(points)
+            }))
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Polygon Cells", e);
+        }
+    }
+
 
     async getScatterplotData() {
         try {

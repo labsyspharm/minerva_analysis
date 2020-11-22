@@ -108,7 +108,6 @@ class ImageViewer {
         // document.querySelector('.channel-list-content').click();
 
         /******************************************************************************************** Back to normal  */
-        /* TODO - unused
         // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
         this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
@@ -134,35 +133,82 @@ class ImageViewer {
                 }
             },
         });
-        */
 
         // Add event mouse handler (cell selection)
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
 
             // Right click (cell selection)
-            if (event.button === 2) {
-                // The canvas-click event gives us a position in web coordinates.
-                const webPoint = event.position;
-                // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-                // Convert from viewport coordinates to image coordinates.
-                const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+            // if (event.button === 2) {
+            //     // The canvas-click event gives us a position in web coordinates.
+            //     const webPoint = event.position;
+            //     // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+            //     const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+            //     // Convert from viewport coordinates to image coordinates.
+            //     const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+            //
+            //     return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
+            //         .then(selectedItem => {
+            //             if (selectedItem !== null && selectedItem !== undefined) {
+            //                 // Check if user is doing multi-selection or not
+            //                 let clearPriors = true;
+            //                 if (event.originalEvent.ctrlKey) {
+            //                     clearPriors = false;
+            //                 }
+            //                 // Trigger event
+            //                 that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+            //                     selectedItem,
+            //                     clearPriors
+            //                 });
+            //             }
+            //         })
+            // }
 
-                return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
-                    .then(selectedItem => {
-                        if (selectedItem !== null && selectedItem !== undefined) {
-                            // Check if user is doing multi-selection or not
-                            let clearPriors = true;
-                            if (event.originalEvent.ctrlKey) {
-                                clearPriors = false;
-                            }
-                            // Trigger event
-                            that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-                                selectedItem,
-                                clearPriors
-                            });
-                        }
+            // if (option_selection == "polygon selection") {
+            var webPoint = event.position;
+            // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+            var viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+            // Convert from viewport coordinates to image coordinates.
+            var imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+            //var imagePoint = that.viewer.viewport.viewportToImageCoordinates(viewportPoint);
+
+            // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
+            $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
+
+            that.selectionPolygonToDraw.push({x: imagePoint.x, y: imagePoint.y});
+
+            if (that.selectionPolygonToDraw.length > 2) {
+                return dataLayer.getCellsInPolygon(that.selectionPolygonToDraw)
+                    .then(cells => {
+                        that.eventHandler.trigger(ImageViewer.events.displaySelection, {cells});
                     })
+
+                // var circle = makeCircle(that.selectionPolygonToDraw);
+                // var point = {x: circle.x, y: circle.y};
+                // var queryResult = that.dataFilter.filterFromPointInRadius(point, circle.r);
+                // var selectedItem = [];
+                // queryResult.forEach(function (d) {
+                //     if (mathHelper.isPointInPoly(that.selectionPolygonToDraw,
+                //         {
+                //             x: d[that.config["featureData"][dataSrcIndex]["xCoordinate"]],
+                //             y: d[that.config["featureData"][dataSrcIndex]["yCoordinate"]]
+                //         })) {
+                //         selectedItem.push(d);
+                //     }
+                // })
+                //
+                // // check if user is doing multi-selection or not
+                // var clearPriors = false;
+            }
+            // }
+            if (that.selectionPolygonToDraw.length > 2) {
+                let test = that.selectionPolygonToDraw;
+                // var circle = makeCircle(that.selectionPolygonToDraw);
+
+                //send out the event to trigger all the filtering and rendering for the selection
+                that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+                    selectedItem,
+                    clearPriors
+                });
             }
         });
 
@@ -516,7 +562,8 @@ class ImageViewer {
 // Static vars
 ImageViewer.events = {
     imageClickedMultiSel: 'image_clicked_multi_selection',
-    renderingMode: 'renderingMode'
+    renderingMode: 'renderingMode',
+    displaySelection: 'displaySelection'
 };
 
 async function addTile(path) {

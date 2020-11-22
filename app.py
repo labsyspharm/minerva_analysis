@@ -551,6 +551,14 @@ def get_scatterplot_data():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_cells_in_polygon', methods=['GET'])
+def get_cells_in_polygon():
+    datasource = request.args.get('datasource')
+    points = json.loads(request.args.get('points'))
+    resp = dataFilter.get_cells_in_polygon(datasource, points)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_gated_cell_ids', methods=['GET'])
 def get_gated_cell_ids():
     datasource = request.args.get('datasource')

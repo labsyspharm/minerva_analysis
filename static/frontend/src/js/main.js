@@ -132,6 +132,12 @@ const selectCluster = async (cluster) => {
 }
 eventHandler.bind(Scatterplot.events.selectCluster, selectCluster);
 
+const displaySelection = async (selection) => {
+    dataLayer.addAllToCurrentSelection(selection.cells);
+    updateSeaDragonSelection(false, false);
+}
+eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
+
 
 const computeCellNeighborhood = async ({distance, selectedCell}) => {
     let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
