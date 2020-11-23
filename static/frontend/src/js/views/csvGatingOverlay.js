@@ -35,7 +35,7 @@ export class CsvGatingOverlay {
 
     // Configs
     configs = {
-        radius: [0, 15],
+        radius: [2, 15],
         px_ratio: 2,
         stroke: 2
     }
@@ -146,9 +146,6 @@ export class CsvGatingOverlay {
         // Calc radius
         const r = this.r_scale(this.viewer.viewport.getZoom()).toFixed(2);
 
-        // Iteration ID (run count)
-        const scopeID = this.run_count;
-
         // Get cells in range
         for (let k of this.image_viewer.selection.keys()) {
 
@@ -156,15 +153,17 @@ export class CsvGatingOverlay {
             const values = this.image_viewer.selection.get(k)
 
             // Position condition
-            if (values.CellPosition_X >= this.range[0][0]
-                && values.CellPosition_X <= this.range[1][0]
-                && values.CellPosition_Y >= this.range[0][1]
-                && values.CellPosition_Y <= this.range[1][1]
+            const xAlias = this.global_data_layer.config.featureData[0].xCoordinate;
+            const yAlias = this.global_data_layer.config.featureData[0].yCoordinate;
+            if (values[xAlias] >= this.range[0][0]
+                && values[xAlias] <= this.range[1][0]
+                && values[yAlias] >= this.range[0][1]
+                && values[yAlias] <= this.range[1][1]
             ) {
 
                 // Get coords
-                const x = this.coord_scale_x(values.CellPosition_X);
-                const y = this.coord_scale_y(values.CellPosition_Y);
+                const x = this.coord_scale_x(values[xAlias]);
+                const y = this.coord_scale_y(values[yAlias]);
 
                 // Draw circles - placeholder
                 ctx.strokeStyle = 'white';
@@ -212,7 +211,9 @@ export class CsvGatingOverlay {
                         ctx.fillStyle = this.image_viewer.channelTF[gatingChannelIndices[i].index].end_color;
 
                         ctx.beginPath();
+                        ctx.moveTo(x, y);
                         ctx.arc(x, y, r * this.configs.px_ratio, this.channel_scale(i), this.channel_scale(i + 1));
+                        ctx.closePath();
                         ctx.stroke();
                         ctx.fill();
 

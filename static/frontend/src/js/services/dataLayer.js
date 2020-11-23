@@ -193,11 +193,12 @@ class DataLayer {
         }
     }
 
-    async getGatedCellIdsCustom(filter) {
+    async getGatedCellIdsCustom(filter, start_keys) {
         try {
             // const start = performance.now()
             let response = await fetch('/get_gated_cell_ids_custom?' + new URLSearchParams({
                 filter: JSON.stringify(filter),
+                start_keys: start_keys,
                 datasource: datasource
             }))
             let cellIds = await response.json();

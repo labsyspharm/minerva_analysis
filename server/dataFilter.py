@@ -291,7 +291,7 @@ def get_gated_cells(datasource, gates):
     return query
 
 
-def get_gated_cells_custom(datasource, gates):
+def get_gated_cells_custom(datasource, gates, start_keys):
     global database
     global source
     global ball_tree
@@ -302,13 +302,13 @@ def get_gated_cells_custom(datasource, gates):
 
     # Query
     query_string = ''
-    query_keys = ['id', 'CellPosition_X', 'CellPosition_Y']
+    query_keys = start_keys
     for key, value in gates.items():
         if query_string != '':
             query_string += ' or '
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
         query_keys.append(key)
-    if query_string == None or query_string == "":
+    if query_string is None or query_string == "":
         return []
     query = database.query(query_string)[query_keys].to_dict(orient='records')
 

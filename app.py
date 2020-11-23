@@ -548,7 +548,8 @@ def get_gated_cell_ids():
 def get_gated_cell_ids_custom():
     datasource = request.args.get('datasource')
     filter = json.loads(request.args.get('filter'))
-    resp = dataFilter.get_gated_cells_custom(datasource, filter)
+    start_keys = list(request.args.get('start_keys').split(','))
+    resp = dataFilter.get_gated_cells_custom(datasource, filter, start_keys)
     return serialize_and_submit_json(resp)
 
 
