@@ -56,8 +56,12 @@ def load_db(datasource, reload=False):
     source = datasource
     seg = zarr.load(config[datasource]['segmentation'])
     channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
-    xml = channel_io.pages[0].tags['ImageDescription'].value
-    metadata = from_xml(xml).images[0].pixels
+    try:
+        xml = channel_io.pages[0].tags['ImageDescription'].value
+        metadata = from_xml(xml).images[0].pixels
+    except:
+        # Catch Parse Error for XML
+        metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
 
 
