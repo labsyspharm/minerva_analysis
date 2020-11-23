@@ -118,7 +118,7 @@ class ImageViewer {
                     context.globalAlpha = 0.7;
                     //context.fillStyle = 'orange';
                     context.strokeStyle = 'orange';
-                    context.lineWidth = 15;
+                    context.lineWidth = 10;
                     context.beginPath();
                     d.forEach(function (xVal, i) {
                         if (i === 0) {
@@ -179,7 +179,7 @@ class ImageViewer {
             if (that.selectionPolygonToDraw.length > 2) {
                 return dataLayer.getCellsInPolygon(that.selectionPolygonToDraw)
                     .then(cells => {
-                        that.eventHandler.trigger(ImageViewer.events.displaySelection, {cells});
+                        that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
                     })
 
                 // var circle = makeCircle(that.selectionPolygonToDraw);

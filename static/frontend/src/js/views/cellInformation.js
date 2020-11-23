@@ -101,25 +101,25 @@ class CellInformation {
             .style("alignment-baseline", "middle")
         labels.exit().remove();
 
-        if (this.selectedCell) {
-            this.fillCellIcon(this.selectedCell.phenotype);
-        }
+        // if (this.selectedCell) {
+        //     this.fillCellIcon(this.selectedCell.phenotype);
+        // }
     }
 
     selectCell(selectedItem) {
         this.selectedCell = selectedItem;
         let phenotype = selectedItem.phenotype || '';
-        this.fillCellIcon(phenotype);
+        // this.fillCellIcon(phenotype);
         if (phenotype == '') {
             phenotype = "None";
         }
         document.getElementById("phenotype").textContent = phenotype;
     }
 
-    fillCellIcon(phenotype) {
-        let path = _.first(document.getElementById("cell_icon").getElementsByTagName('path'));
-        path.setAttribute('style', `fill: ${this.colorScheme.colorMap[phenotype].hex}`);
-    }
+    // fillCellIcon(phenotype) {
+    //     let path = _.first(document.getElementById("cell_icon").getElementsByTagName('path'));
+    //     path.setAttribute('style', `fill: ${this.colorScheme.colorMap[phenotype].hex}`);
+    // }
 }
 
 CellInformation.events = {

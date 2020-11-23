@@ -12,13 +12,14 @@ from ome_types import from_xml
 import orjson
 from server import smallestenclosingcircle
 from skimage.io import imread
-
+from tqdm import tqdm
 import time
 import pickle
 import tifffile as tf
 from PIL import Image
 import re
 import zarr
+from scipy import spatial
 
 ball_tree = None
 database = None
@@ -359,15 +360,46 @@ def get_cells_in_polygon(datasource, points):
     global config
     point_tuples = [(e['x'], e['y']) for e in points]
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
-    circle_neighbors = get_neighborhood(x, y, datasource, r=r)
+    fields = [config[datasource]['featureData'][0]['xCoordinate'],
+              config[datasource]['featureData'][0]['yCoordinate']]
+    circle_neighbors = get_neighborhood(x, y, datasource, r=r,
+                                        fields=fields)
     polygon = Polygon(point_tuples)
     xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
     yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
     neighbors_in_polygon = []
+    neighbor_ids = []
     for neighbor in circle_neighbors:
         if polygon.contains(Point(neighbor[xCoordinate], neighbor[yCoordinate])):
             neighbors_in_polygon.append(neighbor)
-    return neighbors_in_polygon
+            neighbor_ids.append(neighbor['id'])
+
+    neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
+    selection_summary = np.mean(neighborhood_array[neighbor_ids, :], axis=0)
+    obj = {'raw_summary': selection_summary}
+    similar_ids = find_similarity(selection_summary)
+    summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
+    phenotypes = database.phenotype.unique().tolist()
+    cluster_summary = np.mean(neighborhood_array[similar_ids, :], axis=0)
+    for i in range(len(phenotypes)):
+        count = cluster_summary[i * 2]
+        weight = cluster_summary[i * 2 + 1]
+        summary_stats['neighborhood_count'][phenotypes[i]] = count
+        summary_stats['avg_weight'][phenotypes[i]] = weight
+        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
+
+    obj['cells'] = database.iloc[similar_ids][fields].to_dict(orient='records')
+    obj['cluster_summary'] = cluster_summary
+    return obj
+
+
+def find_similarity(cluster_summary):
+    neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
+    test = time.time()
+    distances = 1 - spatial.distance.cdist([cluster_summary], neighborhood_array, "cosine")[0]
+    print("Time", time.time() - test)
+    greater_than = np.argwhere(distances > 0.8).flatten()
+    return greater_than
 
 
 def get_gated_cells(datasource, gates):
