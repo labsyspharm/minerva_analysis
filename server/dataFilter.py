@@ -6,6 +6,9 @@ import requests
 import json
 import os
 from pathlib import Path
+from ome_types import from_xml
+import orjson
+
 from skimage.io import imread
 
 import time
@@ -21,6 +24,7 @@ source = None
 config = None
 seg = None
 channels = None
+metadata = None
 
 
 def init(datasource):
@@ -33,6 +37,7 @@ def load_db(datasource, reload=False):
     global config
     global seg
     global channels
+    global metadata
 
     if source is datasource and database is not None and reload is False:
         return
@@ -51,6 +56,8 @@ def load_db(datasource, reload=False):
     source = datasource
     seg = zarr.load(config[datasource]['segmentation'])
     channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
+    xml = channel_io.pages[0].tags['ImageDescription'].value
+    metadata = from_xml(xml).images[0].pixels
     channels = zarr.open(channel_io.series[0].aszarr())
 
 
@@ -395,33 +402,39 @@ def get_database_description(datasource):
 def generate_zarr_png(datasource, channel, level, tile):
     if config is None:
         load_db(datasource)
-    global segmentation_data
     global channels
     global seg
     [tx, ty] = tile.replace('.png', '').split('_')
     tx = int(tx)
     ty = int(ty)
     level = int(level)
-    tilesize = 1024
-    ix = tx * tilesize
-    iy = ty * tilesize
+    tile_width = config[datasource]['tileWidth']
+    tile_height = config[datasource]['tileHeight']
+    ix = tx * tile_width
+    iy = ty * tile_height
     segmentation = False
     try:
-        channel_num = int(re.match(r".*(\d+)", channel).groups()[0])
+        channel_num = int(re.match(r".*_(\d*).*", channel).groups()[0])
     except AttributeError:
         segmentation = True
-
     if segmentation:
-        tile = seg[level][iy:iy + tilesize, ix:ix + tilesize]
+        tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
     else:
         if isinstance(channels, zarr.Array):
-            tile = channels[channel_num, iy:iy + tilesize, ix:ix + tilesize]
+            tile = channels[channel_num, iy:iy + tile_height, ix:ix + tile_width]
         else:
-            tile = channels[level][channel_num, iy:iy + tilesize, ix:ix + tilesize]
+            tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
     png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
     return png
+
+
+def get_ome_metadata(datasource):
+    if config is None:
+        load_db(datasource)
+    global metadata
+    return metadata
 
 
 def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
@@ -432,10 +445,15 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         channels = zarr.open(channel_io.series[0].aszarr())
         if isinstance(channels, zarr.Array):
             channel_info['maxLevel'] = 1
+            chunks = channels.chunks
             shape = channels.shape
         else:
             channel_info['maxLevel'] = len(channels)
             shape = channels[0].shape
+            chunks = (1, 1024, 1024)
+        chunks = (chunks[-2], chunks[-1])
+        channel_info['tileHeight'] = chunks[0]
+        channel_info['tileWidth'] = chunks[1]
         channel_info['height'] = shape[1]
         channel_info['width'] = shape[2]
         channel_info['num_channels'] = shape[0]

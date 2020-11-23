@@ -111,7 +111,7 @@ class CSVGatingList {
             svgCol.style.display = "none";
 
             let gatingName = document.createElement("span");
-            gatingName.classList.add("gating-name");
+            gatingName.classList.add('gating-name');
             gatingName.textContent = column;
             nameCol.appendChild(gatingName);
             listItemParentDiv.addEventListener("click", e => self.abstract_click(e, svgCol));
@@ -398,6 +398,7 @@ class CSVGatingList {
         // Toggle outlined / filled cell selections
         gating_controls_outlines.addEventListener('change', e => {
             seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
+            seaDragonViewer.viewerManagerVMain.force_repaint()
         })
 
     }
@@ -419,10 +420,10 @@ class CSVGatingList {
 
                     // If event target is not an svg el (from slider)
                     const svgEls = ['path']
-                    if (!svgEls.includes(e.target.tagName)) {
+                    if (!svgEls.includes(e.currentTarget.tagName)) {
 
                         // Get channel name
-                        const name = _.get(e.target.querySelector(`.${target_class}`), 'innerText');
+                        const name = _.get(e.currentTarget.querySelector(`.${target_class}`), 'innerText');
 
                         // Find match el in gating list
                         if (name) {
@@ -464,9 +465,10 @@ class CSVGatingList {
 
         //add range slider row content
         var sliderSimple = d3.sliderBottom()
-            .min(d3.min(data))
-            .max(d3.max(data))
-            .width(swidth - 60)//.tickFormat(d3.format("s"))
+            .min(parseFloat(d3.min(data)))
+            .max(parseFloat(d3.max(data)))
+            .width(swidth - 60)
+            .tickFormat(d3.format(",.2f"))
             .fill('orange')
             .ticks(5)
             .default(activeRange)
@@ -534,6 +536,7 @@ class CSVGatingList {
     ;
 }
 
+//resize sliders, etc on window change
 window
     .addEventListener(
         "resize"
@@ -541,16 +544,33 @@ window
 
         function () {
             //reinitialize slider on window change..(had some bug updating with via d3 update)
-            if (csv_gatingList) {
+            if (typeof csv_gatingList != "undefined" && csv_gatingList) {
                 csv_gatingList.sliders.forEach(function (slider, name) {
                     d3.select('div#csv_gating-slider_' + name).select('svg').remove();
-                    csv_gatingList.addSlider(csv_gatingList.imageBitRange, slider.value(), name,
+                    //add and hide gating sliders (will be visible when gating is active)
+                    let fullName = csv_gatingList.dataLayer.getFullChannelName(name);
+                    let sliderRange = [csv_gatingList.databaseDescription[fullName].min, csv_gatingList.databaseDescription[fullName].max];
+                    csv_gatingList.addSlider(sliderRange, slider.value(), name,
                         document.getElementById("csv_gating_list").getBoundingClientRect().width);
                 });
             }
         }
-    )
-;
+    );
+
+//hide gating control panel when scrolled down to access all channels..
+$(document).ready(function()
+{
+   $('#csv_gating_list').scroll(function()
+   {
+      var div = $(this);
+      if (div[0].scrollHeight - div.scrollTop() < div.height()+10)
+      {
+            $('#gating_controls_panel').hide();
+      }else{
+            $('#gating_controls_panel').show();
+      }
+   });
+});
 
 //static vars
 CSVGatingList
