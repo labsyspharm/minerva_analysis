@@ -399,6 +399,7 @@ export class ViewerManager {
                                 }
                             }
                         } else {
+                            if (i < 100) console.log(color)
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];
                             pixels[i + 2] = color[2];
