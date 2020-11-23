@@ -38,7 +38,7 @@ export class LensingFiltersExt {
             lfChannelView.load,
             lfNearestCells.load,
             lfNearestCell.load,
-            lfChannelRelationships.load
+            // lfChannelRelationships.load
         ];
 
     }

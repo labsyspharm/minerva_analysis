@@ -57,6 +57,7 @@ class ImageViewer {
             this.channelTF.push(tf_def);
         }
 
+
         // Applying TF to selection, subset, or all
         this.show_subset = false;
         this.show_selection = true;
@@ -92,13 +93,22 @@ class ImageViewer {
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
+        /************************************************************************************* Lensing Implementation */
+
+            // Get lensingFilters data
+        const dataLoad = LensingFiltersExt.getFilters(this);
+
+        // Instantiate viewer
+        that.viewer.lensing = Lensing.construct(OpenSeadragon, that.viewer, viewer_config, dataLoad);
+
         /************************************************************************************* Create viewer managers */
 
         // Instantiate viewer managers
         that.viewerManagerVMain = new ViewerManager(that, that.viewer, 'main');
+        that.viewerManagerVAuxi = new ViewerManager(that, that.viewer.lensing.viewer_aux, 'auxi');
 
         // Append to viewers
-        that.viewerManagers.push(that.viewerManagerVMain);
+        that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
 
         /********************************************************************************************** Emulate click */
 
