@@ -194,7 +194,7 @@ export class CsvGatingOverlay {
                     const gatingChannelIndices = [];
                     for (let key in this.global_gating_list.selections) {
 
-                        this.global_channel_list.selections.forEach((c, i) => {
+                        this.global_channel_list.columns.forEach((c, i) => {
 
                             if (this.global_data_layer.getShortChannelName(key) === c) {
 
