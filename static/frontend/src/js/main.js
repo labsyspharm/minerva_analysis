@@ -186,7 +186,7 @@ function updateSeaDragonSelection(repaint = true) {
     var selectionHashMap = new Map(arr.map(i => ['' + (i[this.config[datasource].featureData[0].idField]), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
     if (document.getElementById("cell_wrapper")) {
-        if (_.size(selection) == 0) {
+        if (_.size(selection) === 0) {
             document.getElementById("cell_wrapper").style.display = "none";
         } else {
             document.getElementById("cell_wrapper").style.display = "none";

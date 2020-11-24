@@ -116,11 +116,6 @@ export class CsvGatingOverlay {
             [this.image_rect.x + this.image_rect.width, this.image_rect.y + this.image_rect.height]
         ];
 
-        // Clear if not clear
-        if (!this.cleared) {
-            this.clear();
-        }
-
         // If run balancer evens out (strategy for getting last request -
         //  run_balancer++ in csvGatingList, run_balancer-- in main
         // FIXME - would be better to nest all references for gating in gating plugin packages
@@ -144,6 +139,11 @@ export class CsvGatingOverlay {
         if (!this.show_centroids) {
             this.clear();
             return;
+        }
+
+        // Clear if not clear
+        if (!this.cleared) {
+            this.clear();
         }
 
         // Context
