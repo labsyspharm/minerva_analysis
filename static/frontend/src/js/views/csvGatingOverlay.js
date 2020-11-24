@@ -1,4 +1,3 @@
-import "regenerator-runtime/runtime.js";
 
 /**
  * @class CsvGatingOverlay
@@ -14,6 +13,7 @@ export class CsvGatingOverlay {
 
     // Vars
     canvas = null;
+    cleared = true;
     context = null;
     force = false;
     image_rect = {
@@ -32,6 +32,7 @@ export class CsvGatingOverlay {
     };
     range = [[], []];
     run_balancer = 0;
+    show_centroids = false;
 
     // Configs
     configs = {
@@ -61,6 +62,7 @@ export class CsvGatingOverlay {
         this.global_channel_list = channelList;
         this.global_gating_list = csv_gatingList;
         this.global_data_layer = dataLayer;
+        this.global_event_handler = eventHandler;
 
         this.init();
     }
@@ -88,6 +90,8 @@ export class CsvGatingOverlay {
         this.image_viewer.viewer.addHandler('animation-start', this.clear.bind(this));
         this.image_viewer.viewer.addHandler('animation-finish', this.evaluate.bind(this));
 
+        // Handle channel list color changes
+
     }
 
     /** 2.
@@ -112,15 +116,20 @@ export class CsvGatingOverlay {
             [this.image_rect.x + this.image_rect.width, this.image_rect.y + this.image_rect.height]
         ];
 
-        // If run balancer evens out (strategy for getting last request -
-        // run_balancer++ in csvGatingList, run_balancer-- in main
-        // FIXME - would be better to nest all references for gating in gating plugin packages
-        if (this.run_balancer === 0) {
-
-            // Draw
-            this.draw();
-
+        // Clear if not clear
+        if (!this.cleared) {
+            this.clear();
         }
+
+        // If run balancer evens out (strategy for getting last request -
+        //  run_balancer++ in csvGatingList, run_balancer-- in main
+        // FIXME - would be better to nest all references for gating in gating plugin packages
+        // if (this.run_balancer === 0) {
+
+        // Draw
+        this.draw();
+
+        // }
 
     }
 
@@ -130,6 +139,12 @@ export class CsvGatingOverlay {
      * @return void
      */
     draw() {
+
+        // Bounce if centroids off
+        if (!this.show_centroids) {
+            this.clear();
+            return;
+        }
 
         // Context
         const ctx = this.context;
@@ -213,6 +228,7 @@ export class CsvGatingOverlay {
                         ctx.beginPath();
                         ctx.moveTo(x, y);
                         ctx.arc(x, y, r * this.configs.px_ratio, this.channel_scale(i), this.channel_scale(i + 1));
+                        ctx.lineWidth = this.configs.px_ratio;
                         ctx.closePath();
                         ctx.stroke();
                         ctx.fill();
@@ -225,6 +241,9 @@ export class CsvGatingOverlay {
             }
 
         }
+
+        // Mark as not cleared
+        this.cleared = false;
 
     }
 
@@ -245,7 +264,23 @@ export class CsvGatingOverlay {
         // Clear rect
         requestAnimationFrame(() => {
             ctx.clearRect(0, 0, w, h);
+            this.cleared = true;
         });
+    }
+
+    /**
+     * @function control
+     *
+     * @param show
+     */
+    control(show) {
+
+        // Update mode
+        this.show_centroids = show;
+
+        // Trigger event
+        this.global_event_handler.trigger(CSVGatingList.events.GATING_BRUSH_END,
+            this.global_gating_list.selections);
     }
 
 

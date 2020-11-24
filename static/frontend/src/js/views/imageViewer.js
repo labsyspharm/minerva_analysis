@@ -466,6 +466,7 @@ class ImageViewer {
 
         this.channelTF[channelIdx] = tf_def;
         this.forceRepaint();
+
     }
 
     /**

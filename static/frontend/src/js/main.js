@@ -74,6 +74,9 @@ const actionColorTransferChange = (d) => {
     d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
     d3.select('body').style('cursor', 'default');
+
+    // Update gating overlay view
+    seaDragonViewer.csvGatingOverlay.draw()
 }
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
@@ -136,8 +139,8 @@ eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 const gatingBrushEnd = async (packet) => {
 
-    // TODO - toggle these methods with centroids on/off ui
-    // let gatedCellIds = await dataLayer.getGatedCellIds(packet);
+    // Init gated cells
+    let gatedCells = [];
 
     // Get custom cell ids (made-to-order properties)
     const start_keys = [
@@ -145,11 +148,21 @@ const gatingBrushEnd = async (packet) => {
         this.config[datasource].featureData[0].xCoordinate,
         this.config[datasource].featureData[0].yCoordinate
     ];
-    let gatedCells = await dataLayer.getGatedCellIdsCustom(packet, start_keys);
-    console.log(gatedCells)
 
+    // Toggle these methods with centroids on/off ui
+    if (csv_gatingList.eval_mode === 'and') {
+        // AND
+        gatedCells = await dataLayer.getGatedCellIds(packet, start_keys);
+
+    } else {
+        // OR
+        gatedCells = await dataLayer.getGatedCellIdsCustom(packet, start_keys);
+    }
+
+    // Update selection
     dataLayer.addAllToCurrentSelection(gatedCells);
 
+    // Update view
     updateSeaDragonSelection();
 }
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
@@ -183,7 +196,7 @@ function updateSeaDragonSelection(repaint = true) {
     seaDragonViewer.updateSelection(selectionHashMap);
 
     // Gating overlay (and query decrementor)
-    seaDragonViewer.csvGatingOverlay.run_balancer--;
+    // seaDragonViewer.csvGatingOverlay.run_balancer--;
     seaDragonViewer.csvGatingOverlay.evaluate();
 }
 

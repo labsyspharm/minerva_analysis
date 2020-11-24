@@ -540,7 +540,8 @@ def get_num_cells_in_circle():
 def get_gated_cell_ids():
     datasource = request.args.get('datasource')
     filter = json.loads(request.args.get('filter'))
-    resp = dataFilter.get_gated_cells(datasource, filter)
+    start_keys = list(request.args.get('start_keys').split(','))
+    resp = dataFilter.get_gated_cells(datasource, filter, start_keys)
     return serialize_and_submit_json(resp)
 
 

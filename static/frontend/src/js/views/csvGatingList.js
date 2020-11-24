@@ -20,11 +20,13 @@ class CSVGatingList {
         this.download_panel_visible = false;
         this.download_input1 = null;
         this.download_input2 = null;
+        // Eval settings
+        this.eval_mode = 'and'
     }
 
     selectChannel(name) {
         // For overlay (and query incrementor)
-        seaDragonViewer.csvGatingOverlay.run_balancer++;
+        // seaDragonViewer.csvGatingOverlay.run_balancer++;
 
         // Add
         this.selections[this.dataLayer.getFullChannelName(name)] = this.sliders.get(name).value();
@@ -35,7 +37,7 @@ class CSVGatingList {
 
     removeChannel(name) {
         // For overlay (and query incrementor)
-        seaDragonViewer.csvGatingOverlay.run_balancer++;
+        // seaDragonViewer.csvGatingOverlay.run_balancer++;
 
         // Delete
         delete this.selections[this.dataLayer.getFullChannelName(name)];
@@ -218,6 +220,11 @@ class CSVGatingList {
                 }
             }
         })
+
+        // For overlay (and query incrementor)
+        // seaDragonViewer.csvGatingOverlay.run_balancer++;
+
+        // Trigger brush
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
 
     }
@@ -346,6 +353,7 @@ class CSVGatingList {
         const download_input1 = document.querySelector('#download_input1');
         const download_input2 = document.querySelector('#download_input2');
         const gating_controls_outlines = document.querySelector('#gating_controls_outlines')
+        const gating_controls_centroids= document.querySelector('#gating_controls_centroids')
 
         // Events ::
 
@@ -398,7 +406,23 @@ class CSVGatingList {
         // Toggle outlined / filled cell selections
         gating_controls_outlines.addEventListener('change', e => {
             seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
-            seaDragonViewer.viewerManagerVMain.force_repaint()
+        })
+
+        // Toggle outlined / filled cell selections
+        gating_controls_centroids.addEventListener('change', e => {
+
+            // For overlay (and query incrementor)
+            // seaDragonViewer.csvGatingOverlay.run_balancer++;
+
+            // Update logic mode for selection query
+            if (e.target.checked) {
+                this.eval_mode = 'or';
+            } else {
+                this.eval_mode = 'and';
+            }
+
+            // Update overlay centroid (will also trigger event)
+            seaDragonViewer.csvGatingOverlay.control(e.target.checked);
         })
 
     }
