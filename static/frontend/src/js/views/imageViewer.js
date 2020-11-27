@@ -63,6 +63,9 @@ class ImageViewer {
         this.show_subset = false;
         this.show_selection = true;
 
+        this.isSelectionToolActive = true;
+
+
     }
 
     /**
@@ -101,6 +104,113 @@ class ImageViewer {
 
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain);
+
+        /*********/
+        that.svg_overlay = that.viewer.svgOverlay()
+        that.overlay = d3.select(that.svg_overlay.node())
+
+        //SELECTION POLYGON (LASSO)
+        that.polygonSelection = [];
+        that.renew = false;
+        that.numCalls = 0; //defines how fine-grained the polygon resolution is (0 = no subsampling, 10=high subsampling)
+
+        that.lasso_draw = function (event) {
+            //add points to polygon and (re)draw
+
+            var webPoint = event.position;
+            var viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+            //console.log(webPoint.toString(), viewportPoint.toString());
+
+            if (that.numCalls % 5 == 0) {
+                console.log(that.numCalls)
+                that.polygonSelection.push({"x": viewportPoint.x, "y": viewportPoint.y});
+            }
+
+            d3.select('#selectionPolygon').remove();
+            var selPoly = that.overlay.selectAll("selectionPolygon").data([that.polygonSelection]);
+            selPoly.enter().append("polygon")
+                .attr('id', 'selectionPolygon')
+                .attr("points", function (d) {
+                    return d.map(function (d) {
+                        return [d.x, d.y].join(",");
+                    }).join(" ");
+                })
+            that.numCalls++;
+        }
+
+        that.lasso_end = function (event) {
+            that.renew = true;
+
+            //the drawn polygon data
+            console.log('original polygon data: ')
+            console.log(that.polygonSelection);
+
+            //the compressed url string for this polygon
+            var encodedPolygonString = that.toURL(that.polygonSelection);
+            console.log('compressed polygon string: ');
+            console.log(encodedPolygonString)
+
+            //the decoded polygon (holding the original x,y values for each point)
+            var decodedPolygon = that.fromURL(encodedPolygonString);
+            console.log('decoded polygon data: ')
+            console.log(decodedPolygon);
+
+            that.polygonSelection = [];
+            that.numCalls = 0;
+        }
+
+
+        that.mouse_drag = new OpenSeadragon.MouseTracker({
+            element: that.viewer.canvas,
+            dragHandler: function (event) {
+                if (that.isSelectionToolActive) {
+                    console.log('dragged');
+                    that.lasso_draw(event);
+                }
+            }
+        })
+
+        that.mouse_up = new OpenSeadragon.MouseTracker({
+            element: that.viewer.canvas,
+            dragEndHandler: function (event) {
+                if (that.isSelectionToolActive) {
+                    console.log('release');
+                    that.lasso_end(event);
+                }
+            }
+        })
+        that.toURL = function(polygon){
+            var pointString='';
+            polygon.forEach(function(d){
+                pointString += d.x.toFixed(5) + "," + d.y.toFixed(5) + ",";
+            })
+            pointString = pointString.slice(0, -1); //removes "," at the end
+            var result =  LZString.compressToEncodedURIComponent(pointString);
+            return result;
+        }
+
+        that.fromURL = function(polygonString){
+            var decompressed = LZString.decompressFromEncodedURIComponent(polygonString);
+            var xArray = [], yArray = [];
+
+            //get all values out of the string
+            decompressed.split(',').forEach(function(d,i){
+                if (i % 2 == 0){ xArray.push(d); }
+                else{ yArray.push(d) }
+            })
+
+            //recreate polygon data structure
+            var newPolygon = [];
+            xArray.forEach(function(d, i){
+                newPolygon.push({x: d, y: yArray[i]});
+            })
+            return newPolygon;
+        }
+
+
+        //some resizing corrections
+        d3.select(window).on('resize', function() {});
+        that.svg_overlay.resize();
 
         /********************************************************************************************** Emulate click */
 
