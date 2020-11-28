@@ -470,3 +470,17 @@ label {
 .tooltip {
     fill: #333333;
 }
+
+polygon {
+    fill: rgba(70, 130, 180, 0.0);
+    stroke: #ffbc3e;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}
+
+polygon:hover {
+    fill: rgba(70, 130, 180, 0.0);
+    stroke: #ffbc3e;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}

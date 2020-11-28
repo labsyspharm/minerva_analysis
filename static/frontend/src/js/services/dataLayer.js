@@ -135,11 +135,12 @@ class DataLayer {
         }
     }
 
-    async getCellsInPolygon(points) {
+    async getCellsInPolygon(points, similar = false) {
         try {
             let response = await fetch('/get_cells_in_polygon?' + new URLSearchParams({
                 datasource: datasource,
-                points: JSON.stringify(points)
+                points: JSON.stringify(points),
+                similar_neighborhood: similar
             }))
             let cells = await response.json();
             return cells;

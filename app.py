@@ -555,7 +555,8 @@ def get_scatterplot_data():
 def get_cells_in_polygon():
     datasource = request.args.get('datasource')
     points = json.loads(request.args.get('points'))
-    resp = dataFilter.get_cells_in_polygon(datasource, points)
+    similar = request.args.get('similar_neighborhood') == 'true'
+    resp = dataFilter.get_cells_in_polygon(datasource, points, similar)
     return serialize_and_submit_json(resp)
 
 
