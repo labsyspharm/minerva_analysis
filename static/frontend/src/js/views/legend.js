@@ -25,7 +25,7 @@ class Legend {
             .attr("height", "100%")
             .attr("fill", "white")
         this.svg.append("text")
-            .text("Phenotypes")
+            .text("Phenotype")
             .attr("class", "legend-title")
             .attr("x", 3)
             .attr("y", 10)

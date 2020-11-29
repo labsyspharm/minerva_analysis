@@ -149,6 +149,21 @@ class DataLayer {
         }
     }
 
+    async getSimilarNeighborhoodToSelection() {
+        try {
+
+            let response = await fetch('/get_similar_neighborhood_to_selection?' + new URLSearchParams({
+                datasource: datasource,
+                selection: JSON.stringify([...this.getCurrentSelection()])
+            }))
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Similar Neighborhood", e);
+        }
+    }
+
+
 
     async getScatterplotData() {
         try {

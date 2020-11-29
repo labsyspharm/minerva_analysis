@@ -64,6 +64,7 @@ class ImageViewer {
         this.show_selection = true;
         this.lassoButton = document.getElementById("lasso_button");
         this.selectButton = document.getElementById("select_button");
+        this.neighborhoodButton = document.getElementById("neighborhood_icon");
         this.lassoButton.style.color = "orange";
         this.isSelectionToolActive = true;
 
@@ -232,7 +233,6 @@ class ImageViewer {
                 if (that.selectionPolygonToDraw && that.selectionPolygonToDraw.length > 0) {
                     var d = that.selectionPolygonToDraw;
                     context.globalAlpha = 0.7;
-                    //context.fillStyle = 'orange';
                     context.strokeStyle = 'orange';
                     context.lineWidth = 10;
                     context.beginPath();
@@ -250,67 +250,31 @@ class ImageViewer {
             },
         });
 
-        // Add event mouse handler (cell selection)
-        this.viewer.addHandler('canvas-nonprimary-press', function (event) {
-
-            // Right click (cell selection)
-            //
-
-            // if (option_selection == "polygon selection") {
-            // var webPoint = event.position;
-            // //var imagePoint = that.viewer.viewport.viewportToImageCoordinates(viewportPoint);
-            //
-            // // console.log(webPoint.toString(), viewportPoint.toString(), imagePoint.toString());
-            // $("#terminal").html("Terminal message: webpoint " + webPoint.toString() + " viewpoint " + viewportPoint.toString() + " image point " + imagePoint.toString())
-
-            // that.selectionPolygonToDraw.push({x: imagePoint.x, y: imagePoint.y});
-
-            //     if (that.selectionPolygonToDraw.length > 2) {
-            //         return dataLayer.getCellsInPolygon(that.selectionPolygonToDraw)
-            //             .then(cells => {
-            //                 that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
-            //             })
-            //
-            //         // var circle = makeCircle(that.selectionPolygonToDraw);
-            //         // var point = {x: circle.x, y: circle.y};
-            //         // var queryResult = that.dataFilter.filterFromPointInRadius(point, circle.r);
-            //         // var selectedItem = [];
-            //         // queryResult.forEach(function (d) {
-            //         //     if (mathHelper.isPointInPoly(that.selectionPolygonToDraw,
-            //         //         {
-            //         //             x: d[that.config["featureData"][dataSrcIndex]["xCoordinate"]],
-            //         //             y: d[that.config["featureData"][dataSrcIndex]["yCoordinate"]]
-            //         //         })) {
-            //         //         selectedItem.push(d);
-            //         //     }
-            //         // })
-            //         //
-            //         // // check if user is doing multi-selection or not
-            //         // var clearPriors = false;
-            //     }
-            //     // }
-            //     if (that.selectionPolygonToDraw.length > 2) {
-            //         let test = that.selectionPolygonToDraw;
-            //         // var circle = makeCircle(that.selectionPolygonToDraw);
-            //
-            //         //send out the event to trigger all the filtering and rendering for the selection
-            //         that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-            //             selectedItem,
-            //             clearPriors
-            //         });
-            //     }
-        });
-
         that.lassoButton.addEventListener("click", () => {
-            this.lassoButton.style.color = "orange";
-            this.selectButton.style.color = "#8f8f8f";
-            this.isSelectionToolActive = true;
+            that.lassoButton.style.color = "orange";
+            that.selectButton.style.color = "#8f8f8f";
+            that.neighborhoodButton.style.stroke = "#8f8f8f";
+            that.isSelectionToolActive = true;
         })
 
         that.selectButton.addEventListener("click", () => {
-            this.selectButton.style.color = "orange";
-            this.lassoButton.style.color = "#8f8f8f";
-            this.isSelectionToolActive = false;
+            that.selectButton.style.color = "orange";
+            that.lassoButton.style.color = "#8f8f8f";
+            that.neighborhoodButton.style.stroke = "#8f8f8f";
+            that.isSelectionToolActive = false;
+        })
+
+        that.neighborhoodButton.addEventListener("click", event => {
+            let color = that.neighborhoodButton.style.stroke;
+            if (color == "orange") { //
+                that.neighborhoodButton.style.stroke = "#8f8f8f";
+            } else {
+                that.neighborhoodButton.style.stroke = "orange";
+                return dataLayer.getSimilarNeighborhoodToSelection()
+                        .then(cells => {
+                            that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
+                        })
+            }
         })
 
     }

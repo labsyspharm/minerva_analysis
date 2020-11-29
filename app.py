@@ -559,6 +559,12 @@ def get_cells_in_polygon():
     resp = dataFilter.get_cells_in_polygon(datasource, points, similar)
     return serialize_and_submit_json(resp)
 
+@app.route('/get_similar_neighborhood_to_selection', methods=['GET'])
+def get_similar_neighborhood_to_selection():
+    datasource = request.args.get('datasource')
+    selection = json.loads(request.args.get('selection'))
+    resp = dataFilter.get_similar_neighborhood_to_selection(datasource, selection)
+    return serialize_and_submit_json(resp)
 
 @app.route('/get_gated_cell_ids', methods=['GET'])
 def get_gated_cell_ids():
@@ -663,4 +669,4 @@ def serialize_and_submit_json(data):
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     # 100 GB file Max
-    serve(app, host='0.0.0.0', port=8000, max_request_body_size=107374182400)
+    serve(app, host='0.0.0.0', port=8000, max_request_body_size=107374182400, max_request_header_size=8589934592)
