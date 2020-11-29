@@ -362,7 +362,7 @@ def get_cells_in_polygon(datasource, points, similar_neighborhood=False):
     print("Num Points", len(point_tuples))
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
     fields = [config[datasource]['featureData'][0]['xCoordinate'],
-              config[datasource]['featureData'][0]['yCoordinate']]
+              config[datasource]['featureData'][0]['yCoordinate'], 'phenotype']
     circle_neighbors = get_neighborhood(x, y, datasource, r=r,
                                         fields=fields)
     polygon = Polygon(point_tuples)

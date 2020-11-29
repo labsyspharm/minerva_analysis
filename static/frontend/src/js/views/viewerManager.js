@@ -354,9 +354,9 @@ export class ViewerManager {
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
                     if (this.imageViewer.selection.has(labelValueStr)) {
-                        // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
-                        let color = [255, 255, 255]
+                        let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
+                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        // let color = [255, 255, 255]
 
                         /************************ new */
                             // Init grid and tests (4 pts v 8 working for now)
@@ -385,9 +385,9 @@ export class ViewerManager {
                                     const altLabelValueStr = altLabelValue.toString();
                                     // Color
                                     if (altLabelValueStr !== labelValueStr) {
-                                        pixels[i] = 255;
-                                        pixels[i + 1] = 255;
-                                        pixels[i + 2] = 255;
+                                        pixels[i] = color[0];
+                                        pixels[i + 1] = color[1];
+                                        pixels[i + 2] = color[2];
                                         break;
                                     }
                                 }

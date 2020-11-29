@@ -62,9 +62,10 @@ class ImageViewer {
         // Applying TF to selection, subset, or all
         this.show_subset = false;
         this.show_selection = true;
-
+        this.lassoButton = document.getElementById("lasso_button");
+        this.selectButton = document.getElementById("select_button");
+        this.lassoButton.style.color = "orange";
         this.isSelectionToolActive = true;
-
 
     }
 
@@ -146,24 +147,61 @@ class ImageViewer {
 
         }
         let drag;
+        // if (event.button === 2) {
+        //     // The canvas-click event gives us a position in web coordinates.
+        //
+        //     // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+        //     const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+        //     // Convert from viewport coordinates to image coordinates.
+        //     const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+        //
+        //
+        // }
 
         let mouseTracker = new OpenSeadragon.MouseTracker({
             element: that.viewer.canvas,
             nonPrimaryPressHandler: function (event) {
-                drag = {
-                    lastPos: event.position.clone()
-                };
+                if (that.isSelectionToolActive) {
+                    drag = {
+                        lastPos: event.position.clone()
+                    };
+                } else {
+                    d3.select('#selectionPolygon').remove();
+                }
                 that.polygonSelection = [];
                 that.numCalls = 0;
+
             }, nonPrimaryReleaseHandler: function (event) {
                 drag = null;
                 console.log('release');
-                that.lasso_end(event);
-                return dataLayer.getCellsInPolygon(that.polygonSelection, false)
-                    .then(cells => {
-                        that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
-
-                    })
+                if (that.isSelectionToolActive) {
+                    that.lasso_end(event);
+                    return dataLayer.getCellsInPolygon(that.polygonSelection, false)
+                        .then(cells => {
+                            that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
+                        })
+                } else {
+                    const webPoint = event.position;
+                    // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+                    const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                    // Convert from viewport coordinates to image coordinates.
+                    const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+                    return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
+                        .then(selectedItem => {
+                            if (selectedItem !== null && selectedItem !== undefined) {
+                                // Check if user is doing multi-selection or not
+                                let clearPriors = true;
+                                if (event.originalEvent.ctrlKey) {
+                                    clearPriors = false;
+                                }
+                                // Trigger event
+                                that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+                                    selectedItem,
+                                    clearPriors
+                                });
+                            }
+                        })
+                }
             }, moveHandler: function (event) {
                 if (that.isSelectionToolActive && drag) {
                     console.log('dragged');
@@ -216,30 +254,7 @@ class ImageViewer {
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
 
             // Right click (cell selection)
-            // if (event.button === 2) {
-            //     // The canvas-click event gives us a position in web coordinates.
-            //     const webPoint = event.position;
-            //     // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-            //     const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-            //     // Convert from viewport coordinates to image coordinates.
-            //     const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
             //
-            //     return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
-            //         .then(selectedItem => {
-            //             if (selectedItem !== null && selectedItem !== undefined) {
-            //                 // Check if user is doing multi-selection or not
-            //                 let clearPriors = true;
-            //                 if (event.originalEvent.ctrlKey) {
-            //                     clearPriors = false;
-            //                 }
-            //                 // Trigger event
-            //                 that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-            //                     selectedItem,
-            //                     clearPriors
-            //                 });
-            //             }
-            //         })
-            // }
 
             // if (option_selection == "polygon selection") {
             // var webPoint = event.position;
@@ -285,6 +300,18 @@ class ImageViewer {
             //         });
             //     }
         });
+
+        that.lassoButton.addEventListener("click", () => {
+            this.lassoButton.style.color = "orange";
+            this.selectButton.style.color = "#8f8f8f";
+            this.isSelectionToolActive = true;
+        })
+
+        that.selectButton.addEventListener("click", () => {
+            this.selectButton.style.color = "orange";
+            this.lassoButton.style.color = "#8f8f8f";
+            this.isSelectionToolActive = false;
+        })
 
     }
 

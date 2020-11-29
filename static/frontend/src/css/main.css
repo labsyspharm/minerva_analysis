@@ -484,3 +484,50 @@ polygon:hover {
     stroke-width: 1px;
     vector-effect: non-scaling-stroke;
 }
+
+#legend {
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    width: 120px;
+    height: 160px;
+    z-index: 1;
+}
+
+#selection-options {
+    top: 0;
+    right: 0;
+    position: absolute;
+    width: 75px;
+    height: 25px;
+    z-index: 1;
+
+}
+
+.box-heading {
+    font-size: 1rem;
+}
+
+.material-icons {
+    color: #c1c1c1;
+}
+
+.material-icons:hover {
+    cursor: pointer;
+    color: #8f8f8f;
+}
+
+#cell_container {
+    height: 24px;
+    width: 24px;
+}
+
+#neighborhood_icon {
+    fill: none;
+    stroke: #c1c1c1;
+    stroke-miterlimit: 10;
+}
+
+#neighborhood_icon:hover {
+    stroke: #8f8f8f;
+}

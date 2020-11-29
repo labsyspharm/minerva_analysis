@@ -13,6 +13,7 @@ let dataLayer;
 let config;
 let starplot;
 let cellInformation;
+let legend;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
@@ -53,6 +54,10 @@ async function init(conf) {
     await colorScheme.init();
     cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
     cellInformation.draw();
+
+    legend = new Legend(dataLayer.phenotypes, colorScheme);
+    legend.draw();
+
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
