@@ -52,7 +52,7 @@ class Barchart {
     draw(cluster) {
         const self = this;
         self.svgSelector.style.display = "block";
-        let chartData = _.get(self.visData, `[${cluster}].clusterSummary.weighted_contribution`, []);
+        let chartData = _.get(self.visData, `[${cluster}].cluster_summary.weighted_contribution`, []);
         self.x.domain(chartData.map(function (d) {
             return _.keys(d)[0]
         }));

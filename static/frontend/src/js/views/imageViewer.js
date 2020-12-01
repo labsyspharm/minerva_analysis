@@ -272,7 +272,7 @@ class ImageViewer {
                 that.neighborhoodButton.style.stroke = "orange";
                 return dataLayer.getSimilarNeighborhoodToSelection()
                         .then(cells => {
-                            that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
+                            that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
                         })
             }
         })
@@ -629,7 +629,8 @@ ImageViewer
     .events = {
     imageClickedMultiSel: 'image_clicked_multi_selection',
     renderingMode: 'renderingMode',
-    displaySelection: 'displaySelection'
+    displaySelection: 'displaySelection',
+    displayNeighborhoodSelection: 'displayNeighborhoodSelection'
 };
 
 async function

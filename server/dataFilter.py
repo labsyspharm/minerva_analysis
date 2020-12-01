@@ -302,7 +302,7 @@ def get_cluster_cells(datasource):
             summary_stats['neighborhood_count'][phenotypes[i]] = count
             summary_stats['avg_weight'][phenotypes[i]] = weight
             summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
-        obj[str(cluster)] = {'cells': cluster_cells, 'clusterSummary': summary_stats}
+        obj[str(cluster)] = {'cells': cluster_cells, 'cluster_summary': summary_stats}
     pickle.dump(obj, open(cluster_stats_path, 'wb'))
     return obj
 
@@ -360,11 +360,14 @@ def get_cells_in_polygon(datasource, points, similar_neighborhood=False):
     global config
     point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
     print("Num Points", len(point_tuples))
+    now = time.time()
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
     fields = [config[datasource]['featureData'][0]['xCoordinate'],
               config[datasource]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     circle_neighbors = get_neighborhood(x, y, datasource, r=r,
                                         fields=fields)
+    print("Radius:", time.time() - now)
+    now = time.time()
     polygon = Polygon(point_tuples)
     xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
     yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
@@ -373,6 +376,8 @@ def get_cells_in_polygon(datasource, points, similar_neighborhood=False):
         if polygon.contains(Point(neighbor[xCoordinate], neighbor[yCoordinate])):
             neighbor_ids.append(neighbor['id'])
     obj = {}
+    print("Remaining:", time.time() - now)
+    now = time.time()
     obj['cells'] = database.iloc[neighbor_ids][fields].to_dict(orient='records')
     return obj
 
@@ -391,11 +396,11 @@ def get_similar_neighborhood_to_selection(datasource, selection):
     cluster_summary = np.mean(neighborhood_array[similar_ids, :], axis=0)
     for i in range(len(phenotypes)):
         count = cluster_summary[i * 2]
-    weight = cluster_summary[i * 2 + 1]
-    summary_stats['neighborhood_count'][phenotypes[i]] = count
-    summary_stats['avg_weight'][phenotypes[i]] = weight
-    summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
-    obj['cluster_summary'] = cluster_summary
+        weight = cluster_summary[i * 2 + 1]
+        summary_stats['neighborhood_count'][phenotypes[i]] = count
+        summary_stats['avg_weight'][phenotypes[i]] = weight
+        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
+    obj['cluster_summary'] = summary_stats
     obj['cells'] = database.iloc[similar_ids][fields].to_dict(orient='records')
     return obj
 

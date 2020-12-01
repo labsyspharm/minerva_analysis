@@ -8,7 +8,6 @@ class Scatterplot {
     async init(visData) {
         const self = this;
         this.visData = visData;
-        let data = this.visData.data;
         let colorScheme = d3.scaleSequential(d3.interpolateInferno)
             .domain([0, _.size(this.visData.clusters) + 2])
         this.colorMap = _.map(this.visData.clusters, cluster => {
@@ -25,30 +24,30 @@ class Scatterplot {
         const xScaleOriginal = xScale.copy();
         const yScaleOriginal = yScale.copy();
 
-        let color = d3.scaleOrdinal() // D3 Version 4
+        self.color = d3.scaleOrdinal() // D3 Version 4
             .domain(Object.keys(this.colorMap))
             .range(_.map(this.colorMap, elem => {
                     return elem.rgba;
                 }
             ));
 
-        let legendColors = color.copy();
-        let rgbaColors = _.map(color.range(), glColor => {
+        self.legendColors = self.color.copy();
+        let rgbaColors = _.map(self.color.range(), glColor => {
             return `rgba(${_.toInteger(glColor[0] * 255)},${_.toInteger(glColor[1] * 255)},${_.toInteger(glColor[2] * 255)},${glColor[3]})`
         });
-        legendColors.range(rgbaColors);
+        self.legendColors.range(rgbaColors);
 
-        let legend = d3.legendColor()
+        self.legend = d3.legendColor()
             .orient('vertical')
             .shapePadding(0)
             .titleWidth(100)
             .labelOffset(5)
             .shapeWidth(10)
             .shapeHeight(10)
-            .scale(legendColors)
+            .scale(self.legendColors)
             .on("cellclick", function (d) {
                 let cluster = d3.select(this).data()[0]
-                recolor(cluster);
+                self.recolor(cluster = cluster);
             });
 
         const createAnnotationData = datapoint => ({
@@ -63,7 +62,7 @@ class Scatterplot {
             dy: 20
         });
 
-        const pointSeries = fc
+        self.pointSeries = fc
             .seriesWebglPoint()
             .equals((a, b) => a === b)
             .size(1)
@@ -77,13 +76,13 @@ class Scatterplot {
                 // update the scales based on current zoom
                 xScale.domain(event.transform.rescaleX(xScaleOriginal).domain());
                 yScale.domain(event.transform.rescaleY(yScaleOriginal).domain());
-                redraw();
+                self.redraw();
             });
 
-        const annotations = [];
+        self.annotations = [];
 
         const pointer = fc.pointer().on("point", ([coord]) => {
-            annotations.pop();
+            self.annotations.pop();
 
             if (!coord || !quadtree) {
                 return;
@@ -97,23 +96,23 @@ class Scatterplot {
 
             // if the closest point is within 20 pixels, show the annotation
             if (closestDatum) {
-                annotations[0] = createAnnotationData(closestDatum);
+                self.annotations[0] = createAnnotationData(closestDatum);
             }
 
-            redraw();
+            self.redraw();
         });
 
         const annotationSeries = seriesSvgAnnotation()
             .notePadding(15)
             .type(d3.annotationCallout);
 
-        const chart = fc
+        self.chart = fc
             .chartCartesian(xScale, yScale)
             .webglPlotArea(
                 // only render the point series on the WebGL layer
                 fc
                     .seriesWebglMulti()
-                    .series([pointSeries])
+                    .series([self.pointSeries])
                     .mapping(d => d.data)
             )
             .svgPlotArea(
@@ -134,7 +133,7 @@ class Scatterplot {
                 //
                 sel.select('.legend')
                     .attr("transform", "translate(0,20)")
-                    .call(legend);
+                    .call(self.legend);
 
                 sel.select("d3fc-svg.plot-area")
                     .on("measure.range", (event) => {
@@ -147,11 +146,11 @@ class Scatterplot {
             });
         let quadtree;
         const pointFill = d => {
-            return color(d.cluster);
+            return self.color(d.cluster);
         }
 
-        const fillColor = fc.webglFillColor().value(pointFill).data(data);
-        pointSeries.decorate(program => fillColor(program));
+        const fillColor = fc.webglFillColor().value(pointFill).data(self.visData.data);
+        self.pointSeries.decorate(program => fillColor(program));
 
         // wire up the fill color selector
         iterateElements(".controls a", el => {
@@ -159,7 +158,7 @@ class Scatterplot {
                 iterateElements(".controls a", el2 => el2.classList.remove("active"));
                 el.classList.add("active");
                 fillColor.value(pointFill);
-                redraw();
+                self.redraw();
             });
         });
 
@@ -168,54 +167,86 @@ class Scatterplot {
             .quadtree()
             .x(d => d.x)
             .y(d => d.y)
-            .addAll(data);
+            .addAll(this.visData.data);
 
-        let selectedCluster = null;
+        self.selectedCluster = null;
 
-        const recolor = (cluster) => {
-            let prevColorRange = color.range();
-            color.range(_.map(prevColorRange, (thisColor, i) => {
-                if (selectedCluster != cluster && cluster != _.toString(i)) {
+
+        // render the chart with the required data
+        // Enqueues a redraw to occur on the next animation frame
+        this.redraw();
+    }
+
+    redraw() {
+        const self = this;
+        let annotations = self.annotations;
+        let data = self.visData.data;
+        d3.select(`#${this.id}`).datum({annotations, data}).call(self.chart);
+        let legendSvg = d3.select('.legend')
+            .data([self.legendColors]);
+        legendSvg.enter()
+            .append('g')
+            .attr('class', 'legend');
+        legendSvg.call(self.legend);
+        legendSvg.exit()
+            .remove();
+    }
+
+    recolor(cluster = null, ids = null) {
+        const self = this;
+        let prevColorRange = self.color.range();
+
+        if (cluster) {
+            self.color.range(_.map(prevColorRange, (thisColor, i) => {
+                if (self.selectedCluster != cluster && cluster != _.toString(i)) {
                     return self.colorMap[i].grayRgba;
                 } else {
                     return self.colorMap[i].rgba;
                 }
             }))
 
-            legendColors.range(_.map(color.range(), thisColor => {
+            self.legendColors.range(_.map(self.color.range(), thisColor => {
                 return `rgba(${_.toInteger(thisColor[0] * 255)},${_.toInteger(thisColor[1] * 255)},${_.toInteger(thisColor[2] * 255)},${thisColor[3]})`
             }))
             const pointFill = d => {
-                return color(d.cluster);
+                return self.color(d.cluster);
             }
-            const fillColor = fc.webglFillColor().value(pointFill).data(data);
-            pointSeries.decorate(program => fillColor(program));
-            if (selectedCluster == cluster) {
-                selectedCluster = null;
+            const fillColor = fc.webglFillColor().value(pointFill).data(self.visData.data);
+            self.pointSeries.decorate(program => fillColor(program));
+            if (self.selectedCluster == cluster) {
+                self.selectedCluster = null;
             } else {
-                selectedCluster = cluster;
+                self.selectedCluster = cluster;
             }
-            this.eventHandler.trigger(Scatterplot.events.selectCluster, selectedCluster)
-            redraw();
+            this.eventHandler.trigger(Scatterplot.events.selectCluster, self.selectedCluster)
+        } else if (ids) {
+            let idDict = {}
+            _.forEach(ids,cell=>{
+                idDict[cell.id] = true
+            })
+            self.color.range(_.map(prevColorRange, (thisColor, i) => {
+                return self.colorMap[i].rgba;
+            }))
+
+            self.legendColors.range(_.map(self.color.range(), thisColor => {
+                return `rgba(${_.toInteger(thisColor[0] * 255)},${_.toInteger(thisColor[1] * 255)},${_.toInteger(thisColor[2] * 255)},${thisColor[3]})`
+            }))
+            const pointFill = d => {
+                if (idDict[d.id])
+                    return self.colorMap[d.cluster].rgba
+                else
+                    return self.colorMap[d.cluster].grayRgba;
+            }
+            const fillColor = fc.webglFillColor().value(pointFill).data(self.visData.data);
+            self.pointSeries.decorate(program => fillColor(program));
+            if (self.selectedCluster == cluster) {
+                self.selectedCluster = null;
+            } else {
+                self.selectedCluster = cluster;
+            }
         }
-
-        // render the chart with the required data
-        // Enqueues a redraw to occur on the next animation frame
-        const redraw = () => {
-            d3.select(`#${this.id}`).datum({annotations, data}).call(chart);
-            let legendSvg = d3.select('.legend')
-                .data([legendColors]);
-            legendSvg.enter()
-                .append('g')
-                .attr('class', 'legend');
-            legendSvg.call(legend);
-            legendSvg.exit()
-                .remove();
-        };
-        redraw();
+        self.redraw();
     }
-
-
 }
 
 Scatterplot.events = {

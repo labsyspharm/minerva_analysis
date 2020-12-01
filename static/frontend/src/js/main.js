@@ -12,7 +12,8 @@ let channelList;
 let dataLayer;
 let config;
 let starplot;
-let cellInformation;
+let scatterplot;
+// let cellInformation;
 let legend;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
@@ -52,8 +53,8 @@ async function init(conf) {
     await channelList.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
-    cellInformation.draw();
+    // cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
+    // cellInformation.draw();
 
     legend = new Legend(dataLayer.phenotypes, colorScheme);
     legend.draw();
@@ -61,12 +62,13 @@ async function init(conf) {
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
-    let scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer);
+    scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer);
     let scatterplotData = await dataLayer.getScatterplotData();
     await scatterplot.init(scatterplotData);
     starplot = new Starplot('barchart_display', colorScheme);
-    clusterData = await dataLayer.getClusterCells()
-    starplot.init(clusterData);
+    starplot.init();
+    clusterData = await dataLayer.getClusterCells();
+
 }
 
 //feature color map changed in ridge plot
@@ -114,7 +116,7 @@ const actionImageClickedMultiSel = (d) => {
         // console.log(d.selectedItem.length);
         dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
-    cellInformation.selectCell(d.selectedItem);
+    // cellInformation.selectCell(d.selectedItem);
     updateSeaDragonSelection(true, true);
     d3.select('body').style('cursor', 'default');
 }
@@ -126,7 +128,9 @@ const selectCluster = async (cluster) => {
     if (cluster) {
         let selectedCluster = _.get(clusterData, `[${cluster}]`);
         dataLayer.addAllToCurrentSelection(selectedCluster.cells)
-        starplot.draw(cluster)
+        let starplotData = _.get(selectedCluster, 'cluster_summary.weighted_contribution', []);
+        starplot.wrangle(starplotData);
+
 
     } else {
         starplot.hide();
@@ -143,24 +147,32 @@ const displaySelection = async (selection) => {
 }
 eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 
-
-const computeCellNeighborhood = async ({distance, selectedCell}) => {
-    let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
-    displayNeighborhood(selectedCell, neighborhood);
+const displayNeighborhoodSelection = async (selection) => {
+    dataLayer.addAllToCurrentSelection(selection.cells);
+    let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
+    starplot.wrangle(starplotData);
+    scatterplot.recolor(cluster = null, ids = selection.cells);
+    updateSeaDragonSelection(false, false);
 }
-eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
+eventHandler.bind(ImageViewer.events.displayNeighborhoodSelection, displayNeighborhoodSelection);
 
-const drawNeighborhoodRadius = async ({distance, selectedCell, dragging}) => {
-    seaDragonViewer.drawCellRadius(distance, selectedCell, dragging);
-}
-eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
+// const computeCellNeighborhood = async ({distance, selectedCell}) => {
+//     let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
+//     displayNeighborhood(selectedCell, neighborhood);
+// }
+// eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
 
-const refreshColors = async () => {
-    await colorScheme.refreshColorScheme(true);
-    cellInformation.draw();
-    updateSeaDragonSelection(true);
-}
-eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
+// const drawNeighborhoodRadius = async ({distance, selectedCell, dragging}) => {
+//     seaDragonViewer.drawCellRadius(distance, selectedCell, dragging);
+// }
+// eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
+
+// const refreshColors = async () => {
+//     await colorScheme.refreshColorScheme(true);
+//     // cellInformation.draw();
+//     updateSeaDragonSelection(true);
+// }
+// eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 // For channel select click event
 const channelSelect = async (sels) => {
@@ -186,11 +198,11 @@ function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     //     document.getElementById("cell_wrapper").style.display = "none";
     // }
     seaDragonViewer.updateSelection(selectionHashMap);
-    if (_.size(selection) == 0) {
-        document.getElementById("cell_wrapper").style.display = "none";
-    } else {
-        document.getElementById("cell_wrapper").style.display = "none";
-    }
+    // if (_.size(selection) == 0) {
+    //     document.getElementById("cell_wrapper").style.display = "none";
+    // } else {
+    //     document.getElementById("cell_wrapper").style.display = "none";
+    // }
     seaDragonViewer.updateSelection(selectionHashMap, repaint);
 }
 
