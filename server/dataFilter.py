@@ -181,16 +181,10 @@ def get_neighborhood(x, y, datasource, r=100, fields=None):
     global ball_tree
     if datasource != source:
         load_ball_tree(datasource)
+    now = time.time()
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
     try:
-        neighborhood = []
-        for neighbor in neighbors:
-            row = database.iloc[[neighbor]]
-            obj = row.to_dict(orient='records')[0]
-            if 'phenotype' not in obj:
-                obj['phenotype'] = ''
-            neighborhood.append(obj)
         if fields and len(fields) > 0:
             fields.append('id') if 'id' not in fields else fields
             if len(fields) > 1:
@@ -199,10 +193,6 @@ def get_neighborhood(x, y, datasource, r=100, fields=None):
                 neighborhood = database.iloc[neighbors][fields].to_dict()
         else:
             neighborhood = database.iloc[neighbors].to_dict(orient='records')
-        # for neighbor in neighbors:
-        #     row = database.iloc[[neighbor]]
-        #     obj = row.to_dict(orient='records')[0]
-        #     # obj['id'] = str(neighbor)
 
         return neighborhood
     except:
@@ -359,15 +349,11 @@ def get_rect_cells(datasource, rect, channels):
 def get_cells_in_polygon(datasource, points, similar_neighborhood=False):
     global config
     point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
-    print("Num Points", len(point_tuples))
-    now = time.time()
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
     fields = [config[datasource]['featureData'][0]['xCoordinate'],
               config[datasource]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     circle_neighbors = get_neighborhood(x, y, datasource, r=r,
                                         fields=fields)
-    print("Radius:", time.time() - now)
-    now = time.time()
     polygon = Polygon(point_tuples)
     xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
     yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
@@ -376,8 +362,6 @@ def get_cells_in_polygon(datasource, points, similar_neighborhood=False):
         if polygon.contains(Point(neighbor[xCoordinate], neighbor[yCoordinate])):
             neighbor_ids.append(neighbor['id'])
     obj = {}
-    print("Remaining:", time.time() - now)
-    now = time.time()
     obj['cells'] = database.iloc[neighbor_ids][fields].to_dict(orient='records')
     return obj
 
