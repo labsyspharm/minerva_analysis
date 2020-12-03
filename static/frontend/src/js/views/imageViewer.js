@@ -94,6 +94,13 @@ class ImageViewer {
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
+        /************************************************************************************** Get ome tiff metadata */
+
+        dataLayer.getMetadata().then(d => {
+            that.imgMetadata = d;
+            console.log('Image metadata:', that.imgMetadata)
+        });
+
         /************************************************************************************* Create viewer managers */
 
         // Instantiate viewer managers
