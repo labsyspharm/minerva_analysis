@@ -354,34 +354,6 @@ export class LfNearestCell {
                                 return [x, y];
                             }
 
-                            /*
-                            aux function :: getChannelColor
-                             */
-                            function getChannelColor(name, value) {
-
-                                if (channels.includes(name)) {
-                                    // Find channel TF
-                                    let channelTF = null;
-                                    for (let k in vis.image_viewer.channelTF) {
-                                        if (vis.image_viewer.channelTF.hasOwnProperty(k) &&
-                                            vis.image_viewer.channelTF[k].name === name) {
-                                            channelTF = vis.image_viewer.channelTF[k];
-                                            break;
-                                        }
-                                    }
-                                    if (channelTF) {
-
-                                        // Retrieve color
-                                        const rgb = vis.image_viewer.viewerManagerVMain.evaluateTF(
-                                            value, channelTF);
-                                        return `rgb(${Math.round(rgb.r)}, 
-                                                        ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
-                                    }
-
-                                }
-                                return 'none';
-                            }
-
                             // Draw lines / labels
                             this.vars.el_chartLabelsG.selectAll('.viewfinder_chart_label_g_g')
                                 .data(this.vars.cellChannels, d => d.key)

@@ -1,3 +1,5 @@
+import {Utils} from "./utils";
+
 /**
  * @class LfNearestCells
  */
@@ -7,13 +9,16 @@ export class LfNearestCells {
     data = [];
     load = [];
     vars = {
+        areaTerm: '',
         cellIntensityRange: [0, 65536],
         config_colorR: 4,
-        config_boxW: 240,
+        config_boxW: 300,
         config_boxH: 50,
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
         config_channelExtH: 50,
         config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 30},
+        config_fontSm: 9,
+        config_fontMd: 11,
         config_rectPad: 0.15,
         el_boxExtG: null,
         el_cellsG: null,
@@ -21,6 +26,7 @@ export class LfNearestCells {
         el_radialExtG: null,
         el_textReportG: null,
         histRange: [],
+        channelSelections: [],
         tool_rCellScale: d3.scalePow()
             .exponent(0.5)
             .range([0.5, 10]),
@@ -119,9 +125,11 @@ export class LfNearestCells {
                                 // Iterate data array
                                 darr.forEach(d => {
                                     // Calc offset
-                                    const cell_point = new OpenSeadragon.Point(d.CellPosition_X, d.CellPosition_Y);
+                                    const cell_point = new OpenSeadragon.Point(d[config.featureData[0].xCoordinate],
+                                        d[config.featureData[0].yCoordinate]);
                                     const cell_vpoint = lensing.viewer_aux.viewport.pixelFromPoint(
-                                        lensing.viewer_aux.world.getItemAt(0).imageToViewportCoordinates(cell_point)
+                                        lensing.viewer_aux.world.getItemAt(0)
+                                            .imageToViewportCoordinates(cell_point)
                                     );
                                     const offset = [
                                         Math.round(cell_vpoint.x - lensing.configs.pos[0] / lensing.configs.pxRatio),
@@ -197,7 +205,7 @@ export class LfNearestCells {
                                 .attr('dominant-baseline', 'hanging')
                                 .attr('fill', 'white')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', 10.5)
+                                .attr('font-size', this.vars.config_fontMd)
                                 .attr('font-weight', 'lighter')
                                 .text('Multi cell analysis (intensity)');
                             this.vars.el_textReportG.append('text')
@@ -208,7 +216,7 @@ export class LfNearestCells {
                                 .attr('dominant-baseline', 'hanging')
                                 .attr('fill', 'white')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', 9)
+                                .attr('font-size', this.vars.config_fontSm)
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter');
 
@@ -221,8 +229,13 @@ export class LfNearestCells {
                         },
                         wrangle: () => {
 
-                            // Get channels
-                            const channels = this.channel_list.selections;
+                            // Set image channels (whitelist)
+                            this.vars.channelSelections = this.channel_list.selections;
+
+                            // Set area term
+                            if (this.vars.areaTerm === '') {
+                                this.vars.areaTerm = Utils.getAreaTerm(this.data[0].data);
+                            }
 
                             // TODO - nucleus ave
                             let aveNucleus = 0;
@@ -232,15 +245,17 @@ export class LfNearestCells {
                             if (this.data.length > 0) {
                                 for (let k in this.data[0].data) {
 
+                                    const short = this.data_layer.getShortChannelName(k);
+
                                     // Add channels
                                     if (this.data[0].data.hasOwnProperty(k) &&
-                                        channels.includes(k.split('_')[0])) {
+                                        this.vars.channelSelections.includes(short)) {
                                         const map = this.data.map(c => c.data[k]);
                                         const sum = map.reduce((acc, cur) => acc + cur);
                                         this.vars.histRange.push({
                                             key: k,
                                             mean: sum / map.length,
-                                            short_name: k.split('_')[0],
+                                            short: short,
                                             values: map
                                         });
                                     }
@@ -278,13 +293,11 @@ export class LfNearestCells {
                             const vis = this;
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
 
-                            // Define cell, channels
-                            const channels = this.channel_list.selections;
-
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH
-                                + channels.length * this.vars.config_channelExtH);
-                            vf.configs.boxH = this.vars.config_boxH + channels.length * this.vars.config_channelExtH;
+                                + this.vars.channelSelections.length * this.vars.config_channelExtH);
+                            vf.configs.boxH = this.vars.config_boxH + this.vars.channelSelections.length *
+                                this.vars.config_channelExtH;
 
                             // Get zoom
                             const zoom = vis.image_viewer.viewer.viewport.getZoom();
@@ -320,35 +333,6 @@ export class LfNearestCells {
                                     exit => exit.remove()
                                 );
 
-
-                            /*
-                            aux function :: getChannelColor
-                             */
-                            function getChannelColor(name, value) {
-
-                                if (channels.includes(name)) {
-                                    // Find channel TF
-                                    let channelTF = null;
-                                    for (let k in vis.image_viewer.channelTF) {
-                                        if (vis.image_viewer.channelTF.hasOwnProperty(k) &&
-                                            vis.image_viewer.channelTF[k].name === name) {
-                                            channelTF = vis.image_viewer.channelTF[k];
-                                            break;
-                                        }
-                                    }
-                                    if (channelTF) {
-
-                                        // Retrieve color
-                                        const rgb = vis.image_viewer.viewerManagerVMain.evaluateTF(
-                                            value, channelTF);
-                                        return `rgb(${Math.round(rgb.r)}, 
-                                                        ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
-                                    }
-
-                                }
-                                return 'none';
-                            }
-
                             /*
                             aux func :: nestedJoin()
                              */
@@ -378,7 +362,7 @@ export class LfNearestCells {
 
                             // Append chart for each channel
                             this.vars.el_chartsG.selectAll('.viewfinder_charts_g_chart_g')
-                                .data(channels)
+                                .data(vis.vars.channelSelections)
                                 .join(
                                     enter => enter
                                         .append('g')
@@ -389,7 +373,7 @@ export class LfNearestCells {
                                                 vis.vars.config_boxH}px)`);
 
                                             // Find histogram
-                                            const bins = vis.vars.histRange.find(h => d === h.short_name);
+                                            const bins = vis.vars.histRange.find(h => d === h.short);
                                             if (bins) {
 
                                                 // Label g
@@ -404,9 +388,12 @@ export class LfNearestCells {
                                                     .attr('class', 'viewfinder_charts_g_chart_g_circle')
                                                     .attr('r', vis.vars.config_colorR)
                                                     .attr('cy', -vis.vars.config_colorR)
-                                                    .attr('fill', getChannelColor(d, bins.mean))
+                                                    .attr('fill', Utils.getChannelColor(bins.short, bins.mean,
+                                                        vis.image_viewer, vis.channel_list))
                                                     .attr('stroke', () => {
-                                                        if (channels.includes(d)) return 'rgba(255, 255, 255, 1)';
+                                                        if (vis.vars.channelSelections.includes(d)) {
+                                                            return 'rgba(255, 255, 255, 1)';
+                                                        }
                                                         return 'rgba(255, 255, 255, 0)';
                                                     })
                                                     .attr('stroke-width', 0.5);
@@ -431,7 +418,7 @@ export class LfNearestCells {
                                                 vis.vars.config_boxH}px)`);
 
                                             // Find histogram
-                                            const bins = vis.vars.histRange.find(h => d === h.short_name);
+                                            const bins = vis.vars.histRange.find(h => d === h.short);
                                             if (bins) {
 
                                                 // Label g
@@ -439,9 +426,12 @@ export class LfNearestCells {
 
                                                 // update channel color
                                                 labelG.select('.viewfinder_charts_g_chart_g_circle')
-                                                    .attr('fill', getChannelColor(d, bins.mean))
+                                                    .attr('fill', Utils.getChannelColor(bins.short, bins.mean,
+                                                        vis.image_viewer, vis.channel_list))
                                                     .attr('stroke', () => {
-                                                        if (channels.includes(d)) return 'rgba(255, 255, 255, 1)';
+                                                        if (vis.vars.channelSelections.includes(d)) {
+                                                            return 'rgba(255, 255, 255, 1)';
+                                                        }
                                                         return 'rgba(255, 255, 255, 0)';
                                                     });
 

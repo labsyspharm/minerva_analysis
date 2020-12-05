@@ -19,7 +19,6 @@
 }
 
 #container {
-    margin: 0 0 50vh 0;
     width: 100vw;
     max-width: 100vw;
 }
@@ -37,16 +36,16 @@
 
 #channel_list_wrapper {
     padding: 0 6px 0 0;
-    max-width: 15%;
-    min-width: 15%;
-    width: 15%;
+    max-width: 20%;
+    min-width: 20%;
+    width: 20%;
 }
 
 #openseadragon_wrapper {
     padding: 0 0 0 6px;
-    max-width: 85%;
-    min-width: 85%;
-    width: 85%;
+    max-width: 80%;
+    min-width: 80%;
+    width: 80%;
 }
 
 #csv_channel_list_wrapper {

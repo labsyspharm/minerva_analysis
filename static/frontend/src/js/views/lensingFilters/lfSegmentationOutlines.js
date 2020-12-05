@@ -78,6 +78,7 @@ export class LfSegmentationOutlines {
                             this.channel_list.triggerChannelSelect();
 
                             // Show outlines
+                            this.image_viewer.show_selection = false;
                             this.image_viewer.viewerManagerVAuxi.show_sel = true;
                             this.image_viewer.viewerManagerVAuxi.force_repaint();
 
@@ -94,7 +95,9 @@ export class LfSegmentationOutlines {
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
                             vf.els.svg.attr('opacity', 1);
 
-                            // Show outlines
+                            // Hide outlines
+                            this.image_viewer.selection = new Map();
+                            this.image_viewer.show_selection = false;
                             this.image_viewer.viewerManagerVAuxi.show_sel = false;
                             this.image_viewer.viewerManagerVAuxi.force_repaint();
 

@@ -5,7 +5,7 @@ export class Utils {
      * @param {any} d
      *
      * @returns {string}
-     * TODO - just read from config.json (featureData[...])
+     * TODO - add area to config.json (featureData[...])
      */
     static getAreaTerm(d) {
         // Init
@@ -66,13 +66,8 @@ export class Utils {
      * @param {any} d
      *
      * @returns {array}
-     * TODO - just read from config.json (featureData[...])
      */
     static getPositionKeys(d) {
-        // Init
-        const whitelist = ['CellPosition_X', 'CellPosition_Y', 'X_centroid', 'Y_centroid'];
-        const keys = Object.keys(d);
-        // Filter, return
-        return whitelist.filter(w => keys.includes(w));
+        return [config.featureData[0].xCoordinate, config.featureData[0].yCoordinate];
     }
 }
