@@ -28,6 +28,8 @@ class ImageViewer {
 
         // Local storage of image tiles (for all loaded channels)
         this.tileCache = {};
+        // Stores the ordered contents of the tile cache, so that once we hit max size we remove oldest elements
+        this.tileCacheQueue = []
 
         // Map of selected ids, key is id
         this.selection = new Map();
@@ -83,7 +85,7 @@ class ImageViewer {
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 200,
+            maxImageCacheCount: 150,
             timeout: 90000,
             preload: false,
             homeFillsViewer: true,
@@ -266,7 +268,8 @@ class ImageViewer {
                 ctx.drawImage(img, 0, 0);
 
                 // This gets back an 8 bit RGBA image
-                this.tileCache[img.src] = ctx.getImageData(0, 0, img.width, img.height);
+
+                this.addToTileCache(img.src, ctx.getImageData(0, 0, img.width, img.height));
 
             };
             img.src = event.tile.url;
@@ -280,7 +283,8 @@ class ImageViewer {
                     const tile = event.tile;
 
                     // Save tile in tileCache
-                    this.tileCache[tile.url] = PNG.sync.read(buffer, {colortype: 0});
+
+                    this.addToTileCache(tile.url, PNG.sync.read(buffer, {colortype: 0}))
                 } else {
                     // console.log('[TILE LOADED]: buffer UNDEFINED');
                 }
@@ -297,7 +301,24 @@ class ImageViewer {
     tileUnloaded(event) {
 
         //// console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
-        this.tileCache[event.tile.url] = null;
+        this.removeTileFromCache(event.tile.url)
+
+    }
+
+    removeTileFromCache(tileName) {
+        if (this.tileCache.hasOwnProperty(tileName)) {
+            console.log("Removing from Tile Cache");
+            this.tileCache[tileName] = null;
+        }
+    }
+
+    addToTileCache(tileName, data) {
+        let cacheSize = this.tileCacheQueue.push(tileName)
+        if (cacheSize > this.viewer.maxImageCacheCount) {
+            let tileToRemove = this.tileCacheQueue.shift();
+            this.removeTileFromCache(tileToRemove);
+        }
+        this.tileCache[tileName] = data;
     }
 
     // =================================================================================================================

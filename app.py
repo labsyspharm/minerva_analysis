@@ -580,6 +580,13 @@ def get_rect_cells():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_ome_metadata', methods=['GET'])
+def get_ome_metadata():
+    datasource = request.args.get('datasource')
+    resp = dataFilter.get_ome_metadata(datasource)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/download_gating_csv', methods=['POST'])
 def download_gating_csv():
     datasource = request.form['datasource']
