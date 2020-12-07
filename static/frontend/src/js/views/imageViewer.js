@@ -13,6 +13,7 @@ class ImageViewer {
 
     // Vars
     viewerManagers = [];
+    imageMetadata = null;
 
     constructor(config, dataLayer, eventHandler, colorScheme) {
 
@@ -59,7 +60,6 @@ class ImageViewer {
             this.channelTF.push(tf_def);
         }
 
-
         // Applying TF to selection, subset, or all
         this.show_subset = false;
         this.show_selection = true;
@@ -69,7 +69,7 @@ class ImageViewer {
     /**
      * @function init
      */
-    init() {
+    async init() {
 
         // Define this as that
         const that = this;
@@ -101,7 +101,34 @@ class ImageViewer {
         const dataLoad = LensingFiltersExt.getFilters(this);
 
         // Instantiate viewer
-        that.viewer.lensing = Lensing.construct(OpenSeadragon, that.viewer, viewer_config, dataLoad);
+        const lensing_config = {
+        };
+        this.viewer.lensing = Lensing.construct(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
+
+        /*************************************************** Access OME tiff metadata / activate lensing measurements */
+
+        // Get metadata -> share with lensing
+        this.dataLayer.getMetadata().then(d => {
+
+            // Add magnification
+            this.imageMetadata = d;
+
+            //
+            const unitConversion = {
+                inputUnit: d.physical_size_x_unit,
+                outputUnit: 'nm',
+                inputOutputRatio: [1, 1000]
+            }
+
+            // Update lensing
+            this.viewer.lensing.config_update({
+                compassOn: true,
+                compassUnitConversion: unitConversion,
+                imageMetadata: this.imageMetadata,
+            });
+
+
+        }).catch(err => console.log(err));
 
         /************************************************************************************* Create viewer managers */
 
