@@ -81,6 +81,21 @@ class DataLayer {
         }
     }
 
+    async getHistogramComparison(maxDistance, x, y, channels) {
+        try {
+            let response = await fetch('/get_histogram_comparison?' + new URLSearchParams({
+                point_x: x,
+                point_y: y,
+                max_distance: maxDistance,
+                channels: channels,
+                datasource: datasource
+            }))
+            return await response.json();
+        } catch (e) {
+            console.log("Error getting histogram comparison", e);
+        }
+    }
+
     async getPhenotypes() {
         try {
             let response = await fetch('/get_phenotypes?' + new URLSearchParams({

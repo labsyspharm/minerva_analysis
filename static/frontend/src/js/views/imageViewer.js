@@ -95,6 +95,11 @@ class ImageViewer {
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
+        // Get and shrink all button images
+        this.parent = d3.select(`#openseadragon`)
+        this.parent.selectAll('img')
+            .attr('height', 40);
+
         /************************************************************************************* Lensing Implementation */
 
             // Get lensingFilters data

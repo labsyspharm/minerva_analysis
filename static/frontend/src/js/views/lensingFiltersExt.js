@@ -3,6 +3,7 @@ import {LfNearestCells} from "./lensingFilters/lfNearestCells";
 import {LfChannelView} from "./lensingFilters/lfChannelView";
 import {LfSegmentationOutlines} from "./lensingFilters/lfSegmentationOutlines";
 import {LfChannelRelationships} from "./lensingFilters/LfChannelRelationships";
+import {LfHistoSearch} from "./lensingFilters/lfHistoSearch";
 
 /**
  * @class LensingFiltersExt
@@ -32,12 +33,16 @@ export class LensingFiltersExt {
         ////////////////////////////////////////////////////////////////////////////// Data load - channel relationships
         const lfChannelRelationships = new LfChannelRelationships(_imageViewer);
 
+        ////////////////////////////////////////////////////////////////////////////////////////// Data load - histosnap
+        const lfHistoSearch = new LfHistoSearch(_imageViewer);
+
         // Add in reverse order
         return [
             lfSegmentationOutlines.load,
             lfChannelView.load,
             lfNearestCells.load,
             lfNearestCell.load,
+            lfHistoSearch.load,
             // lfChannelRelationships.load
         ];
 
