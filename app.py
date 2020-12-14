@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, Response, jsonify, abort, sen
 import io
 from PIL import Image
 from server import mostFrequentLongestSubstring, pre_normalization, dataFilter
-from server.lensingAnalysis import LensingAnalysis
+from server import lensingAnalysis
 import os
 import csv
 from pathlib import Path
@@ -526,7 +526,7 @@ def get_histogram_comparison():
     channels = []
     if request.args.get('channels') != '':
         channels = request.args.get('channels').split()[0].split(',')
-    resp = LensingAnalysis.histogramComparison(x, y, datasource, max_distance, channels)
+    resp = lensingAnalysis.histogramComparison(x, y, datasource, max_distance, channels)
     return serialize_and_submit_json(resp)
 
 
