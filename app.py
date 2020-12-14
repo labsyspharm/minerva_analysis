@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, Response, jsonify, abort, sen
 import io
 from PIL import Image
 from server import mostFrequentLongestSubstring, pre_normalization, dataFilter
+from server.lensingAnalysis import LensingAnalysis
 import os
 import csv
 from pathlib import Path
@@ -513,6 +514,19 @@ def get_color_scheme():
     datasource = request.args.get('datasource')
     refresh = request.args.get('refresh') == 'true'
     resp = dataFilter.get_color_scheme(datasource, refresh)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_histogram_comparison', methods=['GET'])
+def get_histogram_comparison():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    channels = []
+    if request.args.get('channels') != '':
+        channels = request.args.get('channels').split()[0].split(',')
+    resp = LensingAnalysis.histogramComparison(x, y, datasource, max_distance, channels)
     return serialize_and_submit_json(resp)
 
 
