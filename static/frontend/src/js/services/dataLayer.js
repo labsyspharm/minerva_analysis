@@ -149,7 +149,7 @@ class DataLayer {
         }
     }
 
-    async getSimilarNeighborhoodToSelection() {
+    async getSimilarNeighborhoodToSelection(similarity) {
         try {
             let response = await fetch('/get_similar_neighborhood_to_selection', {
                 method: 'POST',
@@ -160,6 +160,7 @@ class DataLayer {
                 body: JSON.stringify(
                     {
                         datasource: datasource,
+                        similarity: similarity,
                         selection: [...this.getCurrentSelection()]
                     })
             });

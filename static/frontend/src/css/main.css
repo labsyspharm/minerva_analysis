@@ -531,3 +531,23 @@ polygon:hover {
 #neighborhood_icon:hover {
     stroke: #8f8f8f;
 }
+
+#neighborhood_similarity_label {
+    font-size: 6pt;
+    color: #c1c1c1;
+    margin-bottom: 0;
+}
+
+#similarity_val {
+    font-size: 6pt;
+    color: #c1c1c1;
+    font-weight: bold;
+}
+
+#similarity_group {
+    display: none;
+}
+
+#neighborhood_similarity {
+    width: 80px;
+}

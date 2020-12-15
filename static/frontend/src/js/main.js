@@ -143,6 +143,9 @@ eventHandler.bind(Scatterplot.events.selectCluster, selectCluster);
 
 const displaySelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection.cells);
+    let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
+    starplot.wrangle(starplotData);
+    scatterplot.recolor(cluster = null, ids = selection.cells);
     updateSeaDragonSelection(false, false);
 }
 eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);

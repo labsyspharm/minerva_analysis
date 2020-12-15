@@ -358,12 +358,15 @@ def get_rect_cells(datasource, rect, channels):
 def get_cells_in_polygon(datasource, points, similar_neighborhood=False):
     global config
     point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
+    neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
+    phenotypes = database.phenotype.unique().tolist()
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
     fields = [config[datasource]['featureData'][0]['xCoordinate'],
               config[datasource]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     circle_neighbors = get_neighborhood(x, y, datasource, r=r,
                                         fields=fields)
     polygon = Polygon(point_tuples)
+
     xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
     yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
     neighbor_ids = []
@@ -371,11 +374,20 @@ def get_cells_in_polygon(datasource, points, similar_neighborhood=False):
         if polygon.contains(Point(neighbor[xCoordinate], neighbor[yCoordinate])):
             neighbor_ids.append(neighbor['id'])
     obj = {}
+    summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
+    cluster_summary = np.mean(neighborhood_array[neighbor_ids, :], axis=0)
+    for i in range(len(phenotypes)):
+        count = cluster_summary[i * 2]
+        weight = cluster_summary[i * 2 + 1]
+        summary_stats['neighborhood_count'][phenotypes[i]] = count
+        summary_stats['avg_weight'][phenotypes[i]] = weight
+        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
+    obj['cluster_summary'] = summary_stats
     obj['cells'] = database.iloc[neighbor_ids][fields].to_dict(orient='records')
     return obj
 
 
-def get_similar_neighborhood_to_selection(datasource, selection):
+def get_similar_neighborhood_to_selection(datasource, selection, similarity):
     neighbor_ids = [elem['id'] for elem in selection]
     fields = [config[datasource]['featureData'][0]['xCoordinate'],
               config[datasource]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
@@ -383,7 +395,7 @@ def get_similar_neighborhood_to_selection(datasource, selection):
     neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
     selection_summary = np.mean(neighborhood_array[neighbor_ids, :], axis=0)
     obj['raw_summary'] = selection_summary
-    similar_ids = find_similarity(selection_summary)
+    similar_ids = find_similarity(selection_summary, similarity)
     summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
     phenotypes = database.phenotype.unique().tolist()
     cluster_summary = np.mean(neighborhood_array[similar_ids, :], axis=0)
@@ -398,12 +410,12 @@ def get_similar_neighborhood_to_selection(datasource, selection):
     return obj
 
 
-def find_similarity(cluster_summary):
+def find_similarity(cluster_summary, similarity):
     neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
     test = time.time()
     distances = 1 - spatial.distance.cdist([cluster_summary], neighborhood_array, "cosine")[0]
     print("Time", time.time() - test)
-    greater_than = np.argwhere(distances > 0.8).flatten()
+    greater_than = np.argwhere(distances > similarity).flatten()
     return greater_than
 
 

@@ -65,6 +65,13 @@ class ImageViewer {
         this.lassoButton = document.getElementById("lasso_button");
         this.selectButton = document.getElementById("select_button");
         this.neighborhoodButton = document.getElementById("neighborhood_icon");
+        this.similaritySlider = document.getElementById("similarity_group");
+        this.similaritySlider.onchange = (e) => {
+            let val = document.getElementById("neighborhood_similarity").value;
+            let span = document.getElementById('similarity_val');
+            span.innerHTML = ''
+            span.innerHTML = _.toString((val / 100).toFixed(2));
+        }
         this.lassoButton.style.color = "orange";
         this.isSelectionToolActive = true;
 
@@ -263,17 +270,28 @@ class ImageViewer {
             that.neighborhoodButton.style.stroke = "#8f8f8f";
             that.isSelectionToolActive = false;
         })
-
+        that.neighborhoodButton.addEventListener("contextmenu", event => {
+            let display = that.similaritySlider.style.display;
+            if (display == "none") {
+                that.similaritySlider.style.display = "block";
+            } else {
+                that.similaritySlider.style.display = "none";
+            }
+        })
         that.neighborhoodButton.addEventListener("click", event => {
             let color = that.neighborhoodButton.style.stroke;
+            d3.select('#selectionPolygon').remove();
             if (color == "orange") { //
                 that.neighborhoodButton.style.stroke = "#8f8f8f";
             } else {
                 that.neighborhoodButton.style.stroke = "orange";
-                return dataLayer.getSimilarNeighborhoodToSelection()
-                        .then(cells => {
-                            that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
-                        })
+                let sim = document.getElementById('similarity_val').innerHTML || '0.8';
+                let simVal = parseFloat(sim)
+
+                return dataLayer.getSimilarNeighborhoodToSelection(simVal)
+                    .then(cells => {
+                        that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
+                    })
             }
         })
 
@@ -617,6 +635,7 @@ class ImageViewer {
      * @returns void
      */
     updateSelection(selection, repaint = true) {
+        this.neighborhoodButton.style.stroke = "#8f8f8f";
         this.selection = selection;
 
         if (repaint) this.forceRepaint();

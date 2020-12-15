@@ -559,13 +559,16 @@ def get_cells_in_polygon():
     resp = dataFilter.get_cells_in_polygon(datasource, points, similar)
     return serialize_and_submit_json(resp)
 
+
 @app.route('/get_similar_neighborhood_to_selection', methods=['POST'])
 def get_similar_neighborhood_to_selection():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
+    similarity = post_data['similarity']
     selection = post_data['selection']
-    resp = dataFilter.get_similar_neighborhood_to_selection(datasource, selection)
+    resp = dataFilter.get_similar_neighborhood_to_selection(datasource, selection, similarity)
     return serialize_and_submit_json(resp)
+
 
 @app.route('/get_gated_cell_ids', methods=['GET'])
 def get_gated_cell_ids():
