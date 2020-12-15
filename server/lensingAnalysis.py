@@ -1,9 +1,15 @@
-from server.dataFilter import database
+from server.dataFilter import database, channels
 
 import numpy as np
+import scipy.misc as sp
 import matplotlib
 import matplotlib.pyplot as plt
 import time
+import tifffile as tf
+import re
+import server.dataFilter as dataFilter
+import zarr
+
 
 from skimage import data, transform
 from skimage.util import img_as_ubyte
@@ -53,9 +59,11 @@ def histogramComparison(x, y, datasource, r, channels):
 
     tic = time.perf_counter()
 
-    image = imread("server/Montage-25979ON-Cycle1.tif");
-    image = rescale(image, 0.5, anti_aliasing=False)
-    image = rgb2gray(image)
+    png = loadPng('163final', channels[0])
+
+    # image = imread("server/Montage-25979ON-Cycle1.tif");
+    #image = rescale(png, 0.5, anti_aliasing=False)
+    image = rgb2gray(png)
     img = img_as_ubyte(image)
 
     # Quantize to 16 levels of greyscale; this way the output image will have a
@@ -64,9 +72,12 @@ def histogramComparison(x, y, datasource, r, channels):
 
     # Select the coin from the 4th column, second row.
     # Co-ordinate ordering: [x1,y1,x2,y2]
+
+    print(str(x) + ' ' + str(y) + ' ' + str(r))
     x = int(x);
     y = int(y);
     r = int(r);
+
     coin_coords = [x-r, y-r, x+r, y+r]  # 44 x 44 region
     coin = quantized_img[coin_coords[1]:coin_coords[3],
            coin_coords[0]:coin_coords[2]]
@@ -117,3 +128,25 @@ def histogramComparison(x, y, datasource, r, channels):
 
     # self.prepSlidingWindow()
     return {'channels': channels}
+
+
+# load a channel as png using zarr in full width and height
+def loadPng(datasource, channel):
+    # if dataFilter.config is None:
+    #     dataFilter.load_db(datasource)
+    # channel_io = tf.TiffFile(str(dataFilter.config[datasource]['channelFile']), is_ome=False)
+    # channel_num = 6
+    ix=0
+    iy=0
+    print(channel)
+    channel = dataFilter.get_channel_names(datasource, shortnames=False).index(channel)
+
+    if isinstance(dataFilter.channels, zarr.Array):
+        tile = dataFilter.channels[channel, ix:dataFilter.config[datasource]["width"], iy:dataFilter.config[datasource]["height"]]
+    else:
+        tile = dataFilter.channels[8][channel, ix:dataFilter.config[datasource]["width"], iy:dataFilter.config[datasource]["height"]]
+
+    tile = np.ascontiguousarray(tile, dtype='uint32')
+    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
+
+    return png
