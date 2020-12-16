@@ -10,7 +10,6 @@ from waitress import serve
 import shutil
 
 from time import time
-from scipy.spatial import cKDTree
 import numpy as np
 import pandas as pd
 import json
