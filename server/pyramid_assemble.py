@@ -189,6 +189,10 @@ def main(py_args=None):
                         " intensity-based uint32 images."
                     )
                 ome_dtype = 'uint32'
+            elif dtype == np.int32:
+                img_in = img_in.view()
+                dtype = np.uint32
+                ome_dtype = 'uint32'
             elif dtype == np.uint16:
                 ome_dtype = 'uint16'
             elif dtype == np.uint8:
