@@ -65,7 +65,7 @@ async function init(conf) {
     scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer);
     let scatterplotData = await dataLayer.getScatterplotData();
     await scatterplot.init(scatterplotData);
-    starplot = new Starplot('barchart_display', colorScheme);
+    starplot = new Starplot('starplot_display', colorScheme);
     starplot.init();
     clusterData = await dataLayer.getClusterCells();
 

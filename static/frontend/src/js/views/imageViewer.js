@@ -155,16 +155,6 @@ class ImageViewer {
 
         }
         let drag;
-        // if (event.button === 2) {
-        //     // The canvas-click event gives us a position in web coordinates.
-        //
-        //     // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-        //     const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-        //     // Convert from viewport coordinates to image coordinates.
-        //     const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-        //
-        //
-        // }
 
         let mouseTracker = new OpenSeadragon.MouseTracker({
             element: that.viewer.canvas,
@@ -186,6 +176,7 @@ class ImageViewer {
                     that.lasso_end(event);
                     return dataLayer.getCellsInPolygon(that.polygonSelection, false)
                         .then(cells => {
+                            d3.select('#selectionPolygon').remove();
                             that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
                         })
                 } else {

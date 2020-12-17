@@ -28,10 +28,10 @@
     width: 100%;
 }
 
-#channel_list_wrapper, #openseadragon_wrapper, #csv_channel_list_wrapper {
+#channel_list_wrapper, #openseadragon_wrapper, #csv_channel_list_wrapper, #openseadragon_wrapper {
     height: 87.5vh;
     position: relative;
-    min-height: 570px;
+    min-height: 87.5vh;
 }
 
 #channel_list_wrapper {
@@ -68,7 +68,7 @@
     top: -4px;
 }
 
-#openseadragon, #channel_list {
+#openseadragon, #channel_list, #plots_display {
     height: 100%;
     position: relative;
     width: 100%;
