@@ -446,18 +446,11 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
     else:
         channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
-        if isinstance(channels, zarr.Array):
-            directory = Path(dataDirectory + "/" + filePath.name)
-            args = {}
-            args['in_paths'] = [Path(filePath)]
-            args['out_path'] = directory
-            args['is_mask'] = True
-            pyramid_assemble.main(py_args=args)
-        else:
-            directory = Path(dataDirectory + "/" + filePath.name)
-            args = {}
-            args['in_paths'] = [Path(filePath)]
-            args['out_path'] = directory
-            args['is_mask'] = True
-            pyramid_assemble.main(py_args=args)
+        directory = Path(dataDirectory + "/" + filePath.name)
+        args = {}
+        args['in_paths'] = [Path(filePath)]
+        args['out_path'] = directory
+        args['is_mask'] = True
+        pyramid_assemble.main(py_args=args)
+
         return {'segmentation': str(directory)}

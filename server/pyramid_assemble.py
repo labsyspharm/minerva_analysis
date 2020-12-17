@@ -190,7 +190,7 @@ def main(py_args=None):
                     )
                 ome_dtype = 'uint32'
             elif dtype == np.int32:
-                img_in = img_in.view()
+                img_in = img_in.view('uint32')
                 dtype = np.uint32
                 ome_dtype = 'uint32'
             elif dtype == np.uint16:
