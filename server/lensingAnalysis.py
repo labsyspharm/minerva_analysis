@@ -59,7 +59,7 @@ def histogramComparison(x, y, datasource, r, channels):
 
     tic = time.perf_counter()
 
-    png = loadPng('163final', channels[0])
+    png = loadPng(datasource, channels[0])
 
     # image = imread("server/Montage-25979ON-Cycle1.tif");
     #image = rescale(png, 0.5, anti_aliasing=False)
