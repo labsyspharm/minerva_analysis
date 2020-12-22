@@ -392,7 +392,17 @@ def get_similar_neighborhood_to_selection(datasource, selection, similarity):
     fields = [config[datasource]['featureData'][0]['xCoordinate'],
               config[datasource]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     obj = {}
-    neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
+    # Dynamic Neighborhood Array Code
+    if len(neighbor_ids) < 1000:
+        neighborhood_array = np.load(Path("static/data/Ton/complex_small.npy")).squeeze()
+    elif len(neighbor_ids) < 10000:
+        neighborhood_array = np.load(Path("static/data/Ton/complex_small.npy")).squeeze()
+    else:
+        neighborhood_array = np.load(Path("static/data/Ton/complex_large.npy")).squeeze()
+
+    # old code
+    # neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
+
     selection_summary = np.mean(neighborhood_array[neighbor_ids, :], axis=0)
     obj['raw_summary'] = selection_summary
     similar_ids = find_similarity(selection_summary, similarity)
