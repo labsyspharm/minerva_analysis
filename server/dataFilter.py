@@ -5,11 +5,10 @@ from PIL import ImageColor
 import requests
 import json
 import os
-from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
 from pathlib import Path
 from ome_types import from_xml
 from server import pyramid_assemble
+import matplotlib.path as mpltPath
 
 import orjson
 from server import smallestenclosingcircle
@@ -360,20 +359,20 @@ def get_cells_in_polygon(datasource, points, similar_neighborhood=False):
     point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
     neighborhood_array = np.load(Path("static/data/Ton/neighborhood_array_complex.npy"))
     phenotypes = database.phenotype.unique().tolist()
+    now = time.time()
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
     fields = [config[datasource]['featureData'][0]['xCoordinate'],
               config[datasource]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     circle_neighbors = get_neighborhood(x, y, datasource, r=r,
                                         fields=fields)
-    polygon = Polygon(point_tuples)
 
-    xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
-    yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
-    neighbor_ids = []
-    for neighbor in circle_neighbors:
-        if polygon.contains(Point(neighbor[xCoordinate], neighbor[yCoordinate])):
-            neighbor_ids.append(neighbor['id'])
+    now = time.time()
+    neighbor_points = pd.DataFrame(circle_neighbors).values
     obj = {}
+
+    path = mpltPath.Path(point_tuples)
+    inside = path.contains_points(neighbor_points[:, [0, 1]].astype('float'))
+    neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
     summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
     cluster_summary = np.mean(neighborhood_array[neighbor_ids, :], axis=0)
     for i in range(len(phenotypes)):
@@ -392,11 +391,13 @@ def get_similar_neighborhood_to_selection(datasource, selection, similarity):
     fields = [config[datasource]['featureData'][0]['xCoordinate'],
               config[datasource]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     obj = {}
+    # This is the standard 50 radius neighborhood data
+    standard_neighborhoods = np.load(Path("static/data/Ton/complex_small.npy")).squeeze()
     # Dynamic Neighborhood Array Code
     if len(neighbor_ids) < 1000:
-        neighborhood_array = np.load(Path("static/data/Ton/complex_small.npy")).squeeze()
+        neighborhood_array = standard_neighborhoods
     elif len(neighbor_ids) < 10000:
-        neighborhood_array = np.load(Path("static/data/Ton/complex_small.npy")).squeeze()
+        neighborhood_array = np.load(Path("static/data/Ton/complex_medium.npy")).squeeze()
     else:
         neighborhood_array = np.load(Path("static/data/Ton/complex_large.npy")).squeeze()
 
@@ -408,7 +409,7 @@ def get_similar_neighborhood_to_selection(datasource, selection, similarity):
     similar_ids = find_similarity(selection_summary, similarity)
     summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
     phenotypes = database.phenotype.unique().tolist()
-    cluster_summary = np.mean(neighborhood_array[similar_ids, :], axis=0)
+    cluster_summary = np.mean(standard_neighborhoods[similar_ids, :], axis=0)
     for i in range(len(phenotypes)):
         count = cluster_summary[i * 2]
         weight = cluster_summary[i * 2 + 1]
