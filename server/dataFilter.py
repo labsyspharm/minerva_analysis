@@ -2,7 +2,6 @@ from sklearn.neighbors import BallTree
 import numpy as np
 import pandas as pd
 from PIL import ImageColor
-import requests
 import json
 import os
 from pathlib import Path
@@ -10,14 +9,11 @@ from ome_types import from_xml
 from server import pyramid_assemble
 import matplotlib.path as mpltPath
 
-import orjson
 from server import smallestenclosingcircle
-from skimage.io import imread
 from tqdm import tqdm
 import time
 import pickle
 import tifffile as tf
-from PIL import Image
 import re
 import zarr
 from scipy import spatial
