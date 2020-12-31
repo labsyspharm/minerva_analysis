@@ -7,6 +7,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'pngjs';
 import * as d3base from 'd3';
 import {sliderBottom} from 'd3-simple-slider';
+import createScatterplot from 'regl-scatterplot';
 
 import {annotation} from 'd3-svg-annotation';
 import {legendColor} from 'd3-svg-legend'
@@ -37,4 +38,5 @@ window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
 window.ViewerManager = ViewerManager;
+window.createScatterplot = createScatterplot;
 
