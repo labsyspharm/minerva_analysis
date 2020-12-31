@@ -7,12 +7,12 @@ import csv
 from pathlib import Path
 from waitress import serve
 import shutil
-
 from time import time
 import numpy as np
 import pandas as pd
 import json
 import orjson
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
@@ -671,5 +671,6 @@ def serialize_and_submit_json(data):
 
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.sqlite3'
     # 100 GB file Max
     serve(app, host='0.0.0.0', port=8000, max_request_body_size=107374182400, max_request_header_size=8589934592)
