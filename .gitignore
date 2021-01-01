@@ -6,7 +6,7 @@
 static/frontend/node_modules
 /.pnp
 .pnp.js
-.sqlite3
+*.sqlite3
 */.ipynb_checkpoints/
 # testing
 /coverage
