@@ -6,6 +6,7 @@
 static/frontend/node_modules
 /.pnp
 .pnp.js
+.sqlite3
 */.ipynb_checkpoints/
 # testing
 /coverage
@@ -27,6 +28,7 @@ yarn-error.log*
 
 /static/data
 /static/data/
+/cycif_viewer/static/data
 /__pycache__/
 /__pycache__/*
 */__pycache__/*
