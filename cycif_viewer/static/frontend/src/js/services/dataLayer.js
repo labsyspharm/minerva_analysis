@@ -94,6 +94,19 @@ class DataLayer {
         }
     }
 
+    async getNeighborhoods() {
+        try {
+            let response = await fetch('/get_neighborhoods?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Neighborhoods", e);
+        }
+    }
+
+
     async getNearestCell(point_x, point_y) {
         try {
             let response = await fetch('/get_nearest_cell?' + new URLSearchParams({

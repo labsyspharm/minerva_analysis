@@ -552,3 +552,34 @@ polygon:hover {
 #neighborhood_similarity {
     width: 80px;
 }
+
+#neighborhood_table_heading {
+    padding: 0 10px;
+}
+
+#neighborhood_table_label {
+    font-size: 10pt;
+}
+
+#neighborhood_dropdown_button {
+    margin: 0;
+    padding: 0;
+}
+
+#neighborhood_table_card {
+    padding: 0 10px;
+}
+
+#neighborhood_table {
+    margin-bottom: 5px;
+}
+
+#neighborhood_table td, th {
+    padding: 5px 10px !important;
+    font-size: 0.5rem;
+}
+
+.actions-column * {
+    font-size: 0.8rem;
+    padding: 0px 1px;
+}

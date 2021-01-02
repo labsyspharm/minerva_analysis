@@ -64,6 +64,13 @@ def get_color_scheme():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_neighborhoods', methods=['GET'])
+def get_neighborhoods():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_neighborhoods(datasource)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_neighborhood', methods=['GET'])
 def get_neighborhood():
     x = float(request.args.get('point_x'))

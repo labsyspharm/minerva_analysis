@@ -7,15 +7,13 @@ const datasource = flaskVariables.datasource;
 
 
 //VIEWS
-let seaDragonViewer;
-let channelList;
-let dataLayer;
+let seaDragonViewer, channelList, starplot, scatterplot, legend, neighborhoodTable;
+
+//SERVICES
+let dataLayer, colorScheme;
+
+//INSTANCE VARS
 let config;
-let starplot;
-let scatterplot;
-// let cellInformation;
-let legend;
-let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
 let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
@@ -26,35 +24,32 @@ document.getElementById("openseadragon").addEventListener('contextmenu', event =
 
 
 //LOAD DATA
-// console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
 d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
-    // console.log('loading data');
     this.config = config;
-    init(config[datasource]).then(() => {
-        // console.log("done loading data");
-    });
+    return init(config[datasource])
 });
 
 
 // init all views (datatable, seadragon viewer,...)
 async function init(conf) {
-    // console.log('initialize system');
     config = conf;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;
     }
-    //INIT DATA FILTER
+    //INIT DATA LAYER
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
-    // console.log("Data Loaded");
+
     channelList = new ChannelList(config, dataLayer, eventHandler);
     await channelList.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    // cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
-    // cellInformation.draw();
+
+    neighborhoodTable = new NeighborhoodTable(dataLayer);
+    await neighborhoodTable.drawRows();
+
 
     legend = new Legend(dataLayer.phenotypes, colorScheme);
     legend.draw();
@@ -62,12 +57,14 @@ async function init(conf) {
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
-    scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer);
-    let scatterplotData = await dataLayer.getScatterplotData();
-    await scatterplot.init(scatterplotData);
+
     starplot = new Starplot('starplot_display', colorScheme);
     starplot.init();
-    clusterData = await dataLayer.getClusterCells();
+    clusterData = dataLayer.getClusterCells();
+
+    scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer);
+    let scatterplotData = dataLayer.getScatterplotData();
+    await scatterplot.init(scatterplotData);
 
 }
 

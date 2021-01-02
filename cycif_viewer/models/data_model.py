@@ -4,11 +4,13 @@ import pandas as pd
 from PIL import ImageColor
 import json
 import os
+import io
 from pathlib import Path
 from ome_types import from_xml
 from cycif_viewer.utils import pyramid_assemble
 import matplotlib.path as mpltPath
 from cycif_viewer.utils import smallestenclosingcircle
+from cycif_viewer.models import database
 
 import time
 import pickle
@@ -37,7 +39,6 @@ def load_datasource(datasource_name, reload=False):
     global seg
     global channels
     global metadata
-
     if source is datasource_name and datasource is not None and reload is False:
         return
     load_config()
@@ -62,6 +63,81 @@ def load_datasource(datasource_name, reload=False):
     except:
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
+    init_clusters(datasource_name)
+
+
+def init_clusters(datasource_name):
+    global datasource
+    global source
+
+    # Get Cluster Stats
+    # cluster_stats_path = str(
+    #     Path(os.path.join(os.getcwd())) / "cycif_viewer" / "static" / "data" / datasource_name / "cluster_stats.pickle")
+    # if os.path.isfile(cluster_stats_path):
+    #     print("Cluster Stats Exist, Loading")
+    #     cluster_stats = pickle.load(open(cluster_stats_path, "rb"))
+    #     return cluster_stats
+    # Select Cluster Stats
+    clusters = np.sort(datasource['Cluster'].unique().tolist())
+    obj = {}
+    for cluster in clusters:
+        # Check if the Cluster is in the DB
+        neighborhood = database.get(database.Neighborhood, datasource=datasource_name, is_cluster=True,
+                                    name="Cluster " + str(cluster))
+        cluster_cells = None
+        # If it's not in the Neighborhood database then create and add it
+        if neighborhood is None:
+            cluster_cells = datasource.loc[datasource['Cluster'] == cluster]
+            indices = np.array(cluster_cells.index.values.tolist())
+            f = io.BytesIO()
+            np.save(f, indices)
+            neighborhood = database.create(database.Neighborhood, datasource=datasource_name, is_cluster=True,
+                                           name="Cluster " + str(cluster), cells=f.getvalue())
+
+        else:
+            indices = np.load(io.BytesIO(neighborhood.cells))
+            cluster_cells = datasource.loc[indices]
+
+        neighborhood_stats = database.get(database.NeighborhoodStats, neighborhood=neighborhood)
+
+        # Similarly, if the stats are not initialized, let's store them in the DB as well
+        if neighborhood_stats is None:
+            cluster_cells = cluster_cells[['id', 'Cluster', 'phenotype']].to_dict(orient='records')
+            neighborhood_array = np.load(Path("cycif_viewer/static/data/Ton/neighborhood_array_complex.npy"))
+            cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
+            summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
+            phenotypes = datasource.phenotype.unique().tolist()
+            for i in range(len(phenotypes)):
+                count = cluster_summary[i * 2]
+                weight = cluster_summary[i * 2 + 1]
+                summary_stats['neighborhood_count'][phenotypes[i]] = count
+                summary_stats['avg_weight'][phenotypes[i]] = weight
+                summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
+            f = io.BytesIO()
+            pickle.dump({'cells': cluster_cells, 'cluster_summary': summary_stats}, f)
+            neighborhood_stats = database.create(database.NeighborhoodStats, datasource=datasource_name,
+                                                 is_cluster=True,
+                                                 name="ClusterStats " + str(cluster), stats=f.getvalue(),
+                                                 neighborhood=neighborhood)
+
+
+def get_cluster_cells(datasource_name):
+    global datasource
+    global source
+    clusters = datasource['Cluster'].unique().tolist()
+    obj = {}
+    for cluster in clusters:
+        # Check if the Cluster is in the DB
+        neighborhood = database.get(database.Neighborhood, datasource=datasource_name, is_cluster=True,
+                                    name="Cluster " + str(cluster))
+        neighborhood_stats = database.get(database.NeighborhoodStats, neighborhood=neighborhood)
+        obj[str(cluster)] = pickle.load(io.BytesIO(neighborhood_stats.stats))
+    return obj
+
+
+def get_neighborhoods(datasource_name):
+    neighborhoods = database.get_all(database.Neighborhood, datasource=datasource_name)
+    return [(neighborhood.id, neighborhood.name, neighborhood.is_cluster) for neighborhood in neighborhoods]
 
 
 def load_config():
@@ -268,39 +344,6 @@ def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
 
     pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
     return color_scheme
-
-
-def get_cluster_cells(datasource_name):
-    global datasource
-    global source
-    global ball_tree
-    if datasource_name != source:
-        load_ball_tree(datasource_name)
-    cluster_stats_path = str(
-        Path(os.path.join(os.getcwd())) / "cycif_viewer" / "static" / "data" / datasource_name / "cluster_stats.pickle")
-    if os.path.isfile(cluster_stats_path):
-        print("Cluster Stats Exist, Loading")
-        cluster_stats = pickle.load(open(cluster_stats_path, "rb"))
-        return cluster_stats
-    clusters = datasource['Cluster'].unique().tolist()
-    obj = {}
-    for cluster in clusters:
-        cluster_cells = datasource.loc[datasource['Cluster'] == cluster]
-        indices = cluster_cells.index.values.tolist()
-        cluster_cells = cluster_cells[['id', 'Cluster', 'phenotype']].to_dict(orient='records')
-        neighborhood_array = np.load(Path("cycif_viewer/static/data/Ton/neighborhood_array_complex.npy"))
-        cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
-        summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
-        phenotypes = datasource.phenotype.unique().tolist()
-        for i in range(len(phenotypes)):
-            count = cluster_summary[i * 2]
-            weight = cluster_summary[i * 2 + 1]
-            summary_stats['neighborhood_count'][phenotypes[i]] = count
-            summary_stats['avg_weight'][phenotypes[i]] = weight
-            summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
-        obj[str(cluster)] = {'cells': cluster_cells, 'cluster_summary': summary_stats}
-    pickle.dump(obj, open(cluster_stats_path, 'wb'))
-    return obj
 
 
 def get_cluster_labels(datasource_name):

@@ -20,19 +20,19 @@
     <script src="../static/frontend/dist/vendor_bundle.js"></script>
 
     <!-- OpenSeadragon imports-->
-    <script src="/static/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-svg-overlay.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/openseadragonrgb.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/viaWebGL.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/openSeadragonGL.js"></script>
-    <script src="/static/external/openseadragon-bin-2.4.0/openseadragon-filtering.js"></script>
+    <script src="../static/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>
+    <script src="../static/external/openseadragon-bin-2.4.0/openseadragon-svg-overlay.js"></script>
+    <script src="../static/external/openseadragon-bin-2.4.0/openseadragonrgb.js"></script>
+    <script src="../static/external/openseadragon-bin-2.4.0/viaWebGL.js"></script>
+    <script src="../static/external/openseadragon-bin-2.4.0/openSeadragonGL.js"></script>
+    <script src="../static/external/openseadragon-bin-2.4.0/openseadragon-filtering.js"></script>
 
     <!-- Scripts -->
     <script src="../static/frontend/src/js/services/colorScheme.js"></script>
     <script src="../static/frontend/src/js/views/rainbow.js"></script>
     <script src="../static/frontend/src/js/services/dataLayer.js"></script>
     <script src="../static/frontend/src/js/views/channelList.js"></script>
-    <script src="../static/frontend/src/js/views/cellInformation.js"></script>
+    <script src="../static/frontend/src/js/views/neighborhoodTable.js"></script>
     <script src="../static/frontend/src/js/views/legend.js"></script>
     <script src="../static/frontend/src/js/views/imageViewer.js"></script>
     <script src="../static/frontend/src/js/views/scatter.js"></script>
@@ -146,6 +146,36 @@
         <div class="col-sm-3 viewer_col" id="scatterplot_wrapper">
             <span id="scatterplot_label">Embedding</span>
             <div id="plots_display" class="col">
+                <div id="accordion">
+                    <div class="card">
+                        <div class="card-header" id="neighborhood_table_heading">
+                            <button id="neighborhood_dropdown_button" class="btn btn-link collapsed"
+                                    data-toggle="collapse"
+                                    data-target="#neighborhood_table_div"
+                                    aria-expanded="true" aria-controls="neighborhood_table_div">
+                                <span id="neighborhood_table_div_label">Neighborhoods</span>
+                            </button>
+                        </div>
+                        <div id="neighborhood_table_div" class="collapse" aria-labelledby="neighborhood_table_heading"
+                             data-parent="#accordion">
+                            <div id="neighborhood_table_card" class="card-body">
+                                <table id="neighborhood_table" class="table table-hover">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">id</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Source</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="row" id="scatterplot_display">
                     <canvas id="scatter_canvas"></canvas>
                 </div>
