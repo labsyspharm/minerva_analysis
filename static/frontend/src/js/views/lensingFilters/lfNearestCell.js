@@ -200,6 +200,7 @@ export class LfNearestCell {
                                 .attr('font-size', this.vars.config_fontMd)
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
+                                .style('letter-spacing', 1)
                                 .text('Single cell analysis (intensity)')
 
                             // Append chartG

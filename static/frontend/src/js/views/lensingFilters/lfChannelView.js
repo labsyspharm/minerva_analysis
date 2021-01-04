@@ -1,3 +1,4 @@
+
 /**
  * @class LfChannelView
  */
@@ -8,7 +9,7 @@ export class LfChannelView {
     load = [];
     vars = {
         cellIntensityRange: [0, 65536],
-        config_boxW: 240,
+        config_boxW: 300,
         config_boxH: 40,
         config_colorR: 8,
         config_channelExtH: 30,
@@ -18,6 +19,8 @@ export class LfChannelView {
             name: '',
             index: 0
         },
+        config_fontSm: 9,
+        config_fontMd: 11,
         el_boxExtG: null,
         el_cellsG: null,
         el_chartsG: null,
@@ -146,9 +149,11 @@ export class LfChannelView {
                                 .attr('dominant-baseline', 'hanging')
                                 .attr('fill', 'white')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', 10.5)
+                                .attr('font-size', this.vars.config_fontMd)
+                                .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
-                                .text('Channel view')
+                                .style('letter-spacing', 1)
+                                .text('Channel view');
 
                             this.vars.el_toggleNoteG = this.vars.el_boxExtG.append('g')
                                 .attr('class', 'viewfinder_toggle_note_g')

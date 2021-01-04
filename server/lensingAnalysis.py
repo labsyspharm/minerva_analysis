@@ -74,9 +74,9 @@ def histogramComparison(x, y, datasource, r, channels):
     # Co-ordinate ordering: [x1,y1,x2,y2]
 
     print(str(x) + ' ' + str(y) + ' ' + str(r))
-    x = int(x);
-    y = int(y);
-    r = int(r);
+    x = int(x)
+    y = int(y)
+    r = int(r)
 
     coin_coords = [x-r, y-r, x+r, y+r]  # 44 x 44 region
     coin = quantized_img[coin_coords[1]:coin_coords[3],

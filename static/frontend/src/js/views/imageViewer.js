@@ -485,7 +485,7 @@ class ImageViewer {
      *
      * @returns void
      */
-    updateChannelColors(name, color, type) {
+    updateChannelColors(name, color, type, force=true) {
 
         const channelIdx = imageChannels[name];
 
@@ -502,7 +502,9 @@ class ImageViewer {
         tf_def.name = dataLayer.getShortChannelName(name);
 
         this.channelTF[channelIdx] = tf_def;
+        if (force) {
         this.forceRepaint();
+        }
     }
 
     /**

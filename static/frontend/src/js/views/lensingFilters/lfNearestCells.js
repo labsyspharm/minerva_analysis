@@ -206,7 +206,9 @@ export class LfNearestCells {
                                 .attr('fill', 'white')
                                 .attr('font-family', 'sans-serif')
                                 .attr('font-size', this.vars.config_fontMd)
+                                .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
+                                .style('letter-spacing', 1)
                                 .text('Multi cell analysis (intensity)');
                             this.vars.el_textReportG.append('text')
                                 .attr('class', 'viewfinder_text_report_text2')

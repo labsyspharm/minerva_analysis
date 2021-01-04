@@ -44,6 +44,13 @@ export class Utils {
     }
 
     /**
+     * @function getChannelIndex
+     */
+    static getChannelIndex(name ,imageViewer) {
+       return imageViewer.config.imageData.findIndex(d => d.name === name);
+    }
+
+    /**
      * @function getImageChannels
      *
      * @param {any} d

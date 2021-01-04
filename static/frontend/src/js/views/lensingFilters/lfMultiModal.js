@@ -1,52 +1,63 @@
+import {Utils} from './utils'
+
 /**
- * @class LfHistosnap
+ * @class LfMultiModal
  */
-export class LfHistoSearch {
+export class LfMultiModal {
 
     // Class vars (and chart 'vars')
     data = [];
     load = [];
     vars = {
+        cellIntensityRange: [0, 65536],
         config_boxW: 300,
-        config_boxH: 80,
-        config_boxMargin: {top: 8, right: 6, bottom: 7, left: 6},
+        config_boxH: 40,
+        config_colorR: 8,
+        config_channelExtH: 30,
+        config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
+        config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 30},
+        currentChannel: {
+            name: '',
+            index: 0
+        },
         config_fontSm: 9,
         config_fontMd: 11,
         el_boxExtG: null,
+        el_cellsG: null,
+        el_chartsG: null,
         el_radialExtG: null,
         el_textReportG: null,
         el_toggleNoteG: null,
+        forceUpdate: false,
+        mmOptions: [
+            {
+                name: 'hande',
+                channels: ['HE_r', 'HE_g', 'HE_b'],
+                colors: ['255,0,0,1', '0,255,0,1', '0,0,255,1'],
+                displayName: 'H&E',
+                loaded: false,
+                present: false
+            }
+        ],
+        mmSelected: '',
         keydown: e => {
-            if (e.key === 'S') {
-
-                // Lensing ref
-                const lensing = this.image_viewer.viewer.lensing;
+            if (e.key === 'C') {
 
                 // Access auxi viewer manager (lensing instance)
+                const mainManager = this.image_viewer.viewerManagerVMain;
                 const auxiManager = this.image_viewer.viewerManagerVAuxi;
-                const channels = [];
-                for (let k in auxiManager.viewer_channels) {
-                    channels.push(auxiManager.viewer_channels[k].name);
-                }
 
-                // Measure relative
-                const screenPt1 = new OpenSeadragon.Point(0, 0);
-                const screenPt2 =
-                    new OpenSeadragon.Point(lensing.configs.rad / lensing.configs.pxRatio, 0);
-                const contextPt1 =
-                    this.image_viewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
-                const contextPt2 =
-                    this.image_viewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
-                let newRad = Math.round(contextPt2.x - contextPt1.x)
-                if (newRad > 500) newRad = 500;
-
-                // Get position of cell and add to data
-                const pos = lensing.configs.pos_full;
-
-                // Load
-                this.load.config.filterCode.settings.loading = true;
-                this.data_layer.getHistogramComparison(newRad, pos[0], pos[1], channels).then(d => {
-                    console.log(d)
+                // Get keys
+                const keys = Object.keys(mainManager.viewer_channels);
+                keys.forEach((k, i) => {
+                    if (+k === this.vars.currentChannel.index) {
+                        if (i < keys.length - 1) {
+                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[i + 1]].short_name;
+                        } else {
+                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[0]].short_name;
+                        }
+                        this.vars.forceUpdate = true;
+                    }
                 });
             }
         }
@@ -83,8 +94,8 @@ export class LfHistoSearch {
                 vf_ref: 'vis_data_custom',
                 filterCode: {
                     data: [],
-                    name: 'fil_data_histosnap',
-                    vis_name: 'Data Histosnap',
+                    name: 'fil_data_multimodal',
+                    vis_name: 'Data Multimodal',
                     settings: {
                         active: 1,
                         async: true,
@@ -94,7 +105,7 @@ export class LfHistoSearch {
                         min: 0,
                         step: 1,
                         vf: true,
-                        vf_setup: 'vis_data_histosnap',
+                        vf_setup: 'vis_data_multimodal',
                         iter: 'px'
                     },
                     set_pixel: () => {
@@ -117,7 +128,7 @@ export class LfHistoSearch {
                 },
                 get_vf_setup: () => {
                     return {
-                        name: 'vis_data_histosnap',
+                        name: 'vis_data_multimodal',
                         init: () => {
 
                             // Define this
@@ -135,10 +146,13 @@ export class LfHistoSearch {
                             this.vars.el_boxExtG = vf.els.boxG.append('g')
                                 .attr('class', 'viewfinder_box_ext_g');
 
+                            // Append cellsG
+                            this.vars.el_cellsG = this.vars.el_radialExtG.append('g')
+                                .attr('class', 'viewfinder_cells_g');
+
                             // Append textReportG
                             this.vars.el_textReportG = this.vars.el_boxExtG.append('g')
                                 .attr('class', 'viewfinder_text_report_g');
-                            this.vars.el_textReportG.append('text')
                             this.vars.el_textReportG.append('text')
                                 .attr('class', 'viewfinder_text_report_text1')
                                 .attr('x', this.vars.config_boxMargin.left)
@@ -151,7 +165,7 @@ export class LfHistoSearch {
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
                                 .style('letter-spacing', 1)
-                                .text('HistoSearch')
+                                .text('Multimodal options');
 
                             this.vars.el_toggleNoteG = this.vars.el_boxExtG.append('g')
                                 .attr('class', 'viewfinder_toggle_note_g')
@@ -159,18 +173,19 @@ export class LfHistoSearch {
                                 - this.vars.config_boxMargin.right}px, ${this.vars.config_boxMargin.top * 3}px)`);
                             this.vars.el_toggleNoteG.append('text')
                                 .attr('class', 'viewfinder_toggle_note_g_char')
-                                .attr('x', -10)
-                                .attr('y', -3)
+                                .attr('x', 15)
+                                .attr('y', 0)
                                 .attr('text-anchor', 'end')
                                 .attr('dominant-baseline', 'hanging')
                                 .attr('fill', 'white')
                                 .attr('font-family', 'sans-serif')
                                 .attr('font-size', 14)
                                 .attr('font-weight', 'lighter')
-                                .html('&#9740;');
+                                .style('transform', 'rotate(90deg)')
+                                .html('&#10234;');
                             this.vars.el_toggleNoteG.append('text')
                                 .attr('class', 'viewfinder_toggle_note_g_char')
-                                .attr('x', -25)
+                                .attr('x', -15)
                                 .attr('y', 2)
                                 .attr('text-anchor', 'end')
                                 .attr('dominant-baseline', 'hanging')
@@ -179,18 +194,62 @@ export class LfHistoSearch {
                                 .attr('font-size', 8)
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
-                                .html('SHIFT S');
+                                .html('SHIFT C');
+
+
+                            // Append chartG
+                            this.vars.el_chartsG = this.vars.el_boxExtG.append('g')
+                                .attr('class', 'viewfinder_charts_g')
+                                .style('transform', `translate(${this.vars.config_chartsMargin.left}px, 
+                                    ${this.vars.config_chartsMargin.top}px)`);
 
                             // Add listener
                             this.vars.keydown = this.vars.keydown.bind(this)
                             document.addEventListener('keydown', this.vars.keydown);
 
+                            // Check channels to look for sets
+                            this.vars.mmOptions.forEach(o => {
+                                let includes = true;
+                                o.channels.forEach(c => {
+                                    if (!this.channel_list.columns.includes(c)) {
+                                        includes = false
+                                    }
+                                });
+                                if (includes) {
+                                    this.vars.mmSelected = o.name;
+                                    o.present = true;
+                                }
+                            });
+
 
                         },
                         wrangle: () => {
 
-                            // Define this
-                            const vis = this;
+                            // Get selected mmOption
+                            const selMM = this.vars.mmOptions.find(o => o.name === this.vars.mmSelected);
+
+                            // Check current sels
+                            if (selMM && !selMM.loaded) {
+                                // Empty
+                                const items = this.image_viewer.viewer.world.getItemCount();
+                                for (let i = 1; i < items; i++) {
+                                    this.image_viewer.viewerManagerVAuxi.channel_remove(i);
+                                }
+                                // Loads
+                                selMM.channels.forEach((c, i) => {
+
+                                    const channelTF = this.image_viewer.channelTF.find(tf => tf.name === c);
+                                    const rgba = selMM.colors[i].split(',');
+                                    const d3rgba = d3.rgb(+rgba[0], +rgba[1], +rgba[2], +rgba[3]);
+                                    this.image_viewer.updateChannelColors(c, d3rgba, 'white', false);
+
+                                    const index = Utils.getChannelIndex(c, this.image_viewer);
+                                    this.image_viewer.viewerManagerVAuxi.channel_add(index);
+                                });
+                                // Mark as loaded
+                                selMM.loaded = true;
+                            }
+
 
                         },
                         render: () => {
@@ -199,15 +258,40 @@ export class LfHistoSearch {
                             const vis = this;
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
 
+                            // Get channels
+                            const channels = this.channel_list.selections;
+
                             // Update vf box size
-                            vf.els.blackboardRect.attr('height', this.vars.config_boxH);
-                            vf.configs.boxH = this.vars.config_boxH;
+                            vf.els.blackboardRect.attr('height', this.vars.config_boxH + this.vars.mmOptions.length
+                                * this.vars.config_channelExtH);
+                            vf.configs.boxH = this.vars.config_boxH + this.vars.mmOptions.length *
+                                this.vars.config_channelExtH;
+
+
+                            this.vars.el_chartsG.selectAll('.viewfinder_charts_g_chart_g')
+                                .data(this.vars.mmOptions)
+                                .join('text')
+                                .attr('class', 'viewfinder_charts_g_chart_g')
+                                .attr('x', 0)
+                                .attr('y', (d, i) => i * vis.vars.config_channelExtH + vis.vars.config_boxH)
+                                .attr('fill', 'rgba(255, 255, 255, 0.95)')
+                                .attr('font-family', 'sans-serif')
+                                .attr('font-size', 9)
+                                .attr('text-anchor', 'start')
+                                .attr('dominant-baseline', 'middle')
+                                .text(d => d.displayName);
+
 
                         },
                         destroy: () => {
 
                             // Remove handler
                             document.removeEventListener('keydown', this.vars.keydown);
+
+                            // Re-establish channels
+                            this.image_viewer.viewerManagerVAuxi.viewer_channels =
+                                this.image_viewer.viewerManagerVMain.viewer_channels;
+                            this.image_viewer.viewerManagerVAuxi.force_repaint();
 
                             // Remove
                             this.vars.el_radialExtG.remove();
