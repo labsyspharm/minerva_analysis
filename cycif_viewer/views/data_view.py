@@ -81,6 +81,33 @@ def get_neighborhood():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/edit_neighborhood', methods=['POST'])
+def edit_neighborhood():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    elem = post_data['elem']
+    resp = data_model.edit_neighborhood(elem, datasource)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/save_neighborhood', methods=['POST'])
+def save_neighborhood():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    selection = post_data['selection']
+    resp = data_model.save_neighborhood(selection, datasource)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/delete_neighborhood', methods=['POST'])
+def delete_neighborhood():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    elem = post_data['elem']
+    resp = data_model.delete_neighborhood(elem, datasource)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_cluster_cells', methods=['GET'])
 def get_cluster_cells():
     datasource = request.args.get('datasource')

@@ -174,11 +174,13 @@ class ImageViewer {
                 console.log('release');
                 if (that.isSelectionToolActive) {
                     that.lasso_end(event);
-                    return dataLayer.getCellsInPolygon(that.polygonSelection, false)
-                        .then(cells => {
-                            d3.select('#selectionPolygon').remove();
-                            that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
-                        })
+                    if (_.size(that.polygonSelection) > 2) {
+                        return dataLayer.getCellsInPolygon(that.polygonSelection, false)
+                            .then(cells => {
+                                d3.select('#selectionPolygon').remove();
+                                that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
+                            })
+                    }
                 } else {
                     const webPoint = event.position;
                     // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.

@@ -48,7 +48,7 @@ async function init(conf) {
     await colorScheme.init();
 
     neighborhoodTable = new NeighborhoodTable(dataLayer);
-    await neighborhoodTable.drawRows();
+    await neighborhoodTable.init();
 
 
     legend = new Legend(dataLayer.phenotypes, colorScheme);
@@ -111,7 +111,7 @@ const actionImageClickedMultiSel = (d) => {
         dataLayer.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
     } else {
         // console.log(d.selectedItem.length);
-        dataLayer.addAllToCurrentSelection(d.selectedItem);
+        dataLayer.addAllToCurrentSelection({'cells': d.selectedItem});
     }
     // cellInformation.selectCell(d.selectedItem);
     updateSeaDragonSelection(true, true);
@@ -124,7 +124,7 @@ const selectCluster = async (cluster) => {
     console.log('selecting Cluster');
     if (cluster) {
         let selectedCluster = _.get(clusterData, `[${cluster}]`);
-        dataLayer.addAllToCurrentSelection(selectedCluster.cells)
+        dataLayer.addAllToCurrentSelection(selectedCluster)
         let starplotData = _.get(selectedCluster, 'cluster_summary.weighted_contribution', []);
         starplot.wrangle(starplotData);
 
@@ -139,7 +139,7 @@ const selectCluster = async (cluster) => {
 eventHandler.bind(Scatterplot.events.selectCluster, selectCluster);
 
 const displaySelection = async (selection) => {
-    dataLayer.addAllToCurrentSelection(selection.cells);
+    dataLayer.addAllToCurrentSelection(selection);
     let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
     starplot.wrangle(starplotData);
     scatterplot.recolor(cluster = null, ids = selection.cells);
@@ -148,7 +148,7 @@ const displaySelection = async (selection) => {
 eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 
 const displayNeighborhoodSelection = async (selection) => {
-    dataLayer.addAllToCurrentSelection(selection.cells);
+    dataLayer.addAllToCurrentSelection(selection);
     let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
     starplot.wrangle(starplotData);
     scatterplot.recolor(cluster = null, ids = selection.cells);
@@ -179,7 +179,7 @@ const channelSelect = async (sels) => {
 
     let channelCells = await dataLayer.getChannelCellIds(sels);
 
-    dataLayer.addAllToCurrentSelection(channelCells);
+    dataLayer.addAllToCurrentSelection({'cells': channelCells});
 
     updateSeaDragonSelection(true, false);
 }
@@ -189,20 +189,10 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 //current fast solution for seadragon updates
 function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     let selection = dataLayer.getCurrentSelection();
-    var arr = Array.from(selection);
-    var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
-    // This is the neighborhood viewer, uncomment to show cell info on click
-    // if (showCellInfoPanel) {
-    //     document.getElementById("cell_wrapper").style.display = "block";
-    // } else {
-    //     document.getElementById("cell_wrapper").style.display = "none";
-    // }
+    let arr = Array.from(selection);
+    let selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
+    neighborhoodTable.enableSaveButton();
     seaDragonViewer.updateSelection(selectionHashMap);
-    // if (_.size(selection) == 0) {
-    //     document.getElementById("cell_wrapper").style.display = "none";
-    // } else {
-    //     document.getElementById("cell_wrapper").style.display = "none";
-    // }
     seaDragonViewer.updateSelection(selectionHashMap, repaint);
 }
 
@@ -216,7 +206,7 @@ eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
 
 function displayNeighborhood(selectedCell, neighborhood) {
-    dataLayer.addAllToCurrentSelection(neighborhood);
+    dataLayer.addAllToCurrentSelection({'cells': neighborhood});
     dataLayer.addToCurrentSelection(selectedCell, false, false);
     updateSeaDragonSelection(true, true);
 }

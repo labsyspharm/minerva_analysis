@@ -17,8 +17,14 @@ def get(model, **kwargs):
     return db.session.query(model).filter_by(**kwargs).one_or_none()
 
 
+def edit(model, id, edit_field, edit_value):
+    instance = get(model, id=id)
+    instance.__setattr__(edit_field, edit_value)
+    db.session.commit()
+
+
 def get_all(model, **kwargs):
-    return db.session.query(model).filter_by(**kwargs).order_by(model.id).all()
+    return db.session.query(model).filter_by(is_deleted=False, **kwargs).order_by(model.id).all()
 
 
 def get_or_create(model, **kwargs):
@@ -38,8 +44,10 @@ def get_or_create(model, **kwargs):
 class Neighborhood(db.Model):
     __tablename__ = 'neighborhood'
     id = db.Column(db.Integer, primary_key=True)
+    cluster_id = db.Column(db.Integer, unique=False, nullable=False)
     datasource = db.Column(db.String(80), unique=False, nullable=False)
     is_cluster = db.Column(db.Boolean, default=False, nullable=False)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     name = db.Column(db.String(80), unique=False, nullable=False)
     cells = db.Column(db.LargeBinary, nullable=False)
 
@@ -51,25 +59,9 @@ class NeighborhoodStats(db.Model):
     neighborhood = relationship("Neighborhood", backref=db.backref("neighborhood", uselist=False))
     datasource = db.Column(db.String(80), unique=False, nullable=False)
     is_cluster = db.Column(db.Boolean, default=False, nullable=False)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     name = db.Column(db.String(80), unique=False, nullable=False)
     stats = db.Column(db.LargeBinary, nullable=False)
 
 
 db.create_all()
-
-## TEST CRAP
-
-
-test_arr = np.array([1, 2, 3])
-f = io.BytesIO()
-np.save(f, test_arr)
-test_hood = get_or_create(Neighborhood, datasource='test', name='test_neighborhood',
-                          cells=f.getvalue())
-# guest = User(username='guest', email='guest@example.com')
-#
-# # db.session.add(test_hood)
-# # db.session.commit()
-#
-# val = Neighborhood.query.filter_by(datasource='test').first()
-# reloading = np.load(io.BytesIO(val.cells))
-# test = ''

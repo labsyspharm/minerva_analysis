@@ -144,7 +144,7 @@
             </div>
         </div>
         <div class="col-sm-3 viewer_col" id="scatterplot_wrapper">
-            <span id="scatterplot_label">Embedding</span>
+            <span id="scatterplot_label">Neighborhoods</span>
             <div id="plots_display" class="col">
                 <div id="accordion">
                     <div class="card">
@@ -153,7 +153,7 @@
                                     data-toggle="collapse"
                                     data-target="#neighborhood_table_div"
                                     aria-expanded="true" aria-controls="neighborhood_table_div">
-                                <span id="neighborhood_table_div_label">Neighborhoods</span>
+                                <span id="neighborhood_table_div_label">List</span>
                             </button>
                         </div>
                         <div id="neighborhood_table_div" class="collapse" aria-labelledby="neighborhood_table_heading"
@@ -174,13 +174,18 @@
                                 </table>
                             </div>
                         </div>
+                        <div class="card-footer" id="neighborhood_table_footing">
+                            <div id="save_neighborhood_div">
+                                <a id="save_neighborhood">Save Current Selection</a>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
+                <div class="row" id="starplot_display"></div>
                 <div class="row" id="scatterplot_display">
                     <canvas id="scatter_canvas"></canvas>
                 </div>
-
-                <div class="row" id="starplot_display"></div>
             </div>
 
         </div>

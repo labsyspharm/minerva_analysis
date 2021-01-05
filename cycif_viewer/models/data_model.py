@@ -91,7 +91,8 @@ def init_clusters(datasource_name):
             indices = np.array(cluster_cells.index.values.tolist())
             f = io.BytesIO()
             np.save(f, indices)
-            neighborhood = database.create(database.Neighborhood, datasource=datasource_name, is_cluster=True,
+            neighborhood = database.create(database.Neighborhood, cluster_id=int(cluster), datasource=datasource_name,
+                                           is_cluster=True,
                                            name="Cluster " + str(cluster), cells=f.getvalue())
 
         else:
@@ -128,8 +129,7 @@ def get_cluster_cells(datasource_name):
     obj = {}
     for cluster in clusters:
         # Check if the Cluster is in the DB
-        neighborhood = database.get(database.Neighborhood, datasource=datasource_name, is_cluster=True,
-                                    name="Cluster " + str(cluster))
+        neighborhood = database.get(database.Neighborhood, datasource=datasource_name, cluster_id=int(cluster))
         neighborhood_stats = database.get(database.NeighborhoodStats, neighborhood=neighborhood)
         obj[str(cluster)] = pickle.load(io.BytesIO(neighborhood_stats.stats))
     return obj
@@ -137,7 +137,40 @@ def get_cluster_cells(datasource_name):
 
 def get_neighborhoods(datasource_name):
     neighborhoods = database.get_all(database.Neighborhood, datasource=datasource_name)
-    return [(neighborhood.id, neighborhood.name, neighborhood.is_cluster) for neighborhood in neighborhoods]
+    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
+            neighborhoods]
+
+
+def edit_neighborhood(elem, datasource_name):
+    database.edit(database.Neighborhood, elem['id'], elem['editField'], elem['editValue'])
+    new_neighborhoods = database.get_all(database.Neighborhood, datasource=datasource_name)
+    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
+            new_neighborhoods]
+
+
+def save_neighborhood(selection, datasource_name):
+    existing_neighborhoods = database.get_all(database.Neighborhood, datasource=datasource_name)
+    max_cluster_id = existing_neighborhoods[-1].cluster_id
+    indices = np.array([e['id'] for e in selection['cells']])
+    f = io.BytesIO()
+    np.save(f, indices)
+    neighborhood = database.create(database.Neighborhood, cluster_id=max_cluster_id + 1, datasource=datasource_name,
+                                   is_cluster=True,
+                                   name="", cells=f.getvalue())
+    f = io.BytesIO()
+    pickle.dump(selection, f)
+    neighborhood_stats = database.create(database.NeighborhoodStats, datasource=datasource_name,
+                                         is_cluster=True,
+                                         name="", stats=f.getvalue(),
+                                         neighborhood=neighborhood)
+    return get_neighborhoods(datasource_name)
+
+
+def delete_neighborhood(elem, datasource_name):
+    database.edit(database.Neighborhood, elem['id'], 'is_deleted', True)
+    new_neighborhoods = database.get_all(database.Neighborhood, datasource=datasource_name)
+    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
+            new_neighborhoods]
 
 
 def load_config():

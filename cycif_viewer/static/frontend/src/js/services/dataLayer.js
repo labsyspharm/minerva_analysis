@@ -94,6 +94,7 @@ class DataLayer {
         }
     }
 
+
     async getNeighborhoods() {
         try {
             let response = await fetch('/get_neighborhoods?' + new URLSearchParams({
@@ -106,6 +107,76 @@ class DataLayer {
         }
     }
 
+    async editNeighborhood(id, editField, editValue) {
+        try {
+            let response = await fetch('/edit_neighborhood', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        elem: {
+                            'id': id,
+                            'editField': editField,
+                            'editValue': editValue
+                        }
+                    })
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Editing Neighborhood", e);
+        }
+    }
+
+    async deleteNeighborhood(id) {
+        try {
+            let response = await fetch('/delete_neighborhood', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        elem: {
+                            'id': id
+                        }
+                    })
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Deleting Neighborhood", e);
+        }
+    }
+
+    async saveNeighborhood() {
+        const self = this;
+        try {
+            let response = await fetch('/save_neighborhood', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        selection: self.getCurrentRawSelection()
+                    }
+                )
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Saving Neighborhood", e);
+        }
+    }
 
     async getNearestCell(point_x, point_y) {
         try {
@@ -206,8 +277,13 @@ class DataLayer {
         return this.currentSelection;
     }
 
+    getCurrentRawSelection() {
+        return this.currentRawSelection;
+    }
+
     clearCurrentSelection() {
         this.currentSelection.clear();
+        this.currentRawSelection.clear();
     }
 
 
@@ -245,7 +321,8 @@ class DataLayer {
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Set(items);
+        that.currentSelection = new Set(items.cells);
+        that.currentRawSelection = items;
         // console.log("update current selection done")
     }
 
