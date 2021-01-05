@@ -70,6 +70,7 @@
 
 #openseadragon, #channel_list, #plots_display {
     max-height: 87.5vh;
+    height: 87.5vh;
     /*height: 100%;*/
     position: relative;
     width: 100%;

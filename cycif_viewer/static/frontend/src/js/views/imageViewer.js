@@ -205,11 +205,8 @@ class ImageViewer {
                 }
             }, moveHandler: function (event) {
                 if (that.isSelectionToolActive && drag) {
-                    console.log('dragged');
                     that.lasso_draw(event);
-
                 }
-
             }
         });
 

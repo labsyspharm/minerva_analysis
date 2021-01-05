@@ -97,7 +97,7 @@ class DataLayer {
 
     async getNeighborhoods() {
         try {
-            let response = await fetch('/get_neighborhoods?' + new URLSearchParams({
+            let response = await fetch('/get_neighborhood_list?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
@@ -155,6 +155,29 @@ class DataLayer {
         }
     }
 
+    async getNeighborhood(id) {
+        try {
+            let response = await fetch('/get_neighborhood', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        elem: {
+                            'id': id
+                        }
+                    })
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Neighborhood", e);
+        }
+    }
+
     async saveNeighborhood() {
         const self = this;
         try {
@@ -192,9 +215,9 @@ class DataLayer {
         }
     }
 
-    async getNeighborhood(maxDistance, x, y) {
+    async getIndividualNeighborhood(maxDistance, x, y) {
         try {
-            let response = await fetch('/get_neighborhood?' + new URLSearchParams({
+            let response = await fetch('/get_individual_neighborhood?' + new URLSearchParams({
                 point_x: x,
                 point_y: y,
                 max_distance: maxDistance,
@@ -270,7 +293,7 @@ class DataLayer {
 
 
     async getNeighborhoodForCell(maxDistance, selectedCell) {
-        return this.getNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);
+        return this.getIndividualNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);
     }
 
     getCurrentSelection() {

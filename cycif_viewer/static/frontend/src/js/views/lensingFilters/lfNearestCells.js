@@ -96,7 +96,7 @@ export class LfNearestCells {
 
                             // Load
                             this.load.config.filterCode.settings.loading = true;
-                            this.data_layer.getNeighborhood(newRad, pos[0], pos[1]).then(darr => {
+                            this.data_layer.getIndividualNeighborhood(newRad, pos[0], pos[1]).then(darr => {
 
                                 // Loaded
                                 this.load.config.filterCode.settings.loading = false;

@@ -64,22 +64,30 @@ def get_color_scheme():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_neighborhoods', methods=['GET'])
-def get_neighborhoods():
+@app.route('/get_neighborhood_list', methods=['GET'])
+def get_neighborhood_list():
     datasource = request.args.get('datasource')
-    resp = data_model.get_neighborhoods(datasource)
+    resp = data_model.get_neighborhood_list(datasource)
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_neighborhood', methods=['GET'])
-def get_neighborhood():
+@app.route('/get_individual_neighborhood', methods=['GET'])
+def get_individual_neighborhood():
     x = float(request.args.get('point_x'))
     y = float(request.args.get('point_y'))
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
-    resp = data_model.get_neighborhood(x, y, datasource, r=max_distance)
+    resp = data_model.get_individual_neighborhood(x, y, datasource, r=max_distance)
     return serialize_and_submit_json(resp)
 
+
+@app.route('/get_neighborhood', methods=['POST'])
+def get_neighborhood():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    elem = post_data['elem']
+    resp = data_model.get_neighborhood(elem, datasource)
+    return serialize_and_submit_json(resp)
 
 @app.route('/edit_neighborhood', methods=['POST'])
 def edit_neighborhood():

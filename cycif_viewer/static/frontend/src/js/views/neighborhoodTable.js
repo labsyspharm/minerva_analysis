@@ -1,7 +1,8 @@
 class NeighborhoodTable {
-    constructor(dataLayer) {
+    constructor(dataLayer, eventHandler) {
         this.dataLayer = dataLayer;
-        this.table = document.getElementById('neighborhood_table')
+        this.eventHandler = eventHandler;
+        this.table = document.getElementById('neighborhood_table');
         this.selectedRow = null;
         this.selectedRowName = null;
         this.neighborhoods = null;
@@ -28,40 +29,23 @@ class NeighborhoodTable {
 
     drawRows() {
         const self = this;
-        let rows = d3.select(self.table).select('tbody').selectAll(".neighborhood-row")
+        let rows = d3.select(self.table).selectAll(".neighborhood-row")
             .data(self.neighborhoods)
-
         rows.enter()
             .append("tr")
-            .merge(rows)
             .attr('class', 'neighborhood-row')
-            .on('click', (e) => {
-                let elem = findElementWithTag(e, "TR");
-                // Clicking on already selected row
-                if (elem == self.selectedRow) {
-                    return;
-                }
-                if (self.selectedRow) {
-                    self.selectedRow.classList.remove("table-dark");
-                    if (self.selectedRowName) {
-                        self.selectedRowName.setAttribute('contenteditable', false);
-                        self.selectedRowName = null;
-                    }
-                }
-                self.selectedRow = elem;
-                // Update Class To Highlight Row
-                if (elem) {
-                    elem.classList.add("table-dark");
-                }
+            .on('click', (e, d) => {
+                return self.selectRow(e, d);
             })
         rows.exit().remove();
 
-        let isCol = d3.select(self.table).selectAll('tbody .neighborhood-row').selectAll('.id-col')
+        let idCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.id-col')
             .data(d => {
                 return [d];
             })
+        console.log('idcol:', idCol)
 
-        isCol.enter()
+        idCol.enter()
             .append('th')
             .attr('scope', 'row')
             .attr('class', 'id-col')
@@ -70,11 +54,11 @@ class NeighborhoodTable {
                 return _.toString(d[1])
             })
 
-        isCol.exit().remove();
+        idCol.exit().remove();
 
 
         //
-        let nameCol = d3.select(self.table).selectAll('tbody .neighborhood-row').selectAll('.name-col')
+        let nameCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.name-col')
             .data(d => {
                 return [d];
             })
@@ -95,17 +79,19 @@ class NeighborhoodTable {
                     self.selectedRowName.blur()
                     console.log('Saving');
                     e.preventDefault();
+                    self.selectedRowName.setAttribute('contenteditable', false);
                     self.selectedRowName = null;
                     return self.editNeighborhood(d, newName);
                 }
             })
         nameCol.exit().remove();
 
-        let sourceCol = d3.select(self.table).selectAll('tbody .neighborhood-row').selectAll('.source-col')
+        let sourceCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.source-col')
             .data(d => {
                 return [d];
             });
-        sourceCol.enter().append('td')
+        sourceCol.enter()
+            .append('td')
             .attr('class', 'source-col')
             .append('span')
             .text(d => {
@@ -117,7 +103,7 @@ class NeighborhoodTable {
             });
         sourceCol.exit().remove();
 
-        let actionsCol = d3.select(self.table).selectAll('tbody .neighborhood-row').selectAll('.actions-column')
+        let actionsCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.actions-column')
             .data(d => {
                 return [d];
             });
@@ -182,7 +168,8 @@ class NeighborhoodTable {
     async editNeighborhood(d, newName) {
         const self = this;
         self.neighborhoods = await self.dataLayer.editNeighborhood(d[0], 'name', newName);
-        return self.drawRows();
+        self.drawRows()
+        self.selectedRow.click();
     }
 
     async deleteNeighborhood(d) {
@@ -201,19 +188,41 @@ class NeighborhoodTable {
         self.drawRows();
 
         let lastRow = self.table.querySelector('.neighborhood-row:last-child');
-
-        lastRow.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'start'})
         lastRow.click();
-        lastRow.querySelector('.edit_neighborhood').click();
+        lastRow.querySelector('.neighborhood_icon_col').click();
+        self.disableSaveButton();
+    }
+
+    selectRow(e, d) {
+        const self = this;
+        let elem = findElementWithTag(e, "TR");
+        // Clicking on already selected row
+        if (self.selectedRow && elem != self.selectedRow) {
+            self.selectedRow.classList.remove("table-dark");
+            if (self.selectedRowName) {
+                self.selectedRowName.setAttribute('contenteditable', false);
+                self.selectedRowName = null;
+            }
+            self.eventHandler.trigger(NeighborhoodTable.events.selectNeighborhood, d);
 
 
+        }
+        self.selectedRow = elem;
+        // Update Class To Highlight Row
+        if (elem) {
+            elem.classList.add("table-dark");
+        }
     }
 }
+
+NeighborhoodTable.events = {
+    selectNeighborhood: 'selectNeighborhood'
+};
 
 function findElementWithTag(e, tag) {
     let i = 0;
     let elem = e.path[i]
-    while (elem.tagName !== "TR" && elem) {
+    while (elem.tagName !== tag && elem) {
         i++;
         elem = e.path[i];
     }

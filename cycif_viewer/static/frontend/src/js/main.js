@@ -47,7 +47,7 @@ async function init(conf) {
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
 
-    neighborhoodTable = new NeighborhoodTable(dataLayer);
+    neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     await neighborhoodTable.init();
 
 
@@ -156,8 +156,18 @@ const displayNeighborhoodSelection = async (selection) => {
 }
 eventHandler.bind(ImageViewer.events.displayNeighborhoodSelection, displayNeighborhoodSelection);
 
+const selectNeighborhood = async (d) => {
+    let selection = await dataLayer.getNeighborhood(d[0]);
+    dataLayer.addAllToCurrentSelection(selection);
+    let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
+    starplot.wrangle(starplotData);
+    scatterplot.recolor(cluster = null, ids = selection.cells);
+    updateSeaDragonSelection(false, false);
+}
+eventHandler.bind(NeighborhoodTable.events.selectNeighborhood, selectNeighborhood)
+
 // const computeCellNeighborhood = async ({distance, selectedCell}) => {
-//     let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
+//     let neighborhood = await dataLayer.getIndividualNeighborhood(distance, selectedCell);
 //     displayNeighborhood(selectedCell, neighborhood);
 // }
 // eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);

@@ -135,7 +135,7 @@ def get_cluster_cells(datasource_name):
     return obj
 
 
-def get_neighborhoods(datasource_name):
+def get_neighborhood_list(datasource_name):
     neighborhoods = database.get_all(database.Neighborhood, datasource=datasource_name)
     return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
             neighborhoods]
@@ -146,6 +146,12 @@ def edit_neighborhood(elem, datasource_name):
     new_neighborhoods = database.get_all(database.Neighborhood, datasource=datasource_name)
     return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
             new_neighborhoods]
+
+
+def get_neighborhood(elem, datasource_name):
+    neighborhood = database.get(database.Neighborhood, id=elem['id'], datasource=datasource_name)
+    neighborhood_stats = database.get(database.NeighborhoodStats, neighborhood=neighborhood, datasource=datasource_name)
+    return pickle.load(io.BytesIO(neighborhood_stats.stats))
 
 
 def save_neighborhood(selection, datasource_name):
@@ -159,16 +165,17 @@ def save_neighborhood(selection, datasource_name):
                                    name="", cells=f.getvalue())
     f = io.BytesIO()
     pickle.dump(selection, f)
-    neighborhood_stats = database.create(database.NeighborhoodStats, datasource=datasource_name,
-                                         is_cluster=True,
-                                         name="", stats=f.getvalue(),
-                                         neighborhood=neighborhood)
-    return get_neighborhoods(datasource_name)
+    database.create(database.NeighborhoodStats, datasource=datasource_name,
+                    is_cluster=True,
+                    name="", stats=f.getvalue(),
+                    neighborhood=neighborhood)
+    return get_neighborhood_list(datasource_name)
 
 
 def delete_neighborhood(elem, datasource_name):
     database.edit(database.Neighborhood, elem['id'], 'is_deleted', True)
     new_neighborhoods = database.get_all(database.Neighborhood, datasource=datasource_name)
+    print('Count', len(new_neighborhoods))
     return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
             new_neighborhoods]
 
@@ -289,7 +296,7 @@ def get_phenotypes(datasource_name):
         return ['']
 
 
-def get_neighborhood(x, y, datasource_name, r=100, fields=None):
+def get_individual_neighborhood(x, y, datasource_name, r=100, fields=None):
     global datasource
     global source
     global ball_tree
@@ -437,8 +444,8 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False):
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    circle_neighbors = get_neighborhood(x, y, datasource_name, r=r,
-                                        fields=fields)
+    circle_neighbors = get_individual_neighborhood(x, y, datasource_name, r=r,
+                                                   fields=fields)
 
     now = time.time()
     neighbor_points = pd.DataFrame(circle_neighbors).values
