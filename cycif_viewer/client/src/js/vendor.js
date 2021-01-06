@@ -20,7 +20,6 @@ import Mark from 'mark.js';
 import $ from 'jquery';
 import 'node-fetch';
 import convert from 'color-convert';
-import * as fc from 'd3fc';
 import * as OpenSeadragon from 'openseadragon';
 import {ViewerManager} from './views/viewerManager';
 
@@ -29,7 +28,6 @@ window.d3 = Object.assign(d3base, {legendColor, sliderBottom, annotation});
 window.convert = convert;
 window.$ = $;
 window.d3 = d3;
-window.fc = fc;
 window.colorbrewer = colorbrewer;
 window.d3.sliderBottom = sliderBottom;
 window.PNG = PNG;

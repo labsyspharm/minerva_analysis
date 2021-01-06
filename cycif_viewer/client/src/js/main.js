@@ -2,6 +2,7 @@
 
  */
 //EVENTHANDLER
+console.log("Here");
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
 

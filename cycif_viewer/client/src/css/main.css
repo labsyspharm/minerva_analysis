@@ -95,7 +95,7 @@ body {
 }
 
 #starplot_display {
-    height: 40vh;
+    height: 30vh;
     padding-left: 15px;
     width: 100%;
 }
@@ -137,14 +137,23 @@ body {
     font-size: 0.6rem;
 }
 
-#channel_list {
+#channel_list_div {
+    height: 92%;
     width: 100%;
-    height: 80vh;
     font-size: 6pt;
     overflow-y: auto;
     overflow-x: hidden;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
 
+#accordion {
+    height: 8%;
+    width: 100%;
+    border-radius: 0rem;
+}
+
+#channel_list {
+    height: 80vh;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 #upload-container {
@@ -184,10 +193,6 @@ body {
     font-size: 8px;
 }
 
-
-nav {
-    margin-bottom: 10px;
-}
 
 .channel-col {
     margin: 0;
@@ -557,6 +562,10 @@ polygon:hover {
     padding: 0 10px;
 }
 
+#accordion .card {
+    border-radius: 0;
+}
+
 #neighborhood_table_label {
     font-size: 10pt;
 }
@@ -568,7 +577,7 @@ polygon:hover {
 
 #neighborhood_table_card {
     padding: 0 10px;
-    max-height: 200px;
+    max-height: 24.3vh;
     overflow-y: scroll;
 }
 
@@ -582,7 +591,7 @@ polygon:hover {
 }
 
 .actions-column * {
-    font-size: 1rem;
+    font-size: 0.8rem;
     padding: 0px 2px;
     color: black;
 }
@@ -597,4 +606,22 @@ polygon:hover {
 
 .id-col, .name-col, .source-col {
     padding: 0 !important;
+}
+
+#neighborhood_table_header th {
+    padding: 0;
+}
+
+#neighborhood_table_div_label, #save_neighborhood {
+    font-size: 0.8rem;
+}
+
+#accordion .card-header {
+    height: 3.6vh;
+}
+
+#channel_list .collapsing {
+    -webkit-transition: none;
+    transition: none;
+    display: none;
 }

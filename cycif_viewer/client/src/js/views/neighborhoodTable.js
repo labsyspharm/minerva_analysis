@@ -12,7 +12,22 @@ class NeighborhoodTable {
     async init() {
         const self = this;
         this.neighborhoods = await this.dataLayer.getNeighborhoods();
+        this.showButton = document.getElementById('neighborhood_dropdown_button');
+        this.showButton.addEventListener('click', self.displayTable.bind(self));
         return self.drawRows();
+    }
+
+    displayTable() {
+        const self = this;
+        let channelListDiv = document.getElementById('channel_list_div');
+        let accordionDiv = document.getElementById('accordion');
+        if ($(self.table).is(':hidden')) {
+            channelListDiv.style.height = '65%';
+            accordionDiv.style.height = '35%';
+        } else {
+            channelListDiv.style.height = '92%';
+            accordionDiv.style.height = '8%';
+        }
     }
 
     enableSaveButton() {
@@ -208,11 +223,14 @@ class NeighborhoodTable {
     }
 }
 
-NeighborhoodTable.events = {
+NeighborhoodTable
+    .events = {
     selectNeighborhood: 'selectNeighborhood'
 };
 
-function findElementWithTag(e, tag) {
+function
+
+findElementWithTag(e, tag) {
     let i = 0;
     let elem = e.path[i]
     while (elem.tagName !== tag && elem) {

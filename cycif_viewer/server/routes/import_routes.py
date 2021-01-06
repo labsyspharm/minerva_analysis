@@ -159,7 +159,7 @@ def upload_file_page():
                     raise Exception("Please Name Dataset")
                 else:
                     datasetName = request.form['name']
-                    file_path = str(Path(os.path.join(os.getcwd())) / "cycif_viewer" / "static" / "data" / datasetName)
+                    file_path = str(Path(os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasetName)
                     if not os.path.exists(file_path):
                         os.makedirs(file_path)
 

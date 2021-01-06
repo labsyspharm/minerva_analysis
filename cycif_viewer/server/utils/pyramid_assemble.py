@@ -164,7 +164,7 @@ def main(py_args=None):
         is_mask = py_args['is_mask']
         pixel_size = 1
     if out_path.exists():
-        error(out_path, "Output file already exists, aborting.")
+            error(out_path, "Output file already exists, aborting.")
 
     if hasattr(os, 'sched_getaffinity'):
         num_workers = len(os.sched_getaffinity(0))
