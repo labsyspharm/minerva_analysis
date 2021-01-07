@@ -28,7 +28,6 @@
                 </div>
                 <div id="accordion">
                     <div class="card">
-
                         <div class="card-header" id="neighborhood_table_heading">
                             <button id="neighborhood_dropdown_button" class="btn btn-link collapsed"
                                     data-toggle="collapse"
@@ -61,6 +60,13 @@
                                 <a id="save_neighborhood">Save Current Selection</a>
                             </div>
                         </div>
+                        <div class="card-footer" id="compare_neighborhood">
+                            <div id="compare_neighborhoods_div">
+                                <a id="compare_neighborhoods_link" href="/compare_neighborhoods/{{ data.datasource }}">Compare
+                                    Neighborhoods</a>
+                            </div>
+                        </div>
+
 
                     </div>
                 </div>
@@ -113,9 +119,19 @@
             </div>
         </div>
         <div class="col-sm-3 viewer_col" id="scatterplot_wrapper">
-            <span id="scatterplot_label">Neighborhoods</span>
+            <span id="analysis_label">Analysis</span>
             <div id="plots_display" class="col">
+                <div class="row justify-content-md-center">
+                    <div class="col">
+                        <h5 id="starplot_label" class="text-center">Neighborhood Composition</h5>
+                    </div>
+                </div>
                 <div class="row" id="starplot_display"></div>
+                <div class="row justify-content-md-center">
+                    <div class="col">
+                        <h5 id="scatterplot_label" class="text-center">Neighborhood Embedding Space</h5>
+                    </div>
+                </div>
                 <div class="row" id="scatterplot_display">
                     <canvas id="scatter_canvas"></canvas>
                 </div>

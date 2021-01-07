@@ -36,9 +36,9 @@
 
 #channel_list_wrapper {
     padding: 0 6px 0 0;
-    max-width: 14%;
-    min-width: 14%;
-    width: 14%;
+    max-width: 20%;
+    min-width: 20%;
+    width: 20%;
 }
 
 #openseadragon_wrapper {
@@ -77,4 +77,15 @@
 
 #boxChannels1A, #boxChannels1B {
     font-size: 10px;
+}
+
+#starplot_label, #scatterplot_label {
+    font-size: 0.8rem;
+}
+
+#plots_display .viewfinder_chart_label_g_g_text_g {
+    font-weight: bold;
+}
+#comparison_div .viewfinder_chart_label_g_g_text_g {
+    font-weight: normal;
 }

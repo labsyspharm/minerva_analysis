@@ -95,7 +95,7 @@ body {
 }
 
 #starplot_display {
-    height: 30vh;
+    height: 40vh;
     padding-left: 15px;
     width: 100%;
 }
@@ -138,14 +138,14 @@ body {
 }
 
 #channel_list_div {
-    height: 92%;
+    height: 90%;
     width: 100%;
     font-size: 6pt;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-#accordion {
+#accordion, #compare_button_accordion {
     height: 8%;
     width: 100%;
     border-radius: 0rem;
@@ -558,7 +558,7 @@ polygon:hover {
     width: 80px;
 }
 
-#neighborhood_table_heading, #neighborhood_table_footing {
+#neighborhood_table_heading, #neighborhood_table_footing, #compare_neighborhood {
     padding: 0 10px;
 }
 
@@ -577,7 +577,7 @@ polygon:hover {
 
 #neighborhood_table_card {
     padding: 0 10px;
-    max-height: 24.3vh;
+    max-height: 22.5vh;
     overflow-y: scroll;
 }
 
@@ -612,16 +612,47 @@ polygon:hover {
     padding: 0;
 }
 
-#neighborhood_table_div_label, #save_neighborhood {
-    font-size: 0.8rem;
+#neighborhood_table_div_label, #save_neighborhood, #compare_neighborhoods_link {
+    font-size: 0.7rem;
 }
 
-#accordion .card-header {
-    height: 3.6vh;
+#accordion .card-header, .card-footer {
+    height: 3vh;
 }
 
 #channel_list .collapsing {
     -webkit-transition: none;
     transition: none;
     display: none;
+}
+
+.radarstarplot_display {
+    display: block;
+    margin: auto;
+}
+
+#comparison_title {
+    margin-top: 5px;
+}
+
+.compare_row {
+    height: 28vh;
+}
+
+#comparison_div .compare_col {
+    padding: 0;
+}
+
+.compare_plot_body {
+    height: 90%;
+    width: 100%;
+}
+
+.compare_plot_title {
+    height: 10%;
+    width: 100%;
+}
+
+#comparison_div h5 {
+    font-size: 0.8rem;
 }

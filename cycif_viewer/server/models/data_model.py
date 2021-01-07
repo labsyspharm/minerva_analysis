@@ -83,7 +83,8 @@ def init_clusters(datasource_name):
             indices = np.array(cluster_cells.index.values.tolist())
             f = io.BytesIO()
             np.save(f, indices)
-            neighborhood = database_model.create(database_model.Neighborhood, cluster_id=int(cluster), datasource=datasource_name,
+            neighborhood = database_model.create(database_model.Neighborhood, cluster_id=int(cluster),
+                                                 datasource=datasource_name,
                                                  is_cluster=True,
                                                  name="Cluster " + str(cluster), cells=f.getvalue())
 
@@ -121,7 +122,8 @@ def get_cluster_cells(datasource_name):
     obj = {}
     for cluster in clusters:
         # Check if the Cluster is in the DB
-        neighborhood = database_model.get(database_model.Neighborhood, datasource=datasource_name, cluster_id=int(cluster))
+        neighborhood = database_model.get(database_model.Neighborhood, datasource=datasource_name,
+                                          cluster_id=int(cluster))
         neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood)
         obj[str(cluster)] = pickle.load(io.BytesIO(neighborhood_stats.stats))
     return obj
@@ -142,23 +144,25 @@ def edit_neighborhood(elem, datasource_name):
 
 def get_neighborhood(elem, datasource_name):
     neighborhood = database_model.get(database_model.Neighborhood, id=elem['id'], datasource=datasource_name)
-    neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood, datasource=datasource_name)
+    neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood,
+                                            datasource=datasource_name)
     return pickle.load(io.BytesIO(neighborhood_stats.stats))
 
 
-def save_neighborhood(selection, datasource_name):
+def save_neighborhood(selection, datasource_name, is_cluster=True):
     existing_neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
     max_cluster_id = existing_neighborhoods[-1].cluster_id
     indices = np.array([e['id'] for e in selection['cells']])
     f = io.BytesIO()
     np.save(f, indices)
-    neighborhood = database_model.create(database_model.Neighborhood, cluster_id=max_cluster_id + 1, datasource=datasource_name,
-                                         is_cluster=True,
+    neighborhood = database_model.create(database_model.Neighborhood, cluster_id=max_cluster_id + 1,
+                                         datasource=datasource_name,
+                                         is_cluster=is_cluster,
                                          name="", cells=f.getvalue())
     f = io.BytesIO()
     pickle.dump(selection, f)
     database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
-                          is_cluster=True,
+                          is_cluster=is_cluster,
                           name="", stats=f.getvalue(),
                           neighborhood=neighborhood)
     return get_neighborhood_list(datasource_name)
@@ -223,14 +227,26 @@ def query_for_closest_cell(x, y, datasource_name):
             return {}
 
 
-def get_row(row, datasource_name):
+def get_cells(elem, datasource_name):
     global datasource
     global source
-    global ball_tree
-    if datasource_name != source:
-        load_ball_tree(datasource_name)
-    obj = datasource.loc[[row]].to_dict(orient='records')[0]
-    obj['id'] = row
+    global config
+    fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
+              config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
+    neighborhood_array = np.load(Path("cycif_viewer/data/Ton/neighborhood_array_complex.npy"))
+    phenotypes = datasource.phenotype.unique().tolist()
+    ids = elem['ids']
+    obj = {}
+    summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
+    cluster_summary = np.mean(neighborhood_array[ids, :], axis=0)
+    for i in range(len(phenotypes)):
+        count = cluster_summary[i * 2]
+        weight = cluster_summary[i * 2 + 1]
+        summary_stats['neighborhood_count'][phenotypes[i]] = count
+        summary_stats['avg_weight'][phenotypes[i]] = weight
+        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
+    obj['cluster_summary'] = summary_stats
+    obj['cells'] = datasource.iloc[ids][fields].to_dict(orient='records')
     return obj
 
 
@@ -334,9 +350,7 @@ def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
             return color_scheme
     if label_field == 'phenotype':
         labels = get_phenotypes(datasource_name)
-    elif label_field == 'cluster':
-        labels = get_cluster_labels(datasource_name)
-
+    labels.append('SelectedCluster')
     color_scheme = {}
     colors = ["#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059", "#FFDBE5", "#7A4900",
               "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87", "#5A0007", "#809693", "#FEFFE6",
@@ -387,7 +401,7 @@ def get_cluster_labels(datasource_name):
 def get_scatterplot_data(datasource_name):
     global config
     data = np.load(Path("." + config[datasource_name]['embedding']))
-    list_of_obs = [{'x': elem[0], 'y': elem[1], 'cluster': elem[2], 'id': id} for id, elem in enumerate(data)]
+    list_of_obs = [{'x': elem[0], 'y': elem[1], 'id': id} for id, elem in enumerate(data)]
     visData = {
         'data': list_of_obs,
         'xMin': np.min(data[:, 0]),

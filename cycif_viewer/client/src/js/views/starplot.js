@@ -1,12 +1,14 @@
 class Starplot {
-    constructor(id, colorScheme) {
+    constructor(id, phenotypes, small = false) {
         this.id = id;
-        this.parent = d3.select(`#${id}`)
-        this.colorScheme = colorScheme;
-        this.selector = document.getElementById(id)
+        this.small = small;
+        this.parent = d3.select(`#${id}`);
+        this.selector = document.getElementById(id);
+        this.phenotypes = phenotypes;
     }
 
     init() {
+        const self = this;
         this.margin = {top: 40, right: 20, bottom: 60, left: 20},
             this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -27,9 +29,13 @@ class Starplot {
             .domain([0, 200]);
         this.tool_radiusScale = d3.scaleLinear()
             .domain([0, 1]);
-
-        this.config_chartR0 = 15;
-        this.config_chartR1 = 65;
+        if (this.small) {
+            this.config_chartR0 = 5;
+            this.config_chartR1 = 40;
+        } else {
+            this.config_chartR0 = 15;
+            this.config_chartR1 = 65;
+        }
 // Main chart
         this.el_boxExtG = this.svg.append('g')
             .attr('class', 'viewfinder_box_ext_g');
@@ -49,12 +55,17 @@ class Starplot {
         this.el_chartAreaPath = this.el_chartG.append('path')
             .attr('class', 'viewfinder_chart_area_path')
             .attr('fill', 'rgba(155, 155, 155, 0.9');
+        let i = -1;
+        let emptyData = _.keyBy(_.times(_.size(this.phenotypes), _.constant(0)), d => {
+            return this.phenotypes[++i];
+        })
+        return this.wrangle(emptyData);
 
 
     }
 
     wrangle(data) {
-
+        const self = this;
         this.visData = _.map(data, (v, k) => {
             return {
                 key: k,
@@ -139,7 +150,13 @@ class Starplot {
                             .append('text')
                             .attr('fill', 'black')
                             .attr('font', 'sans-serif')
-                            .attr('font-size', 5)
+                            .attr('font-size', d => {
+                                if (self.small) {
+                                    return 5;
+                                } else {
+                                    return 7;
+                                }
+                            })
                             .attr('text-anchor', () => {
                                 if (angle >= Math.PI) return `end`;
                                 return `start`;
@@ -177,7 +194,11 @@ class Starplot {
                         g.select('.viewfinder_chart_label_g_g_text_g text')
                             .attr('class', 'viewfinder_chart_label_g_g_text_g')
                             .attr('font-weight', () => {
-                                return 'bold'
+                                if (self.small) {
+                                    return 'normal';
+                                } else {
+                                    return 'bold';
+                                }
                             });
 
                         // Label group

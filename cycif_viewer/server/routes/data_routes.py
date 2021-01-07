@@ -32,11 +32,12 @@ def get_channel_cell_ids():
 
 
 # Gets a row based on the index
-@app.route('/get_datasource_row', methods=['GET'])
+@app.route('/get_cells', methods=['POST'])
 def get_datasource_row():
-    datasource = request.args.get('datasource')
-    row = int(request.args.get('row'))
-    resp = data_model.get_row(row, datasource)
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    elem = post_data['elem']
+    resp = data_model.get_cells(elem, datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -104,7 +105,8 @@ def save_neighborhood():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     selection = post_data['selection']
-    resp = data_model.save_neighborhood(selection, datasource)
+    is_cluster = post_data['isCluster']
+    resp = data_model.save_neighborhood(selection, datasource, is_cluster)
     return serialize_and_submit_json(resp)
 
 

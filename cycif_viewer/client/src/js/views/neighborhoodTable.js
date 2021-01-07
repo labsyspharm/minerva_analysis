@@ -25,8 +25,8 @@ class NeighborhoodTable {
             channelListDiv.style.height = '65%';
             accordionDiv.style.height = '35%';
         } else {
-            channelListDiv.style.height = '92%';
-            accordionDiv.style.height = '8%';
+            channelListDiv.style.height = '90%';
+            accordionDiv.style.height = '10%';
         }
     }
 
@@ -223,8 +223,7 @@ class NeighborhoodTable {
     }
 }
 
-NeighborhoodTable
-    .events = {
+NeighborhoodTable.events = {
     selectNeighborhood: 'selectNeighborhood'
 };
 

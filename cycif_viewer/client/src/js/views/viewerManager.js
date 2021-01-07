@@ -338,7 +338,7 @@ export class ViewerManager {
             if (labelValue >= 0) {
                 if (this.imageViewer.show_subset) {
                     // Render subset with TF (check label id is in subset, apply TF)
-                    if (this.imageViewer.data.has(labelValueStr)) {
+                    if (this.imageViewer.data.has(labelValue)) {
                         if (channelValue < tf.min) {
                             pixels[i] = 0;
                             pixels[i + 1] = 0;
@@ -353,8 +353,8 @@ export class ViewerManager {
 
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-                    if (this.imageViewer.selection.has(labelValueStr)) {
-                        let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
+                    if (this.imageViewer.selection.has(labelValue)) {
+                        let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype', '');
                         let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         // let color = [255, 255, 255]
 
@@ -520,7 +520,7 @@ export class ViewerManager {
                 // render subset with TF
                 if (this.imageViewer.show_subset) {
                     // render with TF
-                    if (this.imageViewer.data.has(labelValueStr)) {
+                    if (this.imageViewer.data.has(labelValue)) {
                         if (channelValue >= tfs[channel].min) {
                             pixels[i] += rgb.r;
                             pixels[i + 1] += rgb.g;
@@ -536,7 +536,7 @@ export class ViewerManager {
 
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-                    if (this.imageViewer.selection.has(labelValueStr)) {
+                    if (this.imageViewer.selection.has(labelValue)) {
                         // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
                         // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         let color = [255, 255, 255]

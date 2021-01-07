@@ -10,6 +10,8 @@ class DataLayer {
         this.imageChannels = imageChannels;
         //selections
         this.currentSelection = new Set();
+        this.currentRawSelection = {};
+        this.currentSelectionHashMap = new Map();
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
@@ -29,16 +31,26 @@ class DataLayer {
         }
     }
 
-    async getRow(row) {
+    async getCells(ids) {
         try {
-            let response = await fetch('/get_datasource_row?' + new URLSearchParams({
-                row: row,
-                datasource: datasource
-            }))
+            let response = await fetch('/get_cells', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        elem: {
+                            'ids': ids.points
+                        }
+                    })
+            });
             let response_data = await response.json();
             return response_data;
         } catch (e) {
-            console.log("Error Getting Row", e);
+            console.log("Error Getting Cells", e);
         }
     }
 
@@ -190,7 +202,8 @@ class DataLayer {
                 body: JSON.stringify(
                     {
                         datasource: datasource,
-                        selection: self.getCurrentRawSelection()
+                        selection: self.getCurrentRawSelection(),
+                        isCluster: false
                     }
                 )
             });
@@ -304,9 +317,14 @@ class DataLayer {
         return this.currentRawSelection;
     }
 
+    getCurrentSelectionHashMap() {
+        return this.currentSelectionHashMap;
+    }
+
     clearCurrentSelection() {
         this.currentSelection.clear();
         this.currentRawSelection.clear();
+        this.currentSelectionHashMap.clear();
     }
 
 
@@ -345,6 +363,7 @@ class DataLayer {
         // console.log("update current selection")
         var that = this;
         that.currentSelection = new Set(items.cells);
+        that.currentSelectionHashMap = new Map(items.cells.map(i => [i.id, i]));
         that.currentRawSelection = items;
         // console.log("update current selection done")
     }

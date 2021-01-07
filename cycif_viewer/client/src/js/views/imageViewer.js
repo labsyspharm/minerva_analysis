@@ -125,11 +125,7 @@ class ImageViewer {
 
         that.lasso_draw = function (event) {
             //add points to polygon and (re)draw
-
             let webPoint = event.position;
-
-            //console.log(webPoint.toString(), viewportPoint.toString());
-
             if (that.numCalls % 5 == 0) {
                 // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
                 let viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);

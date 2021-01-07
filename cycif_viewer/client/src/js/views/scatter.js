@@ -1,25 +1,22 @@
 class Scatterplot {
-    constructor(id, eventHandler, dataLayer) {
+    clusters;
+
+    constructor(id, eventHandler, dataLayer, colorScheme) {
         this.id = id;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
+        this.colorScheme = colorScheme;
     }
 
-    async init(visData) {
+    init(visData) {
         const self = this;
-        self.visData = visData
+        self.visData = visData;
         self.visData.data = _.map(self.visData.data, _.values);
-        let colorScheme = d3.scaleOrdinal(d3.schemeCategory10)
-            .domain([0, _.size(this.visData.clusters) + 2]);
-        this.colorMap = _.map(this.visData.clusters, cluster => {
-            return colorScheme(cluster + 1);
-
-        });
-
+        window.devicePixelRatio = 1;
         const canvas = document.querySelector('#scatter_canvas');
-
         let {width, height} = canvas.getBoundingClientRect();
         let ratio = window.devicePixelRatio;
+        self.lassoActive = false;
         width = width / ratio;
         height = height / ratio;
 
@@ -27,31 +24,57 @@ class Scatterplot {
             canvas,
             width,
             height,
-            colorBy: 'category',
-            pointColor: this.colorMap,
+            pointColor: hexToRGBA('#808080', 0.1),
             pointSize: 5,
+            pointOutlineWidth: 0,
+            pointSizeSelected: 0,
+            pointColorActive: hexToRGBA(self.colorScheme.colorMap['SelectedCluster'].hex, 0.1),
+
         });
-        self.plot.set({opacity: 0.4});
 
-        await self.draw();
-    }
-
-
-    async draw() {
-        const self = this;
-        const points = new Array(10000)
-            .fill()
-            .map(() => [-1 + Math.random() * 2, -1 + Math.random() * 2, 0, 1]);
+        self.plot.subscribe('select', self.select.bind(self));
+        self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
+        self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
+        self.plot.set({cameraDistance: 13});
         self.plot.draw(self.visData.data);
     }
 
-    recolor(cluster = null, ids = null) {
+    recolor() {
         const self = this;
+        self.plot.select([...this.dataLayer.getCurrentSelectionHashMap().keys()]);
+    }
 
+    select(points) {
+        const self = this;
+        if (self.lassoActive) {
+            return dataLayer.getCells(points)
+                .then(cells => {
+                    self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, cells)
+                });
+        }
+    }
+
+    lassoStart() {
+        const self = this;
+        self.lassoActive = true;
+    }
+
+    lassoEnd() {
+        const self = this;
+        self.lassoActive = false;
     }
 }
 
+https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
+    function hexToRGBA(hex, alpha) {
+        const h = "0123456789ABCDEF";
+        let r = h.indexOf(hex[1]) * 16 + h.indexOf(hex[2]);
+        let g = h.indexOf(hex[3]) * 16 + h.indexOf(hex[4]);
+        let b = h.indexOf(hex[5]) * 16 + h.indexOf(hex[6]);
+        return [r / 255, g / 255, b / 255, alpha]
+    }
+
 Scatterplot.events = {
-    selectCluster: 'selectCluster'
+    selectFromEmbedding: 'selectFromEmbedding'
 };
 
