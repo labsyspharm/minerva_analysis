@@ -138,15 +138,17 @@ body {
 }
 
 #channel_list_div {
-    height: 90%;
+    height: 92%;
     width: 100%;
     font-size: 6pt;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-#accordion, #compare_button_accordion {
-    height: 8%;
+#accordion {
+    position: absolute;
+    bottom: 0;
+    /*height: 8%;*/
     width: 100%;
     border-radius: 0rem;
 }
@@ -418,7 +420,7 @@ label {
 }
 
 .fa-pencil-alt, .fa-trash {
-    color: black;
+    color: #343a40;
 }
 
 .datasource-edit-row a {
@@ -558,8 +560,8 @@ polygon:hover {
     width: 80px;
 }
 
-#neighborhood_table_heading, #neighborhood_table_footing, #compare_neighborhood {
-    padding: 0 10px;
+#neighborhood_table_heading, #neighborhood_table_footing {
+    padding: 0;
 }
 
 #accordion .card {
@@ -570,15 +572,24 @@ polygon:hover {
     font-size: 10pt;
 }
 
-#neighborhood_dropdown_button {
+#neighborhood_dropdown_button, #save_neighborhood_button {
     margin: 0;
     padding: 0;
+    outline: none;
+    box-shadow: none;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
 }
 
 #neighborhood_table_card {
     padding: 0 10px;
-    max-height: 22.5vh;
+    height: 100%;
     overflow-y: scroll;
+}
+
+#accordion .show {
+    height: 28.8vh;
 }
 
 #neighborhood_table {
@@ -612,19 +623,11 @@ polygon:hover {
     padding: 0;
 }
 
-#neighborhood_table_div_label, #save_neighborhood, #compare_neighborhoods_link {
-    font-size: 0.7rem;
-}
 
 #accordion .card-header, .card-footer {
-    height: 3vh;
+    height: 3.6vh;
 }
 
-#channel_list .collapsing {
-    -webkit-transition: none;
-    transition: none;
-    display: none;
-}
 
 .radarstarplot_display {
     display: block;
@@ -655,4 +658,8 @@ polygon:hover {
 
 #comparison_div h5 {
     font-size: 0.8rem;
+}
+
+.btn:focus {
+
 }

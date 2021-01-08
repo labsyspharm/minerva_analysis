@@ -65,7 +65,7 @@ async function init(conf) {
 
     scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer, colorScheme);
     let scatterplotData = await dataLayer.getScatterplotData();
-    await scatterplot.init(scatterplotData);
+     scatterplot.init(scatterplotData);
 
 }
 

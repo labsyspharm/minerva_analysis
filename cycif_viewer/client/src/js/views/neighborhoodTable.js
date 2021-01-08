@@ -6,7 +6,9 @@ class NeighborhoodTable {
         this.selectedRow = null;
         this.selectedRowName = null;
         this.neighborhoods = null;
-        this.saveButton = document.getElementById('save_neighborhood');
+        this.enabled = false;
+        this.saveButton = document.getElementById('save_neighborhood_button');
+        this.saveButton.addEventListener('click', this.saveNeighborhood.bind(this));
     }
 
     async init() {
@@ -20,25 +22,23 @@ class NeighborhoodTable {
     displayTable() {
         const self = this;
         let channelListDiv = document.getElementById('channel_list_div');
-        let accordionDiv = document.getElementById('accordion');
         if ($(self.table).is(':hidden')) {
-            channelListDiv.style.height = '65%';
-            accordionDiv.style.height = '35%';
+            channelListDiv.style.height = '60%';
         } else {
-            channelListDiv.style.height = '90%';
-            accordionDiv.style.height = '10%';
+            channelListDiv.style.height = '92%';
         }
     }
 
     enableSaveButton() {
         const self = this;
-        self.saveButton.href = "#";
-        self.saveButton.addEventListener('click', self.saveNeighborhood.bind(self));
+        self.enabled = true;
+        self.saveButton.disabled = false;
     }
 
     disableSaveButton() {
         const self = this;
-        self.saveButton.href = null;
+        self.enabled = false;
+        self.saveButton.disabled = true;
     }
 
     drawRows() {
@@ -186,19 +186,21 @@ class NeighborhoodTable {
         return self.drawRows();
     }
 
-    async saveNeighborhood() {
+    async saveNeighborhood(e) {
         const self = this;
-        self.neighborhoods = await self.dataLayer.saveNeighborhood();
-        // If the table is hidden, show it
-        if ($(self.table).is(':hidden')) {
-            document.getElementById('neighborhood_dropdown_button').click();
-        }
-        self.drawRows();
+        if (self.enabled) { // Disable
+            self.disableSaveButton();
+            self.neighborhoods = await self.dataLayer.saveNeighborhood();
+            // If the table is hidden, show it
+            if ($(self.table).is(':hidden')) {
+                document.getElementById('neighborhood_dropdown_button').click();
+            }
+            self.drawRows();
 
-        let lastRow = self.table.querySelector('.neighborhood-row:last-child');
-        lastRow.click();
-        lastRow.querySelector('.neighborhood_icon_col').click();
-        self.disableSaveButton();
+            let lastRow = self.table.querySelector('.neighborhood-row:last-child');
+            lastRow.click();
+            lastRow.querySelector('.neighborhood_icon_col').click();
+        }
     }
 
     selectRow(e, d) {

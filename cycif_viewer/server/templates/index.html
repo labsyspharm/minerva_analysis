@@ -29,11 +29,11 @@
                 <div id="accordion">
                     <div class="card">
                         <div class="card-header" id="neighborhood_table_heading">
-                            <button id="neighborhood_dropdown_button" class="btn btn-link collapsed"
+                            <button id="neighborhood_dropdown_button" class="btn btn-secondary collapsed"
                                     data-toggle="collapse"
                                     data-target="#neighborhood_table_div"
                                     aria-expanded="true" aria-controls="neighborhood_table_div">
-                                <span id="neighborhood_table_div_label">Neighborhood List</span>
+                                <span id="neighborhood_table_div_label">View Neighborhood List</span>
                             </button>
                         </div>
                         <div id="neighborhood_table_div" class="collapse"
@@ -56,18 +56,11 @@
                             </div>
                         </div>
                         <div class="card-footer" id="neighborhood_table_footing">
-                            <div id="save_neighborhood_div">
-                                <a id="save_neighborhood">Save Current Selection</a>
-                            </div>
+                            <button id="save_neighborhood_button"
+                                    class="btn btn-primary" disabled>
+                                <span id="save_neighborhood_label">Save Neighborhood </span>
+                            </button>
                         </div>
-                        <div class="card-footer" id="compare_neighborhood">
-                            <div id="compare_neighborhoods_div">
-                                <a id="compare_neighborhoods_link" href="/compare_neighborhoods/{{ data.datasource }}">Compare
-                                    Neighborhoods</a>
-                            </div>
-                        </div>
-
-
                     </div>
                 </div>
             </div>
