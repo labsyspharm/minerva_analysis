@@ -21,7 +21,7 @@ class Starplot {
         this.tool_angleScale = d3.scaleLinear()
             .range([0, 2 * Math.PI]);
         this.tool_areaMaker = d3.areaRadial()
-            .curve(d3.curveCardinalClosed);
+            .curve(d3.curveCardinalClosed)
 
         this.tool_channelScale = d3.scaleLinear()
             .range([Math.PI, -Math.PI]);
@@ -138,7 +138,11 @@ class Starplot {
                             .attr('stroke', 'rgba(155, 155, 155, 1)')
                             .attr('stroke-width', 0.5);
                         labelLine.transition()
-                            .attr('d', d3.line()(coords));
+                            .attr('d', d => {
+                                let test = d3.line()(coords)
+                                console.log(test);
+                                return test;
+                            });
 
                         // Label group
                         const textCoords = getCoordsTranslation(self.config_chartR1 + 5, i)
@@ -216,7 +220,21 @@ class Starplot {
         this.el_chartAreaPath
             .datum(this.visData)
             .transition()
-            .attr('d', d => self.tool_areaMaker(d));
+            .attr('d', d => {
+                let max = _.maxBy(d, function (o) {
+                    return o.value;
+                }).value;
+                let min = _.minBy(d, function (o) {
+                    return o.value;
+                }).value;
+                // If there are no values, draw a blank path
+                if (min == max && min == 0) {
+                    return '';
+                } else {
+                    return self.tool_areaMaker(d);
+                }
+
+            });
     }
 
     hide() {

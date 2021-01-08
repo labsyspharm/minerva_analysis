@@ -509,7 +509,12 @@ polygon:hover {
     width: 75px;
     height: 25px;
     z-index: 1;
+}
 
+#toolbar-div {
+    top: 0;
+    left: 0;
+    z-index: 1;
 }
 
 .box-heading {

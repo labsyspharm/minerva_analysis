@@ -61,11 +61,12 @@ async function init(conf) {
 
     starplot = new Starplot('starplot_display', dataLayer.phenotypes);
     starplot.init();
-    clusterData = dataLayer.getClusterCells();
 
+    clusterData = dataLayer.getClusterCells();
     scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer, colorScheme);
     let scatterplotData = await dataLayer.getScatterplotData();
-     scatterplot.init(scatterplotData);
+    scatterplot.init(scatterplotData);
+
 
 }
 
