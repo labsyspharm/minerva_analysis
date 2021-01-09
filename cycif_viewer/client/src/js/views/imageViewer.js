@@ -275,12 +275,13 @@ class ImageViewer {
             } else {
                 that.neighborhoodButton.style.stroke = "orange";
                 let sim = document.getElementById('similarity_val').innerHTML || '0.8';
-                let simVal = parseFloat(sim)
-
-                return dataLayer.getSimilarNeighborhoodToSelection(simVal)
-                    .then(cells => {
-                        that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
-                    })
+                let simVal = parseFloat(sim);
+                if (dataLayer.getCurrentSelection().size > 0) {
+                    return dataLayer.getSimilarNeighborhoodToSelection(simVal)
+                        .then(cells => {
+                            that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
+                        })
+                }
             }
         })
 

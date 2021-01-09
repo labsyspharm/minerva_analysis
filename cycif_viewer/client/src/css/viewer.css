@@ -96,3 +96,7 @@
 #comparison_div .viewfinder_chart_label_g_g_text_g {
     font-weight: normal;
 }
+
+#scatter_canvas {
+    width: 100%;
+}

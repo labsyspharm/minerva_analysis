@@ -34,40 +34,39 @@ d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
 
 // init all views (datatable, seadragon viewer,...)
 async function init(conf) {
+    console.log('Starting', new Date());
     config = conf;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;
     }
     //INIT DATA LAYER
+    console.log('Starting Init', new Date());
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
-
-    channelList = new ChannelList(config, dataLayer, eventHandler);
-    await channelList.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
 
+
+    channelList = new ChannelList(config, dataLayer, eventHandler);
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
-    await neighborhoodTable.init();
-
-
     legend = new Legend(dataLayer.phenotypes, colorScheme);
-    legend.draw();
-
-    //IMAGE VIEWER
-    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-    seaDragonViewer.init();
-
     starplot = new Starplot('starplot_display', dataLayer.phenotypes);
-    starplot.init();
-
-    clusterData = dataLayer.getClusterCells();
     scatterplot = new Scatterplot('scatterplot_display', eventHandler, dataLayer, colorScheme);
-    let scatterplotData = await dataLayer.getScatterplotData();
-    scatterplot.init(scatterplotData);
-
-
+    console.log('Ending Reg Init', new Date());
+    //image viewer
+    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
+    console.log('Ending Viewer Init', new Date());
+    // init synchronus methods
+    seaDragonViewer.init();
+    legend.draw();
+    starplot.init();
+    console.log('Sync Init', new Date());
+    //Async stuff
+    await Promise.all([channelList.init(), neighborhoodTable.init(), scatterplot.init()]);
+    console.log('Async Init', new Date());
+    clusterData = dataLayer.getClusterCells();
+    console.log('Cluster Cells', new Date());
 }
 
 //feature color map changed in ridge plot

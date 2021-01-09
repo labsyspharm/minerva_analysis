@@ -8,9 +8,9 @@ class Scatterplot {
         this.colorScheme = colorScheme;
     }
 
-    init(visData) {
+    async init() {
         const self = this;
-        self.visData = visData;
+        self.visData = await dataLayer.getScatterplotData()
         self.visData.data = _.map(self.visData.data, _.values);
         window.devicePixelRatio = 1;
         const canvas = document.querySelector('#scatter_canvas');
