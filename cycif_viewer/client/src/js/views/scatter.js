@@ -26,10 +26,10 @@ class Scatterplot {
             height,
             pointColor: hexToRGBA('#808080', 0.1),
             pointSize: 5,
+            lassoColor: hexToRGBA('#ffa500', 1),
             pointOutlineWidth: 0,
             pointSizeSelected: 0,
-            pointColorActive: hexToRGBA(self.colorScheme.colorMap['SelectedCluster'].hex, 0.1),
-
+            pointColorActive: hexToRGBA('#ffa500', 0.3)
         });
 
         self.plot.subscribe('select', self.select.bind(self));
@@ -67,6 +67,7 @@ class Scatterplot {
 
 https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
     function hexToRGBA(hex, alpha) {
+        hex = _.toUpper(hex);
         const h = "0123456789ABCDEF";
         let r = h.indexOf(hex[1]) * 16 + h.indexOf(hex[2]);
         let g = h.indexOf(hex[3]) * 16 + h.indexOf(hex[4]);
