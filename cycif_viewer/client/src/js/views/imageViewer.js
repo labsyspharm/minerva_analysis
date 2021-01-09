@@ -91,10 +91,11 @@ class ImageViewer {
         // Config viewer
         const viewer_config = {
             id: "openseadragon",
-            prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
             showFullPageControl: false,
-            toolbar: "toolbar-div",
+            zoomInButton: "zoom-in",
+            zoomOutButton: "zoom-out",
+            homeButton: "home",
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,

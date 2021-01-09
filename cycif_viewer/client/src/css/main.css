@@ -451,7 +451,7 @@ label {
     margin: 0;
 }
 
-#channel_list_wrapper, #openseadragon_wrapper, #cell_wrapper, #scatterplot_wrapper {
+#channel_list_wrapper, #openseadragon_wrapper, #cell_wrapper, #analysis_wrapper {
     padding: 0px 5px;
 }
 
@@ -504,16 +504,20 @@ polygon:hover {
 
 #selection-options {
     top: 0;
-    right: 0;
     position: absolute;
-    width: 75px;
-    height: 25px;
+    left: 0;
     z-index: 1;
 }
 
-#toolbar-div {
+#toolbar-row {
+    width: 100%;
+    margin: 0;
+}
+
+#openseadragon-toolbar {
     top: 0;
-    left: 0;
+    right: 0;
+    position: absolute;
     z-index: 1;
 }
 
@@ -523,6 +527,14 @@ polygon:hover {
 
 .material-icons {
     color: #c1c1c1;
+}
+
+#selection-options .material-icons {
+    font-size: 36px;
+}
+
+#openseadragon-toolbar .material-icons {
+    font-size: 36px;
 }
 
 .material-icons:hover {

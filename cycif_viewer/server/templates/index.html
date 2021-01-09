@@ -7,7 +7,7 @@
 <div id="container" class="container">
     <div id="row" class="row">
 
-        <div class="col-sm-3" id="channel_list_wrapper">
+        <div class="col" id="channel_list_wrapper">
             <div id="lowRow1" class="row">
                 <div id="boxHeading1" class="col-auto mr-auto">
                     <span class="box-heading">Channels</span>
@@ -69,27 +69,30 @@
 
         </div>
 
-        <div class="col-sm-5 viewer_col" id="openseadragon_wrapper">
+        <div class="col viewer_col" id="openseadragon_wrapper">
             <span class="box-heading">Viewer</span>
             <div id="openseadragon">
-                <div id="toolbar-div" class="toolbar"></div>
+                <div id="openseadragon-toolbar">
+                    <div id="toolbar-row" class="row justify-content-end">
+                        <span class="material-icons" id="zoom-in">add</span>
+                        <span class="material-icons" id="zoom-out">remove</span>
+                        <span class="material-icons" id="home">home</span>
+                    </div>
+                </div>
                 <div id="selection-options">
-                    <div class="row justify-content-center">
-                        <div id="cell_container">
-                            <svg id="neighborhood_icon" height="24px" width="24px">
-                                <circle class="cls-1" cx="15.65" cy="3.77" r="1.02"/>
-                                <circle class="cls-1" cx="2.75" cy="15.38" r="2.25"/>
-                                <circle class="cls-1" cx="15.66" cy="15.38" r="1.01"/>
-                                <circle class="cls-1" cx="4.24" cy="2.75" r="2.25"/>
-                                <circle class="cls-1" cx="10.34" cy="9.8" r="5.34"/>
-                            </svg>
+                    <div class="col">
+                        <div class="row">
+                            <span class="material-icons" id="select_button" data-toggle="tooltip" data-placement="right"
+                                  title="Single Cell Selection">near_me</span>
                         </div>
-                        <span class="material-icons" id="lasso_button">gesture</span>
-                        <span class="material-icons" id="select_button">near_me</span>
-
-                        <!--                        <img class="selection-icon" src="../client/src/img/gesture-24px.svg"/>-->
-                        <!--                        <img class="selection-icon" src="../client/src/img/near_me-24px.svg"/>-->
-
+                        <div class="row">
+                            <span class="material-icons" id="lasso_button" data-toggle="tooltip" data-placement="right"
+                                  title="Lasso Selection">gesture</span>
+                        </div>
+                        <div class="row"><span class="material-icons" id="neighborhood_icon" data-toggle="tooltip"
+                                               data-placement="right"
+                                               title="Search for Similar Neighborhoods">search</span>
+                        </div>
                     </div>
                     <div class="row" id="similarity_group">
                         <form>
@@ -113,7 +116,7 @@
                 <div id="legend"></div>
             </div>
         </div>
-        <div class="col-sm-3 viewer_col" id="scatterplot_wrapper">
+        <div class="col viewer_col" id="analysis_wrapper">
             <span id="analysis_label">Analysis</span>
             <div id="plots_display" class="col">
                 <div class="row justify-content-md-center">

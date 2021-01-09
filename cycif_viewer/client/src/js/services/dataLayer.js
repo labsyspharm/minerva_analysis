@@ -362,7 +362,7 @@ class DataLayer {
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Set(items.cells);
+        that.currentSelection = new Map(items.cells.map(i => [i.id, i]));
         that.currentSelectionHashMap = new Map(items.cells.map(i => [i.id, i]));
         that.currentRawSelection = items;
         // console.log("update current selection done")

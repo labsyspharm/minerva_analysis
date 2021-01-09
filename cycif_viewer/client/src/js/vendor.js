@@ -4,6 +4,8 @@ import 'popper.js';
 import 'jquery';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+
+
 import 'pngjs';
 import * as d3base from 'd3';
 import {sliderBottom} from 'd3-simple-slider';
