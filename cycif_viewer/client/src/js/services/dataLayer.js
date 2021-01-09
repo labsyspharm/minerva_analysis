@@ -9,9 +9,8 @@ class DataLayer {
         //all image channels
         this.imageChannels = imageChannels;
         //selections
-        this.currentSelection = new Set();
+        this.currentSelection = new Map();
         this.currentRawSelection = {};
-        this.currentSelectionHashMap = new Map();
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
@@ -281,7 +280,7 @@ class DataLayer {
                     {
                         datasource: datasource,
                         similarity: similarity,
-                        selection: [...this.getCurrentSelection()]
+                        selectionIds: [...this.getCurrentSelection().keys()]
                     })
             });
             let cells = await response.json();
@@ -317,14 +316,11 @@ class DataLayer {
         return this.currentRawSelection;
     }
 
-    getCurrentSelectionHashMap() {
-        return this.currentSelectionHashMap;
-    }
 
     clearCurrentSelection() {
         this.currentSelection.clear();
         this.currentRawSelection.clear();
-        this.currentSelectionHashMap.clear();
+
     }
 
 
@@ -350,7 +346,7 @@ class DataLayer {
         }
 
         // add new item
-        this.currentSelection.add(item);
+        this.currentSelection.set(item.id, item);
 
         // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {
@@ -363,7 +359,6 @@ class DataLayer {
         // console.log("update current selection")
         var that = this;
         that.currentSelection = new Map(items.cells.map(i => [i.id, i]));
-        that.currentSelectionHashMap = new Map(items.cells.map(i => [i.id, i]));
         that.currentRawSelection = items;
         // console.log("update current selection done")
     }

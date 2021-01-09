@@ -174,8 +174,8 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 //current fast solution for seadragon updates
 function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     neighborhoodTable.enableSaveButton();
-    seaDragonViewer.updateSelection(dataLayer.getCurrentSelectionHashMap());
-    seaDragonViewer.updateSelection(dataLayer.getCurrentSelectionHashMap(), repaint);
+    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
+    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
 }
 
 //feature range selection changed in ridge plot

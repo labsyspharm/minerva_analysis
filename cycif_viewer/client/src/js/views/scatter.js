@@ -41,7 +41,7 @@ class Scatterplot {
 
     recolor() {
         const self = this;
-        self.plot.select([...this.dataLayer.getCurrentSelectionHashMap().keys()]);
+        self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
     }
 
     select(points) {

@@ -90,25 +90,15 @@ def init_clusters(datasource_name):
 
         else:
             indices = np.load(io.BytesIO(neighborhood.cells))
-            cluster_cells = datasource.loc[indices]
+            cluster_cells = None
 
         neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood)
 
         # Similarly, if the stats are not initialized, let's store them in the DB as well
         if neighborhood_stats is None:
-            cluster_cells = cluster_cells[['id', 'Cluster', 'phenotype']].to_dict(orient='records')
-            neighborhood_array = np.load(Path("cycif_viewer//data/Ton/neighborhood_array_complex.npy"))
-            cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
-            summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
-            phenotypes = datasource.phenotype.unique().tolist()
-            for i in range(len(phenotypes)):
-                count = cluster_summary[i * 2]
-                weight = cluster_summary[i * 2 + 1]
-                summary_stats['neighborhood_count'][phenotypes[i]] = count
-                summary_stats['avg_weight'][phenotypes[i]] = weight
-                summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
+            obj = get_neighborhood_stats(indices, cluster_cells)
             f = io.BytesIO()
-            pickle.dump({'cells': cluster_cells, 'cluster_summary': summary_stats}, f)
+            pickle.dump(obj, f)
             neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
                                                        is_cluster=True,
                                                        name="ClusterStats " + str(cluster), stats=f.getvalue(),
@@ -219,7 +209,6 @@ def query_for_closest_cell(x, y, datasource_name):
         try:
             row = datasource.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
-            obj['id'] = str(index[0][0])
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             return obj
@@ -233,20 +222,8 @@ def get_cells(elem, datasource_name):
     global config
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    neighborhood_array = np.load(Path("cycif_viewer/data/Ton/neighborhood_array_complex.npy"))
-    phenotypes = datasource.phenotype.unique().tolist()
     ids = elem['ids']
-    obj = {}
-    summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
-    cluster_summary = np.mean(neighborhood_array[ids, :], axis=0)
-    for i in range(len(phenotypes)):
-        count = cluster_summary[i * 2]
-        weight = cluster_summary[i * 2 + 1]
-        summary_stats['neighborhood_count'][phenotypes[i]] = count
-        summary_stats['avg_weight'][phenotypes[i]] = weight
-        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
-    obj['cluster_summary'] = summary_stats
-    obj['cells'] = datasource.iloc[ids][fields].to_dict(orient='records')
+    obj = get_neighborhood_stats(ids, fields=fields)
     return obj
 
 
@@ -309,7 +286,6 @@ def get_individual_neighborhood(x, y, datasource_name, r=100, fields=None):
     global ball_tree
     if datasource_name != source:
         load_ball_tree(datasource_name)
-    now = time.time()
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
     try:
@@ -431,7 +407,6 @@ def get_rect_cells(datasource_name, rect, channels):
         for neighbor in neighbors:
             row = datasource.iloc[[neighbor]]
             obj = row.to_dict(orient='records')[0]
-            obj['id'] = str(neighbor)
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             neighborhood.append(obj)
@@ -443,67 +418,37 @@ def get_rect_cells(datasource_name, rect, channels):
 def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False):
     global config
     point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
-    neighborhood_array = np.load(Path("cycif_viewer/data/Ton/neighborhood_array_complex.npy"))
-    phenotypes = datasource.phenotype.unique().tolist()
-    now = time.time()
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     circle_neighbors = get_individual_neighborhood(x, y, datasource_name, r=r,
                                                    fields=fields)
-
-    now = time.time()
     neighbor_points = pd.DataFrame(circle_neighbors).values
-    obj = {}
-
     path = mpltPath.Path(point_tuples)
     inside = path.contains_points(neighbor_points[:, [0, 1]].astype('float'))
     neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
-    summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
-    cluster_summary = np.mean(neighborhood_array[neighbor_ids, :], axis=0)
-    for i in range(len(phenotypes)):
-        count = cluster_summary[i * 2]
-        weight = cluster_summary[i * 2 + 1]
-        summary_stats['neighborhood_count'][phenotypes[i]] = count
-        summary_stats['avg_weight'][phenotypes[i]] = weight
-        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
-    obj['cluster_summary'] = summary_stats
-    obj['cells'] = datasource.iloc[neighbor_ids][fields].to_dict(orient='records')
+    obj = get_neighborhood_stats(neighbor_ids, fields=fields)
     return obj
 
 
-def get_similar_neighborhood_to_selection(datasource_name, selection, similarity):
-    neighbor_ids = [elem['id'] for elem in selection]
+def get_similar_neighborhood_to_selection(datasource_name, selection_ids, similarity):
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     obj = {}
     # This is the standard 50 radius neighborhood data
-    standard_neighborhoods = np.load(Path("cycif_viewer//data/Ton/complex_small.npy")).squeeze()
+    standard_neighborhoods = np.load(Path("cycif_viewer/data/Ton/complex_small.npy")).squeeze()
     # Dynamic Neighborhood Array Code
-    if len(neighbor_ids) < 1000:
-        neighborhood_array = standard_neighborhoods
-    elif len(neighbor_ids) < 10000:
-        neighborhood_array = np.load(Path("cycif_viewer//data/Ton/complex_medium.npy")).squeeze()
-    else:
-        neighborhood_array = np.load(Path("cycif_viewer//data/Ton/complex_large.npy")).squeeze()
+    # if len(selection_ids) < 1000:
+    #     neighborhood_array = standard_neighborhoods
+    # elif len(selection_ids) < 10000:
+    #     neighborhood_array = np.load(Path("cycif_viewer/data/Ton/complex_medium.npy")).squeeze()
+    # else:
+    #     neighborhood_array = np.load(Path("cycif_viewer/data/Ton/complex_large.npy")).squeeze()
 
-    # old code
-    # neighborhood_array = np.load(Path("/data/Ton/neighborhood_array_complex.npy"))
-
-    selection_summary = np.mean(neighborhood_array[neighbor_ids, :], axis=0)
-    obj['raw_summary'] = selection_summary
+    selection_summary = np.mean(standard_neighborhoods[selection_ids, :], axis=0)
     similar_ids = find_similarity(selection_summary, similarity)
-    summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
-    phenotypes = datasource.phenotype.unique().tolist()
-    cluster_summary = np.mean(standard_neighborhoods[similar_ids, :], axis=0)
-    for i in range(len(phenotypes)):
-        count = cluster_summary[i * 2]
-        weight = cluster_summary[i * 2 + 1]
-        summary_stats['neighborhood_count'][phenotypes[i]] = count
-        summary_stats['avg_weight'][phenotypes[i]] = weight
-        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
-    obj['cluster_summary'] = summary_stats
-    obj['cells'] = datasource.iloc[similar_ids][fields].to_dict(orient='records')
+    obj = get_neighborhood_stats(similar_ids, fields=fields)
+    obj['raw_summary'] = selection_summary
     return obj
 
 
@@ -690,3 +635,29 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         pyramid_assemble.main(py_args=args)
 
         return {'segmentation': str(directory)}
+
+
+def get_neighborhood_stats(indices, cluster_cells=None, fields=[]):
+    global datasource
+    global source
+    default_fields = ['id', 'Cluster', 'phenotype']
+    for field in fields:
+        if field not in default_fields:
+            default_fields.append(field)
+
+    if cluster_cells is None:
+        cluster_cells = datasource.loc[indices, default_fields].to_dict(orient='records')
+    else:
+        cluster_cells = cluster_cells[['id', 'Cluster', 'phenotype']].to_dict(orient='records')
+    neighborhood_array = np.load(Path("cycif_viewer/data/Ton/neighborhood_array_complex.npy"))
+    cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
+    summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
+    phenotypes = datasource.phenotype.unique().tolist()
+    for i in range(len(phenotypes)):
+        count = cluster_summary[i * 2]
+        weight = cluster_summary[i * 2 + 1]
+        summary_stats['neighborhood_count'][phenotypes[i]] = count
+        summary_stats['avg_weight'][phenotypes[i]] = weight
+        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
+    obj = {'cells': cluster_cells, 'cluster_summary': summary_stats}
+    return obj

@@ -138,11 +138,8 @@ class Starplot {
                             .attr('stroke', 'rgba(155, 155, 155, 1)')
                             .attr('stroke-width', 0.5);
                         labelLine.transition()
-                            .attr('d', d => {
-                                let test = d3.line()(coords)
-                                console.log(test);
-                                return test;
-                            });
+                            .attr('d', d3.line()(coords));
+
 
                         // Label group
                         const textCoords = getCoordsTranslation(self.config_chartR1 + 5, i)

@@ -157,8 +157,8 @@ def get_similar_neighborhood_to_selection():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     similarity = post_data['similarity']
-    selection = post_data['selection']
-    resp = data_model.get_similar_neighborhood_to_selection(datasource, selection, similarity)
+    selection_ids = post_data['selectionIds']
+    resp = data_model.get_similar_neighborhood_to_selection(datasource, selection_ids, similarity)
     return serialize_and_submit_json(resp)
 
 
