@@ -139,6 +139,20 @@ def get_neighborhood(elem, datasource_name):
     return pickle.load(io.BytesIO(neighborhood_stats.stats))
 
 
+def get_all_neighborhood_stats(datasource_name):
+    def get_stats(neighborhood):
+        neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood,
+                                                datasource=datasource_name)
+        stats = pickle.load(io.BytesIO(neighborhood_stats.stats))
+        stats['neighborhood_id'] = neighborhood_stats.neighborhood_id
+        stats['name'] = neighborhood_stats.name
+        return stats
+
+    neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
+    obj = [get_stats(neighborhood) for neighborhood in neighborhoods]
+    return obj
+
+
 def save_neighborhood(selection, datasource_name, is_cluster=True):
     existing_neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
     max_cluster_id = existing_neighborhoods[-1].cluster_id

@@ -17,13 +17,8 @@ async function init(conf) {
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
     container = document.getElementById('comparison_div');
-    neighborhoods = await dataLayer.getNeighborhoods();
+    neighborhoods = await dataLayer.getAllNeighborhoodStats();
     createGrid();
-    const promises = [];
-    _.each(neighborhoods, d => {
-        promises.push(dataLayer.getNeighborhood(d[0]));
-    })
-    neighborhoodStats = await Promise.all(promises);
     createPlots();
 }
 
@@ -59,10 +54,10 @@ function createGrid() {
 function createPlots() {
     _.each(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`);
-        let header = div.querySelector('h5').innerHTML = d[2];
+        let header = div.querySelector('h5').innerHTML = d['name'];
         let starplot = new Starplot(`compare_starplot_${i}`, dataLayer.phenotypes, small = true);
         starplot.init();
-        let starplotData = _.get(neighborhoodStats[i], 'cluster_summary.weighted_contribution', []);
+        let starplotData = _.get(d, 'cluster_summary.weighted_contribution', []);
         starplot.wrangle(starplotData);
 
     })

@@ -71,6 +71,12 @@ def get_neighborhood_list():
     resp = data_model.get_neighborhood_list(datasource)
     return serialize_and_submit_json(resp)
 
+@app.route('/get_all_neighborhood_stats', methods=['GET'])
+def get_all_neighboorhood_stats():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_all_neighborhood_stats(datasource)
+    return serialize_and_submit_json(resp)
+
 
 @app.route('/get_individual_neighborhood', methods=['GET'])
 def get_individual_neighborhood():

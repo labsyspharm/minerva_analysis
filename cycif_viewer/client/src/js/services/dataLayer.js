@@ -118,6 +118,19 @@ class DataLayer {
         }
     }
 
+    async getAllNeighborhoodStats() {
+        try {
+            let response = await fetch('/get_all_neighborhood_stats?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting All Neighborhoods", e);
+        }
+    }
+
+
     async editNeighborhood(id, editField, editValue) {
         try {
             let response = await fetch('/edit_neighborhood', {
