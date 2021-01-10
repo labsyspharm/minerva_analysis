@@ -125,7 +125,7 @@ class ImageViewer {
         that.polygonSelection = [];
         that.renew = false;
         that.numCalls = 0; //defines how fine-grained the polygon resolution is (0 = no subsampling, 10=high subsampling)
-
+        that.lassoing = false;
         that.lasso_draw = function (event) {
             //add points to polygon and (re)draw
             let webPoint = event.position;
@@ -153,61 +153,66 @@ class ImageViewer {
             that.renew = true;
 
         }
-        let drag;
 
-        let mouseTracker = new OpenSeadragon.MouseTracker({
+        let primaryTracker = new OpenSeadragon.MouseTracker({
             element: that.viewer.canvas,
-            nonPrimaryPressHandler: function (event) {
-                if (that.isSelectionToolActive) {
-                    drag = {
-                        lastPos: event.position.clone()
-                    };
-                } else {
-                    d3.select('#selectionPolygon').remove();
-                }
-                that.polygonSelection = [];
-                that.numCalls = 0;
+            pressHandler: (event) => {
+                if (event.originalEvent.shiftKey) {
+                    this.viewer.setMouseNavEnabled(false);
+                    if (that.isSelectionToolActive) {
+                        that.lassoing = true;
+                    } else {
+                    }
+                    if (!that.isSelectionToolActive) {
+                        d3.select('#selectionPolygon').remove();
 
-            }, nonPrimaryReleaseHandler: function (event) {
-                drag = null;
-                console.log('release');
-                if (that.isSelectionToolActive) {
-                    that.lasso_end(event);
-                    if (_.size(that.polygonSelection) > 2) {
-                        return dataLayer.getCellsInPolygon(that.polygonSelection, false)
-                            .then(cells => {
-                                d3.select('#selectionPolygon').remove();
-                                that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
+                    }
+                    that.polygonSelection = [];
+                    that.numCalls = 0;
+                }
+            }, releaseHandler: (event) => {
+                this.viewer.setMouseNavEnabled(true);
+                if (that.lassoing) {
+                    that.lassoing = false;
+                    console.log('release');
+                    if (that.isSelectionToolActive) {
+                        that.lasso_end(event);
+                        if (_.size(that.polygonSelection) > 2) {
+                            return dataLayer.getCellsInPolygon(that.polygonSelection, false)
+                                .then(cells => {
+                                    d3.select('#selectionPolygon').remove();
+                                    that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
+                                })
+                        }
+                    } else {
+                        const webPoint = event.position;
+                        // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+                        const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                        // Convert from viewport coordinates to image coordinates.
+                        const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+                        return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
+                            .then(selectedItem => {
+                                if (selectedItem !== null && selectedItem !== undefined) {
+                                    // Check if user is doing multi-selection or not
+                                    let clearPriors = true;
+                                    if (event.originalEvent.ctrlKey) {
+                                        clearPriors = false;
+                                    }
+                                    // Trigger event
+                                    that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+                                        selectedItem,
+                                        clearPriors
+                                    });
+                                }
                             })
                     }
-                } else {
-                    const webPoint = event.position;
-                    // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                    const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-                    // Convert from viewport coordinates to image coordinates.
-                    const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-                    return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
-                        .then(selectedItem => {
-                            if (selectedItem !== null && selectedItem !== undefined) {
-                                // Check if user is doing multi-selection or not
-                                let clearPriors = true;
-                                if (event.originalEvent.ctrlKey) {
-                                    clearPriors = false;
-                                }
-                                // Trigger event
-                                that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-                                    selectedItem,
-                                    clearPriors
-                                });
-                            }
-                        })
                 }
             }, moveHandler: function (event) {
-                if (that.isSelectionToolActive && drag) {
+                if (that.isSelectionToolActive && that.lassoing) {
                     that.lasso_draw(event);
                 }
             }
-        });
+        })
 
 
         //some resizing corrections
