@@ -111,6 +111,18 @@ class DataLayer {
 
         form.method = "post";
 
+        let filename = '';
+        if (fullCsv) {
+            filename = document.getElementById('download_input1').value;
+        }else{
+            filename = document.getElementById('download_input2').value;
+        }
+        let fileNameElemment = document.createElement("input");
+        fileNameElemment.type = "hidden";
+        fileNameElemment.value = _.toString(filename);
+        fileNameElemment.name = "filename";
+        form.appendChild(fileNameElemment);
+
         let fullCsvElemment = document.createElement("input");
         fullCsvElemment.type = "hidden";
         fullCsvElemment.value = _.toString(fullCsv);
