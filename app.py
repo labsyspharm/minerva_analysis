@@ -14,6 +14,9 @@ import pandas as pd
 import json
 import orjson
 
+from numcodecs import compat_ext # Needed for pyinstaller
+from numcodecs import blosc # Needed for pyinstaller
+
 app = Flask(__name__)
 
 config_json_path = Path("static/data") / "config.json"
