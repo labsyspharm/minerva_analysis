@@ -3,8 +3,9 @@
     <meta content="utf-8" http-equiv="encoding">
 
     <!-- Styles -->
+
     <link rel="stylesheet" href="../client/src/css/main.css">
-    <link rel="stylesheet" href="../client/src/css/viewer.css">
+    {% block style %}{% endblock %}
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet">
 
@@ -39,6 +40,7 @@
     <script src="../client/src/js/views/imageViewer.js"></script>
     <script src="../client/src/js/views/scatter.js"></script>
     <script src="../client/src/js/views/starplot.js"></script>
+    <script src="../client/src/js/views/barchart.js"></script>
     <script src="../client/src/js/services/simpleEventHandler.js"></script>
 
 </head>

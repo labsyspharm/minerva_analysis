@@ -641,42 +641,24 @@ polygon:hover {
 }
 
 
+#navbarDropdown, #navbarUpload, #navbarCompareDropdown {
+    font-size: 16px;
+}
+
+#topBar {
+    padding: 0 16px;
+}
+
+#title {
+    font-size: 16px;
+}
+
+
 #accordion .card-header, .card-footer {
     height: 3.6vh;
 }
 
-
 .radarstarplot_display {
     display: block;
     margin: auto;
-}
-
-#comparison_title {
-    margin-top: 5px;
-}
-
-.compare_row {
-    height: 28vh;
-}
-
-#comparison_div .compare_col {
-    padding: 0;
-}
-
-.compare_plot_body {
-    height: 90%;
-    width: 100%;
-}
-
-.compare_plot_title {
-    height: 10%;
-    width: 100%;
-}
-
-#comparison_div h5 {
-    font-size: 0.8rem;
-}
-
-.btn:focus {
-
 }

@@ -289,7 +289,7 @@ def get_phenotypes(datasource_name):
     if datasource_name != source:
         load_ball_tree(datasource_name)
     if phenotype_field in datasource.columns:
-        return datasource[phenotype_field].unique().tolist()
+        return sorted(datasource[phenotype_field].unique().tolist())
     else:
         return ['']
 

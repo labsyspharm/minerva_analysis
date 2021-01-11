@@ -19,9 +19,32 @@ async function init(conf) {
     container = document.getElementById('comparison_div');
     neighborhoods = await dataLayer.getAllNeighborhoodStats();
     createGrid();
-    createPlots();
+    initPhenotypeList();
+    smallMultipleStarplots();
+
+
 }
 
+function initPhenotypeList() {
+    const self = this;
+    // Init Phenotype List
+    let el = document.getElementById('phenotype_list');
+    let list = d3.select(el).selectAll('.list-group-item')
+        .data(dataLayer.phenotypes)
+        .enter()
+        .append('li')
+        .attr('class', 'list-group-item')
+        .text(d => d);
+
+    let sortable = new Sortable(el, {
+        animation: 150,
+        ghostClass: 'blue-background-class',
+        // Called by any change to the list (add / update / remove)
+        onSort: (env) => {
+            let test = '';
+        },
+    });
+}
 
 function createGrid() {
     let rows = Math.floor(Math.sqrt(_.size(neighborhoods)));
@@ -51,7 +74,7 @@ function createGrid() {
     })
 }
 
-function createPlots() {
+function smallMultipleStarplots() {
     _.each(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`);
         let header = div.querySelector('h5').innerHTML = d['name'];
@@ -59,6 +82,10 @@ function createPlots() {
         starplot.init();
         let starplotData = _.get(d, 'cluster_summary.weighted_contribution', []);
         starplot.wrangle(starplotData);
-
     })
+}
+
+function drawMultipleBarcharts() {
+    let test = '';
+
 }

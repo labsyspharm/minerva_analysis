@@ -1,15 +1,4 @@
 /* Bootstrap Overrides */
-#topBar {
-    padding: 0 16px;
-}
-
-#title {
-    font-size: 16px;
-}
-
-#navbarDropdown, #navbarUpload, #navbarCompareDropdown {
-    font-size: 16px;
-}
 
 #container, #row, #channel_list_wrapper, #openseadragon_wrapper, #csv_channel_list_wrapper {
     border: 0;

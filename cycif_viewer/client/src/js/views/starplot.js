@@ -25,8 +25,7 @@ class Starplot {
 
         this.tool_channelScale = d3.scaleLinear()
             .range([Math.PI, -Math.PI]);
-        this.tool_nucleusScale = d3.scaleSqrt()
-            .domain([0, 200]);
+
         this.tool_radiusScale = d3.scaleLinear()
             .domain([0, 1]);
         if (this.small) {
@@ -36,6 +35,11 @@ class Starplot {
             this.config_chartR0 = 15;
             this.config_chartR1 = 65;
         }
+        this.tool_logRadiusScale = d3.scaleSymlog()
+            .domain([0, 2000])
+            .range([this.config_chartR0, this.config_chartR1])
+
+        this.tool_logRadiusScale.clamp(true);
 // Main chart
         this.el_boxExtG = this.svg.append('g')
             .attr('class', 'viewfinder_box_ext_g');
@@ -64,27 +68,26 @@ class Starplot {
 
     }
 
-    wrangle(data) {
+    wrangle(data, order = null) {
         const self = this;
+        if (!order) {
+            order = self.phenotypes;
+        }
+
         this.visData = _.map(data, (v, k) => {
             return {
                 key: k,
                 short: k,
-                value: v
+                value: v,
+                index: _.indexOf(order, k)
             }
         })
+
+        this.visData = _.sortBy(this.visData, ['index']);
         this.range = [_.minBy(this.visData, elem => elem.value).value,
             _.maxBy(this.visData, elem => elem.value).value]
+        console.log("Range", this.range);
 
-        this.visData.sort((a, b) => {
-            if (a.key.toLowerCase() < b.key.toLowerCase()) return -1;
-            if (a.key.toLowerCase() > b.key.toLowerCase()) return 1;
-            return 0;
-        });
-        this.visData.forEach((d, i) => {
-            // Add index
-            d.index = i;
-        })
 
         // Config
         this.tool_angleScale.domain([0, this.visData.length]);
@@ -93,8 +96,8 @@ class Starplot {
         this.tool_radiusScale
             .range([this.config_chartR0, this.config_chartR1])
         this.tool_areaMaker
-            .innerRadius(() => this.tool_radiusScale(this.range[0]))
-            .outerRadius(d => this.tool_radiusScale(d.value / this.range[1]))
+            .innerRadius(d => this.tool_logRadiusScale(0))
+            .outerRadius(d => this.tool_logRadiusScale(d.value))
             .angle(d => this.tool_angleScale(d.index));
         return this.draw()
     }
@@ -122,7 +125,7 @@ class Starplot {
                     .append('g')
                     .attr('class', 'viewfinder_chart_label_g_g')
                     .each(function (d, i) {
-
+                        console.log(d);
                         // Get g
                         const g = d3.select(this);
 
