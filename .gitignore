@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+__pycache__/
 /node_modules
 */node_modules
 static/frontend/node_modules
@@ -10,7 +11,7 @@ static/frontend/node_modules
 */.ipynb_checkpoints/
 cycif_viewer/data/
 # testing
-/coverage
+/coverage__pycache__
 
 # production
 /build
