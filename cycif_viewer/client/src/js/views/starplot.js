@@ -85,9 +85,7 @@ class Starplot {
 
         this.visData = _.sortBy(this.visData, ['index']);
         this.range = [_.minBy(this.visData, elem => elem.value).value,
-            _.maxBy(this.visData, elem => elem.value).value]
-        console.log("Range", this.range);
-
+            _.maxBy(this.visData, elem => elem.value).value];
 
         // Config
         this.tool_angleScale.domain([0, this.visData.length]);
@@ -125,7 +123,6 @@ class Starplot {
                     .append('g')
                     .attr('class', 'viewfinder_chart_label_g_g')
                     .each(function (d, i) {
-                        console.log(d);
                         // Get g
                         const g = d3.select(this);
 

@@ -1,7 +1,7 @@
 const datasource = flaskVariables.datasource;
 let imageChannels = {};
 let dataSrcIndex = 0;
-let config, dataLayer, neighborhoods, neighborhoodStats, container;
+let config, dataLayer, neighborhoods, neighborhoodStats, container, phenotypeList;
 d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
     this.config = config;
     return init(config[datasource])
@@ -18,6 +18,7 @@ async function init(conf) {
     await dataLayer.init();
     container = document.getElementById('comparison_div');
     neighborhoods = await dataLayer.getAllNeighborhoodStats();
+    phenotypeList = document.getElementById('phenotype_list');
     createGrid();
     initPhenotypeList();
     smallMultipleStarplots();
@@ -28,20 +29,19 @@ async function init(conf) {
 function initPhenotypeList() {
     const self = this;
     // Init Phenotype List
-    let el = document.getElementById('phenotype_list');
-    let list = d3.select(el).selectAll('.list-group-item')
+    let list = d3.select(phenotypeList).selectAll('.list-group-item')
         .data(dataLayer.phenotypes)
         .enter()
         .append('li')
         .attr('class', 'list-group-item')
         .text(d => d);
 
-    let sortable = new Sortable(el, {
+    let sortable = new Sortable(phenotypeList, {
         animation: 150,
         ghostClass: 'blue-background-class',
         // Called by any change to the list (add / update / remove)
         onSort: (env) => {
-            let test = '';
+            console.log(d3.select(phenotypeList).selectAll('.list-group-item').data());
         },
     });
 }
