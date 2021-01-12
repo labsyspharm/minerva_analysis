@@ -1,5 +1,6 @@
 const datasource = flaskVariables.datasource;
 let imageChannels = {};
+let starplots = [];
 let dataSrcIndex = 0;
 let config, dataLayer, neighborhoods, neighborhoodStats, container, phenotypeList;
 d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
@@ -21,7 +22,7 @@ async function init(conf) {
     phenotypeList = document.getElementById('phenotype_list');
     createGrid();
     initPhenotypeList();
-    smallMultipleStarplots();
+    initSmallMultipleStarplots();
 
 
 }
@@ -40,8 +41,11 @@ function initPhenotypeList() {
         animation: 150,
         ghostClass: 'blue-background-class',
         // Called by any change to the list (add / update / remove)
-        onSort: (env) => {
-            console.log(d3.select(phenotypeList).selectAll('.list-group-item').data());
+        onSort: (e) => {
+            // Gets data in order
+            let data = d3.select(phenotypeList).selectAll('.list-group-item').data();
+
+            wrangleSmallMultipleStarplots(data.slice(0,4));
         },
     });
 }
@@ -74,15 +78,22 @@ function createGrid() {
     })
 }
 
-function smallMultipleStarplots() {
-    _.each(neighborhoods, (d, i) => {
+function initSmallMultipleStarplots() {
+    starplots = _.map(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`);
-        let header = div.querySelector('h5').innerHTML = d['name'];
+        let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
         let starplot = new Starplot(`compare_starplot_${i}`, dataLayer.phenotypes, small = true);
         starplot.init();
-        let starplotData = _.get(d, 'cluster_summary.weighted_contribution', []);
-        starplot.wrangle(starplotData);
-    })
+        return starplot;
+    });
+    wrangleSmallMultipleStarplots();
+}
+
+function wrangleSmallMultipleStarplots(order = null) {
+    _.each(starplots, (starplot, i) => {
+        let starplotData = _.get(neighborhoods[i], 'cluster_summary.weighted_contribution', []);
+        starplot.wrangle(starplotData, order);
+    });
 }
 
 function drawMultipleBarcharts() {

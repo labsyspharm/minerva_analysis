@@ -146,6 +146,7 @@ def get_all_neighborhood_stats(datasource_name):
         stats = pickle.load(io.BytesIO(neighborhood_stats.stats))
         stats['neighborhood_id'] = neighborhood_stats.neighborhood_id
         stats['name'] = neighborhood_stats.name
+        stats['neighborhood_name'] = neighborhood.name
         return stats
 
     neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)

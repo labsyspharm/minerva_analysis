@@ -82,8 +82,11 @@ class Starplot {
                 index: _.indexOf(order, k)
             }
         })
-
+        this.visData = _.filter(this.visData, elem => {
+            return elem.index !== -1; // Remove elements not in my order list
+        })
         this.visData = _.sortBy(this.visData, ['index']);
+
         this.range = [_.minBy(this.visData, elem => elem.value).value,
             _.maxBy(this.visData, elem => elem.value).value];
 
@@ -117,7 +120,7 @@ class Starplot {
 
         // Draw lines / labels
         this.el_chartLabelsG.selectAll('.viewfinder_chart_label_g_g')
-            .data(this.visData, d => d.key)
+            .data(this.visData)
             .join(
                 enter => enter
                     .append('g')
@@ -167,6 +170,13 @@ class Starplot {
                                 if (angle >= Math.PI) return `rotate(${angle + Math.PI / 2}rad)`;
                                 return `rotate(${angle - Math.PI / 2}rad)`;
                             })
+                            .attr('font-weight', () => {
+                                if (self.small) {
+                                    return 'normal';
+                                } else {
+                                    return 'bold';
+                                }
+                            })
                             .text(d => {
                                 return d.short;
                             });
@@ -186,21 +196,42 @@ class Starplot {
                             .attr('stroke-width', 0.5);
                     }),
                 update => update
-                    .each(function (d, i) {
+                    .each(function (dat, i) {
 
                         // Get g
                         const g = d3.select(this);
+                        const coords = [
+                            getCoordsTranslation(self.config_chartR0, i),
+                            getCoordsTranslation(self.config_chartR1, i)
+                        ];
+                        g.select('.labelLine')
+                            .attr('class', 'labelLine')
+                            .attr('d', d3.line()(coords));
+
+
+                        // Label group
+                        const textCoords = getCoordsTranslation(self.config_chartR1 + 5, i)
+                        const angle = self.tool_angleScale(i);
+                        g.select('.viewfinder_chart_label_g_g_text_g')
+                            .attr('class', 'viewfinder_chart_label_g_g_text_g')
+                            .style('transform',
+                                `translate(${textCoords[0]}px, ${textCoords[1]}px)`)
 
                         // Label groups
                         g.select('.viewfinder_chart_label_g_g_text_g text')
                             .attr('class', 'viewfinder_chart_label_g_g_text_g')
-                            .attr('font-weight', () => {
-                                if (self.small) {
-                                    return 'normal';
-                                } else {
-                                    return 'bold';
-                                }
+                            .style('transform', () => {
+                                if (angle >= Math.PI) return `rotate(${angle + Math.PI / 2}rad)`;
+                                return `rotate(${angle - Math.PI / 2}rad)`;
+                            })
+                            .attr('text-anchor', () => {
+                                if (angle >= Math.PI) return `end`;
+                                return `start`;
+                            })
+                            .text(d => {
+                                return d.short;
                             });
+
 
                         // Label group
                         g.select('.viewfinder_chart_label_g_g_circle')
@@ -211,6 +242,8 @@ class Starplot {
 
                     }),
                 exit => exit
+                    .transition()
+                    .remove()
             );
 
         // Draw path
