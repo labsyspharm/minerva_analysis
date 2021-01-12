@@ -25,6 +25,10 @@
 }
 
 #phenotype_list .list-group-item {
-    padding: 10px 5px;
+    padding: 6px 3px;
     font-size: 0.6rem;
+}
+
+#phenotype_list .material-icons {
+    font-size: 1rem;
 }

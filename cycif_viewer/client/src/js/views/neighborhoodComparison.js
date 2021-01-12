@@ -2,7 +2,7 @@ const datasource = flaskVariables.datasource;
 let imageChannels = {};
 let starplots = [];
 let dataSrcIndex = 0;
-let config, dataLayer, neighborhoods, neighborhoodStats, container, phenotypeList;
+let config, dataLayer, neighborhoods, neighborhoodStats, container, phenotypeList, sortable;
 d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
     this.config = config;
     return init(config[datasource])
@@ -34,20 +34,64 @@ function initPhenotypeList() {
         .data(dataLayer.phenotypes)
         .enter()
         .append('li')
-        .attr('class', 'list-group-item')
-        .text(d => d);
+        .attr('class', 'list-group-item list-group-item-secondary')
+        .attr('data-id', d => d)
+        .append('div')
+        .attr('class', 'row')
+    list.append('div')
+        .attr('class', 'col-9')
+        .text(d => d)
+    list.append('div')
+        .attr('class', 'col-3 phenotype_action')
+        .on('click', (e, d) => {
+            removePhenotype(e, d);
+        })
+        .append('span')
+        .attr('class', 'material-icons')
+        .text('remove')
 
-    let sortable = new Sortable(phenotypeList, {
+
+    sortable = new Sortable(phenotypeList, {
         animation: 150,
         ghostClass: 'blue-background-class',
         // Called by any change to the list (add / update / remove)
         onSort: (e) => {
-            // Gets data in order
-            let data = d3.select(phenotypeList).selectAll('.list-group-item').data();
-
-            wrangleSmallMultipleStarplots(data.slice(0,4));
-        },
+            redrawStarplots();
+        }
     });
+}
+
+function redrawStarplots() {
+    // Gets data in order
+
+    let data = d3.select(phenotypeList).selectAll('.list-group-item-secondary').data();
+    wrangleSmallMultipleStarplots(data);
+}
+
+function removePhenotype(e, d) {
+    let div = e.path[0];
+    let span;
+    if (div.tagName == "SPAN") {
+        span = div;
+        div = e.path[1];
+    } else {
+        span = div.childNodes[0];
+    }
+    let row = div.parentElement.parentElement;
+    let array = sortable.toArray();
+    if (span.innerText == "remove") {
+        span.innerText = "add";
+        row.classList.remove("list-group-item-secondary");
+        row.classList.add("list-group-item-light");
+        _.pull(array, d);
+        array = _.concat(array, d);
+        sortable.sort(array, true);
+    } else {
+        span.innerText = "remove";
+        row.classList.add("list-group-item-secondary");
+        row.classList.remove("list-group-item-light");
+    }
+    redrawStarplots();
 }
 
 function createGrid() {
