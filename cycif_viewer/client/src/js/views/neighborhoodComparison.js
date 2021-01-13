@@ -1,8 +1,11 @@
 const datasource = flaskVariables.datasource;
 let imageChannels = {};
-let starplots = [];
+let plots = [];
 let dataSrcIndex = 0;
 let config, dataLayer, neighborhoods, neighborhoodStats, container, phenotypeList, sortable;
+let currentState = ''
+const eventHandler = new SimpleEventHandler(d3.select('body').node());
+
 d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
     this.config = config;
     return init(config[datasource])
@@ -22,6 +25,7 @@ async function init(conf) {
     phenotypeList = document.getElementById('phenotype_list');
     createGrid();
     initPhenotypeList();
+    initSmallMultipleToggles();
     initSmallMultipleStarplots();
 
 
@@ -61,11 +65,67 @@ function initPhenotypeList() {
     });
 }
 
+function initSmallMultipleToggles() {
+    let parent = document.getElementById("small-multiple-toggle");
+    _.each(parent.querySelectorAll(".btn-check"), (elem) => {
+        elem.onclick = () => {
+            switchSmallMultipleType(elem, parent);
+        }
+    })
+}
+
+function switchSmallMultipleType(elem, parent) {
+    if (elem.id == "starplot-button") {
+        if (selectAndUnselect(elem, parent)) {
+            //Remove Bars
+            currentState = 'starplot';
+            //Add starplots
+            removeAllPlots();
+            initSmallMultipleStarplots();
+        }
+    } else if (elem.id == "barchart-button") {
+        if (selectAndUnselect(elem, parent)) {
+            currentState = 'barchart';
+            removeAllPlots();
+            initSmallMultipleBarcharts();
+        }
+
+    } else if (elem.id == "scatterplot-button") {
+        if (selectAndUnselect(elem, parent)) {
+            currentState = 'scatterplot';
+            removeAllPlots();
+            initSmallMultipleScatterplots();
+
+        }
+
+    }
+
+    function selectAndUnselect(elem, parent) {
+        let label = elem.labels[0];
+        if (label.classList.contains("btn-dark")) {
+            console.log("Already Checked")
+            return false;
+        } else {
+            let otherButton = parent.querySelector('.btn-dark');
+            otherButton.classList.remove('btn-dark');
+            otherButton.classList.add('btn-light');
+            label.classList.add('btn-dark');
+            label.classList.remove('btn-light');
+            return true;
+        }
+    }
+}
+
+function removeAllPlots() {
+    d3.selectAll('.starplot, .barchart').remove();
+    plots = [];
+}
+
+
 function redrawStarplots() {
     // Gets data in order
-
     let data = d3.select(phenotypeList).selectAll('.list-group-item-secondary').data();
-    wrangleSmallMultipleStarplots(data);
+    wrangleSmallMultiples();
 }
 
 function removePhenotype(e, d) {
@@ -123,24 +183,58 @@ function createGrid() {
 }
 
 function initSmallMultipleStarplots() {
-    starplots = _.map(neighborhoods, (d, i) => {
+    plots = _.map(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`);
         let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
         let starplot = new Starplot(`compare_starplot_${i}`, dataLayer.phenotypes, small = true);
         starplot.init();
         return starplot;
     });
-    wrangleSmallMultipleStarplots();
+    wrangleSmallMultiples();
 }
 
-function wrangleSmallMultipleStarplots(order = null) {
-    _.each(starplots, (starplot, i) => {
-        let starplotData = _.get(neighborhoods[i], 'cluster_summary.weighted_contribution', []);
-        starplot.wrangle(starplotData, order);
+function wrangleSmallMultiples(order = null, scatterplot = false) {
+    _.each(plots, (plot, i) => {
+        let plotData;
+        if (currentState == 'scatterplot') {
+            plotData = _.get(neighborhoods[i], 'cells', []);
+            plotData = _.map(plotData, d => {
+                return {
+                    'x':d['X_centroid'],
+                    'y':d['Y_centroid'],
+                    'id':d['id']
+                }
+            })
+        } else {
+            plotData = _.get(neighborhoods[i], 'cluster_summary.weighted_contribution', []);
+        }
+        plot.wrangle(plotData, order);
     });
 }
 
-function drawMultipleBarcharts() {
-    let test = '';
+function initSmallMultipleBarcharts() {
+    plots = _.map(neighborhoods, (d, i) => {
+        let div = document.getElementById(`compare_col_${i}`);
+        let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
+        let barchart = new Barchart(`compare_starplot_${i}`, dataLayer.phenotypes);
+        barchart.init();
+        return barchart;
+    });
+    wrangleSmallMultiples();
+}
 
+function initSmallMultipleScatterplots() {
+    plots = _.map(neighborhoods, (d, i) => {
+        let div = document.getElementById(`compare_col_${i}`)
+        let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
+        let canvas_div = document.getElementById(`compare_starplot_${i}`);
+        let canvas = document.createElement("canvas");
+        canvas.className = 'scatterplot scatter_canvas';
+        canvas.id = `compare_col_canvas_${i}`;
+        canvas_div.appendChild(canvas);
+        scatterplot = new Scatterplot(`compare_starplot_${i}`, `compare_col_canvas_${i}`, eventHandler, dataLayer);
+        scatterplot.init();
+        return scatterplot;
+    });
+    wrangleSmallMultiples();
 }

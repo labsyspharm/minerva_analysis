@@ -1,19 +1,18 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, eventHandler, dataLayer, colorScheme) {
+    constructor(id, canvasId, eventHandler, dataLayer) {
         this.id = id;
+        this.canvasId = canvasId;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
-        this.colorScheme = colorScheme;
     }
 
-    async init() {
+    init() {
         const self = this;
-        self.visData = await dataLayer.getScatterplotData()
-        self.visData.data = _.map(self.visData.data, _.values);
+
         window.devicePixelRatio = 1;
-        const canvas = document.querySelector('#scatter_canvas');
+        const canvas = document.querySelector(`#${self.canvasId}`);
         let {width, height} = canvas.getBoundingClientRect();
         let ratio = window.devicePixelRatio;
         self.lassoActive = false;
@@ -36,7 +35,17 @@ class Scatterplot {
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
         self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
         self.plot.set({cameraDistance: 13});
-        self.plot.draw(self.visData.data);
+    }
+
+    async wrangle(data) {
+        const self = this;
+        if (data) {
+            self.visData = data;
+        } else {
+            self.visData = await dataLayer.getScatterplotData().data;
+        }
+        self.visData = _.map(self.visData, _.values);
+        self.plot.draw(self.visData);
     }
 
     recolor() {

@@ -16,7 +16,7 @@ class Starplot {
         this.svg = d3.select(`#${this.id}`).append("svg")
             .attr("width", this.width + this.margin.left + this.margin.right)
             .attr("height", this.height + this.margin.top + this.margin.bottom)
-            .attr("class", "radar" + this.id);
+            .attr("class", "radar" + this.id + " starplot");
 
         this.tool_angleScale = d3.scaleLinear()
             .range([0, 2 * Math.PI]);
@@ -78,7 +78,7 @@ class Starplot {
             return {
                 key: k,
                 short: k,
-                value: v,
+                value: v || 0,
                 index: _.indexOf(order, k)
             }
         })

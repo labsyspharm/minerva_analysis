@@ -86,6 +86,6 @@
     font-weight: normal;
 }
 
-#scatter_canvas {
+.scatter_canvas {
     width: 100%;
 }

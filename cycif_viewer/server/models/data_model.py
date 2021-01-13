@@ -96,7 +96,7 @@ def init_clusters(datasource_name):
 
         # Similarly, if the stats are not initialized, let's store them in the DB as well
         if neighborhood_stats is None:
-            obj = get_neighborhood_stats(indices, cluster_cells)
+            obj = get_neighborhood_stats(datasource_name, indices, cluster_cells)
             f = io.BytesIO()
             pickle.dump(obj, f)
             neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
@@ -238,7 +238,7 @@ def get_cells(elem, datasource_name):
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     ids = elem['ids']
-    obj = get_neighborhood_stats(ids, fields=fields)
+    obj = get_neighborhood_stats(datasource_name, ids, fields=fields)
     return obj
 
 
@@ -442,7 +442,7 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False):
     path = mpltPath.Path(point_tuples)
     inside = path.contains_points(neighbor_points[:, [0, 1]].astype('float'))
     neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
-    obj = get_neighborhood_stats(neighbor_ids, fields=fields)
+    obj = get_neighborhood_stats(datasource_name, neighbor_ids, fields=fields)
     return obj
 
 
@@ -462,7 +462,7 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
 
     selection_summary = np.mean(standard_neighborhoods[selection_ids, :], axis=0)
     similar_ids = find_similarity(selection_summary, similarity)
-    obj = get_neighborhood_stats(similar_ids, fields=fields)
+    obj = get_neighborhood_stats(datasource_name, similar_ids, fields=fields)
     obj['raw_summary'] = selection_summary
     return obj
 
@@ -652,10 +652,12 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return {'segmentation': str(directory)}
 
 
-def get_neighborhood_stats(indices, cluster_cells=None, fields=[]):
+def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=[]):
     global datasource
     global source
-    default_fields = ['id', 'Cluster', 'phenotype']
+    global config
+    default_fields = ['id', 'Cluster', 'phenotype', config[datasource_name]['featureData'][0]['xCoordinate'],
+                      config[datasource_name]['featureData'][0]['yCoordinate']]
     for field in fields:
         if field not in default_fields:
             default_fields.append(field)
@@ -663,7 +665,7 @@ def get_neighborhood_stats(indices, cluster_cells=None, fields=[]):
     if cluster_cells is None:
         cluster_cells = datasource.loc[indices, default_fields].to_dict(orient='records')
     else:
-        cluster_cells = cluster_cells[['id', 'Cluster', 'phenotype']].to_dict(orient='records')
+        cluster_cells = cluster_cells[default_fields].to_dict(orient='records')
     neighborhood_array = np.load(Path("cycif_viewer/data/Ton/neighborhood_array_complex.npy"))
     cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
     summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
