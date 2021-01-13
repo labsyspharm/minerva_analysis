@@ -1,3 +1,4 @@
+name: cycif_viewer
 channels:
   - conda-forge
 dependencies:
@@ -13,6 +14,7 @@ dependencies:
   - tifffile=2020.10.1
   - waitress
   - zarr
+  - pyinstaller
   - pip
   - pip:
       - opencv-python==4.4.0.*

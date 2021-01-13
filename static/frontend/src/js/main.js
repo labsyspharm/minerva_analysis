@@ -25,7 +25,8 @@ document.getElementById("openseadragon").addEventListener('contextmenu', event =
 //LOAD DATA
 // console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
-d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
+//d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
+d3.json(`/config`).then(function (config) {
     // console.log('loading data');
     this.config = config;
     init(config[datasource]).then(() => {
@@ -36,6 +37,7 @@ d3.json(`/static/data/config.json?t=${Date.now()}`).then(function (config) {
 
 // init all views (datatable, seadragon viewer,...)
 async function init(conf) {
+
     // console.log('initialize system');
     config = conf;
     //channel information

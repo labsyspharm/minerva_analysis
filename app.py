@@ -7,22 +7,44 @@ import csv
 from pathlib import Path
 from waitress import serve
 import shutil
+import xmlschema
 
 from time import time
 import numpy as np
 import pandas as pd
 import json
 import orjson
+import sys
 
-app = Flask(__name__)
 
-config_json_path = Path("static/data") / "config.json"
+from numcodecs import compat_ext # Needed for pyinstaller
+from numcodecs import blosc # Needed for pyinstaller
+
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    static_folder = os.path.join(sys._MEIPASS, 'static')
+    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+    app = Flask(__name__)
+
+config_json_path = Path("data") / "config.json"
 
 
 @app.route("/")
 def my_index():
     return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
 
+@app.route('/config')
+def get_config():
+    if not os.path.isdir(Path("data")):
+        os.makedirs(Path("data"))
+    if not os.path.isfile(config_json_path):
+        with open(config_json_path, 'w') as f:
+            json.dump({}, f)
+            return []
+    with open('data/config.json') as f:
+        data = json.load(f)
+    return data;
 
 @app.route('/<string:datasource>')
 def image_viewer(datasource):
@@ -35,8 +57,8 @@ def image_viewer(datasource):
 
 
 def get_config_names():
-    if not os.path.isdir(Path("static/data")):
-        os.makedirs(Path("static/data"))
+    if not os.path.isdir(Path("data")):
+        os.makedirs(Path("data"))
 
     if not os.path.isfile(config_json_path):
         with open(config_json_path, 'w') as f:
@@ -74,7 +96,7 @@ def edit_config_with_request_name(config_name):
 def delete_with_datasource_name(config_name):
     global config_json_path
 
-    path = str(Path('static/data') / config_name)
+    path = str(Path('data') / config_name)
     if os.path.exists(path):
         shutil.rmtree(path)
     with open(config_json_path, "r+") as configJson:
@@ -200,7 +222,7 @@ def upload_file_page():
                     raise Exception("Please Name Dataset")
                 else:
                     datasetName = request.form['name']
-                    file_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasetName)
+                    file_path = str(Path(os.path.join(os.getcwd())) / "data" / datasetName)
                     if not os.path.exists(file_path):
                         os.makedirs(file_path)
 
@@ -362,7 +384,7 @@ def save_config():
                     skip_columns.append(column_name)
             name, ext = os.path.splitext(csvName)
             normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
-            file_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasetName)
+            file_path = str(Path(os.path.join(os.getcwd())) / "data" / datasetName)
             csvPath = str(Path(file_path) / csvName)
             normPath = str(Path(file_path) / normCsvName)
             pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
@@ -424,7 +446,7 @@ def save_config():
             if 'normalization' in originalData:
                 configData[datasetName]['featureData'][0]['normalization'] = originalData['normalization']
 
-            configData[datasetName]['featureData'][0]['src'] = "/static/data/" + datasetName + "/" + csvName
+            configData[datasetName]['featureData'][0]['src'] = "/data/" + datasetName + "/" + csvName
             # Adding the Label Channel as the First Label
             configData[datasetName]['imageData'] = [{}]
             #
@@ -556,7 +578,7 @@ def upload_gates():
     if file.filename.endswith('.csv') == False:
         abort(422)
     datasource = request.form['datasource']
-    save_path = Path(os.path.join(os.getcwd())) / "static" / "data" / datasource
+    save_path = Path(os.path.join(os.getcwd())) / "data" / datasource
     if save_path.is_dir() == False:
         abort(422)
 
@@ -606,7 +628,7 @@ def download_gating_csv():
 @app.route('/get_uploaded_gating_csv_values', methods=['GET'])
 def get_gating_csv_values():
     datasource = request.args.get('datasource')
-    file_path = Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / 'uploaded_gates.csv'
+    file_path = Path(os.path.join(os.getcwd())) / "data" / datasource / 'uploaded_gates.csv'
     if file_path.is_file() == False:
         abort(422)
     csv = pd.read_csv(file_path)
