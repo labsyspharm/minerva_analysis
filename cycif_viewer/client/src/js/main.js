@@ -26,12 +26,9 @@ document.getElementById("openseadragon").addEventListener('contextmenu', event =
 // console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
 //d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
-d3.json(`/config`).then(function (config) {
-    // console.log('loading data');
+d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
     this.config = config;
-    init(config[datasource]).then(() => {
-        // console.log("done loading data");
-    });
+    return init(config[datasource])
 });
 
 

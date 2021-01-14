@@ -20,7 +20,7 @@ def get_nearest_cell():
     x = float(request.args.get('point_x'))
     y = float(request.args.get('point_y'))
     datasource = request.args.get('datasource')
-    resp = dataFilter.query_for_closest_cell(x, y, datasource)
+    resp = data_model.query_for_closest_cell(x, y, datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -28,7 +28,7 @@ def get_nearest_cell():
 def get_channel_cell_ids():
     datasource = request.args.get('datasource')
     filter = json.loads(request.args.get('filter'))
-    resp = dataFilter.get_channel_cells(datasource, filter)
+    resp = data_model.get_channel_cells(datasource, filter)
     return serialize_and_submit_json(resp)
 
 
@@ -37,7 +37,7 @@ def get_channel_cell_ids():
 def get_database_row():
     datasource = request.args.get('datasource')
     row = int(request.args.get('row'))
-    resp = dataFilter.get_row(row, datasource)
+    resp = data_model.get_row(row, datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -45,14 +45,14 @@ def get_database_row():
 def get_channel_names():
     datasource = request.args.get('datasource')
     shortnames = bool(request.args.get('shortNames'))
-    resp = dataFilter.get_channel_names(datasource, shortnames)
+    resp = data_model.get_channel_names(datasource, shortnames)
     return serialize_and_submit_json(resp)
 
 
 @app.route('/get_phenotypes', methods=['GET'])
 def get_phenotypes():
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_phenotypes(datasource)
+    resp = data_model.get_phenotypes(datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -60,7 +60,7 @@ def get_phenotypes():
 def get_color_scheme():
     datasource = request.args.get('datasource')
     refresh = request.args.get('refresh') == 'true'
-    resp = dataFilter.get_color_scheme(datasource, refresh)
+    resp = data_model.get_color_scheme(datasource, refresh)
     return serialize_and_submit_json(resp)
 
 
@@ -70,7 +70,7 @@ def get_neighborhood():
     y = float(request.args.get('point_y'))
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_neighborhood(x, y, datasource, r=max_distance)
+    resp = data_model.get_neighborhood(x, y, datasource, r=max_distance)
     return serialize_and_submit_json(resp)
 
 
@@ -80,7 +80,7 @@ def get_num_cells_in_circle():
     x = float(request.args.get('point_x'))
     y = float(request.args.get('point_y'))
     r = float(request.args.get('radius'))
-    resp = dataFilter.get_number_of_cells_in_circle(x, y, datasource, r=r)
+    resp = data_model.get_number_of_cells_in_circle(x, y, datasource, r=r)
     return serialize_and_submit_json(resp)
 
 
@@ -88,14 +88,14 @@ def get_num_cells_in_circle():
 def get_gated_cell_ids():
     datasource = request.args.get('datasource')
     filter = json.loads(request.args.get('filter'))
-    resp = dataFilter.get_gated_cells(datasource, filter)
+    resp = data_model.get_gated_cells(datasource, filter)
     return serialize_and_submit_json(resp)
 
 
 @app.route('/get_database_description', methods=['GET'])
 def get_database_description():
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_database_description(datasource)
+    resp = data_model.get_database_description(datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -123,7 +123,7 @@ def get_rect_cells():
     channels = request.args.get('channels')
 
     # Retrieve cells - FIXME: Too slow - jam is stalling image loading
-    resp = dataFilter.get_rect_cells(datasource, rect, channels)
+    resp = data_model.get_rect_cells(datasource, rect, channels)
     print('Neighborhood size:', len(resp))
     return serialize_and_submit_json(resp)
 
@@ -131,7 +131,7 @@ def get_rect_cells():
 @app.route('/get_ome_metadata', methods=['GET'])
 def get_ome_metadata():
     datasource = request.args.get('datasource')
-    resp = dataFilter.get_ome_metadata(datasource)
+    resp = data_model.get_ome_metadata(datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -142,9 +142,9 @@ def download_gating_csv():
     channels = json.loads(request.form['channels'])
     fullCsv = json.loads(request.form['fullCsv'])
     if fullCsv:
-        csv = dataFilter.download_gating_csv(datasource, filter, channels)
+        csv = data_model.download_gating_csv(datasource, filter, channels)
     else:
-        csv = dataFilter.download_gates(datasource, filter, channels)
+        csv = data_model.download_gates(datasource, filter, channels)
     return Response(
         csv.to_csv(index=False),
         mimetype="text/csv",
@@ -167,7 +167,7 @@ def get_gating_csv_values():
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
     now = time()
-    png = dataFilter.generate_zarr_png(datasource, channel, level, tile)
+    png = data_model.generate_zarr_png(datasource, channel, level, tile)
     file_object = io.BytesIO()
     # write PNG in file-object
     Image.fromarray(png).save(file_object, 'PNG', compress_level=0)

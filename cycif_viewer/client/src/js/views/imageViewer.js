@@ -79,7 +79,7 @@ class ImageViewer {
         // Config viewer
         const viewer_config = {
             id: "openseadragon",
-            prefixUrl: "/static/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
+            prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,

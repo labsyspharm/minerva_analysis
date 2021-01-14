@@ -1,17 +1,14 @@
 from sklearn.neighbors import BallTree
 import numpy as np
 import pandas as pd
-from skimage import color
-import requests
+from PIL import ImageColor
 import json
 import os
 from pathlib import Path
 from ome_types import from_xml
-from server import pyramid_assemble
-
-import orjson
-
-from skimage.io import imread
+from cycif_viewer import config_json_path
+from cycif_viewer.server.utils import pyramid_assemble
+from cycif_viewer.server.models import database_model
 
 import time
 import pickle
@@ -29,34 +26,33 @@ channels = None
 metadata = None
 
 
-def init(datasource):
-    load_ball_tree(datasource)
+def init(datasource_name):
+    load_ball_tree(datasource_name)
 
 
-def load_db(datasource, reload=False):
-    global database
+def load_datasource(datasource_name, reload=False):
+    global datasource
     global source
     global config
     global seg
     global channels
     global metadata
-
-    if source is datasource and database is not None and reload is False:
+    if source is datasource_name and datasource is not None and reload is False:
         return
     load_config()
     if reload:
-        load_ball_tree(datasource, reload=reload)
-    csvPath = "." + config[datasource]['featureData'][0]['src']
-    database = pd.read_csv(csvPath)
-    database['id'] = database.index
-    database = database.replace(-np.Inf, 0)
-    source = datasource
-    if config[datasource]['segmentation'].endswith('.zarr'):
-        seg = zarr.load(config[datasource]['segmentation'])
+        load_ball_tree(datasource_name, reload=reload)
+    csvPath = "." + config[datasource_name]['featureData'][0]['src']
+    datasource = pd.read_csv(csvPath)
+    datasource['id'] = datasource.index
+    datasource = datasource.replace(-np.Inf, 0)
+    source = datasource_name
+    if config[datasource_name]['segmentation'].endswith('.zarr'):
+        seg = zarr.load(config[datasource_name]['segmentation'])
     else:
-        seg_io = tf.TiffFile(config[datasource]['segmentation'], is_ome=False)
+        seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
-    channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
+    channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
     try:
         xml = channel_io.pages[0].tags['ImageDescription'].value
         metadata = from_xml(xml).images[0].pixels
@@ -66,49 +62,48 @@ def load_db(datasource, reload=False):
 
 
 def load_config():
-    config_json_path = Path("data") / "config.json"
     global config
     with open(config_json_path, "r+") as configJson:
         config = json.load(configJson)
 
 
-def load_ball_tree(datasource, reload=False):
+def load_ball_tree(datasource_name_name, reload=False):
     global ball_tree
-    global database
+    global datasource
     global config
-    if datasource != source:
-        load_db(datasource)
-    pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "data" / datasource / "ball_tree.pickle")
+    if datasource_name_name != source:
+        load_datasource(datasource_name_name)
+    pickled_kd_tree_path = str(
+        Path(
+            os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name_name / "ball_tree.pickle")
     if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
     else:
         print("Creating KD Tree")
-        xCoordinate = config[datasource]['featureData'][0]['xCoordinate']
-        print('X', xCoordinate)
-        yCoordinate = config[datasource]['featureData'][0]['yCoordinate']
-        csvPath = "." + config[datasource]['featureData'][0]['src']
+        xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
+        yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
+        csvPath = "." + config[datasource_name_name]['featureData'][0]['src']
         raw_data = pd.read_csv(csvPath)
         points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
         pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
 
-def query_for_closest_cell(x, y, datasource):
-    global database
+def query_for_closest_cell(x, y, datasource_name):
+    global datasource
     global source
     global ball_tree
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
     distance, index = ball_tree.query([[x, y]], k=1)
     if distance == np.inf:
         return {}
     #         Nothing found
     else:
         try:
-            row = database.iloc[index[0]]
+            row = datasource.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
-            obj['id'] = str(index[0][0])
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             return obj
@@ -116,39 +111,39 @@ def query_for_closest_cell(x, y, datasource):
             return {}
 
 
-def get_row(row, datasource):
+def get_row(row, datasource_name):
     global database
     global source
     global ball_tree
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
     obj = database.loc[[row]].to_dict(orient='records')[0]
     obj['id'] = row
     return obj
 
 
-def get_channel_names(datasource, shortnames=True):
-    global database
+def get_channel_names(datasource_name, shortnames=True):
+    global datasource
     global source
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
     if shortnames:
-        channel_names = [channel['name'] for channel in config[datasource]['imageData'][1:]]
+        channel_names = [channel['name'] for channel in config[datasource_name]['imageData'][1:]]
     else:
-        channel_names = [channel['fullname'] for channel in config[datasource]['imageData'][1:]]
+        channel_names = [channel['fullname'] for channel in config[datasource_name]['imageData'][1:]]
     return channel_names
 
 
-def get_channel_cells(datasource, channels):
-    global database
+def get_channel_cells(datasource_name, channels):
+    global datasource
     global source
     global ball_tree
 
     range = [0, 65536]
 
     # Load if not loaded
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
 
     query_string = ''
     for c in channels:
@@ -157,35 +152,35 @@ def get_channel_cells(datasource, channels):
         query_string += str(range[0]) + ' < ' + c + ' < ' + str(range[1])
     if query_string == None or query_string == "":
         return []
-    query = database.query(query_string)[['id']].to_dict(orient='records')
+    query = datasource.query(query_string)[['id']].to_dict(orient='records')
     return query
 
 
-def get_phenotypes(datasource):
-    global database
+def get_phenotypes(datasource_name):
+    global datasource
     global source
     global config
     try:
-        phenotype_field = config[datasource]['featureData'][0]['phenotype']
+        phenotype_field = config[datasource_name]['featureData'][0]['phenotype']
     except KeyError:
         phenotype_field = 'phenotype'
     except TypeError:
         phenotype_field = 'phenotype'
 
-    if datasource != source:
-        load_ball_tree(datasource)
-    if phenotype_field in database.columns:
-        return database[phenotype_field].unique().tolist()
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    if phenotype_field in datasource.columns:
+        return sorted(datasource[phenotype_field].unique().tolist())
     else:
         return ['']
 
 
-def get_neighborhood(x, y, datasource, r=100, fields=None):
+def get_neighborhood(x, y, datasource_name, r=100, fields=None):
     global database
     global source
     global ball_tree
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
     try:
@@ -197,21 +192,17 @@ def get_neighborhood(x, y, datasource, r=100, fields=None):
                 neighborhood = database.iloc[neighbors][fields].to_dict()
         else:
             neighborhood = database.iloc[neighbors].to_dict(orient='records')
-        # for neighbor in neighbors:
-        #     row = database.iloc[[neighbor]]
-        #     obj = row.to_dict(orient='records')[0]
-        #     # obj['id'] = str(neighbor)
 
         return neighborhood
     except:
         return {}
 
 
-def get_number_of_cells_in_circle(x, y, datasource, r):
+def get_number_of_cells_in_circle(x, y, datasource_name, r):
     global source
     global ball_tree
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
     index = ball_tree.query_radius([[x, y]], r=r)
     try:
         return len(index[0])
@@ -219,48 +210,66 @@ def get_number_of_cells_in_circle(x, y, datasource, r):
         return 0
 
 
-def get_color_scheme(datasource, refresh):
+def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
     color_scheme_path = str(
-        Path(os.path.join(os.getcwd())) / "data" / datasource / "color_scheme.pickle")
+        Path(os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name / str(
+            label_field + "_color_scheme.pickle"))
     if refresh == False:
         if os.path.isfile(color_scheme_path):
             print("Color Scheme Exists, Loading")
             color_scheme = pickle.load(open(color_scheme_path, "rb"))
             return color_scheme
-    phenotypes = get_phenotypes(datasource)
-    payload = {
-        'hueFilters': [],
-        'lightnessRange': ["25", "85"],
-        'startPalette': [[75, 25, 75]],
-        'weights': {'ciede2000': 1, 'nameDifference': 0, 'nameUniqueness': 0, 'pairPreference': 0},
-        'paletteSize': len(phenotypes)
-    }
-    now = time.time()
-    r = requests.post("http://vrl.cs.brown.edu/color/makePalette",
-                      data=json.dumps(payload), allow_redirects=True)
-    print((now - time.time()), 'seconds to fetch')
-    palette = r.json()['palette']
-    rgb_palette = [
-        np.array(color.lab2rgb(np.reshape(elem, (1, 1, 3)).astype(float)) * 255, dtype=int).flatten().tolist() for
-        elem in palette]
+    if label_field == 'phenotype':
+        labels = get_phenotypes(datasource_name)
+    labels.append('SelectedCluster')
     color_scheme = {}
-    for i in range(len(rgb_palette)):
-        color_scheme[phenotypes[i]] = {}
-        color_scheme[phenotypes[i]]['rgb'] = rgb_palette[i]
-        color_scheme[phenotypes[i]]['hex'] = '%02x%02x%02x' % tuple(rgb_palette[i])
+    colors = ["#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059", "#FFDBE5", "#7A4900",
+              "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87", "#5A0007", "#809693", "#FEFFE6",
+              "#1B4400", "#4FC601", "#3B5DFF", "#4A3B53", "#FF2F80", "#61615A", "#BA0900", "#6B7900", "#00C2A0",
+              "#FFAA92", "#FF90C9", "#B903AA", "#D16100", "#DDEFFF", "#000035", "#7B4F4B", "#A1C299", "#300018",
+              "#0AA6D8", "#013349", "#00846F", "#372101", "#FFB500", "#C2FFED", "#A079BF", "#CC0744", "#C0B9B2",
+              "#C2FF99", "#001E09", "#00489C", "#6F0062", "#0CBD66", "#EEC3FF", "#456D75", "#B77B68", "#7A87A1",
+              "#788D66", "#885578", "#FAD09F", "#FF8A9A", "#D157A0", "#BEC459", "#456648", "#0086ED", "#886F4C",
+              "#34362D", "#B4A8BD", "#00A6AA", "#452C2C", "#636375", "#A3C8C9", "#FF913F", "#938A81", "#575329",
+              "#00FECF", "#B05B6F", "#8CD0FF", "#3B9700", "#04F757", "#C8A1A1", "#1E6E00", "#7900D7", "#A77500",
+              "#6367A9", "#A05837", "#6B002C", "#772600", "#D790FF", "#9B9700", "#549E79", "#FFF69F", "#201625",
+              "#72418F", "#BC23FF", "#99ADC0", "#3A2465", "#922329", "#5B4534", "#FDE8DC", "#404E55", "#0089A3",
+              "#CB7E98", "#A4E804", "#324E72", "#6A3A4C", "#83AB58", "#001C1E", "#D1F7CE", "#004B28", "#C8D0F6",
+              "#A3A489", "#806C66", "#222800", "#BF5650", "#E83000", "#66796D", "#DA007C", "#FF1A59", "#8ADBB4",
+              "#1E0200", "#5B4E51", "#C895C5", "#320033", "#FF6832", "#66E1D3", "#CFCDAC", "#D0AC94", "#7ED379",
+              "#012C58", "#7A7BFF", "#D68E01", "#353339", "#78AFA1", "#FEB2C6", "#75797C", "#837393", "#943A4D",
+              "#B5F4FF", "#D2DCD5", "#9556BD", "#6A714A", "#001325", "#02525F", "#0AA3F7", "#E98176", "#DBD5DD",
+              "#5EBCD1", "#3D4F44", "#7E6405", "#02684E", "#962B75", "#8D8546", "#9695C5", "#E773CE", "#D86A78",
+              "#3E89BE", "#CA834E", "#518A87", "#5B113C", "#55813B", "#E704C4", "#00005F", "#A97399", "#4B8160",
+              "#59738A", "#FF5DA7", "#F7C9BF", "#643127", "#513A01", "#6B94AA", "#51A058", "#A45B02", "#1D1702",
+              "#E20027", "#E7AB63", "#4C6001", "#9C6966", "#64547B", "#97979E", "#006A66", "#391406", "#F4D749",
+              "#0045D2", "#006C31", "#DDB6D0", "#7C6571", "#9FB2A4", "#00D891", "#15A08A", "#BC65E9", "#FFFFFE",
+              "#C6DC99", "#203B3C", "#671190", "#6B3A64", "#F5E1FF", "#FFA0F2", "#CCAA35", "#374527", "#8BB400",
+              "#797868", "#C6005A", "#3B000A", "#C86240", "#29607C", "#402334", "#7D5A44", "#CCB87C", "#B88183",
+              "#AA5199", "#B5D6C3", "#A38469", "#9F94F0", "#A74571", "#B894A6", "#71BB8C", "#00B433", "#789EC9",
+              "#6D80BA", "#953F00", "#5EFF03", "#E4FFFC", "#1BE177", "#BCB1E5", "#76912F", "#003109", "#0060CD",
+              "#D20096", "#895563", "#29201D", "#5B3213", "#A76F42", "#89412E", "#1A3A2A", "#494B5A", "#A88C85",
+              "#F4ABAA", "#A3F3AB", "#00C6C8", "#EA8B66", "#958A9F", "#BDC9D2", "#9FA064", "#BE4700", "#658188",
+              "#83A485", "#453C23", "#47675D", "#3A3F00", "#061203", "#DFFB71", "#868E7E", "#98D058", "#6C8F7D",
+              "#D7BFC2", "#3C3E6E", "#D83D66", "#2F5D9B", "#6C5E46", "#D25B88", "#5B656C", "#00B57F", "#545C46",
+              "#866097", "#365D25", "#252F99", "#00CCFF", "#674E60", "#FC009C", "#92896B"]
+    for i in range(len(labels)):
+        color_scheme[str(labels[i])] = {}
+        color_scheme[str(labels[i])]['rgb'] = list(ImageColor.getcolor(colors[i], "RGB"))
+        color_scheme[str(labels[i])]['hex'] = colors[i]
 
     pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
     return color_scheme
 
 
-def get_rect_cells(datasource, rect, channels):
-    global database
+def get_rect_cells(datasource_name, rect, channels):
+    global datasource
     global source
     global ball_tree
 
     # Load if not loaded
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
 
     # Query
     index = ball_tree.query_radius([[rect[0], rect[1]]], r=rect[2])
@@ -269,9 +278,8 @@ def get_rect_cells(datasource, rect, channels):
     try:
         neighborhood = []
         for neighbor in neighbors:
-            row = database.iloc[[neighbor]]
+            row = datasource.iloc[[neighbor]]
             obj = row.to_dict(orient='records')[0]
-            obj['id'] = str(neighbor)
             if 'phenotype' not in obj:
                 obj['phenotype'] = ''
             neighborhood.append(obj)
@@ -280,14 +288,14 @@ def get_rect_cells(datasource, rect, channels):
         return {}
 
 
-def get_gated_cells(datasource, gates):
-    global database
+def get_gated_cells(datasource_name, gates):
+    global datasource
     global source
     global ball_tree
 
     # Load if not loaded
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
 
     query_string = ''
     for key, value in gates.items():
@@ -296,18 +304,18 @@ def get_gated_cells(datasource, gates):
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
     if query_string == None or query_string == "":
         return []
-    query = database.query(query_string)[['id']].to_dict(orient='records')
+    query = datasource.query(query_string)[['id']].to_dict(orient='records')
     return query
 
 
-def download_gating_csv(datasource, gates, channels):
-    global database
+def download_gating_csv(datasource_name, gates, channels):
+    global datasource
     global source
     global ball_tree
 
     # Load if not loaded
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
 
     query_string = ''
     columns = []
@@ -316,16 +324,16 @@ def download_gating_csv(datasource, gates, channels):
         if query_string != '':
             query_string += ' and '
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
-    ids = database.query(query_string)[['id']].to_numpy().flatten()
-    if 'idField' in config[datasource]['featureData'][0]:
-        idField = config[datasource]['featureData'][0]['idField']
+    ids = datasource.query(query_string)[['id']].to_numpy().flatten()
+    if 'idField' in config[datasource_name]['featureData'][0]:
+        idField = config[datasource_name]['featureData'][0]['idField']
     else:
         idField = "CellID"
     columns.append(idField)
 
-    csv = database.copy()
+    csv = datasource.copy()
 
-    csv[idField] = database['id']
+    csv[idField] = datasource['id']
     for channel in channels:
         if channel in gates:
             csv.loc[csv[idField].isin(ids), key] = 1
@@ -336,14 +344,14 @@ def download_gating_csv(datasource, gates, channels):
     return csv
 
 
-def download_gates(datasource, gates, channels):
-    global database
+def download_gates(datasource_name, gates, channels):
+    global datasource
     global source
     global ball_tree
 
     # Load if not loaded
-    if datasource != source:
-        load_ball_tree(datasource)
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
     arr = []
     for key, value in channels.items():
         arr.append([key, value[0], value[1]])
@@ -357,17 +365,17 @@ def download_gates(datasource, gates, channels):
     return csv
 
 
-def get_database_description(datasource):
-    global database
+def get_datasource_description(datasource_name):
+    global datasource
     global source
     global ball_tree
 
     # Load if not loaded
-    if datasource != source:
-        load_ball_tree(datasource)
-    description = database.describe().to_dict()
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    description = datasource.describe().to_dict()
     for column in description:
-        [hist, bin_edges] = np.histogram(database[column].to_numpy(), bins=50, density=True)
+        [hist, bin_edges] = np.histogram(datasource[column].to_numpy(), bins=50, density=True)
         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
         description[column]['histogram'] = {}
         dat = []
@@ -380,17 +388,17 @@ def get_database_description(datasource):
     return description
 
 
-def generate_zarr_png(datasource, channel, level, tile):
+def generate_zarr_png(datasource_name, channel, level, tile):
     if config is None:
-        load_db(datasource)
+        load_datasource(datasource_name)
     global channels
     global seg
     [tx, ty] = tile.replace('.png', '').split('_')
     tx = int(tx)
     ty = int(ty)
     level = int(level)
-    tile_width = config[datasource]['tileWidth']
-    tile_height = config[datasource]['tileHeight']
+    tile_width = config[datasource_name]['tileWidth']
+    tile_height = config[datasource_name]['tileHeight']
     ix = tx * tile_width
     iy = ty * tile_height
     segmentation = False
@@ -411,9 +419,9 @@ def generate_zarr_png(datasource, channel, level, tile):
     return png
 
 
-def get_ome_metadata(datasource):
+def get_ome_metadata(datasource_name):
     if config is None:
-        load_db(datasource)
+        load_datasource(datasource_name)
     global metadata
     return metadata
 
