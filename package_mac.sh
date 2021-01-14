@@ -1,0 +1,1 @@
+pyinstaller -F --paths $CONDA_PREFIX --add-data "cycif_viewer:cycif_viewer"  --add-data "$CONDA_PREFIX/lib/python3.7/site-packages/xmlschema/schemas:xmlschema/schemas"  --hidden-import "scipy.spatial.transform._rotation_groups" --hidden-import cmath --name cycif_viewer run.py
