@@ -4,6 +4,7 @@
 /node_modules
 */node_modules
 static/frontend/node_modules
+cycif_viewer/client/node_modules/
 /.pnp
 .pnp.js
 *.sqlite3
@@ -29,6 +30,7 @@ yarn-error.log*
 /data
 /data/
 cycif_viewer/data
+
 /cycif_viewer//data
 /static/data
 /static/data/
