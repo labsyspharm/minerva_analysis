@@ -12,6 +12,7 @@ cycif_viewer/client/node_modules/
 cycif_viewer/data/
 # testing
 /coverage
+/dist
 
 # production
 /build
