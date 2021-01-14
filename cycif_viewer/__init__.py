@@ -2,8 +2,8 @@ from flask import Flask
 from pathlib import Path
 from flask_sqlalchemy import SQLAlchemy
 
-from numcodecs import compat_ext # Needed for pyinstaller
-from numcodecs import blosc # Needed for pyinstaller
+from numcodecs import compat_ext  # Needed for pyinstaller
+from numcodecs import blosc  # Needed for pyinstaller
 
 import os
 import json
@@ -30,6 +30,16 @@ def get_config_names():
     else:
         with open(config_json_path) as f:
             data = json.load(f)
+            # Clean up any old paths in the config file
+            for datasource in data:
+                # Update Feature SRC
+                data[datasource]['featureData'][0]['src'] = \
+                    data[datasource]['featureData'][0]['src'].replace('static/data', 'cycif_viewer/data')
+                # Update
+                data[datasource]['segmentation'] = data[datasource]['segmentation'].replace('static/data',
+                                                                                            'cycif_viewer/data')
+                test = ''
+            test = ''
         return [key for key in data.keys()]
 
 

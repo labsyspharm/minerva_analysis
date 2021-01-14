@@ -28,6 +28,7 @@ yarn-error.log*
 .idea/
 /data
 /data/
+cycif_viewer/data
 /cycif_viewer//data
 /static/data
 /static/data/
