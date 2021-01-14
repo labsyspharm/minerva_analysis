@@ -6,7 +6,9 @@
 static/frontend/node_modules
 /.pnp
 .pnp.js
+*.sqlite3
 */.ipynb_checkpoints/
+cycif_viewer/data/
 # testing
 /coverage
 
@@ -24,7 +26,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .idea/
-
+/data
+/data/
+/cycif_viewer//data
 /static/data
 /static/data/
 /__pycache__/
