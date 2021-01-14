@@ -37,3 +37,5 @@ cycif_viewer/data
 /__pycache__/
 /__pycache__/*
 */__pycache__/*
+*__pycache__*
+*.pyc
