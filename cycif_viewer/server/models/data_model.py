@@ -63,8 +63,26 @@ def load_datasource(datasource_name, reload=False):
 
 def load_config():
     global config
+
     with open(config_json_path, "r+") as configJson:
         config = json.load(configJson)
+        updated = False
+        for data in config:
+            # Update Feature SRC
+            original = config[data]['featureData'][0]['src']
+            config[data]['featureData'][0]['src'] = original.replace('static/data', 'cycif_viewer/data')
+            if original != config[data]['featureData'][0]['src']:
+                updated = True
+
+            original = config[data]['segmentation']
+            config[data]['segmentation'] = original.replace('static/data', 'cycif_viewer/data')
+            if original != config[data]['segmentation']:
+                updated = True
+
+            if updated:
+                configJson.seek(0)  # <--- should reset file position to the beginning.
+                json.dump(config, configJson, indent=4)
+                configJson.truncate()
 
 
 def load_ball_tree(datasource_name_name, reload=False):

@@ -28,18 +28,9 @@ def get_config_names():
             json.dump({}, f)
             return []
     else:
-        with open(config_json_path) as f:
+        with open(config_json_path, 'r+') as f:
             data = json.load(f)
-            # Clean up any old paths in the config file
-            for datasource in data:
-                # Update Feature SRC
-                data[datasource]['featureData'][0]['src'] = \
-                    data[datasource]['featureData'][0]['src'].replace('static/data', 'cycif_viewer/data')
-                # Update
-                data[datasource]['segmentation'] = data[datasource]['segmentation'].replace('static/data',
-                                                                                            'cycif_viewer/data')
-                test = ''
-            test = ''
+
         return [key for key in data.keys()]
 
 
