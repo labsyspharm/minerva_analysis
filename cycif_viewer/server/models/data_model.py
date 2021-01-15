@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 from ome_types import from_xml
-from cycif_viewer import config_json_path
+from cycif_viewer import config_json_path, data_path
 from cycif_viewer.server.utils import pyramid_assemble
 from cycif_viewer.server.models import database_model
 
@@ -42,7 +42,7 @@ def load_datasource(datasource_name, reload=False):
     load_config()
     if reload:
         load_ball_tree(datasource_name, reload=reload)
-    csvPath = "." + config[datasource_name]['featureData'][0]['src']
+    csvPath = "./" + config[datasource_name]['featureData'][0]['src']
     datasource = pd.read_csv(csvPath)
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
@@ -93,7 +93,7 @@ def load_ball_tree(datasource_name_name, reload=False):
         load_datasource(datasource_name_name)
     pickled_kd_tree_path = str(
         Path(
-            os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name_name / "ball_tree.pickle")
+            os.path.join(os.getcwd())) / data_path / datasource_name_name / "ball_tree.pickle")
     if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
@@ -101,7 +101,7 @@ def load_ball_tree(datasource_name_name, reload=False):
         print("Creating KD Tree")
         xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
         yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
-        csvPath = "." + config[datasource_name_name]['featureData'][0]['src']
+        csvPath = "./" + config[datasource_name_name]['featureData'][0]['src']
         raw_data = pd.read_csv(csvPath)
         points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
@@ -230,7 +230,7 @@ def get_number_of_cells_in_circle(x, y, datasource_name, r):
 
 def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
     color_scheme_path = str(
-        Path(os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name / str(
+        Path(os.path.join(os.getcwd())) / data_path / datasource_name / str(
             label_field + "_color_scheme.pickle"))
     if refresh == False:
         if os.path.isfile(color_scheme_path):

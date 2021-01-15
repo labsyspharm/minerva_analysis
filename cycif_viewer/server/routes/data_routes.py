@@ -2,7 +2,7 @@ from cycif_viewer import app
 from flask import render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
-
+from cycif_viewer import config_json_path, data_path, get_config
 from cycif_viewer.server.models import data_model
 import os
 from pathlib import Path
@@ -13,6 +13,18 @@ import json
 import orjson
 from flask_sqlalchemy import SQLAlchemy
 
+
+@app.route('/init_database', methods=['GET'])
+def init_database():
+    datasource = request.args.get('datasource')
+    data_model.init(datasource)
+    resp = jsonify(success=True)
+    return resp
+
+
+@app.route('/config')
+def serve_config():
+    return get_config()
 
 
 @app.route('/get_nearest_cell', methods=['GET'])
@@ -105,7 +117,7 @@ def upload_gates():
     if file.filename.endswith('.csv') == False:
         abort(422)
     datasource = request.form['datasource']
-    save_path = Path(os.path.join(os.getcwd())) / "data" / datasource
+    save_path = data_path / datasource
     if save_path.is_dir() == False:
         abort(422)
 
@@ -155,7 +167,7 @@ def download_gating_csv():
 @app.route('/get_uploaded_gating_csv_values', methods=['GET'])
 def get_gating_csv_values():
     datasource = request.args.get('datasource')
-    file_path = Path(os.path.join(os.getcwd())) / "data" / datasource / 'uploaded_gates.csv'
+    file_path = data_path / datasource / 'uploaded_gates.csv'
     if file_path.is_file() == False:
         abort(422)
     csv = pd.read_csv(file_path)
