@@ -84,7 +84,6 @@ class ImageViewer {
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 150,
             timeout: 90000,
             preload: false,
             homeFillsViewer: true,
@@ -303,11 +302,6 @@ class ImageViewer {
     }
 
     addToTileCache(tileName, data) {
-        let cacheSize = this.tileCacheQueue.push(tileName)
-        if (cacheSize > this.viewer.maxImageCacheCount) {
-            let tileToRemove = this.tileCacheQueue.shift();
-            this.removeTileFromCache(tileToRemove);
-        }
         this.tileCache[tileName] = data;
     }
 
