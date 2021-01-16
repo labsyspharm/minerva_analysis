@@ -19,19 +19,17 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///server/db.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['CLIENT_PATH'] = app.root_path + '/client/'
 
-
 # If you're running the pyinstaller version of the code, create a
 # new directory for the data (this will be at ~/ on mac)
 if getattr(sys, 'frozen', False):
     data_path = Path(os.path.dirname(sys.executable) + '/data')
-    multiprocessing.set_start_method('forkserver', force=True)
     multiprocessing.freeze_support()
 else:
     data_path = Path("cycif_viewer/data")
 
-
 config_json_path = data_path / "config.json"
 db = SQLAlchemy(app)
+
 
 def get_config():
     if not os.path.isdir(data_path):
