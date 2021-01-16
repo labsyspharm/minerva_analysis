@@ -2,12 +2,10 @@ from cycif_viewer import app
 from flask import render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
-from cycif_viewer import config_json_path, data_path, get_config
+from cycif_viewer import data_path, get_config
 from cycif_viewer.server.models import data_model
-import os
 from pathlib import Path
 from time import time
-import numpy as np
 import pandas as pd
 import json
 import orjson
