@@ -600,18 +600,25 @@ def get_ome_metadata():
 @app.route('/download_gating_csv', methods=['POST'])
 def download_gating_csv():
     datasource = request.form['datasource']
+    filename = request.form['filename']
     filter = json.loads(request.form['filter'])
     channels = json.loads(request.form['channels'])
     fullCsv = json.loads(request.form['fullCsv'])
+
     if fullCsv:
         csv = dataFilter.download_gating_csv(datasource, filter, channels)
+        return Response(
+            csv.to_csv(index=False),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                         "attachment; filename="  + filename + ".csv"})
     else:
         csv = dataFilter.download_gates(datasource, filter, channels)
-    return Response(
-        csv.to_csv(index=False),
-        mimetype="text/csv",
-        headers={"Content-disposition":
-                     "attachment; filename=gating_csv.csv"})
+        return Response(
+            csv.to_csv(index=False),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                         "attachment; filename=" + filename + ".csv"})
 
 
 @app.route('/get_uploaded_gating_csv_values', methods=['GET'])
