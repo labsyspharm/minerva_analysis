@@ -293,7 +293,7 @@ def get_gated_cells(datasource, gates, start_keys):
         query_keys.append(key)
     if query_string is None or query_string == "":
         return []
-    # query_keys[0] is the ID
+    # query_keys[0] is the ID]
     query = database.query(query_string)[[query_keys[0]]].to_dict(orient='records')
     return query
 
