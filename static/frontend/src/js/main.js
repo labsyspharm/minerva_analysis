@@ -144,7 +144,8 @@ const gatingBrushEnd = async (packet) => {
 
     // Get custom cell ids (made-to-order properties)
     const start_keys = [
-        this.config[datasource].featureData[0].idField,
+        'id',
+        // this.config[datasource].featureData[0].idField,
         this.config[datasource].featureData[0].xCoordinate,
         this.config[datasource].featureData[0].yCoordinate
     ];
@@ -182,8 +183,9 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 //current fast solution for seadragon updates
 function updateSeaDragonSelection(repaint = true) {
     let selection = dataLayer.getCurrentSelection();
-    var arr = Array.from(selection);
-    var selectionHashMap = new Map(arr.map(i => ['' + (i[this.config[datasource].featureData[0].idField]), i]));
+    // var arr = Array.from(selection);
+    var selectionHashMap = new Map(arr.map(i => ['' + (i['id']), i]));
+    // var selectionHashMap = new Map(arr.map(i => ['' + (i[this.config[datasource].featureData[0].idField]), i]));
     // This is the neighborhood viewer, uncomment to show cell info on click
     if (document.getElementById("cell_wrapper")) {
         if (_.size(selection) === 0) {
