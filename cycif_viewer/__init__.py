@@ -11,9 +11,7 @@ import json
 import sys
 import multiprocessing
 
-
-
-app = Flask(__name__, template_folder=Path('server/templates'), static_folder='data')
+app = Flask(__name__, template_folder=Path('client/templates'), static_folder='data')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///server/db.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
