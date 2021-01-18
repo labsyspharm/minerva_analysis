@@ -1,4 +1,5 @@
 from sklearn.neighbors import BallTree
+from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import pandas as pd
 from PIL import ImageColor
@@ -140,13 +141,21 @@ def get_neighborhood(elem, datasource_name):
 
 
 def get_all_neighborhood_stats(datasource_name):
+    scaler = MinMaxScaler(feature_range=(-1, 1)).fit([[0], [np.max(
+        [config[datasource_name]['height'], config[datasource_name]['width']])]])
+
     def get_stats(neighborhood):
+        nonlocal scaler
         neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood,
                                                 datasource=datasource_name)
         stats = pickle.load(io.BytesIO(neighborhood_stats.stats))
         stats['neighborhood_id'] = neighborhood_stats.neighborhood_id
         stats['name'] = neighborhood_stats.name
         stats['neighborhood_name'] = neighborhood.name
+        x_field = config[datasource_name]['featureData'][0]['xCoordinate']
+        y_field = config[datasource_name]['featureData'][0]['yCoordinate']
+        stats['cells'] = np.array([[elem[x_field], elem[y_field], elem['id']] for elem in stats['cells']])
+        stats['cells'][:, 0:2] = scaler.transform(stats['cells'][:, 0:2])
         return stats
 
     neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
@@ -392,13 +401,11 @@ def get_cluster_labels(datasource_name):
 def get_scatterplot_data(datasource_name):
     global config
     data = np.load(Path("." + config[datasource_name]['embedding']))
-    list_of_obs = [{'x': elem[0], 'y': elem[1], 'id': id} for id, elem in enumerate(data)]
+    normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :2])
+    data[:, :2] = normalized_data
+    list_of_obs = [[elem[0], elem[1], id] for id, elem in enumerate(data)]
     visData = {
         'data': list_of_obs,
-        'xMin': np.min(data[:, 0]),
-        'xMax': np.max(data[:, 0]),
-        'yMin': np.min(data[:, 1]),
-        'yMax': np.max(data[:, 1]),
         'clusters': np.unique(data[:, 2]).astype('int32').tolist()
     }
     return visData

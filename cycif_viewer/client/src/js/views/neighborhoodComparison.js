@@ -27,8 +27,6 @@ async function init(conf) {
     initPhenotypeList();
     initSmallMultipleToggles();
     initSmallMultipleStarplots();
-
-
 }
 
 function initPhenotypeList() {
@@ -117,7 +115,8 @@ function switchSmallMultipleType(elem, parent) {
 }
 
 function removeAllPlots() {
-    d3.selectAll('.starplot, .barchart').remove();
+
+    d3.selectAll('.starplot, .barchart, .scatter_canvas').remove();
     plots = [];
 }
 
@@ -198,13 +197,6 @@ function wrangleSmallMultiples(order = null, scatterplot = false) {
         let plotData;
         if (currentState == 'scatterplot') {
             plotData = _.get(neighborhoods[i], 'cells', []);
-            plotData = _.map(plotData, d => {
-                return {
-                    'x':d['X_centroid'],
-                    'y':d['Y_centroid'],
-                    'id':d['id']
-                }
-            })
         } else {
             plotData = _.get(neighborhoods[i], 'cluster_summary.weighted_contribution', []);
         }

@@ -10,7 +10,6 @@ class Scatterplot {
 
     init() {
         const self = this;
-
         window.devicePixelRatio = 1;
         const canvas = document.querySelector(`#${self.canvasId}`);
         let {width, height} = canvas.getBoundingClientRect();
@@ -24,7 +23,7 @@ class Scatterplot {
             width,
             height,
             pointColor: hexToRGBA('#808080', 0.1),
-            pointSize: 5,
+            pointSize: 1,
             lassoColor: hexToRGBA('#ffa500', 1),
             pointOutlineWidth: 0,
             pointSizeSelected: 0,
@@ -34,7 +33,6 @@ class Scatterplot {
         self.plot.subscribe('select', self.select.bind(self));
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
         self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
-        self.plot.set({cameraDistance: 13});
     }
 
     async wrangle(data) {
@@ -42,11 +40,12 @@ class Scatterplot {
         if (data) {
             self.visData = data;
         } else {
-            self.visData = await dataLayer.getScatterplotData().data;
+            self.visData = await dataLayer.getScatterplotData();
+            self.visData = self.visData.data;
         }
-        self.visData = _.map(self.visData, _.values);
         self.plot.draw(self.visData);
     }
+
 
     recolor() {
         const self = this;
