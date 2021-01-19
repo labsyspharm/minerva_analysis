@@ -5,12 +5,12 @@
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
 
-
 //VIEWS
 let seaDragonViewer;
 let channelList;
 let dataLayer;
 let config;
+let pluginToolsExt;
 
 // let cellInformation;
 let colorScheme;
@@ -55,6 +55,9 @@ async function init(conf) {
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
+
+    // Plugin toolbox
+    pluginToolsExt = new PluginToolsExt();
 }
 
 //feature color map changed in ridge plot

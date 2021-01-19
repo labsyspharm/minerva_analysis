@@ -25,7 +25,7 @@ class ImageViewer {
         // Viewer
         this.viewer = {};
 
-        // OSD plugins
+        // OSD pluginTools
 
         // Local storage of image tiles (for all loaded channels)
         this.tileCache = {};

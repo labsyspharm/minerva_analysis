@@ -1,0 +1,108 @@
+
+#tray {
+    align-items: center;
+    display: flex;
+    flex-flow: column nowrap;
+    height: 100%;
+    position: relative;
+    width: 2.5vw;
+}
+
+#tray .plugin {
+    margin: 4px 2px 10px 0;
+    width: 25px;
+}
+
+#toolbox {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    transform: translate3d(0, 0, 0);
+    width: 0;
+    will-change: width;
+}
+
+.toolboxContainer {
+    display: flex;
+    flex-flow: column nowrap;
+    height: 100%;
+    width: 100%;
+}
+
+.toolboxContainer h1 {
+    align-items: center;
+    border-left: 5px solid rgba(255, 255, 255, 1);
+    color: rgba(198, 124, 33, 0.8);
+    display: flex;
+    height: 25px;
+    font-size: 18px;
+    letter-spacing: 2px;
+    padding: 0 0 0 6px;
+    margin: 6px 12px;
+}
+
+.toolboxContainer .dotter_album {
+    padding: 5px 0 5px 5px;
+    width: 100%;
+}
+
+.toolboxContainer .dotter_block {
+    display: flex;
+    padding: 5px;
+    width: 100%;
+}
+
+.toolboxContainer .dotter_block .dotter_block_canvas_container {
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+}
+
+.toolboxContainer .dotter_block .dotter_block_canvas {
+}
+
+.toolboxContainer .dotter_block .dotter_block_canvas.borderRadius50p {
+    border-radius: 50%;
+}
+
+.toolboxContainer .dotter_block .dotter_block_content_container {
+    display: flex;
+    flex-flow: column nowrap;
+    margin: 0 0 0 5px;
+    width: available;
+}
+
+.toolboxContainer .dotter_block .dotter_block_content_container h2 {
+    color: rgba(255, 255, 255, 1);
+    font-size: 10px;
+    margin: 0 0 3px 0;
+}
+
+.toolboxContainer .dotter_block .dotter_block_content_container p {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 10px;
+    font-weight: 300;
+    margin: 0 0 3px 0;
+}
+
+.toolboxContainer .dotter_block .dotter_block_content_container textarea {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 1);
+    height: 14px;
+    font-size: 10px;
+    margin: 0 0 6px 0;
+}
+
+.toolboxContainer .dotter_block .dotter_block_content_container textarea:focus {
+    outline: 1px solid blue;
+}
+
+.toolboxContainer .dotter_block .dotter_block_icon_container {
+    display: flex;
+    width: 100%;
+}
+
+.toolboxContainer .dotter_block .dotter_block_icon_container img {
+    margin: 0 6px 0 0;
+    opacity: 0.75;
+}
+
+
+
