@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 from ome_types import from_xml
+from server import pyramid_assemble
+
 import orjson
 
 from skimage.io import imread
@@ -54,19 +56,22 @@ def load_db(datasource, reload=False):
     database['id'] = database.index
     database = database.replace(-np.Inf, 0)
     source = datasource
-    seg = zarr.load(config[datasource]['segmentation'])
+    if config[datasource]['segmentation'].endswith('.zarr'):
+        seg = zarr.load(config[datasource]['segmentation'])
+    else:
+        seg_io = tf.TiffFile(config[datasource]['segmentation'], is_ome=False)
+        seg = zarr.open(seg_io.series[0].aszarr())
     channel_io = tf.TiffFile(config[datasource]['channelFile'], is_ome=False)
     try:
         xml = channel_io.pages[0].tags['ImageDescription'].value
         metadata = from_xml(xml).images[0].pixels
     except:
-        # Catch Parse Error for XML
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
 
 
 def load_config():
-    config_json_path = Path("static/data") / "config.json"
+    config_json_path = Path("data") / "config.json"
     global config
     with open(config_json_path, "r+") as configJson:
         config = json.load(configJson)
@@ -78,7 +83,7 @@ def load_ball_tree(datasource, reload=False):
     global config
     if datasource != source:
         load_db(datasource)
-    pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "ball_tree.pickle")
+    pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "data" / datasource / "ball_tree.pickle")
     if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
@@ -216,7 +221,7 @@ def get_number_of_cells_in_circle(x, y, datasource, r):
 
 def get_color_scheme(datasource, refresh):
     color_scheme_path = str(
-        Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "color_scheme.pickle")
+        Path(os.path.join(os.getcwd())) / "data" / datasource / "color_scheme.pickle")
     if refresh == False:
         if os.path.isfile(color_scheme_path):
             print("Color Scheme Exists, Loading")
@@ -421,7 +426,7 @@ def generate_zarr_png(datasource, channel, level, tile):
     iy = ty * tile_height
     segmentation = False
     try:
-        channel_num = int(re.match(r".*_(\d*).*", channel).groups()[0])
+        channel_num = int(re.match(r".*_(\d*)$", channel).groups()[0])
     except AttributeError:
         segmentation = True
     if segmentation:
@@ -472,25 +477,11 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
     else:
         channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
-        seg = tf.imread(filePath, is_ome=False)
-        directory = Path(dataDirectory + "/" + filePath.name + ".zarr")
-        store = zarr.DirectoryStore(directory)
-        g = zarr.group(store=store, overwrite=True)
-        if isinstance(channels, zarr.Array):
-            data = zarr.array(seg)
-            chunks = channels.chunks
-            chunks = (chunks[-2], chunks[-1])
-            g.create_dataset('0', data=data, shape=seg.shape, chunks=chunks, dtype=seg.dtype)
-        else:
-            for i in range(len(channels)):
-                shape = channels[i].shape
-                shape = (shape[-2], shape[-1])
-                chunks = channels[i].chunks
-                chunks = (chunks[-2], chunks[-1])
-                data = seg
-                print(shape)
-                data = np.array(Image.fromarray(data).resize((shape[-1], shape[-2]), Image.NEAREST))
-                print(np.shape(data))
-                data = zarr.array(data)
-                g.create_dataset(str(i), data=data, shape=shape, chunks=chunks, dtype=seg.dtype)
+        directory = Path(dataDirectory + "/" + filePath.name)
+        args = {}
+        args['in_paths'] = [Path(filePath)]
+        args['out_path'] = directory
+        args['is_mask'] = True
+        pyramid_assemble.main(py_args=args)
+
         return {'segmentation': str(directory)}

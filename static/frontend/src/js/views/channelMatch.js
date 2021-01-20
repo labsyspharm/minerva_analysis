@@ -107,6 +107,8 @@ function channelMatch(data) {
     });
     let normalizeCsvName = _.get(data, 'normCsvName');
     let normalizeCsv = _.get(data, 'normalize_csv', true);
+    $('.normalize-label').hide();
+    $('.normalize-checkbox').hide();
     if ((normalizeCsvName && normalizeCsvName != '') || normalizeCsv == false) {
         $('#normalize-csv').prop('checked', false)
         $('.normalize-label').hide();
