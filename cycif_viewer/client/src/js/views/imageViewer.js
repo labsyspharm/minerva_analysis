@@ -84,6 +84,7 @@ class ImageViewer {
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
+            maxImageCacheCount: 50,
             timeout: 90000,
             preload: false,
             homeFillsViewer: true,
@@ -288,16 +289,13 @@ class ImageViewer {
      * @param event
      */
     tileUnloaded(event) {
-
-        //// console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
         this.removeTileFromCache(event.tile.url)
 
     }
 
     removeTileFromCache(tileName) {
         if (this.tileCache.hasOwnProperty(tileName)) {
-            console.log("Removing from Tile Cache");
-            this.tileCache[tileName] = null;
+            delete this.tileCache[tileName];
         }
     }
 
