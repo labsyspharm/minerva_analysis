@@ -17,6 +17,7 @@ import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert'
 import * as OpenSeadragon from 'openseadragon';
+import {PluginToolsExt} from './views/pluginToolsExt';
 import {ViewerManager} from './views/viewerManager';
 import * as Lensing from 'lensing';
 import {LensingFiltersExt} from './views/lensingFiltersExt';
@@ -30,6 +31,7 @@ window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
+window.PluginToolsExt = PluginToolsExt;
 window.ViewerManager = ViewerManager;
 window.Lensing = Lensing;
 window.LensingFiltersExt = LensingFiltersExt;

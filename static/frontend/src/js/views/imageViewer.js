@@ -25,7 +25,7 @@ class ImageViewer {
         // Viewer
         this.viewer = {};
 
-        // OSD plugins
+        // OSD pluginTools
 
         // Local storage of image tiles (for all loaded channels)
         this.tileCache = {};
@@ -89,16 +89,24 @@ class ImageViewer {
             timeout: 90000,
             preload: false,
             homeFillsViewer: true,
-            visibilityRatio: 1.0
+            visibilityRatio: 1.0,
+            sequenceControlAnchor: 'BOTTOM_RIGHT'
         };
 
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
         // Get and shrink all button images
-        this.parent = d3.select(`#openseadragon`)
-        this.parent.selectAll('img')
+        this.parent = d3.select(`#openseadragon`);
+        const imgs = this.parent.selectAll('img')
             .attr('height', 40);
+
+        // Force controls to bottom right
+        const controlsAnchor = this.parent.select('img').node().parentElement.parentElement.parentElement.parentElement;
+        controlsAnchor.style.left = 'unset';
+        controlsAnchor.style.top = 'unset';
+        controlsAnchor.style.right = '5px';
+        controlsAnchor.style.bottom = '5px';
 
         /************************************************************************************* Lensing Implementation */
 
