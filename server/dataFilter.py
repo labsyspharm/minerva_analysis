@@ -66,7 +66,7 @@ def load_db(datasource, reload=False):
 
 
 def load_config():
-    config_json_path = Path("static/data") / "config.json"
+    config_json_path = Path("data") / "config.json"
     global config
     with open(config_json_path, "r+") as configJson:
         config = json.load(configJson)
@@ -78,7 +78,7 @@ def load_ball_tree(datasource, reload=False):
     global config
     if datasource != source:
         load_db(datasource)
-    pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "ball_tree.pickle")
+    pickled_kd_tree_path = str(Path(os.path.join(os.getcwd())) / "data" / datasource / "ball_tree.pickle")
     if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
@@ -221,7 +221,7 @@ def get_number_of_cells_in_circle(x, y, datasource, r):
 
 def get_color_scheme(datasource, refresh):
     color_scheme_path = str(
-        Path(os.path.join(os.getcwd())) / "static" / "data" / datasource / "color_scheme.pickle")
+        Path(os.path.join(os.getcwd())) / "data" / datasource / "color_scheme.pickle")
     if refresh == False:
         if os.path.isfile(color_scheme_path):
             print("Color Scheme Exists, Loading")
