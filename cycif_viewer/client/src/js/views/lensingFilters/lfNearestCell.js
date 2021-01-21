@@ -1,3 +1,5 @@
+import {Utils} from './utils'
+
 /**
  * @class LfNearestCell
  */
@@ -7,16 +9,19 @@ export class LfNearestCell {
     data = [];
     load = [];
     vars = {
+        areaTerm: '',
         cellChannels: [],
         cellIntensityRange: [0, 65536],
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
-        config_boxW: 240,
-        config_boxH: 240,
+        config_boxW: 300,
+        config_boxH: 300,
         config_channelR: 3,
-        config_chartR0: 15,
-        config_chartR1: 65,
-        config_nucleusMargin: {top: 0, right: 0, bottom: 20, left: 20},
-        config_nucleusR: 15,
+        config_chartR0: 20,
+        config_chartR1: 70,
+        config_fontSm: 9,
+        config_fontMd: 11,
+        config_nucleusMargin: {top: 0, right: 0, bottom: 30, left: 30},
+        config_nucleusR: 25,
         el_boxExtG: null,
         el_cellsG: null,
         el_chartG: null,
@@ -26,6 +31,7 @@ export class LfNearestCell {
         el_nucleusG: null,
         el_radialExtG: null,
         el_textReportG: null,
+        imageChannels: [],
         tool_angleScale: d3.scaleLinear()
             .range([0, 2 * Math.PI]),
         tool_areaMaker: d3.areaRadial()
@@ -36,6 +42,7 @@ export class LfNearestCell {
             .domain([0, 200]),
         tool_radiusScale: d3.scaleLinear()
             .domain([0, 1]),
+        xyPosKeys: []
     };
 
     /**
@@ -115,8 +122,12 @@ export class LfNearestCell {
                                 // Clear data to vis
                                 this.data = [];
 
-                                // Calc offset
-                                const cell_point = new OpenSeadragon.Point(d.CellPosition_X, d.CellPosition_Y);
+                                // Calc offset - first check for position keys
+                                if (this.vars.xyPosKeys.length === 0) {
+                                    this.vars.xyPosKeys = Utils.getPositionKeys(d);
+                                }
+                                const cell_point = new OpenSeadragon.Point(d[this.vars.xyPosKeys[0]],
+                                    d[this.vars.xyPosKeys[1]]);
                                 const cell_vpoint = lensing.viewer_aux.viewport.pixelFromPoint(
                                     lensing.viewer_aux.world.getItemAt(0).imageToViewportCoordinates(cell_point)
                                 );
@@ -186,8 +197,10 @@ export class LfNearestCell {
                                 .attr('dominant-baseline', 'hanging')
                                 .attr('fill', 'white')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', 10.5)
+                                .attr('font-size', this.vars.config_fontMd)
+                                .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
+                                .style('letter-spacing', 1)
                                 .text('Single cell analysis (intensity)')
 
                             // Append chartG
@@ -214,19 +227,20 @@ export class LfNearestCell {
                                 .attr('y', 1)
                                 .attr('fill', 'rgba(0, 0, 0, 0.95)')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', 10.5)
+                                .attr('font-size', this.vars.config_fontMd)
                                 .attr('text-anchor', 'middle')
                                 .attr('dominant-baseline', 'middle');
                             this.vars.el_nucleusG.append('text')
                                 .attr('class', 'viewfinder_nucleus_g_text2')
                                 .attr('x', this.vars.config_nucleusR)
-                                .attr('y', this.vars.config_nucleusR)
+                                .attr('y', this.vars.config_nucleusR / 2)
                                 .attr('fill', 'rgba(255, 255, 255, 0.95)')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', 9)
+                                .attr('font-size', this.vars.config_fontSm)
                                 .attr('font-style', 'italic')
                                 .attr('text-anchor', 'start')
-                                .text('Nuc. Area');
+                                .html(`Area, &micro;<tspan font-size=\'${this.vars.config_fontMd / 2}\' ` +
+                                    `dx=\'1\' dy=\'-5\'>2</tspan>`);
 
                             // Append idG
                             this.vars.el_idG = this.vars.el_boxExtG.append('g')
@@ -238,7 +252,7 @@ export class LfNearestCell {
                                 .attr('class', 'tool_cell_sel_id_text')
                                 .attr('fill', 'rgba(255, 255, 255, 1)')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', 9)
+                                .attr('font-size', this.vars.config_fontSm)
                                 .attr('font-weight', 'bold')
                                 .attr('text-anchor', 'start')
                                 .attr('dominant-baseline', 'hanging')
@@ -255,16 +269,18 @@ export class LfNearestCell {
                                 cell = this.data[0].data;
                             }
 
-                            // Set blacklist (non-channels)
-                            const blacklist = ['CellPosition_X', 'CellPosition_Y', 'NucleusArea', 'id', 'phenotype'];
+                            // Set image channels (whitelist)
+                            if (this.vars.imageChannels.length === 0) {
+                                this.vars.imageChannels = Utils.getImageChannels(this.data[0].data, this.image_viewer)
+                            }
 
                             // Clear then update cell channels
                             this.vars.cellChannels = [];
                             for (let k in cell) {
-                                if (cell.hasOwnProperty(k) && !blacklist.includes(k)) {
+                                if (cell.hasOwnProperty(k) && this.vars.imageChannels.includes(k)) {
                                     this.vars.cellChannels.push({
                                         key: k,
-                                        short: k.split('_')[0],
+                                        short: this.data_layer.getShortChannelName(k),
                                         value: cell[k]
                                     });
                                 }
@@ -301,7 +317,6 @@ export class LfNearestCell {
                             if (this.data && this.data[0] && this.data[0].data) {
                                 cell = this.data[0].data;
                             }
-                            const channels = this.channel_list.selections;
 
                             // Append cell center circles
                             this.vars.el_cellsG.selectAll('.cell')
@@ -340,34 +355,6 @@ export class LfNearestCell {
                                 return [x, y];
                             }
 
-                            /*
-                            aux function :: getChannelColor
-                             */
-                            function getChannelColor(name, value) {
-
-                                if (channels.includes(name)) {
-                                    // Find channel TF
-                                    let channelTF = null;
-                                    for (let k in vis.image_viewer.channelTF) {
-                                        if (vis.image_viewer.channelTF.hasOwnProperty(k) &&
-                                            vis.image_viewer.channelTF[k].name === name) {
-                                            channelTF = vis.image_viewer.channelTF[k];
-                                            break;
-                                        }
-                                    }
-                                    if (channelTF) {
-
-                                        // Retrieve color
-                                        const rgb = vis.image_viewer.viewerManagerVMain.evaluateTF(
-                                            value, channelTF);
-                                        return `rgb(${Math.round(rgb.r)}, 
-                                                        ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
-                                    }
-
-                                }
-                                return 'none';
-                            }
-
                             // Draw lines / labels
                             this.vars.el_chartLabelsG.selectAll('.viewfinder_chart_label_g_g')
                                 .data(this.vars.cellChannels, d => d.key)
@@ -402,12 +389,17 @@ export class LfNearestCell {
                                                 .style('transform',
                                                     `translate(${textCoords[0]}px, ${textCoords[1]}px)`)
                                                 .append('text')
-                                                .attr('fill', 'white')
+                                                .attr('fill', () => {
+                                                    if (vis.channel_list.selections.includes(d.short)) {
+                                                        return 'rgba(255, 255, 255, 1)';
+                                                    }
+                                                    return 'rgba(255, 255, 255, 0.75)';
+                                                })
                                                 .attr('font', 'sans-serif')
-                                                .attr('font-size', 9)
+                                                .attr('font-size', vis.vars.config_fontSm)
                                                 .attr('font-weight', () => {
-                                                    if (channels.includes(d.short)) return 'bold';
-                                                    return 'lighter';
+                                                    if (vis.channel_list.selections.includes(d.short)) return 'bold';
+                                                    return 'normal';
                                                 })
                                                 .attr('text-anchor', () => {
                                                     if (angle >= Math.PI) return `end`;
@@ -420,20 +412,23 @@ export class LfNearestCell {
                                                 })
                                                 .text(d => {
                                                     if (d.short.length <= 4) return d.short;
-                                                    return d.short.substring(0, 4);
+                                                    return d.short;
                                                 });
 
                                             // Label group
                                             const channelCoords =
-                                                getCoordsTranslation(vis.vars.config_chartR1 + 33, i + 0.05)
+                                                getCoordsTranslation(vis.vars.config_chartR1, i + 0.05)
                                             g.append('circle')
                                                 .attr('class', 'viewfinder_chart_label_g_g_circle')
                                                 .attr('r', vis.vars.config_channelR)
                                                 .attr('cx', channelCoords[0])
                                                 .attr('cy', channelCoords[1])
-                                                .attr('fill', getChannelColor(d.short, d.value))
+                                                .attr('fill', Utils.getChannelColor(d.short, d.value, vis.image_viewer,
+                                                    vis.channel_list))
                                                 .attr('stroke', () => {
-                                                    if (channels.includes(d.short)) return 'rgba(255, 255, 255, 1)';
+                                                    if (vis.channel_list.selections.includes(d.short)) {
+                                                        return 'rgba(255, 255, 255, 1)';
+                                                    }
                                                     return 'rgba(255, 255, 255, 0)';
                                                 })
                                                 .attr('stroke-width', 0.5);
@@ -447,16 +442,25 @@ export class LfNearestCell {
                                             // Label groups
                                             g.select('.viewfinder_chart_label_g_g_text_g text')
                                                 .attr('class', 'viewfinder_chart_label_g_g_text_g')
+                                                .attr('fill', () => {
+                                                    if (vis.channel_list.selections.includes(d.short)) {
+                                                        return 'rgba(255, 255, 255, 1)';
+                                                    }
+                                                    return 'rgba(255, 255, 255, 0.75)';
+                                                })
                                                 .attr('font-weight', () => {
-                                                    if (channels.includes(d.short)) return 'bold';
-                                                    return 'lighter';
+                                                    if (vis.channel_list.selections.includes(d.short)) return 'bold';
+                                                    return 'normal';
                                                 });
 
                                             // Label group
                                             g.select('.viewfinder_chart_label_g_g_circle')
-                                                .attr('fill', getChannelColor(d.short, d.value))
+                                                .attr('fill', Utils.getChannelColor(d.short, d.value, vis.image_viewer,
+                                                    vis.channel_list))
                                                 .attr('stroke', () => {
-                                                    if (channels.includes(d.short)) return 'rgba(255, 255, 255, 1)';
+                                                    if (vis.channel_list.selections.includes(d.short)) {
+                                                        return 'rgba(255, 255, 255, 1)';
+                                                    }
                                                     return 'rgba(255, 255, 255, 0)';
                                                 });
 
@@ -477,18 +481,25 @@ export class LfNearestCell {
                                     // Define this
                                     const g = d3.select(this);
 
+                                    // Set image channels (whitelist)
+                                    if (vis.vars.areaTerm === '') {
+                                        vis.vars.areaTerm = Utils.getAreaTerm(d);
+                                    }
+
                                     // Update
                                     g.select('circle')
                                         .transition()
                                         .attr('r', () => {
-                                            if (d.hasOwnProperty('NucleusArea')) {
-                                                return vis.vars.tool_nucleusScale(d.NucleusArea);
+                                            if (d.hasOwnProperty(vis.vars.areaTerm)) {
+                                                return vis.vars.tool_nucleusScale(d[vis.vars.areaTerm]);
                                             }
                                             return vis.vars.tool_nucleusScale(0);
                                         });
                                     g.select('.viewfinder_chart_nucleus_g_text1')
                                         .text(() => {
-                                            if (d.hasOwnProperty('NucleusArea')) return d.NucleusArea;
+                                            if (d.hasOwnProperty(vis.vars.areaTerm)) {
+                                                return Math.round(d[vis.vars.areaTerm])
+                                            }
                                             return '';
                                         });
                                 });

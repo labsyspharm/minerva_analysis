@@ -223,191 +223,189 @@ export class ViewerManager {
      * @param tile
      * @returns {Promise<void>}
      */
-    async renderTFWithLabels(context, callback, tile) {
-
-        // If no tile
-        if (tile === null) {
-            callback();
-            return;
-        }
-
-        // If no tile in cache
-        const inputTile = this.imageViewer.tileCache[tile.url];
-        if (inputTile === null) {
-            callback();
-            return;
-        }
-
-        // If multi-channel image
-        if (Object.keys(seaDragonViewer.currentChannels).length > 1) {
-            await this.renderTFWithLabelsMulti(context, callback, tile);
-            return;
-        }
-
-        // Render single-channel image
-        const group = tile.url.split("/");
-        const somePath = group[group.length - 3];
-
-        // Label data
-        let labelTile = '';
-        let labelTileAdr = '';
-        if (!this.imageViewer.noLabel) {
-            const labelPath = this.imageViewer.labelChannel["sub_url"];
-            labelTileAdr = tile.url.replace(somePath, labelPath);
-            labelTile = this.imageViewer.tileCache[labelTileAdr];
-        }
-
-        // Retrieve channel data
-        let channelIdx = "";
-        for (let key in this.imageViewer.currentChannels) {
-            channelIdx = key;
-            break;
-        }
-        if (channelIdx === "") {
-            return;
-        }
-        const channelPath = this.imageViewer.currentChannels[channelIdx]["sub_url"];
-        const channelTileAdr = tile.url.replace(somePath, channelPath);
-        const channelTile = this.imageViewer.tileCache[channelTileAdr];
-
-        if (channelTile === null || !channelTile) {
-            return;
-        }
-        const channelTileData = channelTile.data;
-        const tf = this.imageViewer.channelTF[channelIdx];
-
-        // Get screen pixels to write into
-        const screenData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
-        const pixels = screenData.data;
-
-        // Initialize
-        let labelValue = 0;
-        let labelValueStr = "";
-        let channelValue = 0;
-        let rgb = 0;
-
-        // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        if (labelTile === null && !this.imageViewer.noLabel) {
-            const loaded = await addTile(labelTileAdr);
-            labelTile = this.imageViewer.tileCache[labelTileAdr];
-        }
-
-        // Check if there is a label present
-        const labelTileData = _.get(labelTile, 'data');
-
-        // Iterate over all tile pixels
-        for (let i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
-
-            // Get 24bit label data
-            if (labelTileData) {
-                labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
-                labelValueStr = labelValue.toString();
-            }
-
-            // Get 16 bit data (stored in G and B channels)
-            channelValue = (channelTileData[i + 1] * 256) + channelTileData[i + 2];
-
-            // Apply color transfer function
-            rgb = this.evaluateTF(channelValue, tf);
-
-            // Eval rendering
-            if (this.imageViewer.show_subset) {
-
-                // Show data as black/white
-                pixels[i] = channelTileData[i + 1];
-                pixels[i + 1] = channelTileData[i + 1];
-                pixels[i + 2] = channelTileData[i + 1];
-
-            } else {
-
-                // Render everything with TF
-                if (channelValue < tf.min) {
-                    // values lower than TF gating: 0
-                    pixels[i] = 0;
-                    pixels[i + 1] = 0;
-                    pixels[i + 2] = 0;
-                } else {
-                    // values higher than TF gating: highest TF color
-                    pixels[i] = rgb.r;
-                    pixels[i + 1] = rgb.g;
-                    pixels[i + 2] = rgb.b;
-                }
-            }
-
-            // Check for label data
-            if (labelValue >= 0) {
-                if (this.imageViewer.show_subset) {
-                    // Render subset with TF (check label id is in subset, apply TF)
-                    if (this.imageViewer.data.has(labelValueStr)) {
-                        if (channelValue < tf.min) {
-                            pixels[i] = 0;
-                            pixels[i + 1] = 0;
-                            pixels[i + 2] = 0;
-                        } else {
-                            pixels[i] = rgb.r;
-                            pixels[i + 1] = rgb.g;
-                            pixels[i + 2] = rgb.b;
-                        }
-                    }
-                }
-
-                // Render selection ids as highlighted
-                if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-                    if (this.imageViewer.selection.has(labelValueStr)) {
-                        // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
-                        let color = [255, 255, 255]
-
-                        /************************ new */
-                            // Init grid and tests (4 pts v 8 working for now)
-                        const grid = [
-                                i - 4,
-                                i + 4,
-                                i - inputTile.width * 4,
-                                i + inputTile.width * 4
-                            ];
-                        const test = [
-                            i % (inputTile.width * 4) !== 0,
-                            i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
-                            i >= inputTile.width * 4,
-                            i < inputTile.width * 4 * (inputTile.height - 1)
-                        ];
-
-                        // If outline
-                        if (this.sel_outlines) {
-                            // Iterate grid
-                            for (let j = 0; j < grid.length; j++) {
-                                // if pass test (not on tile border)
-                                if (test[j]) {
-                                    // Neighbor label value
-                                    const altLabelValue = ((labelTileData[grid[j]] * 65536)
-                                        + (labelTileData[grid[j] + 1] * 256) + labelTileData[grid[j] + 2]) - 1;
-                                    const altLabelValueStr = altLabelValue.toString();
-                                    // Color
-                                    if (altLabelValueStr !== labelValueStr) {
-                                        pixels[i] = 255;
-                                        pixels[i + 1] = 255;
-                                        pixels[i + 2] = 255;
-                                        break;
-                                    }
-                                }
-                            }
-                        } else {
-                            pixels[i] = color[0];
-                            pixels[i + 1] = color[1];
-                            pixels[i + 2] = color[2];
-                        }
-                        /************************ newend */
-                    }
-                }
-            }
-
-
-        }
-
-        context.putImageData(screenData, 0, 0);
-        callback();
-    }
+    // async renderTFWithLabels(context, callback, tile) {
+    //
+    //     // If no tile
+    //     if (tile === null) {
+    //         callback();
+    //         return;
+    //     }
+    //
+    //     // If no tile in cache
+    //     const inputTile = this.imageViewer.tileCache[tile.url];
+    //     if (inputTile === null) {
+    //         callback();
+    //         return;
+    //     }
+    //
+    //     // If multi-channel image
+    //     if (Object.keys(seaDragonViewer.currentChannels).length > 1) {
+    //         await this.renderTFWithLabelsMulti(context, callback, tile);
+    //         return;
+    //     }
+    //
+    //     // Render single-channel image
+    //     const group = tile.url.split("/");
+    //     const somePath = group[group.length - 3];
+    //
+    //     // Label data
+    //     let labelTile = '';
+    //     let labelTileAdr = '';
+    //     if (!this.imageViewer.noLabel) {
+    //         const labelPath = this.imageViewer.labelChannel["sub_url"];
+    //         labelTileAdr = tile.url.replace(somePath, labelPath);
+    //         labelTile = this.imageViewer.tileCache[labelTileAdr];
+    //     }
+    //
+    //     // Retrieve channel data
+    //     let channelIdx = "";
+    //     for (let key in this.imageViewer.currentChannels) {
+    //         channelIdx = key;
+    //         break;
+    //     }
+    //     if (channelIdx === "") {
+    //         return;
+    //     }
+    //     const channelPath = this.imageViewer.currentChannels[channelIdx]["sub_url"];
+    //     const channelTileAdr = tile.url.replace(somePath, channelPath);
+    //     const channelTile = this.imageViewer.tileCache[channelTileAdr];
+    //
+    //     if (channelTile === null || !channelTile) {
+    //         return;
+    //     }
+    //     const channelTileData = channelTile.data;
+    //     const tf = this.imageViewer.channelTF[channelIdx];
+    //
+    //     // Get screen pixels to write into
+    //     const screenData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
+    //     const pixels = screenData.data;
+    //
+    //     // Initialize
+    //     let labelValue = 0;
+    //     let labelValueStr = "";
+    //     let channelValue = 0;
+    //     let rgb = 0;
+    //
+    //     // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
+    //     if (labelTile === null && !this.imageViewer.noLabel) {
+    //         const loaded = await addTile(labelTileAdr);
+    //         labelTile = this.imageViewer.tileCache[labelTileAdr];
+    //     }
+    //
+    //     // Check if there is a label present
+    //     const labelTileData = _.get(labelTile, 'data');
+    //
+    //     // Iterate over all tile pixels
+    //     for (let i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
+    //
+    //         // Get 24bit label data
+    //         if (labelTileData) {
+    //             labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
+    //             labelValueStr = labelValue.toString();
+    //         }
+    //
+    //         // Get 16 bit data (stored in G and B channels)
+    //         channelValue = (channelTileData[i + 1] * 256) + channelTileData[i + 2];
+    //
+    //         // Apply color transfer function
+    //         rgb = this.evaluateTF(channelValue, tf);
+    //
+    //         // Eval rendering
+    //         if (this.imageViewer.show_subset) {
+    //
+    //             // Show data as black/white
+    //             pixels[i] = channelTileData[i + 1];
+    //             pixels[i + 1] = channelTileData[i + 1];
+    //             pixels[i + 2] = channelTileData[i + 1];
+    //
+    //         } else {
+    //
+    //             // Render everything with TF
+    //             if (channelValue < tf.min) {
+    //                 // values lower than TF gating: 0
+    //                 pixels[i] = 0;
+    //                 pixels[i + 1] = 0;
+    //                 pixels[i + 2] = 0;
+    //             } else {
+    //                 // values higher than TF gating: highest TF color
+    //                 pixels[i] = rgb.r;
+    //                 pixels[i + 1] = rgb.g;
+    //                 pixels[i + 2] = rgb.b;
+    //             }
+    //         }
+    //
+    //         // Check for label data
+    //         if (labelValue >= 0) {
+    //             if (this.imageViewer.show_subset) {
+    //                 // Render subset with TF (check label id is in subset, apply TF)
+    //                 if (this.imageViewer.data.has(labelValueStr)) {
+    //                     if (channelValue < tf.min) {
+    //                         pixels[i] = 0;
+    //                         pixels[i + 1] = 0;
+    //                         pixels[i + 2] = 0;
+    //                     } else {
+    //                         pixels[i] = rgb.r;
+    //                         pixels[i + 1] = rgb.g;
+    //                         pixels[i + 2] = rgb.b;
+    //                     }
+    //                 }
+    //             }
+    //
+    //             // Render selection ids as highlighted
+    //             if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
+    //                 if (this.imageViewer.selection.has(labelValueStr)) {
+    //                     // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
+    //                     // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+    //                     let color = [255, 255, 255]
+    //
+    //                         // Init grid and tests (4 pts v 8 working for now)
+    //                     const grid = [
+    //                             i - 4,
+    //                             i + 4,
+    //                             i - inputTile.width * 4,
+    //                             i + inputTile.width * 4
+    //                         ];
+    //                     const test = [
+    //                         i % (inputTile.width * 4) !== 0,
+    //                         i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
+    //                         i >= inputTile.width * 4,
+    //                         i < inputTile.width * 4 * (inputTile.height - 1)
+    //                     ];
+    //
+    //                     // If outline
+    //                     if (this.sel_outlines) {
+    //                         // Iterate grid
+    //                         for (let j = 0; j < grid.length; j++) {
+    //                             // if pass test (not on tile border)
+    //                             if (test[j]) {
+    //                                 // Neighbor label value
+    //                                 const altLabelValue = ((labelTileData[grid[j]] * 65536)
+    //                                     + (labelTileData[grid[j] + 1] * 256) + labelTileData[grid[j] + 2]) - 1;
+    //                                 const altLabelValueStr = altLabelValue.toString();
+    //                                 // Color
+    //                                 if (altLabelValueStr !== labelValueStr) {
+    //                                     pixels[i] = 255;
+    //                                     pixels[i + 1] = 255;
+    //                                     pixels[i + 2] = 255;
+    //                                     break;
+    //                                 }
+    //                             }
+    //                         }
+    //                     } else {
+    //                         pixels[i] = color[0];
+    //                         pixels[i + 1] = color[1];
+    //                         pixels[i + 2] = color[2];
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //
+    //
+    //     }
+    //
+    //     context.putImageData(screenData, 0, 0);
+    //     callback();
+    // }
 
     /**
      * @function renderTFWithLabelsMulti
@@ -601,7 +599,7 @@ export class ViewerManager {
     set_filter_options() {
         this.viewer.setFilterOptions({
             filters: {
-                processors: this.renderTFWithLabels.bind(this)
+                processors: this.renderTFWithLabelsMulti.bind(this)
             }
         });
     }

@@ -11,8 +11,7 @@ let seaDragonViewer;
 let channelList;
 let dataLayer;
 let config;
-
-let cellInformation;
+let pluginToolsExt;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
@@ -49,11 +48,12 @@ async function init(conf) {
     await channelList.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
-    cellInformation.draw();
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
+
+    // Plugin toolbox
+    pluginToolsExt = new PluginToolsExt();
 }
 
 //feature color map changed in ridge plot
@@ -101,29 +101,11 @@ const actionImageClickedMultiSel = (d) => {
         // console.log(d.selectedItem.length);
         dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
-    cellInformation.selectCell(d.selectedItem);
     updateSeaDragonSelection();
     d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
 
-const computeCellNeighborhood = async ({distance, selectedCell}) => {
-    let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
-    displayNeighborhood(selectedCell, neighborhood);
-}
-eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
-
-const drawNeighborhoodRadius = async ({distance, selectedCell, dragging}) => {
-    seaDragonViewer.drawCellRadius(distance, selectedCell, dragging);
-}
-eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
-
-const refreshColors = async () => {
-    await colorScheme.getColorScheme(true);
-    cellInformation.draw();
-
-}
-eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 // For channel select click event
 const channelSelect = async (sels) => {
@@ -142,12 +124,6 @@ function updateSeaDragonSelection(repaint = true) {
     let selection = dataLayer.getCurrentSelection();
     var arr = Array.from(selection);
     var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
-    // This is the neighborhood viewer, uncomment to show cell info on click
-    if (_.size(selection) == 0) {
-        document.getElementById("cell_wrapper").style.display = "none";
-    } else {
-        document.getElementById("cell_wrapper").style.display = "none";
-    }
     seaDragonViewer.updateSelection(selectionHashMap, repaint);
 }
 

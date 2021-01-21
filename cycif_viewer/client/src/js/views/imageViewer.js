@@ -13,6 +13,7 @@ class ImageViewer {
 
     // Vars
     viewerManagers = [];
+    imageMetadata = null;
 
     constructor(config, dataLayer, eventHandler, colorScheme) {
 
@@ -24,7 +25,7 @@ class ImageViewer {
         // Viewer
         this.viewer = {};
 
-        // OSD plugins
+        // OSD pluginTools
 
         // Local storage of image tiles (for all loaded channels)
         this.tileCache = {};
@@ -68,7 +69,7 @@ class ImageViewer {
     /**
      * @function init
      */
-    init() {
+    async init() {
 
         // Define this as that
         const that = this;
@@ -88,19 +89,68 @@ class ImageViewer {
             timeout: 90000,
             preload: false,
             homeFillsViewer: true,
-            visibilityRatio: 1.0
+            visibilityRatio: 1.0,
+            sequenceControlAnchor: 'BOTTOM_RIGHT'
         };
 
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
+        // Get and shrink all button images
+        this.parent = d3.select(`#openseadragon`);
+        const imgs = this.parent.selectAll('img')
+            .attr('height', 40);
+
+        // Force controls to bottom right
+        const controlsAnchor = this.parent.select('img').node().parentElement.parentElement.parentElement.parentElement;
+        controlsAnchor.style.left = 'unset';
+        controlsAnchor.style.top = 'unset';
+        controlsAnchor.style.right = '5px';
+        controlsAnchor.style.bottom = '5px';
+
+        /************************************************************************************* Lensing Implementation */
+
+            // Get lensingFilters data
+        const dataLoad = LensingFiltersExt.getFilters(this);
+
+        // Instantiate viewer
+        const lensing_config = {
+        };
+        this.viewer.lensing = Lensing.construct(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
+
+        /*************************************************** Access OME tiff metadata / activate lensing measurements */
+
+        // Get metadata -> share with lensing
+        this.dataLayer.getMetadata().then(d => {
+
+            // Add magnification
+            this.imageMetadata = d;
+
+            //
+            const unitConversion = {
+                inputUnit: d.physical_size_x_unit,
+                outputUnit: 'nm',
+                inputOutputRatio: [1, 1000]
+            }
+
+            // Update lensing
+            this.viewer.lensing.config_update({
+                compassOn: true,
+                compassUnitConversion: unitConversion,
+                imageMetadata: this.imageMetadata,
+            });
+
+
+        }).catch(err => console.log(err));
+
         /************************************************************************************* Create viewer managers */
 
         // Instantiate viewer managers
         that.viewerManagerVMain = new ViewerManager(that, that.viewer, 'main');
+        that.viewerManagerVAuxi = new ViewerManager(that, that.viewer.lensing.viewer_aux, 'auxi');
 
         // Append to viewers
-        that.viewerManagers.push(that.viewerManagerVMain);
+        that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
 
         /********************************************************************************************** Emulate click */
 
@@ -289,17 +339,25 @@ class ImageViewer {
      * @param event
      */
     tileUnloaded(event) {
+
+        //// console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
         this.removeTileFromCache(event.tile.url)
 
     }
 
     removeTileFromCache(tileName) {
         if (this.tileCache.hasOwnProperty(tileName)) {
-            delete this.tileCache[tileName];
+            console.log("Removing from Tile Cache");
+            this.tileCache[tileName] = null;
         }
     }
 
     addToTileCache(tileName, data) {
+        let cacheSize = this.tileCacheQueue.push(tileName)
+        if (cacheSize > this.viewer.maxImageCacheCount) {
+            let tileToRemove = this.tileCacheQueue.shift();
+            this.removeTileFromCache(tileToRemove);
+        }
         this.tileCache[tileName] = data;
     }
 
@@ -435,7 +493,7 @@ class ImageViewer {
      *
      * @returns void
      */
-    updateChannelColors(name, color, type) {
+    updateChannelColors(name, color, type, force=true) {
 
         const channelIdx = imageChannels[name];
 
@@ -452,7 +510,9 @@ class ImageViewer {
         tf_def.name = dataLayer.getShortChannelName(name);
 
         this.channelTF[channelIdx] = tf_def;
+        if (force) {
         this.forceRepaint();
+        }
     }
 
     /**

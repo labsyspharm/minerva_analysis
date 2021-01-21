@@ -3,7 +3,7 @@ from flask import render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
 from cycif_viewer import data_path, get_config
-from cycif_viewer.server.models import data_model
+from cycif_viewer.server.models import data_model, lensing_model
 from pathlib import Path
 from time import time
 import pandas as pd
@@ -171,6 +171,19 @@ def get_gating_csv_values():
     csv = pd.read_csv(file_path)
     obj = csv.to_dict(orient='records')
     return serialize_and_submit_json(obj)
+
+
+@app.route('/get_histogram_comparison', methods=['GET'])
+def get_histogram_comparison():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    channels = []
+    if request.args.get('channels') != '':
+        channels = request.args.get('channels').split()[0].split(',')
+    resp = lensing_model.histogramComparison(x, y, datasource, max_distance, channels)
+    return serialize_and_submit_json(resp)
 
 
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
