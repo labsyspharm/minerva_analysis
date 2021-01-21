@@ -12,11 +12,13 @@ import 'lodash'
 import 'jquery-form'
 import '@fortawesome/fontawesome-free/js/all'
 import Sortable from 'sortablejs';
-import Mark from 'mark.js'
-import $ from 'jquery'
-import 'node-fetch'
-import convert from 'color-convert'
+import Mark from 'mark.js';
+import $ from 'jquery';
+import 'node-fetch';
+import convert from 'color-convert';
+import Dropzone from 'dropzone';
 import * as OpenSeadragon from 'openseadragon';
+import {CsvGatingOverlay} from './views/CsvGatingOverlay';
 import {ViewerManager} from './views/viewerManager';
 
 window.convert = convert;
@@ -28,5 +30,7 @@ window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = OpenSeadragon;
+window.Dropzone = Dropzone;
+window.CsvGatingOverlay = CsvGatingOverlay;
 window.ViewerManager = ViewerManager;
 

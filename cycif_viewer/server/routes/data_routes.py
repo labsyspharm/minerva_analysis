@@ -104,18 +104,17 @@ def get_num_cells_in_circle():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_gated_cell_ids', methods=['GET'])
-def get_gated_cell_ids():
+@app.route('/get_channel_cell_ids', methods=['GET'])
+def get_channel_cell_ids():
     datasource = request.args.get('datasource')
     filter = json.loads(request.args.get('filter'))
-    resp = data_model.get_gated_cells(datasource, filter)
+    resp = data_model.get_channel_cells(datasource, filter)
     return serialize_and_submit_json(resp)
-
 
 @app.route('/get_database_description', methods=['GET'])
 def get_database_description():
     datasource = request.args.get('datasource')
-    resp = data_model.get_database_description(datasource)
+    resp = data_model.get_datasource_description(datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -171,7 +170,7 @@ def download_gating_csv():
             headers={"Content-disposition":
                          "attachment; filename=" + filename + ".csv"})
     else:
-        csv = data_model.download_gates(datasource, filter, channels)
+        csv = dataFilter.download_gates(datasource, filter, channels)
         return Response(
             csv.to_csv(index=False),
             mimetype="text/csv",
