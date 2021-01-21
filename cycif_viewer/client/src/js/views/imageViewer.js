@@ -79,12 +79,12 @@ class ImageViewer {
         // Config viewer
         const viewer_config = {
             id: "openseadragon",
-            prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
+            prefixUrl: "/static/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 50,
+            maxImageCacheCount: 150,
             timeout: 90000,
             preload: false,
             homeFillsViewer: true,
@@ -94,6 +94,13 @@ class ImageViewer {
         // Instantiate viewer
         that.viewer = OpenSeadragon(viewer_config);
 
+        /************************************************************************************** Get ome tiff metadata */
+
+        dataLayer.getMetadata().then(d => {
+            that.imgMetadata = d;
+            console.log('Image metadata:', that.imgMetadata)
+        });
+
         /************************************************************************************* Create viewer managers */
 
         // Instantiate viewer managers
@@ -101,6 +108,11 @@ class ImageViewer {
 
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain);
+
+        /************************************************************************************************** Add layer */
+
+        // Add overlay
+        this.csvGatingOverlay = new CsvGatingOverlay(this.viewer, this);
 
         /********************************************************************************************** Emulate click */
 
@@ -289,17 +301,25 @@ class ImageViewer {
      * @param event
      */
     tileUnloaded(event) {
+
+        //// console.log('[TILE UNLOADED LOADED]: url:', event.tile.url, 'value:', seaDragonViewer.tileCounter[event.tile.url]);
         this.removeTileFromCache(event.tile.url)
 
     }
 
     removeTileFromCache(tileName) {
         if (this.tileCache.hasOwnProperty(tileName)) {
-            delete this.tileCache[tileName];
+            console.log("Removing from Tile Cache");
+            this.tileCache[tileName] = null;
         }
     }
 
     addToTileCache(tileName, data) {
+        let cacheSize = this.tileCacheQueue.push(tileName)
+        if (cacheSize > this.viewer.maxImageCacheCount) {
+            let tileToRemove = this.tileCacheQueue.shift();
+            this.removeTileFromCache(tileToRemove);
+        }
         this.tileCache[tileName] = data;
     }
 
@@ -453,6 +473,7 @@ class ImageViewer {
 
         this.channelTF[channelIdx] = tf_def;
         this.forceRepaint();
+
     }
 
     /**

@@ -34,11 +34,21 @@ def get_nearest_cell():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_channel_cell_ids', methods=['GET'])
-def get_channel_cell_ids():
+@app.route('/get_gated_cell_ids', methods=['GET'])
+def get_gated_cell_ids():
     datasource = request.args.get('datasource')
     filter = json.loads(request.args.get('filter'))
-    resp = data_model.get_channel_cells(datasource, filter)
+    start_keys = list(request.args.get('start_keys').split(','))
+    resp = data_model.get_gated_cells(datasource, filter, start_keys)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_gated_cell_ids_custom', methods=['GET'])
+def get_gated_cell_ids_custom():
+    datasource = request.args.get('datasource')
+    filter = json.loads(request.args.get('filter'))
+    start_keys = list(request.args.get('start_keys').split(','))
+    resp = data_model.get_gated_cells_custom(datasource, filter, start_keys)
     return serialize_and_submit_json(resp)
 
 
@@ -148,18 +158,25 @@ def get_ome_metadata():
 @app.route('/download_gating_csv', methods=['POST'])
 def download_gating_csv():
     datasource = request.form['datasource']
+    filename = request.form['filename']
+
     filter = json.loads(request.form['filter'])
     channels = json.loads(request.form['channels'])
     fullCsv = json.loads(request.form['fullCsv'])
     if fullCsv:
         csv = data_model.download_gating_csv(datasource, filter, channels)
+        return Response(
+            csv.to_csv(index=False),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                         "attachment; filename=" + filename + ".csv"})
     else:
         csv = data_model.download_gates(datasource, filter, channels)
-    return Response(
-        csv.to_csv(index=False),
-        mimetype="text/csv",
-        headers={"Content-disposition":
-                     "attachment; filename=gating_csv.csv"})
+        return Response(
+            csv.to_csv(index=False),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                         "attachment; filename=" + filename + ".csv"})
 
 
 @app.route('/get_uploaded_gating_csv_values', methods=['GET'])

@@ -1,11 +1,9 @@
-import "regenerator-runtime/runtime.js";
-
 /**
  * @class ViewerManager
  */
 export class ViewerManager {
 
-    show_sel = false;
+    show_sel = true;
     sel_outlines = true;
 
     /**
@@ -171,6 +169,7 @@ export class ViewerManager {
      * @returns void
      */
     force_repaint() {
+        console.log('hi')
 
         // Refilter, redraw
         this.viewer.forceRefilter();
@@ -268,10 +267,17 @@ export class ViewerManager {
         }
         const channelPath = this.imageViewer.currentChannels[channelIdx]["sub_url"];
         const channelTileAdr = tile.url.replace(somePath, channelPath);
-        const channelTile = this.imageViewer.tileCache[channelTileAdr];
+        let channelTile = this.imageViewer.tileCache[channelTileAdr];
 
         if (channelTile === null || !channelTile) {
-            return;
+            // console.log("No Channel Either");
+            await addTile(channelTileAdr);
+            channelTile = seaDragonViewer.tileCache[channelTileAdr];
+
+            // FIXME : clearing errors from console but watch for side effects
+            if (channelTile === null || !channelTile) {
+                return;
+            }
         }
         const channelTileData = channelTile.data;
         const tf = this.imageViewer.channelTF[channelIdx];
@@ -287,9 +293,9 @@ export class ViewerManager {
         let rgb = 0;
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        if (labelTile === null && !this.imageViewer.noLabel) {
-            const loaded = await addTile(labelTileAdr);
-            labelTile = this.imageViewer.tileCache[labelTileAdr];
+        if (labelTile == null && !seaDragonViewer.noLabel) {
+            await addTile(labelTileAdr);
+            labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
 
         // Check if there is a label present
@@ -352,10 +358,10 @@ export class ViewerManager {
                 }
 
                 // Render selection ids as highlighted
-                if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
+                if (this.show_sel && this.imageViewer.selection.size > 0) {
                     if (this.imageViewer.selection.has(labelValueStr)) {
                         // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        // let color = seaDragonViewer.colorScheme.colorsMap[phenotype].rgb;
                         let color = [255, 255, 255]
 
                         /************************ new */
@@ -393,6 +399,7 @@ export class ViewerManager {
                                 }
                             }
                         } else {
+                            if (i < 100) console.log(color)
                             pixels[i] = color[0];
                             pixels[i + 1] = color[1];
                             pixels[i + 2] = color[2];
@@ -459,10 +466,17 @@ export class ViewerManager {
 
             const channelPath = this.viewer_channels[channelIdx]["sub_url"];
             const channelTileAdr = tileurl.replace(somePath, channelPath);
-            const channelTile = this.imageViewer.tileCache[channelTileAdr];
+            let channelTile = this.imageViewer.tileCache[channelTileAdr];
 
-            if (channelTile == null) {
-                return;
+            if (channelTile === null || !channelTile) {
+                // console.log("No Channel Either");
+                await addTile(channelTileAdr);
+                channelTile = seaDragonViewer.tileCache[channelTileAdr];
+                // FIXME : clearing errors from console but watch for side effects
+                if (channelTile === null || !channelTile) {
+                    return;
+                }
+
             }
 
             channelsTileData.push(channelTile.data);
@@ -476,8 +490,8 @@ export class ViewerManager {
 
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !this.imageViewer.noLabel) {
-            const loaded = await addTile(labelTileAdr);
-            labelTile = this.imageViewer.tileCache[labelTileAdr];
+            await addTile(labelTileAdr);
+            labelTile = seaDragonViewer.tileCache[labelTileAdr];
         }
 
         // Init
@@ -535,7 +549,7 @@ export class ViewerManager {
                 }
 
                 // Render selection ids as highlighted
-                if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
+                if (this.show_sel && this.imageViewer.selection.size > 0) {
                     if (this.imageViewer.selection.has(labelValueStr)) {
                         // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
                         // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;

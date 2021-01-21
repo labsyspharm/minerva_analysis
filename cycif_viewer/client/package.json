@@ -15,6 +15,7 @@
     "css-loader": "^3.6.0",
     "d3": "^6.2.0",
     "d3-simple-slider": "latest",
+    "dropzone": "^5.7.2",
     "expose-loader": "^1.0.0",
     "file-loader": "^6.0.0",
     "install": "^0.13.0",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
+    "@babel/plugin-proposal-class-properties": "^7.10.4",
     "@babel/plugin-transform-runtime": "^7.12.1",
     "@babel/preset-env": "^7.11.5",
     "babel-loader": "^8.1.0",
