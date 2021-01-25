@@ -1,17 +1,18 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-__pycache__/
 /node_modules
 */node_modules
 static/frontend/node_modules
+cycif_viewer/client/node_modules/
 /.pnp
 .pnp.js
 *.sqlite3
 */.ipynb_checkpoints/
 cycif_viewer/data/
 # testing
-/coverage__pycache__
+/coverage
+/dist
 
 # production
 /build
@@ -27,12 +28,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .idea/
-
 /data
 /data/
-//=data
-//data/
+cycif_viewer/data
+
 /cycif_viewer//data
+/static/data
+/static/data/
 /__pycache__/
 /__pycache__/*
 */__pycache__/*
+*__pycache__*
+*.pyc
