@@ -170,7 +170,7 @@ def download_gating_csv():
             headers={"Content-disposition":
                          "attachment; filename=" + filename + ".csv"})
     else:
-        csv = dataFilter.download_gates(datasource, filter, channels)
+        csv = data_model.download_gates(datasource, filter, channels)
         return Response(
             csv.to_csv(index=False),
             mimetype="text/csv",
