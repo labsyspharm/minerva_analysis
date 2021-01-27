@@ -316,6 +316,20 @@ class DataLayer {
         }
     }
 
+    async customCluster(numClusters) {
+        try {
+            let response = await fetch('/custom_cluster?' + new URLSearchParams({
+                datasource: datasource,
+                numClusters: numClusters
+
+            }))
+            let customClusters = await response.json();
+            return customClusters;
+        } catch (e) {
+            console.log("Error Getting Custom Clusters", e);
+        }
+    }
+
 
     async getNeighborhoodForCell(maxDistance, selectedCell) {
         return this.getIndividualNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);

@@ -52,7 +52,7 @@ async function init(conf) {
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     legend = new Legend(dataLayer.phenotypes, colorScheme);
     starplot = new Starplot('starplot_display', dataLayer.phenotypes);
-    scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer);
+    scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer, neighborhoodTable);
     console.log('Ending Reg Init', new Date());
     //image viewer
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);

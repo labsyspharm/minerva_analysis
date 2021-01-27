@@ -138,14 +138,27 @@
                 <div class="row" id="scatterplot_display">
                     <canvas class="scatter_canvas" id="viewer_scatter_canvas"></canvas>
                 </div>
+                <div class="row" id="custom_cluster">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-sm-3">
+                            <span id="custom_cluster_label">Custom Clustering</span>
+                        </div>
+                        <div class="col-sm-5">
+                            <input type="number" id="custom_cluster_number" placeholder="# of Clusters">
+                        </div>
+                        <div class="col-sm-3">
+                            <button id="custom_cluster_submit" class="btn btn-secondary">Submit</button>
+                        </div>
+                        <div class="col-sm-1" id="custom_cluster_loading"></div>
+                    </div>
+                </div>
+
             </div>
 
         </div>
-
     </div>
-</div>
-<script src="../client/src/js/main.js" defer></script>
-{% endif %}
-{% endblock %}
+    <script src="../client/src/js/main.js" defer></script>
+    {% endif %}
+    {% endblock %}
 
 

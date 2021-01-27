@@ -71,6 +71,7 @@ def get_neighborhood_list():
     resp = data_model.get_neighborhood_list(datasource)
     return serialize_and_submit_json(resp)
 
+
 @app.route('/get_all_neighborhood_stats', methods=['GET'])
 def get_all_neighboorhood_stats():
     datasource = request.args.get('datasource')
@@ -209,6 +210,16 @@ def get_rect_cells():
     # Retrieve cells - FIXME: Too slow - jam is stalling image loading
     resp = data_model.get_rect_cells(datasource, rect, channels)
     print('Neighborhood size:', len(resp))
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/custom_cluster', methods=['GET'])
+def get_custom_clusters():
+    # Parse (rect - [x, y, r], channels [string])
+    datasource = request.args.get('datasource')
+    num_clusters = int(request.args.get('numClusters'))
+    data_model.create_custom_clusters(datasource, num_clusters)
+    resp = data_model.get_neighborhood_list(datasource)
     return serialize_and_submit_json(resp)
 
 

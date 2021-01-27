@@ -1,5 +1,8 @@
 from sklearn.neighbors import BallTree
+from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.decomposition import IncrementalPCA
+
 import numpy as np
 import pandas as pd
 from PIL import ImageColor
@@ -46,11 +49,11 @@ def load_datasource(datasource_name, reload=False):
     load_config()
     if reload:
         load_ball_tree(datasource_name, reload=reload)
-    csvPath = "." + config[datasource_name]['featureData'][0]['src']
+    csvPath = Path(config[datasource_name]['featureData'][0]['src'])
     datasource = pd.read_csv(csvPath)
     embedding = np.load(Path("." + config[datasource_name]['embedding']))
     datasource['id'] = datasource.index
-    datasource['Cluster'] = embedding[:, 2].astype('int32').tolist()
+    datasource['Cluster'] = embedding[:, -1].astype('int32').tolist()
     datasource = datasource.replace(-np.Inf, 0)
     source = datasource_name
     if config[datasource_name]['segmentation'].endswith('.zarr'):
@@ -164,8 +167,7 @@ def get_all_neighborhood_stats(datasource_name):
 
 
 def save_neighborhood(selection, datasource_name, is_cluster=True):
-    existing_neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
-    max_cluster_id = existing_neighborhoods[-1].cluster_id
+    max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
     indices = np.array([e['id'] for e in selection['cells']])
     f = io.BytesIO()
     np.save(f, indices)
@@ -190,29 +192,68 @@ def delete_neighborhood(elem, datasource_name):
             new_neighborhoods]
 
 
+def create_custom_clusters(datasource_name, num_clusters):
+    global config
+    database_model.delete(database_model.Neighborhood, custom=True)
+    database_model.delete(database_model.NeighborhoodStats, custom=True)
+    max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
+
+    g_mixtures = GaussianMixture(n_components=num_clusters)
+    data = np.load(Path("." + config[datasource_name]['embedding']))
+    randomly_sampled = np.random.choice(data.shape[0], size=100000, replace=False)
+    g_mixtures.fit(data[randomly_sampled, :-1])
+    clusters = np.zeros((data.shape[0],))
+    for i in range(np.ceil(data.shape[0] / 100000).astype(int)):
+        bottom = i * 100000
+        top = min(data.shape[0], (i + 1) * 100000)
+        clusters[bottom:top] = g_mixtures.predict(data[bottom:top, :2])
+
+    for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
+        indices = np.argwhere(clusters == cluster).flatten().tolist()
+        f = io.BytesIO()
+        np.save(f, indices)
+        neighborhood = database_model.create(database_model.Neighborhood,
+                                             datasource=datasource_name, is_cluster=True, custom=True,
+                                             cluster_id=max_cluster_id + 1, name="Custom Cluster " + str(cluster),
+                                             cells=f.getvalue())
+
+        obj = get_neighborhood_stats(datasource_name, indices)
+        f = io.BytesIO()
+        pickle.dump(obj, f)
+
+        neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
+                                                   is_cluster=True,
+                                                   custom=True,
+                                                   name="ClusterStats " + str(cluster), stats=f.getvalue(),
+                                                   neighborhood=neighborhood)
+        max_cluster_id += 1
+
+    return get_neighborhood_list(datasource_name)
+
+
 def load_config():
     global config
     with open(config_json_path, "r+") as configJson:
         config = json.load(configJson)
 
 
-def load_ball_tree(datasource_name_name, reload=False):
+def load_ball_tree(datasource_name, reload=False):
     global ball_tree
     global datasource
     global config
-    if datasource_name_name != source:
-        load_datasource(datasource_name_name)
+    if datasource_name != source:
+        load_datasource(datasource_name)
     pickled_kd_tree_path = str(
         Path(
-            os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name_name / "ball_tree.pickle")
+            os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name / "ball_tree.pickle")
     if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
     else:
         print("Creating KD Tree")
-        xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
-        yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
-        csvPath = "." + config[datasource_name_name]['featureData'][0]['src']
+        xCoordinate = config[datasource_name]['featureData'][0]['xCoordinate']
+        yCoordinate = config[datasource_name]['featureData'][0]['yCoordinate']
+        csvPath = Path(config[datasource_name]['featureData'][0]['src'])
         raw_data = pd.read_csv(csvPath)
         points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
@@ -394,19 +435,20 @@ def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
 def get_cluster_labels(datasource_name):
     global config
     data = np.load(Path("." + config[datasource_name]['embedding']))
-    clusters = np.unique(data[:, 2])
+    clusters = np.unique(data[:, -1])
     return clusters.astype('int32').tolist()
 
 
 def get_scatterplot_data(datasource_name):
     global config
     data = np.load(Path("." + config[datasource_name]['embedding']))
-    normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :2])
-    data[:, :2] = normalized_data
-    list_of_obs = [[elem[0], elem[1], id] for id, elem in enumerate(data)]
+
+    normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :-1])
+    # data[:, :2] = normalized_data
+    list_of_obs = [[elem[0], elem[1], id] for id, elem in enumerate(normalized_data)]
     visData = {
         'data': list_of_obs,
-        'clusters': np.unique(data[:, 2]).astype('int32').tolist()
+        'clusters': np.unique(data[:, -1]).astype('int32').tolist()
     }
     return visData
 

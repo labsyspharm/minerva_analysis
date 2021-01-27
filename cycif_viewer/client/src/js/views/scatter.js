@@ -1,11 +1,12 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, canvasId, eventHandler, dataLayer) {
+    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable) {
         this.id = id;
         this.canvasId = canvasId;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
+        this.neighborhoodTable = neighborhoodTable;
     }
 
     init() {
@@ -33,6 +34,11 @@ class Scatterplot {
         self.plot.subscribe('select', self.select.bind(self));
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
         self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
+
+
+        // Custom Cluster Submit
+        let button = document.getElementById("custom_cluster_submit");
+        button.addEventListener('click', self.customCluster.bind(self));
     }
 
     async wrangle(data) {
@@ -70,6 +76,22 @@ class Scatterplot {
     lassoEnd() {
         const self = this;
         self.lassoActive = false;
+    }
+
+    async customCluster() {
+        const self = this;
+        let numberOfClusters = document.getElementById('custom_cluster_number')
+        if (!numberOfClusters || !numberOfClusters.value) {
+            return;
+        }
+        numberOfClusters = _.toInteger(numberOfClusters.value);
+        document.getElementById('custom_cluster_loading').innerHTML += '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+        try {
+            let updatedNeighborhoods = await self.dataLayer.customCluster(numberOfClusters)
+            self.neighborhoodTable.updateNeighborhoods(updatedNeighborhoods);
+        } catch (e) {
+        }
+        document.getElementById('custom_cluster_loading').innerHTML = '';
     }
 }
 

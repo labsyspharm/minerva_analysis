@@ -186,6 +186,17 @@ class NeighborhoodTable {
         return self.drawRows();
     }
 
+    updateNeighborhoods(neighborhoods) {
+        const self = this;
+        self.neighborhoods = neighborhoods;
+        if ($(self.table).is(':hidden')) {
+            document.getElementById('neighborhood_dropdown_button').click();
+        }
+        self.drawRows();
+        let lastRow = self.table.querySelector('.neighborhood-row:last-child');
+        lastRow.scrollIntoView();
+    }
+
     async saveNeighborhood(e) {
         const self = this;
         if (self.enabled) { // Disable
@@ -195,9 +206,11 @@ class NeighborhoodTable {
             if ($(self.table).is(':hidden')) {
                 document.getElementById('neighborhood_dropdown_button').click();
             }
+
             self.drawRows();
 
             let lastRow = self.table.querySelector('.neighborhood-row:last-child');
+            lastRow.scrollIntoView();
             lastRow.click();
             lastRow.querySelector('.neighborhood_icon_col').click();
         }
