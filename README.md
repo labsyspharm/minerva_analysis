@@ -16,10 +16,10 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 #### 2. Conda Install Instructions. 
 ##### Install Conda
 * Install [miniconda](https://conda.io/miniconda.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html). 
-* Create env:  `conda env create -n [myenvname] -f requirements.yml`
+* Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
-* Active environment: `conda activate [myenvname]`. 
+* Active environment: `conda activate cycif_viewer`. 
 
 
 ##### Start the Server
