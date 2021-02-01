@@ -19,7 +19,7 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 * Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
-* Active environment: `conda activate cycif_viewer`. 
+* Active environment: `conda activate cycif_viewer`
 
 
 ##### Start the Server
@@ -34,14 +34,14 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 
 ##### Windows
 
-* Create alternative conda env without mkl: `conda create --name nomkl`. 
-* Active environment: `conda activate nomkl`. 
-* Run `pip install -r requirements.txt`.
-* Run `package_win.bat`.
+* Create alternative conda env without mkl: `conda create --name nomkl`
+* Active environment: `conda activate nomkl`
+* Run `pip install -r requirements.txt`
+* Run `package_win.bat`
 
 ##### MacOS
 
 * Create env:  `conda env create -f requirements.yml`
-* Active environment: `conda activate cycif_viewer`. 
-* Run `bash package_mac.sh`.
+* Active environment: `conda activate cycif_viewer`
+* Run `bash package_mac.sh`
 
