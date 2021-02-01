@@ -112,7 +112,7 @@ class DataLayer {
         form.method = "post";
 
         let filename = '';
-        if (fullCsv) {
+        if (!fullCsv) {
             filename = document.getElementById('download_input1').value;
         }else{
             filename = document.getElementById('download_input2').value;
