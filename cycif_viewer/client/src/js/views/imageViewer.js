@@ -184,30 +184,33 @@ class ImageViewer {
                                     that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
                                 })
                         }
-                    } else {
-                        const webPoint = event.position;
-                        // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                        const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-                        // Convert from viewport coordinates to image coordinates.
-                        const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-                        return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
-                            .then(selectedItem => {
-                                if (selectedItem !== null && selectedItem !== undefined) {
-                                    // Check if user is doing multi-selection or not
-                                    let clearPriors = true;
-                                    if (event.originalEvent.ctrlKey) {
-                                        clearPriors = false;
-                                    }
-                                    // Trigger event
-                                    that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-                                        selectedItem,
-                                        clearPriors
-                                    });
-                                }
-                            })
                     }
                 }
-            }, moveHandler: function (event) {
+            }, nonPrimaryReleaseHandler(event) {
+                if (that.selectButton.style.color == "orange" && !that.lassoing) {
+                    const webPoint = event.position;
+                    // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+                    const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                    // Convert from viewport coordinates to image coordinates.
+                    const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+                    return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
+                        .then(selectedItem => {
+                            if (selectedItem !== null && selectedItem !== undefined) {
+                                // Check if user is doing multi-selection or not
+                                let clearPriors = true;
+                                if (event.originalEvent.ctrlKey) {
+                                    clearPriors = false;
+                                }
+                                // Trigger event
+                                that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+                                    selectedItem,
+                                    clearPriors
+                                });
+                            }
+                        })
+                }
+            }
+            , moveHandler: function (event) {
                 if (that.isSelectionToolActive && that.lassoing) {
                     that.lasso_draw(event);
                 }

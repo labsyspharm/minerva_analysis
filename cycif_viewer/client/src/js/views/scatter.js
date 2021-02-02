@@ -38,7 +38,9 @@ class Scatterplot {
 
         // Custom Cluster Submit
         let button = document.getElementById("custom_cluster_submit");
-        button.addEventListener('click', self.customCluster.bind(self));
+        if (button) {
+            button.addEventListener('click', self.customCluster.bind(self));
+        }
     }
 
     async wrangle(data) {

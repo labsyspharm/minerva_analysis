@@ -124,7 +124,7 @@ function removeAllPlots() {
 function redrawStarplots() {
     // Gets data in order
     let data = d3.select(phenotypeList).selectAll('.list-group-item-secondary').data();
-    wrangleSmallMultiples();
+    wrangleSmallMultiples(data);
 }
 
 function removePhenotype(e, d) {

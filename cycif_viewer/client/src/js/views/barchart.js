@@ -89,8 +89,9 @@ class Barchart {
             .attr("y", 0)
             .attr("x", 9)
             .attr("dy", ".35em")
+            .attr("font-size", "0.8em")
             .attr("transform", "rotate(90)")
-            .style("text-anchor", "start");
+            .style("text-anchor", "start")
 
         // self.svg.select(".yaxis")
         //     .transition()

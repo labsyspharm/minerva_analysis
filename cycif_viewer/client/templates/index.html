@@ -97,16 +97,17 @@
                         <div class="row"><span class="material-icons" id="neighborhood_icon" data-toggle="tooltip"
                                                data-placement="right"
                                                title="Search for Similar Neighborhoods">search</span>
+                            <div id="similarity_group">
+                                <form>
+                                    <label id="neighborhood_similarity_label" for="neighborhood_similarity">
+                                        Similarity Threshold: </label> <span id="similarity_val">0.8</span>
+                                    <input type="range" class="form-control-range" min="0" max="100" value="80"
+                                           id="neighborhood_similarity">
+                                </form>
+                            </div>
                         </div>
                     </div>
-                    <div class="row" id="similarity_group">
-                        <form>
-                            <label id="neighborhood_similarity_label" for="neighborhood_similarity">
-                                Similarity: </label> <span id="similarity_val">0.8</span>
-                            <input type="range" class="form-control-range" min="0" max="100" value="80"
-                                   id="neighborhood_similarity">
-                        </form>
-                    </div>
+
                 </div>
                 <div class="row">
                     <div class="col-auto">
@@ -126,7 +127,7 @@
             <div id="plots_display" class="col">
                 <div class="row justify-content-md-center">
                     <div class="col">
-                        <h5 id="starplot_label" class="text-center">Neighborhood Composition</h5>
+                        <h5 id="starplot_label" class="text-center">Neighborhood Composition Space</h5>
                     </div>
                 </div>
                 <div class="row" id="starplot_display"></div>
