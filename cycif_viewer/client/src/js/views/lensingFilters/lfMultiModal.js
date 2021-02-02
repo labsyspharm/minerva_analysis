@@ -231,10 +231,10 @@ export class LfMultiModal {
                             // Check current sels
                             if (selMM && !selMM.loaded) {
                                 // Empty
-                                const items = this.image_viewer.viewer.world.getItemCount();
-                                for (let i = 1; i < items; i++) {
-                                    this.image_viewer.viewerManagerVAuxi.channel_remove(i);
-                                }
+                                const items = Object.keys(this.image_viewer.viewerManagerVMain.viewer_channels);
+                                items.forEach(item => {
+                                    this.image_viewer.viewerManagerVAuxi.channel_remove(+item);
+                                })
                                 // Loads
                                 selMM.channels.forEach((c, i) => {
 
@@ -288,10 +288,19 @@ export class LfMultiModal {
                             // Remove handler
                             document.removeEventListener('keydown', this.vars.keydown);
 
-                            // Re-establish channels
-                            this.image_viewer.viewerManagerVAuxi.viewer_channels =
-                                this.image_viewer.viewerManagerVMain.viewer_channels;
-                            this.image_viewer.viewerManagerVAuxi.force_repaint();
+                            // Clear prev channels and reload from main
+                            const itemsAuxi = Object.keys(this.image_viewer.viewerManagerVAuxi.viewer_channels);
+                            itemsAuxi.forEach(item => {
+                                this.image_viewer.viewerManagerVAuxi.channel_remove(+item);
+                            });
+                            const itemsMain = Object.keys(this.image_viewer.viewerManagerVMain.viewer_channels);
+                            itemsMain.forEach(item => {
+                                this.image_viewer.viewerManagerVAuxi.channel_add(+item);
+                            });
+
+                            // Mark all as not loaded
+                            const selMM = this.vars.mmOptions.find(o => o.name === this.vars.mmSelected);
+                            selMM.loaded = false;
 
                             // Remove
                             this.vars.el_radialExtG.remove();

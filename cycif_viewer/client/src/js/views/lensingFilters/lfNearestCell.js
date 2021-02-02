@@ -232,7 +232,7 @@ export class LfNearestCell {
                                 .attr('dominant-baseline', 'middle');
                             this.vars.el_nucleusG.append('text')
                                 .attr('class', 'viewfinder_nucleus_g_text2')
-                                .attr('x', this.vars.config_nucleusR)
+                                .attr('x', this.vars.config_nucleusR / 2)
                                 .attr('y', this.vars.config_nucleusR / 2)
                                 .attr('fill', 'rgba(255, 255, 255, 0.95)')
                                 .attr('font-family', 'sans-serif')

@@ -111,6 +111,7 @@ eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMul
 const channelSelect = async (sels) => {
 
     let channelCells = await dataLayer.getChannelCellIds(sels);
+    console.log(channelCells)
 
     dataLayer.addAllToCurrentSelection(channelCells);
 

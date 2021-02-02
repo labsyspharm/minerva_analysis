@@ -200,6 +200,7 @@ def get_phenotypes(datasource_name):
 
 def get_neighborhood(x, y, datasource_name, r=100, fields=None):
     global database
+    global datasource
     global source
     global ball_tree
     if datasource_name != source:
@@ -208,16 +209,18 @@ def get_neighborhood(x, y, datasource_name, r=100, fields=None):
     neighbors = index[0]
     try:
         if fields and len(fields) > 0:
+            print('ding')
             fields.append('id') if 'id' not in fields else fields
             if len(fields) > 1:
-                neighborhood = database.iloc[neighbors][fields].to_dict(orient='records')
+                neighborhood = datasource.iloc[neighbors][fields].to_dict(orient='records')
             else:
-                neighborhood = database.iloc[neighbors][fields].to_dict()
+                neighborhood = datasource.iloc[neighbors][fields].to_dict()
         else:
-            neighborhood = database.iloc[neighbors].to_dict(orient='records')
+            neighborhood = datasource.iloc[neighbors].to_dict(orient='records')
 
         return neighborhood
     except:
+        print('womp')
         return {}
 
 

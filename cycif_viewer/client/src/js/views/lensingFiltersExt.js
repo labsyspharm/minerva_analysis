@@ -42,12 +42,12 @@ export class LensingFiltersExt {
 
         // Add in reverse order
         return [
-            lfSegmentationOutlines.load,
             lfChannelView.load,
+            lfMultiModal.load,
+            lfHistoSearch.load,
             lfNearestCells.load,
             lfNearestCell.load,
-            lfHistoSearch.load,
-            lfMultiModal.load,
+            lfSegmentationOutlines.load,
             // lfChannelRelationships.load
         ];
 

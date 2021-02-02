@@ -131,13 +131,13 @@ export class PtDotter {
                         //     .style('height', `${vis.configs.iconH}px`);
 
                         iconContainer.append('img')
-                            .attr('src', '../static/frontend/assets/cycif-download.svg')
+                            .attr('src', '../client/assets/cycif-download.svg')
                             .attr('alt', 'Download')
                             .style('width', `${vis.configs.iconW}px`)
                             .style('height', `${vis.configs.iconH}px`);
 
                         iconContainer.append('img')
-                            .attr('src', '../static/frontend/assets/cycif-remove.svg')
+                            .attr('src', '../client/assets/cycif-remove.svg')
                             .attr('alt', 'Remove')
                             .style('width', `${vis.configs.iconW}px`)
                             .style('height', `${vis.configs.iconH}px`);
