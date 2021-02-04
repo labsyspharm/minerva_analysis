@@ -36,7 +36,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 * Access the tool via `http://localhost:8000/`
 
 
-## Packaging (Bundling Code as Executable)
+## Packaging/Bundling Code as Executable (for Developers)
 
 ##### Windows
 
