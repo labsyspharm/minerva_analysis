@@ -45,3 +45,8 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 * Active environment: `conda activate cycif_viewer`
 * Run `bash package_mac.sh`
 
+#### Executables
+
+Releases can be found here:
+https://github.com/labsyspharm/cycif_viewer/releases
+These are executables for Windows and MacOS that can be run locally without any installations.
