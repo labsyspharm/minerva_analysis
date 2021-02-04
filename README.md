@@ -4,7 +4,13 @@
 This is  an [openseadragon](https://openseadragon.github.io/) based **Cellular Image Viewing and Analysis Tool**. 
 It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.js](https://nodejs.org/en/) javascript frontend.
 
-### Install
+### Executables
+Releases can be found here:
+https://github.com/labsyspharm/cycif_viewer/releases
+These are executables for Windows and MacOS that can be run locally without any installations.
+
+
+### Clone and Run Codebase
 #### 1. Checkout Project
 `git clone https://github.com/labsyspharm/cycif_viewer.git`
 #### 2. Checkout Necessary Branch
@@ -44,9 +50,3 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 * Create env:  `conda env create -f requirements.yml`
 * Active environment: `conda activate cycif_viewer`
 * Run `bash package_mac.sh`
-
-### Executables
-
-Releases can be found here:
-https://github.com/labsyspharm/cycif_viewer/releases
-These are executables for Windows and MacOS that can be run locally without any installations.
