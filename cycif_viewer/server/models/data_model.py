@@ -47,8 +47,6 @@ def load_datasource(datasource_name, reload=False):
     if source is datasource_name and datasource is not None and reload is False:
         return
     load_config()
-    if reload:
-        load_ball_tree(datasource_name, reload=reload)
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
     datasource = pd.read_csv(csvPath)
     embedding = np.load(Path("." + config[datasource_name]['embedding']))
@@ -56,6 +54,8 @@ def load_datasource(datasource_name, reload=False):
     datasource['Cluster'] = embedding[:, -1].astype('int32').tolist()
     datasource = datasource.replace(-np.Inf, 0)
     source = datasource_name
+    if reload or ball_tree is None:
+        load_ball_tree(datasource_name, reload=reload)
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
     else:
@@ -703,6 +703,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
 
 def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=[]):
     global datasource
+    global ball_tree
     global source
     global config
     default_fields = ['id', 'Cluster', 'phenotype', config[datasource_name]['featureData'][0]['xCoordinate'],
@@ -712,9 +713,9 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
             default_fields.append(field)
 
     if cluster_cells is None:
-        cluster_cells = datasource.loc[indices, default_fields].to_dict(orient='records')
+        cluster_cells = datasource.loc[indices, default_fields]
     else:
-        cluster_cells = cluster_cells[default_fields].to_dict(orient='records')
+        cluster_cells = cluster_cells[default_fields]
     neighborhood_array = np.load(Path("cycif_viewer/data/Ton/neighborhood_array_complex.npy"))
     cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
     summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
@@ -722,8 +723,12 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
     for i in range(len(phenotypes)):
         count = cluster_summary[i * 2]
         weight = cluster_summary[i * 2 + 1]
-        summary_stats['neighborhood_count'][phenotypes[i]] = count
-        summary_stats['avg_weight'][phenotypes[i]] = weight
+        # These Stats are Probably Useful Later, but I don't need them now
+        # summary_stats['neighborhood_count'][phenotypes[i]] = count
+        # summary_stats['avg_weight'][phenotypes[i]] = weight
         summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
-    obj = {'cells': cluster_cells, 'cluster_summary': summary_stats}
+    obj = {'cells': cluster_cells.to_dict(orient='records'), 'cluster_summary': summary_stats}
+    # points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
+    #                        'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
+    # neighbors = ball_tree.query_radius(points, r=46.15)
     return obj
