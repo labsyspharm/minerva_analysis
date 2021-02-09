@@ -537,9 +537,9 @@ export class ViewerManager {
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
                     if (this.imageViewer.selection.has(labelValue)) {
-                        // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
-                        let color = [255, 255, 255]
+                        let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype', '');
+                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        // let color = [255, 255, 255]
 
                         /************************ new */
                             // Init grid and tests (4 pts v 8 working for now)

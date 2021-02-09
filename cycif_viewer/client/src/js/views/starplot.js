@@ -35,8 +35,9 @@ class Starplot {
             this.config_chartR0 = 15;
             this.config_chartR1 = 65;
         }
-        this.tool_logRadiusScale = d3.scaleSymlog()
-            .domain([0, 2000])
+        // this.tool_logRadiusScale = d3.scaleSymlog()
+        this.tool_logRadiusScale = d3.scaleLinear()
+            .domain([0, 20])
             .range([this.config_chartR0, this.config_chartR1])
 
         this.tool_logRadiusScale.clamp(true);
@@ -265,6 +266,12 @@ class Starplot {
                 }
 
             });
+        self.el_chartG.append("circle")
+            .style("stroke", "none")
+            .style("fill", "white")
+            .attr("r", self.config_chartR0)
+            .attr("cx", 0)
+            .attr("cy", 0);
     }
 
     hide() {

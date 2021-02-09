@@ -680,3 +680,8 @@ polygon:hover {
 #custom_cluster_number {
     width: 100%;
 }
+
+.cell_view_icon {
+    height: 36px;
+    width: 36px;
+}

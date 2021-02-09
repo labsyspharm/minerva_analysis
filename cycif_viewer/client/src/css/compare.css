@@ -8,6 +8,7 @@
 
 #comparison_div .compare_col {
     padding: 0;
+    height: 100%;
 }
 
 .compare_plot_body {

@@ -7,7 +7,7 @@ class Barchart {
 
     init() {
         const self = this;
-        this.margin = {top: 10, right: 10, bottom: 100, left: 40},
+        this.margin = {top: 10, right: 10, bottom: 30, left: 100},
             this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
 
@@ -20,25 +20,43 @@ class Barchart {
             .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
         this.svgSelector = document.getElementById(`${this.id}_barchart_svg`);
         this.svgSelector.style.display = "none";
-        this.x = d3.scaleBand()
-            .rangeRound([0, this.width], .1)
+        this.y = d3.scaleBand()
+            .rangeRound([0, this.height], .1)
             .paddingInner(0.1);
 
-        this.y = d3.scaleSymlog()
-            .range([this.height, 0])
-            .domain([0, 2000])
+        // this.y = d3.scaleSymlog()
+        this.x = d3.scaleLinear()
+            .range([0, this.width])
+            .domain([0, 20])
 
+        this.x.clamp(true);
 
         this.xAxis = d3.axisBottom()
             .scale(this.x);
+        this.xAxis.tickSizeOuter(0);
 
-        // this.yAxis = d3.axisLeft()
-        //     .scale(this.y)
+
+        this.yAxis = d3.axisLeft()
+            .scale(this.y);
+        this.yAxis.tickSizeOuter(0);
+
 
         this.svg.append("g")
             .attr("class", "xaxis")
             .attr("transform", "translate(0," + this.height + ")")
             .call(this.xAxis)
+
+        this.svg.append("g")
+            .attr("class", "yaxis")
+            .call(this.yAxis)
+
+        this.svg.append("text")
+            .attr("class", "x_axis_label")
+            .attr("transform", `translate(${this.width / 2},${this.height + 22})`)
+            .style("text-anchor", "middle")
+            .attr("font-size", "0.6em")
+
+            .text("Avg. Weight in Neighborhood")
 
 
         // this.svg.append("g")
@@ -73,7 +91,7 @@ class Barchart {
         this.visData = _.sortBy(this.visData, ['index']);
 
         self.svgSelector.style.display = "block";
-        self.x.domain(this.visData.map(function (d) {
+        self.y.domain(this.visData.map(function (d) {
             return d.key;
         }));
         // self.y.domain([0, d3.max(this.visData, function (d) {
@@ -86,17 +104,22 @@ class Barchart {
             .duration(100)
             .call(this.xAxis)
             .selectAll("text")
-            .attr("y", 0)
-            .attr("x", 9)
+            .attr("y", 10)
+            .attr("x", 0)
             .attr("dy", ".35em")
             .attr("font-size", "0.8em")
-            .attr("transform", "rotate(90)")
             .style("text-anchor", "start")
 
-        // self.svg.select(".yaxis")
-        //     .transition()
-        //     .duration(100)
-        //     .call(this.yAxis)
+        self.svg.select(".yaxis")
+            .transition()
+            .duration(100)
+            .call(this.yAxis)
+            .selectAll("text")
+            .attr("y", 0)
+            .attr("x", -10)
+            .attr("dy", ".35em")
+            .attr("font-size", "0.8em")
+            .style("text-anchor", "end")
 
 
         let bars = self.svg.selectAll(".bar")
@@ -107,11 +130,11 @@ class Barchart {
             .attr("class", "bar")
             .transition()
             .duration(500)
-            .attr("x", d => self.x(d.key))
-            .attr("width", self.x.bandwidth())
-            .attr("y", d => self.y(d.value))
-            .attr("height", function (d) {
-                return self.height - self.y(d.value);
+            .attr("y", d => self.y(d.key))
+            .attr("height", self.y.bandwidth())
+            .attr("x", 2)
+            .attr("width", function (d) {
+                return self.x(d.value);
             })
             .attr("fill", '#FFA500');
 

@@ -131,9 +131,11 @@ eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 
 const displayNeighborhoodSelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
-    let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
-    starplot.wrangle(starplotData);
-    scatterplot.recolor();
+    let starplotData = _.get(selection, 'cluster_summary.weighted_contribution');
+    if (starplotData) {
+        starplot.wrangle(starplotData);
+        scatterplot.recolor();
+    }
     updateSeaDragonSelection(false, false);
 }
 eventHandler.bind(ImageViewer.events.displayNeighborhoodSelection, displayNeighborhoodSelection);

@@ -223,6 +223,8 @@ function initSmallMultipleScatterplots() {
         let canvas = document.createElement("canvas");
         canvas.className = 'scatterplot scatter_canvas';
         canvas.id = `compare_col_canvas_${i}`;
+        canvas.width = canvas_div.offsetWidth;
+        canvas.height = canvas_div.offsetHeight;
         canvas_div.appendChild(canvas);
         scatterplot = new Scatterplot(`compare_starplot_${i}`, `compare_col_canvas_${i}`, eventHandler, dataLayer);
         scatterplot.init();
