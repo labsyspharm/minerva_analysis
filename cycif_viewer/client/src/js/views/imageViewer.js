@@ -85,7 +85,7 @@ class ImageViewer {
             imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 50,
+            maxImageCacheCount: 200,
             timeout: 90000,
             preload: false,
             homeFillsViewer: true,
@@ -114,8 +114,7 @@ class ImageViewer {
         const dataLoad = LensingFiltersExt.getFilters(this);
 
         // Instantiate viewer
-        const lensing_config = {
-        };
+        const lensing_config = {};
         this.viewer.lensing = Lensing.construct(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
 
         /*************************************************** Access OME tiff metadata / activate lensing measurements */
@@ -152,39 +151,11 @@ class ImageViewer {
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
 
-        /********************************************************************************************** Emulate click */
+        /************************************************************************************** Create viewer overlay */
 
-        // Click first from channel list
-        // document.querySelector('.channel-list-content').click();
+        this.viewer.overlay = new ViewerOverlay(this);
 
         /******************************************************************************************** Back to normal  */
-        /* TODO - unused
-        // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
-        this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
-            onRedraw: function (opts) {
-                const context = opts.context;
-                //area selection polygon
-                if (that.selectionPolygonToDraw && that.selectionPolygonToDraw.length > 0) {
-                    var d = that.selectionPolygonToDraw;
-                    context.globalAlpha = 0.7;
-                    //context.fillStyle = 'orange';
-                    context.strokeStyle = 'orange';
-                    context.lineWidth = 15;
-                    context.beginPath();
-                    d.forEach(function (xVal, i) {
-                        if (i === 0) {
-                            context.moveTo(d[i].x, d[i].y);
-                        } else {
-                            context.lineTo(d[i].x, d[i].y);
-                        }
-                    });
-                    context.closePath();
-                    context.stroke();
-                    // context.globalAlpha = 1.0;
-                }
-            },
-        });
-        */
 
         // Add event mouse handler (cell selection)
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
@@ -297,6 +268,7 @@ class ImageViewer {
 
         const handlePngAs8Bit = false;
         if (handlePngAs8Bit) {
+
             const img = new Image();
             img.onload = () => {
 
@@ -308,7 +280,6 @@ class ImageViewer {
                 ctx.drawImage(img, 0, 0);
 
                 // This gets back an 8 bit RGBA image
-
                 this.addToTileCache(img.src, ctx.getImageData(0, 0, img.width, img.height));
 
             };
@@ -323,8 +294,8 @@ class ImageViewer {
                     const tile = event.tile;
 
                     // Save tile in tileCache
-
                     this.addToTileCache(tile.url, PNG.sync.read(buffer, {colortype: 0}))
+
                 } else {
                     // console.log('[TILE LOADED]: buffer UNDEFINED');
                 }
@@ -493,7 +464,7 @@ class ImageViewer {
      *
      * @returns void
      */
-    updateChannelColors(name, color, type, force=true) {
+    updateChannelColors(name, color, type, force = true) {
 
         const channelIdx = imageChannels[name];
 
@@ -511,7 +482,7 @@ class ImageViewer {
 
         this.channelTF[channelIdx] = tf_def;
         if (force) {
-        this.forceRepaint();
+            this.forceRepaint();
         }
     }
 

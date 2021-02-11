@@ -59,7 +59,18 @@ export class PluginToolsExt {
      */
     addEvents() {
 
+        // Click
         this.els.trayEl.on('click', this.trayEventClick.bind(this));
+
+        // Keyboard
+        document.addEventListener('keydown', e => {
+
+            if (e.key === 'D') {
+                this.trayEventClickForce('plugin_dotter');
+                this.plugins.plugin_dotter.instance.eventViewerOnKeydown();
+            }
+
+        });
     }
 
     /**
@@ -73,7 +84,7 @@ export class PluginToolsExt {
     }
 
     /**
-     * @function trayClick
+     * @function trayEventClick
      *
      * @returns void
      */
@@ -88,6 +99,23 @@ export class PluginToolsExt {
         // Load
         this.loadPluginTool(e.target.parentElement.id);
 
+    }
+
+    /**
+     * @function trayEventClickForce
+     *
+     * @returns void
+     */
+    trayEventClickForce(pluginId) {
+
+        // Update
+        this.opened = true;
+
+        // Widths
+        this.trayOpenClose();
+
+        // Load
+        this.loadPluginTool(pluginId);
 
     }
 

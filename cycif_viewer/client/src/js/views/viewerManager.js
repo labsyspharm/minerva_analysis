@@ -25,7 +25,6 @@ export class ViewerManager {
 
     /**
      * @function init
-     * Setups up the color manager.
      *
      * @returns void
      */
@@ -455,6 +454,7 @@ export class ViewerManager {
 
             const channelIdx = key;
 
+            // First check main
             const channelPath = this.viewer_channels[channelIdx]["sub_url"];
             const channelTileAdr = tileurl.replace(somePath, channelPath);
             const channelTile = this.imageViewer.tileCache[channelTileAdr];

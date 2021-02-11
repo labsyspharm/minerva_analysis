@@ -115,7 +115,7 @@ const channelSelect = async (sels) => {
 
     dataLayer.addAllToCurrentSelection(channelCells);
 
-    updateSeaDragonSelection(false);
+    updateSeaDragonSelection(true);
 }
 eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 

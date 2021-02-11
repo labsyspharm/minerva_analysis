@@ -1,5 +1,5 @@
-import {LfNearestCell} from "./lensingFilters/lfNearestCell";
-import {LfNearestCells} from "./lensingFilters/lfNearestCells";
+import {LfNearestCellsAll} from "./lensingFilters/lfNearestCellsAll";
+import {LfNearestCellsSel} from "./lensingFilters/lfNearestCellsSel";
 import {LfChannelView} from "./lensingFilters/lfChannelView";
 import {LfSegmentationOutlines} from "./lensingFilters/lfSegmentationOutlines";
 import {LfChannelRelationships} from "./lensingFilters/LfChannelRelationships";
@@ -23,10 +23,10 @@ export class LensingFiltersExt {
         const lfChannelView = new LfChannelView(_imageViewer);
 
         ////////////////////////////////////////////////////////////////////////////////////// Data load - nearest cells
-        const lfNearestCells = new LfNearestCells(_imageViewer);
+        const lfNearestCellsSel = new LfNearestCellsSel(_imageViewer);
 
         /////////////////////////////////////////////////////////////////////////////////////// Data load - nearest cell
-        const lfNearestCell = new LfNearestCell(_imageViewer);
+        const lfNearestCellsAll = new LfNearestCellsAll(_imageViewer);
 
         ////////////////////////////////////////////////////////////////////////////// Data load - segmentation outlines
         const lfSegmentationOutlines = new LfSegmentationOutlines(_imageViewer);
@@ -42,12 +42,12 @@ export class LensingFiltersExt {
 
         // Add in reverse order
         return [
+            lfSegmentationOutlines.load,
+            lfHistoSearch.load,
             lfChannelView.load,
             lfMultiModal.load,
-            lfHistoSearch.load,
-            lfNearestCells.load,
-            lfNearestCell.load,
-            lfSegmentationOutlines.load,
+            lfNearestCellsSel.load,
+            lfNearestCellsAll.load,
             // lfChannelRelationships.load
         ];
 

@@ -52,6 +52,10 @@ body {
     width: 100%;
 }
 
+#openseadragon {
+    position: relative;
+}
+
 #channel_list_wrapper {
     background-color: rgba(0, 0, 0, 0);
     left: 1.25vw;
