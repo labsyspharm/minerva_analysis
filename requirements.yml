@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - Flask=1.1.2
+  - flask-sqlalchemy
   - numpy
   - orjson
   - pandas
@@ -17,7 +18,6 @@ dependencies:
   - pyinstaller
   - pip
   - pip:
-      - opencv-python==4.4.0.*
       - ome-types==0.2.0
 
 
