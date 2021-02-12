@@ -55,6 +55,7 @@ export class PtDotter {
         // Snapshots
         this.snapshotsSubscription = this.imageViewer.viewer.lensing.snapshots.subject.subscribe(next => {
             this.renderSnapshots();
+            this.renderOverlay();
         });
         this.renderSnapshots()
 
@@ -106,8 +107,8 @@ export class PtDotter {
             .range([0, this.configs.viewerOverlayW]);
         this.tools.overlayY.domain(this.configs.imageY)
             .range([0, this.configs.viewerOverlayH]);
-        console.log(this.tools.overlayX.domain(), this.tools.overlayX.range())
-        console.log(this.tools.overlayY.domain(), this.tools.overlayY.range())
+        // console.log(this.tools.overlayX.domain(), this.tools.overlayX.range())
+        // console.log(this.tools.overlayY.domain(), this.tools.overlayY.range())
 
         const vis = this;
 
@@ -119,21 +120,23 @@ export class PtDotter {
             .attr('alt', 'Dot marker')
             .style('position', 'absolute')
             .style('height', `${24}px`)
+            .style('point-events', 'none')
             .each(function (d) {
 
                 const img = d3.select(this);
 
                 // Create new ref point
                 const newPt = new OpenSeadragon.Point({x: 0, y: 0})
-                newPt.x = d.positionData.refPoint.x
-                newPt.y = d.positionData.refPoint.y
+                newPt.x = d.positionData.refPoint.x;
+                newPt.y = d.positionData.refPoint.y;
+
 
                 const imgPt = vis.imageViewer.viewer.world.getItemAt(0).viewportToImageCoordinates(newPt);
-                console.log(imgPt)
-                console.log(vis.tools.overlayX(imgPt.x), vis.tools.overlayY(imgPt.y))
+                // console.log(d.positionData.refPoint, newPt)
+                // console.log('Img. pt', vis.tools.overlayX(imgPt.x), vis.tools.overlayY(imgPt.y))
 
-                img.style('left', `${vis.tools.overlayX(imgPt.x)}px`);
-                img.style('top', `${vis.tools.overlayY(imgPt.y)}px`)
+                img.style('left', `${vis.tools.overlayX(d.lensingConfigs.pos_full[0]) - 12}px`);
+                img.style('top', `${vis.tools.overlayY(d.lensingConfigs.pos_full[1]) - 12}px`)
 
 
             });
