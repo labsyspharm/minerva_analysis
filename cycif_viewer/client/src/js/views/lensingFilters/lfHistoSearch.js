@@ -17,10 +17,19 @@ export class LfHistoSearch {
         el_textReportG: null,
         el_toggleNoteG: null,
         keydown: e => {
-            if (e.key === 'S') {
-
-                // Lensing ref
-                const lensing = this.image_viewer.viewer.lensing;
+            const lensing = this.image_viewer.viewer.lensing;
+            if (!lensing.configs.sensitivity){
+                lensing.configs.sensitivity = 0.05;
+            }
+            if (e.key === 'j'){
+                lensing.configs.sensitivity += 0.001;
+                console.log('increased sensitivity to: ' + lensing.configs.sensitivity);
+            }
+            if (e.key === 'k'){
+                lensing.configs.sensitivity -= 0.001;
+                console.log('decreased sensitivity to: ' + lensing.configs.sensitivity);
+            }
+            if (e.key === 'H') {
 
                 // Access auxi viewer manager (lensing instance)
                 const auxiManager = this.image_viewer.viewerManagerVAuxi;
@@ -47,7 +56,9 @@ export class LfHistoSearch {
                 this.load.config.filterCode.settings.loading = true;
 
                 //create a server query to retrieve ccontours of areas in the image simiar to the current lens area
-                const sensitivity = 0.05;
+                if (!lensing.configs.sensitivity){
+                    lensing.configs.sensitivity = 0;
+                }
 
                 const bounds = this.image_viewer.viewer.viewport.getBounds(true);
                 const topLeft = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getTopLeft());
@@ -55,7 +66,7 @@ export class LfHistoSearch {
                 const viewportBounds = [topLeft, bottomRight];
 
                 this.data_layer.getHistogramComparison(datasource, channels, pos[0], pos[1], newRad,
-                    viewportBounds, this.image_viewer.viewer.viewport.getZoom(), sensitivity).then(d => {
+                    viewportBounds, this.image_viewer.viewer.viewport.getZoom(), lensing.configs.sensitivity).then(d => {
                     console.log(d)
                 });
             }
@@ -189,7 +200,7 @@ export class LfHistoSearch {
                                 .attr('font-size', 8)
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
-                                .html('SHIFT S');
+                                .html('Countours: SHIFT H -- Increase: j -- Decrease: k');
 
                             // Add listener
                             this.vars.keydown = this.vars.keydown.bind(this)
