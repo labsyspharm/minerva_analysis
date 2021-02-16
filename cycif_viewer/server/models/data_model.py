@@ -44,6 +44,7 @@ def load_datasource(datasource_name, reload=False):
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
     # datasource = pd.read_csv(csvPath)
 
+    print("Reading csv single cell data..")
     start = time.time()
     datasource = dd.read_csv(csvPath)
     datasource = datasource.compute()
@@ -53,18 +54,23 @@ def load_datasource(datasource_name, reload=False):
     datasource = datasource.replace(-np.Inf, 0)
     if reload or ball_tree is None:
         load_ball_tree(datasource_name, reload=reload)
+
+    print("Loading image data..")
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
     else:
         seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+
+    print("Loading meta data..")
     try:
         xml = channel_io.pages[0].tags['ImageDescription'].value
         metadata = from_xml(xml).images[0].pixels
     except:
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
+    print("Data loading finished.")
 
 
 def load_config(datasource_name):
