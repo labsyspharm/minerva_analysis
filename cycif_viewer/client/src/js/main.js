@@ -150,6 +150,12 @@ const selectNeighborhood = async (d) => {
 }
 eventHandler.bind(NeighborhoodTable.events.selectNeighborhood, selectNeighborhood);
 
+const changeSelectionMode = (singleCellMode) => {
+    dataLayer.switchViewMode(singleCellMode);
+    updateSeaDragonSelection(false, false);
+}
+eventHandler.bind(ImageViewer.events.changeSelectionMode, changeSelectionMode);
+
 
 eventHandler.bind(Scatterplot.events.selectFromEmbedding, displaySelection);
 

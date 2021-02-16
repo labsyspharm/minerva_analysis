@@ -189,6 +189,7 @@ function initSmallMultipleStarplots() {
         starplot.init();
         return starplot;
     });
+
     wrangleSmallMultiples();
 }
 

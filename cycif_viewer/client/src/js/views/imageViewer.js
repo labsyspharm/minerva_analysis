@@ -62,17 +62,18 @@ class ImageViewer {
         // Applying TF to selection, subset, or all
         this.show_subset = false;
         this.show_selection = true;
+        this.singleCellView = true;
         this.lassoButton = document.getElementById("lasso_button");
         this.selectButton = document.getElementById("select_button");
         this.neighborhoodButton = document.getElementById("neighborhood_icon");
         this.similaritySlider = document.getElementById("similarity_group");
+        this.cellViewButton = document.getElementById("cell_view_icon");
         this.similaritySlider.onchange = (e) => {
             let val = document.getElementById("neighborhood_similarity").value;
             let span = document.getElementById('similarity_val');
             span.innerHTML = ''
             span.innerHTML = _.toString((val / 100).toFixed(2));
         }
-        this.lassoButton.style.color = "orange";
         this.isSelectionToolActive = true;
 
     }
@@ -187,7 +188,7 @@ class ImageViewer {
                     }
                 }
             }, nonPrimaryReleaseHandler(event) {
-                if (that.selectButton.style.color == "orange" && !that.lassoing) {
+                if (that.selectButton.classList.contains('selected') && !that.lassoing) {
                     const webPoint = event.position;
                     // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
                     const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
@@ -255,17 +256,33 @@ class ImageViewer {
         });
 
         that.lassoButton.addEventListener("click", () => {
-            that.lassoButton.style.color = "orange";
-            that.selectButton.style.color = "#8f8f8f";
-            that.neighborhoodButton.style.stroke = "#8f8f8f";
+            that.lassoButton.classList.add('selected');
+            that.selectButton.classList.remove('selected');
             that.isSelectionToolActive = true;
         })
 
         that.selectButton.addEventListener("click", () => {
-            that.selectButton.style.color = "orange";
-            that.lassoButton.style.color = "#8f8f8f";
-            that.neighborhoodButton.style.stroke = "#8f8f8f";
+            that.selectButton.classList.add('selected');
+            that.lassoButton.classList.remove('selected');
             that.isSelectionToolActive = false;
+        })
+        that.cellViewButton.addEventListener("click", () => {
+            let outerCircles = that.cellViewButton.querySelectorAll('.outer-circles');
+            _.each(outerCircles, circle => {
+                let thisCircle = d3.select(circle);
+                if (that.singleCellView) {
+                    thisCircle.attr('fill', '#FEA50A')
+                } else {
+                    thisCircle.attr('fill', 'none');
+                }
+            });
+
+            that.singleCellView = !that.singleCellView;
+            that.eventHandler.trigger(ImageViewer.events.changeSelectionMode, that.singleCellView);
+
+            // that.selectButton.classList.add('selected');
+            // that.lassoButton.classList.remove('selected');
+            // that.isSelectionToolActive = false;
         })
         that.neighborhoodButton.addEventListener("contextmenu", event => {
             let display = that.similaritySlider.style.display;
@@ -276,20 +293,16 @@ class ImageViewer {
             }
         })
         that.neighborhoodButton.addEventListener("click", event => {
-            let color = that.neighborhoodButton.style.stroke;
             d3.select('#selectionPolygon').remove();
-            if (color == "orange") { //
-                that.neighborhoodButton.style.stroke = "#8f8f8f";
-            } else {
-                that.neighborhoodButton.style.stroke = "orange";
-                let sim = document.getElementById('similarity_val').innerHTML || '0.8';
-                let simVal = parseFloat(sim);
-                if (dataLayer.getCurrentSelection().size > 0) {
-                    return dataLayer.getSimilarNeighborhoodToSelection(simVal)
-                        .then(cells => {
-                            that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
-                        })
-                }
+            that.neighborhoodButton.style.stroke = "orange";
+            let sim = document.getElementById('similarity_val').innerHTML || '0.8';
+            let simVal = parseFloat(sim);
+            if (dataLayer.getCurrentSelection().size > 0) {
+                return dataLayer.getSimilarNeighborhoodToSelection(simVal)
+                    .then(cells => {
+                        that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
+                    })
+
             }
         })
 
@@ -647,6 +660,7 @@ ImageViewer
     imageClickedMultiSel: 'image_clicked_multi_selection',
     renderingMode: 'renderingMode',
     displaySelection: 'displaySelection',
+    changeSelectionMode: 'changeSelectionMode',
     displayNeighborhoodSelection: 'displayNeighborhoodSelection'
 };
 

@@ -390,6 +390,23 @@ class DataLayer {
         // console.log("update current selection done")
     }
 
+    switchViewMode(singleCellMode) {
+        const self = this;
+        const title = document.getElementById('cell_view_title');
+        if (singleCellMode) {
+            self.currentSelection = new Map(_.get(self.getCurrentRawSelection(), 'cells').map(i => [i.id, i]));
+            title.innerHTML = "Single Cell View"
+        } else {
+
+            self.currentSelection = new Map(_.map(_.get(self.getCurrentRawSelection(), 'neighbors'), elem => {
+                let phenotype = _.get(self.currentSelection.get(elem), 'phenotype') || _.get(self.getCurrentRawSelection(), `[neighbor_phenotypes][${elem}]`)
+                return [elem, {'phenotype': phenotype}];
+            }));
+            title.innerHTML = "Full Neighborhood View";
+        }
+
+    }
+
     isImageFeature(key) {
         if (this.imageChannels.hasOwnProperty(key)
             && key != 'CellId' && key != 'id' && key != 'CellID' && key != 'ID' && key != 'Area') {

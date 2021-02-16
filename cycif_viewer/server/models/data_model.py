@@ -726,9 +726,16 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
         # These Stats are Probably Useful Later, but I don't need them now
         # summary_stats['neighborhood_count'][phenotypes[i]] = count
         # summary_stats['avg_weight'][phenotypes[i]] = weight
-        summary_stats['weighted_contribution'][phenotypes[i]] = weight * count
+        summary_stats['weighted_contribution'][phenotypes[i]] = weight
     obj = {'cells': cluster_cells.to_dict(orient='records'), 'cluster_summary': summary_stats}
-    # points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
-    #                        'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
-    # neighbors = ball_tree.query_radius(points, r=46.15)
+    points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
+                           'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
+    neighbors = ball_tree.query_radius(points, r=46.15)
+    unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
+    border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells.index.values)
+    neighbor_phenotypes = {}
+    for elem in border_neighbors:
+        neighbor_phenotypes[str(elem)] = datasource.loc[elem, 'phenotype']
+    obj['neighbors'] = unique_neighbors
+    obj['neighbor_phenotypes'] = neighbor_phenotypes
     return obj

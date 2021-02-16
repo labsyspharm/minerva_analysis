@@ -530,11 +530,16 @@ polygon:hover {
 }
 
 #selection-options .material-icons {
-    font-size: 36px;
+    font-size: 24px;
 }
 
 #openseadragon-toolbar .material-icons {
-    font-size: 36px;
+    font-size: 24px;
+}
+
+.selected:hover {
+    cursor: pointer !important;
+    color: darkorange !important;
 }
 
 .material-icons:hover {
@@ -575,6 +580,7 @@ polygon:hover {
 
 #neighborhood_similarity {
     width: 80px;
+    height: 4px;
 }
 
 #neighborhood_table_heading, #neighborhood_table_footing {
@@ -681,7 +687,33 @@ polygon:hover {
     width: 100%;
 }
 
-.cell_view_icon {
-    height: 36px;
-    width: 36px;
+#cell_view_icon {
+    height: 24px;
+    width: 24px;
+}
+
+#cell_view_icon:hover .outline {
+    stroke: #8f8f8f
+}
+
+.toolbar_title {
+    font-size: 0.6rem;
+    font-weight: bold;
+    color: #C1C1C1;
+}
+
+.selected {
+    color: orange;
+}
+
+.outline {
+    stroke: #C1C1C1;
+    stroke-width: 1;
+    stroke-miterlimit: 10;
+}
+
+
+
+.inner-circle {
+    fill: #FEA50A
 }

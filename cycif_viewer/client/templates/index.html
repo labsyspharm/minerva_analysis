@@ -86,25 +86,41 @@
                 </div>
                 <div id="selection-options">
                     <div class="col">
-                        <div class="row">
+                        <div class="row align-items-center">
                             <span class="material-icons" id="select_button" data-toggle="tooltip" data-placement="right"
                                   title="Single Cell Selection">near_me</span>
+                            <span class="toolbar_title">Individual Selection</span>
                         </div>
-                        <div class="row">
-                            <span class="material-icons" id="lasso_button" data-toggle="tooltip" data-placement="right"
+                        <div class="row align-items-center">
+                            <span class="material-icons selected" id="lasso_button" data-toggle="tooltip"
+                                  data-placement="right"
                                   title="Lasso Selection">gesture</span>
+                            <span class="toolbar_title">Lasso Selection</span>
+
                         </div>
-                        <div class="row"><span class="material-icons" id="neighborhood_icon" data-toggle="tooltip"
-                                               data-placement="right"
-                                               title="Search for Similar Neighborhoods">search</span>
+                        <div class="row align-items-center">
+                            <span class="material-icons" id="neighborhood_icon" data-toggle="tooltip"
+                                  data-placement="right"
+                                  title="Search for Similar Neighborhoods">search</span>
+                            <span class="toolbar_title">Find Similar Neighborhoods</span>
+
                             <div id="similarity_group">
                                 <form>
-                                    <label id="neighborhood_similarity_label" for="neighborhood_similarity">
-                                        Similarity Threshold: </label> <span id="similarity_val">0.8</span>
                                     <input type="range" class="form-control-range" min="0" max="100" value="80"
                                            id="neighborhood_similarity">
+                                    <label id="neighborhood_similarity_label" for="neighborhood_similarity">
+                                        Similarity Threshold: </label> <span id="similarity_val">0.8</span>
                                 </form>
                             </div>
+                        </div>
+                        <div class="row align-items-center">
+                            <span id="cell_view" data-toggle="tooltip" data-placement="right"
+                                  title="Cell View Mode">
+                                {% include 'cell_icon.html' %}
+                            </span>
+                            <span id ="cell_view_title"class="toolbar_title">Single Cell View</span>
+
+
                         </div>
                     </div>
 
@@ -161,5 +177,3 @@
     <script src="../client/src/js/main.js" defer></script>
     {% endif %}
     {% endblock %}
-
-

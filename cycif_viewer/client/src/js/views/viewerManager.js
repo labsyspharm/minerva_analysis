@@ -354,7 +354,7 @@ export class ViewerManager {
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
                     if (this.imageViewer.selection.has(labelValue)) {
-                        let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype', '');
+                        let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype');
                         let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         // let color = [255, 255, 255]
 
@@ -568,9 +568,9 @@ export class ViewerManager {
                                     const altLabelValueStr = altLabelValue.toString();
                                     // Color
                                     if (altLabelValueStr !== labelValueStr) {
-                                        pixels[i] = 255;
-                                        pixels[i + 1] = 255;
-                                        pixels[i + 2] = 255;
+                                        pixels[i] = color[0];
+                                        pixels[i + 1] = color[1];
+                                        pixels[i + 2] = color[2];
                                         break;
                                     }
                                 }
