@@ -213,15 +213,34 @@ class DataLayer {
         }
     }
 
-    async getHistogramComparison(maxDistance, x, y, channels) {
+    // async getHistogramComparison(maxDistance, x, y, channels) {
+    //     try {
+    //         let response = await fetch('/get_histogram_comparison2?' + new URLSearchParams({
+    //             point_x: x,
+    //             point_y: y,
+    //             max_distance: maxDistance,
+    //             channels: channels,
+    //             datasource: datasource
+    //         }))
+    //         return await response.json();
+    //     } catch (e) {
+    //         console.log("Error getting histogram comparison", e);
+    //     }
+    // }
+
+    async getHistogramComparison(datasource, channels, x, y, maxDistance, viewportBounds, zoomlevel, sensitivity) {
         try {
-            let response = await fetch('/get_histogram_comparison?' + new URLSearchParams({
+            let response = await fetch('/histogram_comparison?' +
+            new URLSearchParams({
                 point_x: x,
                 point_y: y,
                 max_distance: maxDistance,
                 channels: channels,
-                datasource: datasource
-            }))
+                datasource: datasource,
+                viewport: [viewportBounds[0].x, viewportBounds[0].y,viewportBounds[1].x, viewportBounds[1].y],
+                zoomlevel: zoomlevel,
+                sensitivity: sensitivity
+            }));
             return await response.json();
         } catch (e) {
             console.log("Error getting histogram comparison", e);

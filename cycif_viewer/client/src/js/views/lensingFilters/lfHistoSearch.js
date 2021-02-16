@@ -45,7 +45,17 @@ export class LfHistoSearch {
 
                 // Load
                 this.load.config.filterCode.settings.loading = true;
-                this.data_layer.getHistogramComparison(newRad, pos[0], pos[1], channels).then(d => {
+
+                //create a server query to retrieve ccontours of areas in the image simiar to the current lens area
+                const sensitivity = 0.05;
+
+                const bounds = this.image_viewer.viewer.viewport.getBounds(true);
+                const topLeft = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getTopLeft());
+                const bottomRight = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getBottomRight());
+                const viewportBounds = [topLeft, bottomRight];
+
+                this.data_layer.getHistogramComparison(datasource, channels, pos[0], pos[1], newRad,
+                    viewportBounds, this.image_viewer.viewer.viewport.getZoom(), sensitivity).then(d => {
                     console.log(d)
                 });
             }
@@ -198,6 +208,8 @@ export class LfHistoSearch {
                             // Define this
                             const vis = this;
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
+
+
 
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
