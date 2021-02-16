@@ -14,6 +14,7 @@ import pickle
 import tifffile as tf
 import re
 import zarr
+from dask import dataframe as dd
 
 ball_tree = None
 database = None
@@ -41,7 +42,14 @@ def load_datasource(datasource_name, reload=False):
     if reload:
         load_ball_tree(datasource_name, reload=reload)
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-    datasource = pd.read_csv(csvPath)
+    #datasource = pd.read_csv(csvPath)
+
+    start = time.time()
+    datasource = dd.read_csv(csvPath)
+    datasource = datasource.compute()
+    end = time.time()
+    print("Read csv with dask: ", (end - start), "sec")
+
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
     source = datasource_name
@@ -415,6 +423,7 @@ def get_datasource_description(datasource_name):
 
 
 def generate_zarr_png(datasource_name, channel, level, tile):
+    print(level)
     if config is None:
         load_datasource(datasource_name)
     global channels
