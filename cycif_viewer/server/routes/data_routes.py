@@ -193,7 +193,7 @@ def histogram_comparison():
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
     viewport = request.args.getlist('viewport')
-    zoomlevel = float(request.args.get('zoomlevel'))
+    zoomlevel = int(float(request.args.get('zoomlevel')))
     sensitivity = float(request.args.get('sensitivity'))
 
     # for which channels to compute? (currently only the first)
@@ -209,6 +209,7 @@ def histogram_comparison():
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
+    print('generatepng')
     now = time()
     png = data_model.generate_zarr_png(datasource, channel, level, tile)
     file_object = io.BytesIO()

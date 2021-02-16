@@ -21,8 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib import image
 from skimage import measure
 import cv2
-import _thread
-import multiprocessing
+
 
 from cycif_viewer import data_path
 
@@ -37,11 +36,12 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     png = loadPng(datasource_name, channels[0], zoomlevel)
 
     # image = rgb2gray(png)
-    img = png[..., 0] * 0.299 + png[..., 1] * 0.587 + png[..., 2] * 0.114
+    # img = png[..., 0] * 0.299 + png[..., 1] * 0.587 + png[..., 2] * 0.114
 
+    img = rgb2gray(png);
     # round zoom level
     zoomlevel = int(zoomlevel)
-
+    print(zoomlevel)
     # calculate roi
     print(str(x) + ' ' + str(y) + ' ' + str(r))
     x = int(x)

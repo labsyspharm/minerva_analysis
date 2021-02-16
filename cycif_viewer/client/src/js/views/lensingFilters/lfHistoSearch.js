@@ -64,9 +64,11 @@ export class LfHistoSearch {
                 const topLeft = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getTopLeft());
                 const bottomRight = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getBottomRight());
                 const viewportBounds = [topLeft, bottomRight];
+                //convert frm osd to zarr
+                const zoomlevel = this.image_viewer.config.maxLevel - 1 - this.image_viewer.viewer.viewport.getZoom();
 
                 this.data_layer.getHistogramComparison(datasource, channels, pos[0], pos[1], newRad,
-                    viewportBounds, this.image_viewer.viewer.viewport.getZoom(), lensing.configs.sensitivity).then(d => {
+                    viewportBounds, zoomlevel, lensing.configs.sensitivity).then(d => {
                     console.log(d)
                 });
             }
@@ -220,7 +222,7 @@ export class LfHistoSearch {
                             const vis = this;
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
 
-
+                            // console.log("zoom level:" +this.image_viewer.viewer.viewport.getZoom());
 
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
