@@ -39,21 +39,20 @@ def load_datasource(datasource_name, reload=False):
     if source == datasource_name and datasource is not None and reload is False:
         return
     load_config(datasource_name)
-    if reload:
-        load_ball_tree(datasource_name, reload=reload)
     source = datasource_name
+
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-    #datasource = pd.read_csv(csvPath)
+    # datasource = pd.read_csv(csvPath)
 
     start = time.time()
     datasource = dd.read_csv(csvPath)
     datasource = datasource.compute()
     end = time.time()
     print("Read csv with dask: ", (end - start), "sec")
-
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
-    source = datasource_name
+    if reload or ball_tree is None:
+        load_ball_tree(datasource_name, reload=reload)
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
     else:
@@ -115,9 +114,7 @@ def load_ball_tree(datasource_name_name, reload=False):
         print("Creating KD Tree")
         xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
         yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
-        csvPath = Path(config[datasource_name_name]['featureData'][0]['src'])
-        raw_data = pd.read_csv(csvPath)
-        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+        points = pd.DataFrame({'x': datasource[xCoordinate], 'y': datasource[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
         pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
