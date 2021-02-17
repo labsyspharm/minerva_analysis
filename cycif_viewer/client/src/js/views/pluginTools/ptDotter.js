@@ -133,7 +133,7 @@ export class PtDotter {
 
                 const imgPt = vis.imageViewer.viewer.world.getItemAt(0).viewportToImageCoordinates(newPt);
                 // console.log(d.positionData.refPoint, newPt)
-                // console.log('Img. pt', vis.tools.overlayX(imgPt.x), vis.tools.overlayY(imgPt.y))
+                // console.log('Img. pt', vis.togols.overlayX(imgPt.x), vis.tools.overlayY(imgPt.y))
 
                 img.style('left', `${vis.tools.overlayX(d.lensingConfigs.pos_full[0]) - 12}px`);
                 img.style('top', `${vis.tools.overlayY(d.lensingConfigs.pos_full[1]) - 12}px`)
