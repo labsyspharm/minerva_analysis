@@ -300,7 +300,10 @@ export class LfMultiModal {
 
                             // Mark all as not loaded
                             const selMM = this.vars.mmOptions.find(o => o.name === this.vars.mmSelected);
-                            selMM.loaded = false;
+                            if (selMM != null && selMM != undefined){
+                                selMM.loaded = false;
+                            }
+
 
                             // Remove
                             this.vars.el_radialExtG.remove();

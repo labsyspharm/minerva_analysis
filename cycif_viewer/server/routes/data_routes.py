@@ -3,7 +3,8 @@ from flask import render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
 from cycif_viewer import data_path, get_config
-from cycif_viewer.server.models import data_model, lensing_model
+from cycif_viewer.server.models import data_model
+from cycif_viewer.server.analytics import comparison
 from pathlib import Path
 from time import time
 import pandas as pd
@@ -173,23 +174,41 @@ def get_gating_csv_values():
     return serialize_and_submit_json(obj)
 
 
-@app.route('/get_histogram_comparison', methods=['GET'])
-def get_histogram_comparison():
+# @app.route('/get_histogram_comparison', methods=['GET'])
+# def get_histogram_comparison():
+#     x = float(request.args.get('point_x'))
+#     y = float(request.args.get('point_y'))
+#     max_distance = float(request.args.get('max_distance'))
+#     datasource = request.args.get('datasource')
+#     channels = []
+#     if request.args.get('channels') != '':
+#         channels = request.args.get('channels').split()[0].split(',')
+#     resp = image_similarity.histogramComparison(x, y, datasource, max_distance, channels)
+#     return serialize_and_submit_json(resp)
+
+@app.route('/histogram_comparison', methods=['GET'])
+def histogram_comparison():
     x = float(request.args.get('point_x'))
     y = float(request.args.get('point_y'))
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
+    viewport = request.args.getlist('viewport')
+    zoomlevel = int(float(request.args.get('zoomlevel')))
+    sensitivity = float(request.args.get('sensitivity'))
+
+    # for which channels to compute? (currently only the first)
     channels = []
     if request.args.get('channels') != '':
         channels = request.args.get('channels').split()[0].split(',')
-    resp = lensing_model.histogramComparison(x, y, datasource, max_distance, channels)
+
+    # call functionality
+    resp = comparison.histogramComparison(x, y, datasource, max_distance, channels, viewport, zoomlevel, sensitivity)
     return serialize_and_submit_json(resp)
 
 
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
-    now = time()
     png = data_model.generate_zarr_png(datasource, channel, level, tile)
     file_object = io.BytesIO()
     # write PNG in file-object

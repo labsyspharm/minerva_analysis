@@ -17,10 +17,19 @@ export class LfHistoSearch {
         el_textReportG: null,
         el_toggleNoteG: null,
         keydown: e => {
-            if (e.key === 'S') {
-
-                // Lensing ref
-                const lensing = this.image_viewer.viewer.lensing;
+            const lensing = this.image_viewer.viewer.lensing;
+            if (!lensing.configs.sensitivity){
+                lensing.configs.sensitivity = 0.05;
+            }
+            if (e.key === 'j'){
+                lensing.configs.sensitivity += 0.001;
+                console.log('increased sensitivity to: ' + lensing.configs.sensitivity);
+            }
+            if (e.key === 'k'){
+                lensing.configs.sensitivity -= 0.001;
+                console.log('decreased sensitivity to: ' + lensing.configs.sensitivity);
+            }
+            if (e.key === 'H') {
 
                 // Access auxi viewer manager (lensing instance)
                 const auxiManager = this.image_viewer.viewerManagerVAuxi;
@@ -45,7 +54,21 @@ export class LfHistoSearch {
 
                 // Load
                 this.load.config.filterCode.settings.loading = true;
-                this.data_layer.getHistogramComparison(newRad, pos[0], pos[1], channels).then(d => {
+
+                //create a server query to retrieve ccontours of areas in the image simiar to the current lens area
+                if (!lensing.configs.sensitivity){
+                    lensing.configs.sensitivity = 0;
+                }
+
+                const bounds = this.image_viewer.viewer.viewport.getBounds(true);
+                const topLeft = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getTopLeft());
+                const bottomRight = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getBottomRight());
+                const viewportBounds = [topLeft, bottomRight];
+                //convert frm osd to zarr
+                const zoomlevel = this.image_viewer.config.maxLevel - 1 - this.image_viewer.viewer.viewport.getZoom();
+
+                this.data_layer.getHistogramComparison(datasource, channels, pos[0], pos[1], newRad,
+                    viewportBounds, zoomlevel, lensing.configs.sensitivity).then(d => {
                     console.log(d)
                 });
             }
@@ -179,7 +202,7 @@ export class LfHistoSearch {
                                 .attr('font-size', 8)
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
-                                .html('SHIFT S');
+                                .html('Countours: SHIFT H -- Increase: j -- Decrease: k');
 
                             // Add listener
                             this.vars.keydown = this.vars.keydown.bind(this)
@@ -198,6 +221,8 @@ export class LfHistoSearch {
                             // Define this
                             const vis = this;
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
+
+                            // console.log("zoom level:" +this.image_viewer.viewer.viewport.getZoom());
 
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
