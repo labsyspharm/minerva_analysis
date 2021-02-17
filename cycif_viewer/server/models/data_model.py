@@ -34,7 +34,7 @@ metadata = None
 
 
 def init(datasource_name):
-    load_ball_tree(datasource_name)
+    load_datasource(datasource_name)
 
 
 def load_datasource(datasource_name, reload=False):
@@ -241,8 +241,6 @@ def load_ball_tree(datasource_name, reload=False):
     global ball_tree
     global datasource
     global config
-    if datasource_name != source:
-        load_datasource(datasource_name)
     pickled_kd_tree_path = str(
         Path(
             os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name / "ball_tree.pickle")
@@ -496,11 +494,14 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False):
 
 
 def get_similar_neighborhood_to_selection(datasource_name, selection_ids, similarity):
+    global config
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     obj = {}
     # This is the standard 50 radius neighborhood data
-    standard_neighborhoods = np.load(Path("cycif_viewer/data/Ton/complex_small.npy")).squeeze()
+    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+
+    # neighborhoods = np.load(Path("cycif_viewer/data/Ton/complex_small.npy")).squeeze()
     # Dynamic Neighborhood Array Code
     # if len(selection_ids) < 1000:
     #     neighborhood_array = standard_neighborhoods
@@ -509,18 +510,17 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     # else:
     #     neighborhood_array = np.load(Path("cycif_viewer/data/Ton/complex_large.npy")).squeeze()
 
-    selection_summary = np.mean(standard_neighborhoods[selection_ids, :], axis=0)
-    similar_ids = find_similarity(selection_summary, similarity)
+    selection_summary = np.mean(neighborhoods[selection_ids, :], axis=0)
+    similar_ids = find_similarity(selection_summary, similarity, datasource_name)
     obj = get_neighborhood_stats(datasource_name, similar_ids, fields=fields)
     obj['raw_summary'] = selection_summary
     return obj
 
 
-def find_similarity(cluster_summary, similarity):
-    neighborhood_array = np.load(Path("cycif_viewer//data/Ton/neighborhood_array_complex.npy"))
-    test = time.time()
-    distances = 1 - spatial.distance.cdist([cluster_summary], neighborhood_array, "cosine")[0]
-    print("Time", time.time() - test)
+def find_similarity(cluster_summary, similarity, datasource_name):
+    global config
+    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    distances = 1 - spatial.distance.cdist([cluster_summary], neighborhoods, "cosine")[0]
     greater_than = np.argwhere(distances > similarity).flatten()
     return greater_than
 
@@ -716,16 +716,12 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
         cluster_cells = datasource.loc[indices, default_fields]
     else:
         cluster_cells = cluster_cells[default_fields]
-    neighborhood_array = np.load(Path("cycif_viewer/data/Ton/neighborhood_array_complex.npy"))
-    cluster_summary = np.mean(neighborhood_array[indices, :], axis=0)
-    summary_stats = {'neighborhood_count': {}, 'avg_weight': {}, 'weighted_contribution': {}}
+    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    cluster_summary = np.mean(neighborhoods[indices, :], axis=0)
+    summary_stats = {'weighted_contribution': {}}
     phenotypes = datasource.phenotype.unique().tolist()
     for i in range(len(phenotypes)):
-        count = cluster_summary[i * 2]
-        weight = cluster_summary[i * 2 + 1]
-        # These Stats are Probably Useful Later, but I don't need them now
-        # summary_stats['neighborhood_count'][phenotypes[i]] = count
-        # summary_stats['avg_weight'][phenotypes[i]] = weight
+        weight = cluster_summary[i]
         summary_stats['weighted_contribution'][phenotypes[i]] = weight
     obj = {'cells': cluster_cells.to_dict(orient='records'), 'cluster_summary': summary_stats}
     points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],

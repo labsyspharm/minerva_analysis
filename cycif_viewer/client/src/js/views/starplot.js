@@ -37,7 +37,7 @@ class Starplot {
         }
         // this.tool_logRadiusScale = d3.scaleSymlog()
         this.tool_logRadiusScale = d3.scaleLinear()
-            .domain([0, 20])
+            .domain([0, 1])
             .range([this.config_chartR0, this.config_chartR1])
 
         this.tool_logRadiusScale.clamp(true);
@@ -87,9 +87,6 @@ class Starplot {
             return elem.index !== -1; // Remove elements not in my order list
         })
         this.visData = _.sortBy(this.visData, ['index']);
-
-        this.range = [_.minBy(this.visData, elem => elem.value).value,
-            _.maxBy(this.visData, elem => elem.value).value];
 
         // Config
         this.tool_angleScale.domain([0, this.visData.length]);

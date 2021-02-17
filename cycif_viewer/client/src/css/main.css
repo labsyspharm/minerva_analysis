@@ -177,8 +177,11 @@ body {
 #channel_list .list-group {
     border-radius: 0rem;
 }
+#openseadragon_loader{
+    margin-left: 300px;
+}
 
-#openseadragon_loader, #channel_list_loader {
+#channel_list_loader {
     margin-left: 33px;
 }
 
