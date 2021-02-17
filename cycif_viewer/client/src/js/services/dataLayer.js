@@ -24,7 +24,7 @@ class DataLayer {
             }))
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();
-            $("body").css("cursor", "default");
+            document.body.style.cursor = 'default';
         } catch (e) {
             console.log("Error Initializing Dataset", e);
         }
