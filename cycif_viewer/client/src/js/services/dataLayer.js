@@ -18,12 +18,13 @@ class DataLayer {
 
     async init() {
         try {
+            document.body.style.cursor = 'wait';
             let response = await fetch('/init_database?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();
-
+            $("body").css("cursor", "default");
         } catch (e) {
             console.log("Error Initializing Dataset", e);
         }
