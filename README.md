@@ -40,8 +40,8 @@ These are executables for Windows and MacOS that can be run locally without any 
 
 ##### Windows
 
-* Create alternative conda env without mkl: `conda create --name nomkl`
-* Active environment: `conda activate nomkl`
+* Create alternative conda env without mkl: `conda create --name [name] nomkl`
+* Active environment: `conda activate [name]`
 * Run `pip install -r requirements.txt`
 * Run `package_win.bat`
 
