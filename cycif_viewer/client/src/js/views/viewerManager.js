@@ -154,7 +154,7 @@ export class ViewerManager {
         let frac = (val - tf.min) / (tf.max - tf.min);
         let product = frac * (tf.num_bins - 1);
         // This bitshifting to round is faster than math.round
-        let lerpFactor = (product + (product>0?0.5:-0.5)) << 0;
+        let lerpFactor = (product + (product > 0 ? 0.5 : -0.5)) << 0;
 
         // let lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
 
@@ -315,15 +315,16 @@ export class ViewerManager {
 
 
             // Check for label data
-            if (labelValue >= 0) {
 
-                // Render selection ids as highlighted
-                if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-                    // Get 24bit label data
-                    const labelTileData = _.get(labelTile, 'data');
-                    if (labelTileData) {
-                        labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
-                    }
+
+            // Render selection ids as highlighted
+            if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
+                // Get 24bit label data
+                const labelTileData = _.get(labelTile, 'data');
+                if (labelTileData) {
+                    labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
+                }
+                if (labelValue >= 0) {
                     if (this.imageViewer.selection.has(labelValue)) {
                         // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
                         // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;

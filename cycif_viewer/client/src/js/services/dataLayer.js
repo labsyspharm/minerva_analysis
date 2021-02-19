@@ -9,7 +9,7 @@ class DataLayer {
         //all image channels
         this.imageChannels = imageChannels;
         //selections
-        this.currentSelection = new Set();
+        this.currentSelection = new Map();
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
@@ -157,7 +157,7 @@ class DataLayer {
         }
 
         // add new item
-        this.currentSelection.add(item);
+        this.currentSelection.set(item.id, item);
 
         // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {
@@ -169,8 +169,7 @@ class DataLayer {
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Set(items);
-        // console.log("update current selection done")
+        that.currentSelection = new Map(items.map(i => [i.id, i]));
     }
 
     isImageFeature(key) {
