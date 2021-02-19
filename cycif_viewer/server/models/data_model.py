@@ -439,8 +439,6 @@ def generate_zarr_png(datasource_name, channel, level, tile):
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
     png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
-    if segmentation:
-        png = np.append(png, np.zeros((png.shape[0], png.shape[1], 1), dtype='uint8'), axis=2)
     return png
 
 
