@@ -14,6 +14,7 @@ import pickle
 import tifffile as tf
 import re
 import zarr
+from dask import dataframe as dd
 
 ball_tree = None
 database = None
@@ -25,7 +26,7 @@ metadata = None
 
 
 def init(datasource_name):
-    load_ball_tree(datasource_name)
+    load_datasource(datasource_name)
 
 
 def load_datasource(datasource_name, reload=False):
@@ -35,28 +36,41 @@ def load_datasource(datasource_name, reload=False):
     global seg
     global channels
     global metadata
-    if source is datasource_name and datasource is not None and reload is False:
+    if source == datasource_name and datasource is not None and reload is False:
         return
     load_config(datasource_name)
-    if reload:
-        load_ball_tree(datasource_name, reload=reload)
+    source = datasource_name
+
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-    datasource = pd.read_csv(csvPath)
+    # datasource = pd.read_csv(csvPath)
+
+    print("Reading csv single cell data..")
+    start = time.time()
+    datasource = dd.read_csv(csvPath)
+    datasource = datasource.compute()
+    end = time.time()
+    print("Read csv with dask: ", (end - start), "sec")
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
-    source = datasource_name
+    if reload or ball_tree is None:
+        load_ball_tree(datasource_name, reload=reload)
+
+    print("Loading image data..")
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
     else:
         seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+
+    print("Loading meta data..")
     try:
         xml = channel_io.pages[0].tags['ImageDescription'].value
         metadata = from_xml(xml).images[0].pixels
     except:
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
+    print("Data loading finished.")
 
 
 def load_config(datasource_name):
@@ -106,9 +120,7 @@ def load_ball_tree(datasource_name_name, reload=False):
         print("Creating KD Tree")
         xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
         yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
-        csvPath = Path(config[datasource_name_name]['featureData'][0]['src'])
-        raw_data = pd.read_csv(csvPath)
-        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+        points = pd.DataFrame({'x': datasource[xCoordinate], 'y': datasource[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
         pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
@@ -118,7 +130,7 @@ def query_for_closest_cell(x, y, datasource_name):
     global source
     global ball_tree
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     distance, index = ball_tree.query([[x, y]], k=1)
     if distance == np.inf:
         return {}
@@ -139,7 +151,7 @@ def get_row(row, datasource_name):
     global source
     global ball_tree
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     obj = database.loc[[row]].to_dict(orient='records')[0]
     obj['id'] = row
     return obj
@@ -149,7 +161,7 @@ def get_channel_names(datasource_name, shortnames=True):
     global datasource
     global source
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     if shortnames:
         channel_names = [channel['name'] for channel in config[datasource_name]['imageData'][1:]]
     else:
@@ -166,7 +178,7 @@ def get_channel_cells(datasource_name, channels):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
 
     query_string = ''
     for c in channels:
@@ -191,7 +203,7 @@ def get_phenotypes(datasource_name):
         phenotype_field = 'phenotype'
 
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     if phenotype_field in datasource.columns:
         return sorted(datasource[phenotype_field].unique().tolist())
     else:
@@ -204,7 +216,7 @@ def get_neighborhood(x, y, datasource_name, r=100, fields=None):
     global source
     global ball_tree
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
     try:
@@ -228,7 +240,7 @@ def get_number_of_cells_in_circle(x, y, datasource_name, r):
     global source
     global ball_tree
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     index = ball_tree.query_radius([[x, y]], r=r)
     try:
         return len(index[0])
@@ -295,7 +307,7 @@ def get_rect_cells(datasource_name, rect, channels):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
 
     # Query
     index = ball_tree.query_radius([[rect[0], rect[1]]], r=rect[2])
@@ -321,7 +333,7 @@ def get_gated_cells(datasource_name, gates):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
 
     query_string = ''
     for key, value in gates.items():
@@ -341,7 +353,7 @@ def download_gating_csv(datasource_name, gates, channels):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
 
     query_string = ''
     columns = []
@@ -377,7 +389,7 @@ def download_gates(datasource_name, gates, channels):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     arr = []
     for key, value in channels.items():
         arr.append([key, value[0], value[1]])
@@ -398,7 +410,7 @@ def get_datasource_description(datasource_name):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     description = datasource.describe().to_dict()
     for column in description:
         [hist, bin_edges] = np.histogram(datasource[column].to_numpy(), bins=50, density=True)
@@ -415,6 +427,7 @@ def get_datasource_description(datasource_name):
 
 
 def generate_zarr_png(datasource_name, channel, level, tile):
+    print(level)
     if config is None:
         load_datasource(datasource_name)
     global channels
