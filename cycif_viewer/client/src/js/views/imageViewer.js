@@ -60,7 +60,6 @@ class ImageViewer {
         }
 
         // Applying TF to selection, subset, or all
-        this.show_subset = false;
         this.show_selection = true;
 
     }

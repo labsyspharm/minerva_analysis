@@ -6,7 +6,7 @@ import "regenerator-runtime/runtime.js";
 export class ViewerManager {
 
     show_sel = false;
-    sel_outlines = true;
+    sel_outlines = false;
 
     /**
      * @constructor
@@ -151,8 +151,12 @@ export class ViewerManager {
      * @returns {*}
      */
     evaluateTF(val, tf) {
+        let frac = (val - tf.min) / (tf.max - tf.min);
+        let product = frac * (tf.num_bins - 1);
+        // This bitshifting to round is faster than math.round
+        let lerpFactor = (product + (product>0?0.5:-0.5)) << 0;
 
-        let lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
+        // let lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
 
         if (lerpFactor >= tf.num_bins) {
             lerpFactor = tf.num_bins - 1;
@@ -282,7 +286,6 @@ export class ViewerManager {
 
         // Initialize
         let labelValue = 0;
-        let labelValueStr = "";
         let channelValue = 0;
         let rgb = 0;
 
@@ -293,67 +296,35 @@ export class ViewerManager {
         }
 
         // Check if there is a label present
-        const labelTileData = _.get(labelTile, 'data');
 
         // Iterate over all tile pixels
         for (let i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
 
-            // Get 24bit label data
-            if (labelTileData) {
-                labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
-                labelValueStr = labelValue.toString();
-            }
 
             // Get 16 bit data (stored in G and B channels)
             channelValue = (channelTileData[i + 1] * 256) + channelTileData[i + 2];
 
+
+            // Render everything with TF
+
             // Apply color transfer function
             rgb = this.evaluateTF(channelValue, tf);
+            pixels[i] = rgb.r;
+            pixels[i + 1] = rgb.g;
+            pixels[i + 2] = rgb.b;
 
-            // Eval rendering
-            if (this.imageViewer.show_subset) {
-
-                // Show data as black/white
-                pixels[i] = channelTileData[i + 1];
-                pixels[i + 1] = channelTileData[i + 1];
-                pixels[i + 2] = channelTileData[i + 1];
-
-            } else {
-
-                // Render everything with TF
-                if (channelValue < tf.min) {
-                    // values lower than TF gating: 0
-                    pixels[i] = 0;
-                    pixels[i + 1] = 0;
-                    pixels[i + 2] = 0;
-                } else {
-                    // values higher than TF gating: highest TF color
-                    pixels[i] = rgb.r;
-                    pixels[i + 1] = rgb.g;
-                    pixels[i + 2] = rgb.b;
-                }
-            }
 
             // Check for label data
             if (labelValue >= 0) {
-                if (this.imageViewer.show_subset) {
-                    // Render subset with TF (check label id is in subset, apply TF)
-                    if (this.imageViewer.data.has(labelValueStr)) {
-                        if (channelValue < tf.min) {
-                            pixels[i] = 0;
-                            pixels[i + 1] = 0;
-                            pixels[i + 2] = 0;
-                        } else {
-                            pixels[i] = rgb.r;
-                            pixels[i + 1] = rgb.g;
-                            pixels[i + 2] = rgb.b;
-                        }
-                    }
-                }
 
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-                    if (this.imageViewer.selection.has(labelValueStr)) {
+                    // Get 24bit label data
+                    const labelTileData = _.get(labelTile, 'data');
+                    if (labelTileData) {
+                        labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
+                    }
+                    if (this.imageViewer.selection.has(labelValue)) {
                         // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
                         // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         let color = [255, 255, 255]
@@ -382,9 +353,8 @@ export class ViewerManager {
                                     // Neighbor label value
                                     const altLabelValue = ((labelTileData[grid[j]] * 65536)
                                         + (labelTileData[grid[j] + 1] * 256) + labelTileData[grid[j] + 2]) - 1;
-                                    const altLabelValueStr = altLabelValue.toString();
                                     // Color
-                                    if (altLabelValueStr !== labelValueStr) {
+                                    if (altLabelValue !== labelValue) {
                                         pixels[i] = 255;
                                         pixels[i + 1] = 255;
                                         pixels[i + 2] = 255;
@@ -483,7 +453,6 @@ export class ViewerManager {
         // Init
         const labelTileData = _.get(labelTile, 'data');
         let labelValue = 0;
-        let labelValueStr = "";
         let channelValue = 0;
         let rgb = 0;
 
@@ -497,7 +466,6 @@ export class ViewerManager {
             // Get 24bit label data
             if (labelTileData) {
                 labelValue = ((labelTileData[i] * 65536) + (labelTileData[i + 1] * 256) + labelTileData[i + 2]) - 1;
-                labelValueStr = labelValue + ''; //faster than labelValue.toString()
             }
 
             // Iterate over all image channels
@@ -520,7 +488,7 @@ export class ViewerManager {
                 // render subset with TF
                 if (this.imageViewer.show_subset) {
                     // render with TF
-                    if (this.imageViewer.data.has(labelValueStr)) {
+                    if (this.imageViewer.data.has(labelValue)) {
                         if (channelValue >= tfs[channel].min) {
                             pixels[i] += rgb.r;
                             pixels[i + 1] += rgb.g;
@@ -536,7 +504,7 @@ export class ViewerManager {
 
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-                    if (this.imageViewer.selection.has(labelValueStr)) {
+                    if (this.imageViewer.selection.has(labelValue)) {
                         // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
                         // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         let color = [255, 255, 255]
@@ -565,9 +533,8 @@ export class ViewerManager {
                                     // Neighbor label value
                                     const altLabelValue = ((labelTileData[grid[j]] * 65536)
                                         + (labelTileData[grid[j] + 1] * 256) + labelTileData[grid[j] + 2]) - 1;
-                                    const altLabelValueStr = altLabelValue.toString();
                                     // Color
-                                    if (altLabelValueStr !== labelValueStr) {
+                                    if (altLabelValue !== labelValue) {
                                         pixels[i] = 255;
                                         pixels[i + 1] = 255;
                                         pixels[i + 2] = 255;
