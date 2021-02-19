@@ -327,15 +327,11 @@ export class ViewerManager {
 
                 if (!this.imageViewer.show_subset) { // render everything with TF
                     if (channelValue >= tfs_min[channel]) {
-                        if (channel == 0) {
-                            pixels[i] = rgb.r;
-                            pixels[i + 1] = rgb.g;
-                            pixels[i + 2] = rgb.b;
-                        } else {
-                            pixels[i] += rgb.r;
-                            pixels[i + 1] += rgb.g;
-                            pixels[i + 2] += rgb.b;
-                        }
+
+                        pixels[i] += rgb.r;
+                        pixels[i + 1] += rgb.g;
+                        pixels[i + 2] += rgb.b;
+
                     }
                 }
 
@@ -344,16 +340,9 @@ export class ViewerManager {
                     // render with TF
                     if (this.imageViewer.data.has(labelValue)) {
                         if (channelValue >= tfs[channel].min) {
-                            if (channel == 0) {
-                                pixels[i] = rgb.r;
-                                pixels[i + 1] = rgb.g;
-                                pixels[i + 2] = rgb.b;
-                            } else {
-                                pixels[i] += rgb.r;
-                                pixels[i + 1] += rgb.g;
-                                pixels[i + 2] += rgb.b;
-                            }
-
+                            pixels[i] += rgb.r;
+                            pixels[i + 1] += rgb.g;
+                            pixels[i + 2] += rgb.b;
                         }
                     } else {
                         // render data as black/white
