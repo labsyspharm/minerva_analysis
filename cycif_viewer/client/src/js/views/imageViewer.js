@@ -292,9 +292,21 @@ class ImageViewer {
                 const buffer = new Buffer(event.tileRequest.response);
                 if (buffer) {
                     const tile = event.tile;
+                    const group = event.tile.url.split("/");
+                    let isLabel = group[group.length - 3] == this.labelChannel.sub_url;
+                    let png = PNG.sync.read(buffer, {colortype: 0});
+                    // if (!isLabel) {
+                    //     let convertedData = new Uint16Array(png.height * png.width);
+                    //     convertedData.forEach(function (part, index, theArray) {
+                    //         const i = index * 4;
+                    //         theArray[index] = (png.data[i + 1] * 256) + png.data[i + 2];
+                    //     });
+                    //     png.data = convertedData;
+                    // }
+
 
                     // Save tile in tileCache
-                    this.addToTileCache(tile.url, PNG.sync.read(buffer, {colortype: 0}))
+                    this.addToTileCache(tile.url, png)
 
                 } else {
                     // console.log('[TILE LOADED]: buffer UNDEFINED');

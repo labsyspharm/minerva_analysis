@@ -454,7 +454,7 @@ def generate_zarr_png(datasource_name, channel, level, tile):
             tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
-    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
+    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
     return png
 
 

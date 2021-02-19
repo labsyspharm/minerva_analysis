@@ -9,7 +9,7 @@ class DataLayer {
         //all image channels
         this.imageChannels = imageChannels;
         //selections
-        this.currentSelection = new Set();
+        this.currentSelection = new Map();
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
@@ -158,7 +158,7 @@ class DataLayer {
         }
 
         // add new item
-        this.currentSelection.add(item);
+        this.currentSelection.set(item.id, item);
 
         // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {
@@ -170,7 +170,7 @@ class DataLayer {
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Set(items);
+        that.currentSelection = new Map(items.map(i => [i.id, i]));
         // console.log("update current selection done")
     }
 
@@ -232,16 +232,16 @@ class DataLayer {
     async getHistogramComparison(datasource, channels, x, y, maxDistance, viewportBounds, zoomlevel, sensitivity) {
         try {
             let response = await fetch('/histogram_comparison?' +
-            new URLSearchParams({
-                point_x: x,
-                point_y: y,
-                max_distance: maxDistance,
-                channels: channels,
-                datasource: datasource,
-                viewport: [viewportBounds[0].x, viewportBounds[0].y,viewportBounds[1].x, viewportBounds[1].y],
-                zoomlevel: zoomlevel,
-                sensitivity: sensitivity
-            }));
+                new URLSearchParams({
+                    point_x: x,
+                    point_y: y,
+                    max_distance: maxDistance,
+                    channels: channels,
+                    datasource: datasource,
+                    viewport: [viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x, viewportBounds[1].y],
+                    zoomlevel: zoomlevel,
+                    sensitivity: sensitivity
+                }));
             return await response.json();
         } catch (e) {
             console.log("Error getting histogram comparison", e);
