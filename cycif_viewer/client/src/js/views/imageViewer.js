@@ -269,11 +269,23 @@ class ImageViewer {
             if (event.tileRequest) {
                 const buffer = new Buffer(event.tileRequest.response);
                 if (buffer) {
+                    const group = event.tile.url.split("/");
+                    let isLabel = group[group.length - 3] == this.labelChannel.sub_url;
                     const tile = event.tile;
+                    let png = PNG.sync.read(buffer, {colortype: 0});
+                    // If you turn this on, you'll want to update manager so channelValue = channelsTileData[channel][i/4])
+                    // Maybe fiddle with this because it seems slower but i'm not sure why that would be the case
+                    // if (!isLabel) {
+                    //     let uInt8Array = png.data.filter((element, index) => {
+                    //         return (index % 4) == 1 || (index % 4) == 2;
+                    //     })
+                    //     let uInt16Array = new Uint16Array(uInt8Array.buffer)
+                    //     // png.data = uInt16Array;
+                    // }
 
                     // Save tile in tileCache
 
-                    this.addToTileCache(tile.url, PNG.sync.read(buffer, {colortype: 0}))
+                    this.addToTileCache(tile.url, png)
                 } else {
                     // console.log('[TILE LOADED]: buffer UNDEFINED');
                 }

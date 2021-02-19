@@ -180,7 +180,7 @@ def generate_png(datasource, channel, level, tile):
     png = data_model.generate_zarr_png(datasource, channel, level, tile)
     file_object = io.BytesIO()
     # write PNG in file-object
-    Image.fromarray(png).save(file_object, 'PNG', compress_level=0)
+    Image.fromarray(png).save(file_object, 'PNG', compress_level=1)
     # move to beginning of file so `send_file()` it will read from start
     file_object.seek(0)
     return send_file(file_object, mimetype='image/PNG')
