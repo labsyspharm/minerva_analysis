@@ -8,6 +8,7 @@ from cycif_viewer.server.analytics import comparison
 from pathlib import Path
 from time import time
 import pandas as pd
+import numpy as np
 import json
 import orjson
 from flask_sqlalchemy import SQLAlchemy
@@ -192,7 +193,11 @@ def histogram_comparison():
     y = float(request.args.get('point_y'))
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
+
     viewport = request.args.getlist('viewport')
+    viewport = np.array(viewport[0].split(","));
+    viewport = viewport.astype(np.float);
+
     zoomlevel = int(float(request.args.get('zoomlevel')))
     sensitivity = float(request.args.get('sensitivity'))
 

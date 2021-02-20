@@ -31,37 +31,68 @@ def prepSlidingWindow():
 
 def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel, sensibility):
     tic = time.perf_counter()
-
+    print("histogram comparison..")
     # load png at zoom level
-    png = loadPng(datasource_name, channels[0], zoomlevel)
+    print("load image sections")
+    png = loadPngSection(datasource_name, channels[0], zoomlevel, viewport)
+    roi = loadPngSection(datasource_name, channels[0], zoomlevel, [x-r,y-r,x+r,y+r])
 
-    # image = rgb2gray(png)
-    # img = png[..., 0] * 0.299 + png[..., 1] * 0.587 + png[..., 2] * 0.114
-
-    img = rgb2gray(png);
-    # round zoom level
-    zoomlevel = int(zoomlevel)
-    print(zoomlevel)
-    # calculate roi
-    print(str(x) + ' ' + str(y) + ' ' + str(r))
-    x = int(x)
-    y = int(y)
-    r = int(r)
-    coin_coords = [x - r, y - r, x + r, y + r]  # 44 x 44 region
-    roi = img[coin_coords[1]:coin_coords[3],
-           coin_coords[0]:coin_coords[2]]
+    cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', png)
+    cv2.imwrite('cycif_viewer/server/analytics/img/roi.png', roi)
 
     # calc image similarity map
-    sim_map = calc_sim(img, roi)
+    print("calculate image similarity")
+    sim_map = calc_sim(png, roi)
 
     # find contours
-    contours = find_contours(img, sim_map, sensibility)
+    print("compute contours")
+    contours = find_contours(png, sim_map, sensibility)
 
     return {'contours': contours}
 
 
 # load a channel as png using zarr in full width and height
-def loadPng(datasource_name, channel, zoomlevel):
+def loadPngSection(datasource_name, channel,  zoomlevel, viewport):
+    print("chosen zoom level:")
+    print(zoomlevel)
+    viewport = np.array(viewport).astype(int);
+
+    # convert viewport to image layer: image height, width, layer height width, viewport
+    length = len(data_model.channels[0].shape)
+    viewport = getLayerViewport( data_model.channels[0].shape[length-2],
+                               data_model.channels[0].shape[length-1],
+                              data_model.channels[zoomlevel].shape[length-2],
+                              data_model.channels[zoomlevel].shape[length-1],
+                              viewport)
+
+    ix = viewport[0]
+    iy = viewport[1]
+    # print(data_model.get_channel_names(datasource_name, shortnames=False))
+    channel = data_model.get_channel_names(datasource_name, shortnames=False).index(channel)
+
+
+    if isinstance(data_model.channels, zarr.Array):
+        tile = data_model.channels[channel, iy:iy + int(viewport[3] - iy), ix:ix + int(viewport[2] - ix)   ]
+    else:
+        tile = data_model.channels[zoomlevel][channel, iy:iy + int(viewport[3] - iy), ix:ix + int(viewport[2] - ix)]
+
+    return tile
+
+#convert from whole image viewport to layer viewport (also: zarr has y,x flipped)
+def getLayerViewport(imageHeight, imageWidth, layerHeight, layerWidth, viewport):
+    #calc ratio
+    heightRatio = layerHeight/imageHeight
+    widthRatio = layerWidth/imageWidth
+
+    #convert viewport
+    viewport[0] = viewport[0] * widthRatio;
+    viewport[1] = viewport[1] * heightRatio;
+    viewport[2] = viewport[2] * widthRatio;
+    viewport[3] = viewport[3] * heightRatio;
+    return viewport
+
+# load a channel as png using zarr in full width and height
+def loadPngAtZoomLevel(datasource_name, channel, zoomlevel):
     ix = 0
     iy = 0
     print(channel)
@@ -134,20 +165,33 @@ def windowed_histogram_similarity(image, selem, reference_hist, n_bins):
 
 
 def calc_sim(img, coin):
-    if img.shape[-1] == 3:
-        img = rgb2gray(img)
-    img = img.astype('uint8')
+
+
+    # cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', img)
+    # img = cv2.imread('cycif_viewer/server/analytics/img/testcut.png');
+    print('prepare image')
+    # img = np.stack((img,) * 3, axis=-1)
+    # if img.shape[-1] == 3:
+    #     img = rgbTOgray(img)
+    # img = img.astype('uint8')
     img = img_as_ubyte(img)
 
-    if coin.shape[-1] == 3:
-        coin = rgb2gray(coin)
-    coin = coin.astype('uint8')
-    coin = img_as_ubyte(coin)
+    # cv2.imwrite('cycif_viewer/server/analytics/img/coin.png', coin)
+    # coin = cv2.imread('cycif_viewer/server/analytics/img/coin.png');
+    print('prepare coin')
+    # coin = np.stack((coin,) * 3, axis=-1)
+    # if coin.shape[-1]==3:
+    #     coin= rgbTOgray(coin)
+    # coin = coin.astype('uint8')
+    coin= img_as_ubyte(coin)\
 
-    quantized_img = img // 16
+
+    img = img // 16
     coin = coin // 16
 
+
     # Compute coin histogram and normalize
+    print('compute histogram and normalize')
     coin_hist, _ = np.histogram(coin.flatten(), bins=16, range=(0, 16))
     coin_hist = coin_hist.astype(float) / np.sum(coin_hist)
 
@@ -156,8 +200,15 @@ def calc_sim(img, coin):
     selem = disk(max(coin.shape) // 2)
 
     # Compute the similarity across the complete image
-    similarity = windowed_histogram_similarity(quantized_img, selem, coin_hist, coin_hist.shape[0])
+    print('compute similarity across image')
+    similarity = windowed_histogram_similarity(img, selem, coin_hist, coin_hist.shape[0])
 
     cv2.imwrite('cycif_viewer/server/analytics/img/sim_map.jpg', similarity)
-
+    print('sim computation done')
     return similarity
+
+
+def rgbTOgray(img):
+    gray = img[..., 0] * 0.299 + img[..., 1] * 0.587 + img[..., 2] * 0.114
+
+    return gray

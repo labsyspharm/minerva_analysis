@@ -15,6 +15,7 @@ import tifffile as tf
 import re
 import zarr
 from dask import dataframe as dd
+import cv2
 
 ball_tree = None
 database = None
@@ -455,6 +456,7 @@ def generate_zarr_png(datasource_name, channel, level, tile):
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
     png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
+    # cv2.imwrite('cycif_viewer/server/analytics/img/tile.png', png)
     return png
 
 

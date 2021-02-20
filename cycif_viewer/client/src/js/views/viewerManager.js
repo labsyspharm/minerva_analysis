@@ -324,32 +324,32 @@ export class ViewerManager {
                 // apply TF
                 rgb = this.evaluateTF(channelValue, tfs[channel]);
 
-                if (!this.imageViewer.show_subset) { // render everything with TF
-                    if (channelValue >= tfs_min[channel]) {
+                // if (!this.imageViewer.show_subset) { // render everything with TF
+                if (channelValue >= tfs_min[channel]) {
 
-                        pixels[i] += rgb.r;
-                        pixels[i + 1] += rgb.g;
-                        pixels[i + 2] += rgb.b;
+                    pixels[i] += rgb.r;
+                    pixels[i + 1] += rgb.g;
+                    pixels[i + 2] += rgb.b;
 
-                    }
                 }
+                // }
 
                 // render subset with TF
-                if (this.imageViewer.show_subset) {
-                    // render with TF
-                    if (this.imageViewer.data.has(labelValue)) {
-                        if (channelValue >= tfs[channel].min) {
-                            pixels[i] += rgb.r;
-                            pixels[i + 1] += rgb.g;
-                            pixels[i + 2] += rgb.b;
-                        }
-                    } else {
-                        // render data as black/white
-                        pixels[i] += channelsTileData[channel][i + 1];
-                        pixels[i + 1] += channelsTileData[channel][i + 1];
-                        pixels[i + 2] += channelsTileData[channel][i + 1];
-                    }
-                }
+                // if (this.imageViewer.show_subset) {
+                //     // render with TF
+                //     if (this.imageViewer.data.has(labelValue)) {
+                //         if (channelValue >= tfs[channel].min) {
+                //             pixels[i] += rgb.r;
+                //             pixels[i + 1] += rgb.g;
+                //             pixels[i + 2] += rgb.b;
+                //         }
+                //     } else {
+                //         // render data as black/white
+                //         pixels[i] += channelsTileData[channel][i + 1];
+                //         pixels[i + 1] += channelsTileData[channel][i + 1];
+                //         pixels[i + 2] += channelsTileData[channel][i + 1];
+                //     }
+                // }
 
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {

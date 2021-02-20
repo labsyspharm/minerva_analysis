@@ -31,11 +31,11 @@ export class LfHistoSearch {
             }
             if (e.key === 'H') {
 
-                // Access auxi viewer manager (lensing instance)
-                const auxiManager = this.image_viewer.viewerManagerVAuxi;
+                // Access auxi viewer manager (lensing instance) //lenses was not updated correctly
+                const mainManager = this.image_viewer.viewerManagerVMain;
                 const channels = [];
-                for (let k in auxiManager.viewer_channels) {
-                    channels.push(auxiManager.viewer_channels[k].name);
+                for (let k in mainManager.viewer_channels) {
+                    channels.push(mainManager.viewer_channels[k].name);
                 }
 
                 // Measure relative
@@ -64,8 +64,8 @@ export class LfHistoSearch {
                 const topLeft = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getTopLeft());
                 const bottomRight = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getBottomRight());
                 const viewportBounds = [topLeft, bottomRight];
-                //convert frm osd to zarr
-                const zoomlevel = this.image_viewer.config.maxLevel - 1 - this.image_viewer.viewer.viewport.getZoom();
+                //convert frm osd to zarr (but when we are zoomed in further than 0 (nagative value), we jump back to 0
+                const zoomlevel = Math.max(0,this.image_viewer.config.maxLevel - 1 - this.image_viewer.viewer.viewport.getZoom());
 
                 this.data_layer.getHistogramComparison(datasource, channels, pos[0], pos[1], newRad,
                     viewportBounds, zoomlevel, lensing.configs.sensitivity).then(d => {
