@@ -291,11 +291,6 @@ export class ViewerManager {
         const screenData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
         const pixels = screenData.data;
 
-        // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        if (labelTile == null && !this.imageViewer.noLabel) {
-            const loaded = await addTile(labelTileAdr);
-            labelTile = this.imageViewer.tileCache[labelTileAdr];
-        }
 
         // Init
         const labelTileData = _.get(labelTile, 'data');
@@ -310,10 +305,6 @@ export class ViewerManager {
             pixels[i + 1] = 0;
             pixels[i + 2] = 0;
 
-            // Get 24bit label data
-            if (labelTileData) {
-                labelValue = ((labelTileData[i] << 16) + (labelTileData[i + 1] << 8) + (labelTileData[i + 2])) - 1;
-            }
 
             // Iterate over all image channels
             for (let channel = 0; channel < channelsTileData.length; channel++) {
@@ -353,50 +344,61 @@ export class ViewerManager {
 
                 // Render selection ids as highlighted
                 if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-                    if (this.imageViewer.selection.has(labelValue)) {
-                        // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
-                        // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
-                        let color = [255, 255, 255]
+                    // Get 24bit label data
+                    // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
+                    if (labelTile == null && !this.imageViewer.noLabel) {
+                        const loaded = await addTile(labelTileAdr);
+                        labelTile = this.imageViewer.tileCache[labelTileAdr];
+                    }
+                    if (labelTileData) {
+                        labelValue = ((labelTileData[i] << 16) + (labelTileData[i + 1] << 8) + (labelTileData[i + 2])) - 1;
+                    }
+                    if (labelValue != -1) {
+                        if (this.imageViewer.selection.has(labelValue)) {
+                            // let phenotype = _.get(seaDragonViewer.selection.get(labelValueStr), 'phenotype', '');
+                            // let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                            let color = [255, 255, 255]
 
-                        /************************ new */
-                            // Init grid and tests (4 pts v 8 working for now)
-                        const grid = [
-                                i - 4,
-                                i + 4,
-                                i - inputTile.width * 4,
-                                i + inputTile.width * 4
+                            /************************ new */
+                                // Init grid and tests (4 pts v 8 working for now)
+                            const grid = [
+                                    i - 4,
+                                    i + 4,
+                                    i - inputTile.width * 4,
+                                    i + inputTile.width * 4
+                                ];
+                            const test = [
+                                i % (inputTile.width * 4) !== 0,
+                                i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
+                                i >= inputTile.width * 4,
+                                i < inputTile.width * 4 * (inputTile.height - 1)
                             ];
-                        const test = [
-                            i % (inputTile.width * 4) !== 0,
-                            i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
-                            i >= inputTile.width * 4,
-                            i < inputTile.width * 4 * (inputTile.height - 1)
-                        ];
 
-                        // If outline
-                        if (this.sel_outlines) {
-                            // Iterate grid
-                            for (let j = 0; j < grid.length; j++) {
-                                // if pass test (not on tile border)
-                                if (test[j]) {
-                                    // Neighbor label value
-                                    const altLabelValue = (labelTileData[grid[j]] << 16)
-                                        + (labelTileData[grid[j] + 1] << 8) + (labelTileData[grid[j] + 2]) - 1;
-                                    // Color
-                                    if (altLabelValue !== labelValue) {
-                                        pixels[i] = 255;
-                                        pixels[i + 1] = 255;
-                                        pixels[i + 2] = 255;
-                                        break;
+                            // If outline
+                            if (this.sel_outlines) {
+                                // Iterate grid
+                                for (let j = 0; j < grid.length; j++) {
+                                    // if pass test (not on tile border)
+                                    if (test[j]) {
+                                        // Neighbor label value
+                                        const altLabelValue = (labelTileData[grid[j]] << 16)
+                                            + (labelTileData[grid[j] + 1] << 8) + (labelTileData[grid[j] + 2]) - 1;
+                                        // Color
+                                        if (altLabelValue !== labelValue) {
+                                            pixels[i] = 255;
+                                            pixels[i + 1] = 255;
+                                            pixels[i + 2] = 255;
+                                            break;
+                                        }
                                     }
                                 }
+                            } else {
+                                pixels[i] = color[0];
+                                pixels[i + 1] = color[1];
+                                pixels[i + 2] = color[2];
                             }
-                        } else {
-                            pixels[i] = color[0];
-                            pixels[i + 1] = color[1];
-                            pixels[i + 2] = color[2];
+                            /************************ newend */
                         }
-                        /************************ newend */
                     }
                 }
 

@@ -47,8 +47,9 @@ def load_datasource(datasource_name, reload=False):
 
     print("Reading csv single cell data..")
     start = time.time()
-    datasource = dd.read_csv(csvPath)
-    datasource = datasource.compute()
+    datasource = pd.read_csv(csvPath)
+    # datasource = dd.read_csv(csvPath)
+    # datasource = datasource.compute()
     end = time.time()
     print("Read csv with dask: ", (end - start), "sec")
     datasource['id'] = datasource.index
