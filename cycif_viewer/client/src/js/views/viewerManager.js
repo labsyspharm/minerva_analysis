@@ -252,11 +252,9 @@ export class ViewerManager {
         // Ck tile cache
         let inputTile = this.imageViewer.tileCache[tile.url];
         if (inputTile == null) {
-            console.log("Input Tile Not In Cache");
-            inputTile = await addTile(tile.url);
-            let test = ''
+            await addTile(tile.url);
+            inputTile = this.imageViewer.tileCache[tile.url];
 
-            return;
         }
 
 
@@ -268,17 +266,15 @@ export class ViewerManager {
             labelTileAdr = tile.url.replace(somePath, labelPath);
             labelTile = this.imageViewer.tileCache[labelTileAdr];
         }
-        const labelTileData = _.get(labelTile, 'data');
+        let labelTileData = _.get(labelTile, 'data');
         // Get 24bit label data
         // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
         if (labelTile == null && !this.imageViewer.noLabel) {
-            console.log("No Label Tile");
+            console.log("Missing Label");
             await addTile(labelTileAdr);
-            let test = ''
-            callback();
-            return;
-            // const loaded = await addTile(labelTileAdr);
-            // labelTile = this.imageViewer.tileCache[labelTileAdr];
+            labelTile = this.imageViewer.tileCache[labelTileAdr];
+            labelTileData = _.get(labelTile, 'data');
+            console.log("Loaded Label");
         }
         if (!labelTile.converted) {
             let int32Array = new Int32Array(labelTile.data.buffer)
@@ -294,7 +290,6 @@ export class ViewerManager {
         const tileurl = tile.url;
 
         // Get tfs for channels
-        console.log("Drawing", tile.url);
         for (const key in this.viewer_channels) {
 
             const channelIdx = key;
@@ -302,14 +297,13 @@ export class ViewerManager {
             // First check main
             const channelPath = this.viewer_channels[channelIdx]["sub_url"];
             const channelTileAdr = tileurl.replace(somePath, channelPath);
-            const channelTile = this.imageViewer.tileCache[channelTileAdr];
+            let channelTile = this.imageViewer.tileCache[channelTileAdr];
 
             if (channelTile == null) {
-                console.log("No Channel Tile");
+                console.log("Missing Channel")
                 await addTile(channelTileAdr);
-                let test = ''
-                callback();
-                return;
+                channelTile = this.imageViewer.tileCache[channelTileAdr];
+                console.log("Loaded Channel")
             }
             if (!channelTile.converted) {
                 // Since my data is 32 bit, but the last 16 bits are all 0, view as 32 bit and then convert to 16 bit for size
