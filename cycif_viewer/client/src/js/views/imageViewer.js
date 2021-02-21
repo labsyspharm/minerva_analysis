@@ -82,9 +82,8 @@ class ImageViewer {
             id: "openseadragon",
             prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
-            imageLoaderLimit: 3,
+            imageLoaderLimit: 5,
             loadTilesWithAjax: true,
-            immediateRender: false,
             maxImageCacheCount: 200,
             timeout: 90000,
             preload: false,
@@ -265,7 +264,6 @@ class ImageViewer {
         if (event === null || event === undefined || event.tileRequest === null) {
             return;
         }
-
         const handlePngAs8Bit = false;
         if (handlePngAs8Bit) {
 
@@ -288,7 +286,7 @@ class ImageViewer {
         } else {
 
             // Full 24bit png handling: get buffer, parse it into png, save in cache
-            if (event.tileRequest) {
+            if (event.tileRequest && !this.tileCache[event.tile.url]) {
                 const buffer = new Buffer(event.tileRequest.response);
                 if (buffer) {
                     const tile = event.tile;
@@ -324,13 +322,9 @@ class ImageViewer {
     }
 
     addToTileCache(tileName, data) {
-        let cacheSize = this.tileCacheQueue.push(tileName)
-        if (cacheSize > this.viewer.maxImageCacheCount) {
-            let tileToRemove = this.tileCacheQueue.shift();
-            this.removeTileFromCache(tileToRemove);
-        }
         this.tileCache[tileName] = data;
     }
+
 
     // =================================================================================================================
     // Rendering
@@ -542,23 +536,22 @@ ImageViewer.events = {
     renderingMode: 'renderingMode'
 };
 
-async function addTile(path) {
+function addTile(path) {
 
-    const promiseWrapper = new Promise((resolve, reject) => {
-        function addTileResponse(success, error) {
-            // console.log("Emergency Added Tile:", path);
-            resolve();
+    function addTileResponse(success, error, request) {
+        if (success) {
+            console.log("Emergency Added Tile:", path);
+            let event = {'tileRequest': request, 'tile': {'url': path}}
+            seaDragonViewer.tileLoaded(event);
         }
+    }
 
-        const options = {
-            src: path,
-            loadWithAjax: true,
-            crossOriginPolicy: false,
-            ajaxWithCredentials: false,
-            callback: addTileResponse
-        }
-        seaDragonViewer.viewer.imageLoader.addJob(options)
-    })
-    return Promise.all([promiseWrapper])
-
+    const options = {
+        src: path,
+        loadWithAjax: true,
+        crossOriginPolicy: false,
+        ajaxWithCredentials: false,
+        callback: addTileResponse
+    }
+    seaDragonViewer.viewer.imageLoader.addJob(options)
 }

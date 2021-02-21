@@ -456,8 +456,10 @@ def generate_zarr_png(datasource_name, channel, level, tile):
             tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
-    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
-    # cv2.imwrite('cycif_viewer/server/analytics/img/tile.png', png)
+    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
+
+    png = np.append(png, np.zeros((png.shape[0], png.shape[1], 1), dtype='uint8'), axis=2)
+    # png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
     return png
 
 
