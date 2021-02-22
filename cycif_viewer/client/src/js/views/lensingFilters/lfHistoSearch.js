@@ -70,6 +70,35 @@ export class LfHistoSearch {
                 this.data_layer.getHistogramComparison(datasource, channels, pos[0], pos[1], newRad,
                     viewportBounds, zoomlevel, lensing.configs.sensitivity).then(d => {
                     console.log(d)
+                    this.data = d;
+
+                    //wrangle
+                    // var vis = this;
+                    // if (this.data != null && vis.data.contours != null){
+                    //     const map1 = vis.data.contours[0].map( function(d){
+                    //         var point = vis.image_viewer.viewer.viewport.imageToViewportCoordinates(Math.floor(d[0]),Math.floor(d[1]));
+                    //         return [point.x,point.y];
+                    //     });
+                    //
+                    //     var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("selectionPolygon").data(map1);
+                    //     selPoly.enter().append("polygon")
+                    //         .attr('id', 'selectionPolygon')
+                    //         .attr("points",function(d) {
+                    //             return d.map(function(d) {
+                    //                 return [d[0]*10,d[1]*10].join(",");
+                    //             }).join(" ");
+                    //         })
+                    //         .attr("stroke","orange")
+                    //         .attr("stroke-width",2);
+                    //     var d3Rect = d3.select(this.image_viewer.viewer.svg).append("rect")
+                    //             .style('fill', '#ffff00')
+                    //             .attr("x", 0.2)
+                    //             .attr("width", 0.0425)
+                    //             .attr("y", 0.8)
+                    //             .attr("height", 0.0525);
+                    //     console.log(map1);
+                    // }
+
                 });
             }
         }
@@ -214,13 +243,22 @@ export class LfHistoSearch {
 
                             // Define this
                             const vis = this;
-
+                            console.log('wrangle');
                         },
                         render: () => {
-
+                            console.log('render');
                             // Define this
                             const vis = this;
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
+
+
+                            var d3Rect = d3.select(this.image_viewer.viewer.svg).append("rect")
+                                .style('fill', '#f00')
+                                .attr("x", 0.1)
+                                .attr("width", 0.025)
+                                .attr("y", 0.5)
+                                .attr("height", 0.025);
+
 
                             // console.log("zoom level:" +this.image_viewer.viewer.viewport.getZoom());
 
