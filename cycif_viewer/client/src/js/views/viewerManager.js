@@ -163,7 +163,7 @@ export class ViewerManager {
             lerpFactor = 0;
         }
         let rgb = tf.tf[lerpFactor];
-        return [rgb.r, rgb.b, rgb.g];
+        return [rgb.r, rgb.g, rgb.b];
     }
 
     /**
