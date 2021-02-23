@@ -122,10 +122,7 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection(repaint = true) {
-    let selection = dataLayer.getCurrentSelection();
-    var arr = Array.from(selection);
-    var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
-    seaDragonViewer.updateSelection(selectionHashMap, repaint);
+    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
 }
 
 //feature range selection changed in ridge plot

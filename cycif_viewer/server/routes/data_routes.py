@@ -8,6 +8,7 @@ from cycif_viewer.server.analytics import comparison
 from pathlib import Path
 from time import time
 import pandas as pd
+import numpy as np
 import json
 import orjson
 from flask_sqlalchemy import SQLAlchemy
@@ -192,7 +193,11 @@ def histogram_comparison():
     y = float(request.args.get('point_y'))
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
+
     viewport = request.args.getlist('viewport')
+    viewport = np.array(viewport[0].split(","));
+    viewport = viewport.astype(np.float);
+
     zoomlevel = int(float(request.args.get('zoomlevel')))
     sensitivity = float(request.args.get('sensitivity'))
 
@@ -209,12 +214,14 @@ def histogram_comparison():
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
+    now = time()
     png = data_model.generate_zarr_png(datasource, channel, level, tile)
     file_object = io.BytesIO()
     # write PNG in file-object
     Image.fromarray(png).save(file_object, 'PNG', compress_level=0)
     # move to beginning of file so `send_file()` it will read from start
     file_object.seek(0)
+    print("Gen Time", time() - now)
     return send_file(file_object, mimetype='image/PNG')
 
 

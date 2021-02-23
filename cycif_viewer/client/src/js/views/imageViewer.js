@@ -30,11 +30,14 @@ class ImageViewer {
         // Local storage of image tiles (for all loaded channels)
         this.tileCache = {};
         // Stores the ordered contents of the tile cache, so that once we hit max size we remove oldest elements
-        this.tileCacheQueue = []
+        this.tileCacheQueue = [];
+        // Stores the ordered contents of the tile cache, so that once we hit max size we remove oldest elements
+        this.pendingTiles = new Map();
 
         // Map of selected ids, key is id
         this.selection = new Map();
         this.data = new Map();
+
 
         // Currently loaded image / label channels
         this.currentChannels = {};
@@ -53,10 +56,8 @@ class ImageViewer {
 
             const start_color = d3.rgb(0, 0, 0);
             const end_color = d3.rgb(255, 255, 255);
-
             const tf_def = this.createTFArray(0, 65535, start_color, end_color, this.numTFBins);
             tf_def.name = this.config['imageData'][i].name;
-
             this.channelTF.push(tf_def);
         }
 
@@ -82,9 +83,8 @@ class ImageViewer {
             id: "openseadragon",
             prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
-            imageLoaderLimit: 3,
+            imageLoaderLimit: 5,
             loadTilesWithAjax: true,
-            immediateRender: false,
             maxImageCacheCount: 200,
             timeout: 90000,
             preload: false,
@@ -265,7 +265,6 @@ class ImageViewer {
         if (event === null || event === undefined || event.tileRequest === null) {
             return;
         }
-
         const handlePngAs8Bit = false;
         if (handlePngAs8Bit) {
 
@@ -288,7 +287,7 @@ class ImageViewer {
         } else {
 
             // Full 24bit png handling: get buffer, parse it into png, save in cache
-            if (event.tileRequest) {
+            if (event.tileRequest && !this.tileCache[event.tile.url]) {
                 const buffer = new Buffer(event.tileRequest.response);
                 if (buffer) {
                     const tile = event.tile;
@@ -324,13 +323,16 @@ class ImageViewer {
     }
 
     addToTileCache(tileName, data) {
-        let cacheSize = this.tileCacheQueue.push(tileName)
-        if (cacheSize > this.viewer.maxImageCacheCount) {
+        this.tileCacheQueue.push(tileName)
+        while (_.size(this.tileCacheQueue) > this.viewer.maxImageCacheCount) {
             let tileToRemove = this.tileCacheQueue.shift();
             this.removeTileFromCache(tileToRemove);
         }
         this.tileCache[tileName] = data;
+        this.tileCache[tileName].converted = false;
+
     }
+
 
     // =================================================================================================================
     // Rendering
@@ -542,23 +544,42 @@ ImageViewer.events = {
     renderingMode: 'renderingMode'
 };
 
-async function addTile(path) {
 
-    const promiseWrapper = new Promise((resolve, reject) => {
-        function addTileResponse(success, error) {
-            // console.log("Emergency Added Tile:", path);
+async function addTile(path) {
+    const addJob = new Promise((resolve, reject) => {
+        if (seaDragonViewer.tileCache[path]) {
             resolve();
         }
+
+        // If we're currently waiting for a tile to load, just use it's callback
+        if (seaDragonViewer.pendingTiles.has(path)) {
+            return seaDragonViewer.pendingTiles.get(path);
+        }
+
+        // seaDragonViewer.pendingTiles.add(path);
+        function callback(success, error, request) {
+            if (success) {
+                let event = {'tileRequest': request, 'tile': {'url': path}}
+                seaDragonViewer.tileLoaded(event);
+                console.log("Emergency Added Tile:", path);
+                seaDragonViewer.pendingTiles.delete(path)
+                resolve(success);
+            } else {
+                error();
+            }
+        }
+
+        seaDragonViewer.pendingTiles.set(path, callback);
+
 
         const options = {
             src: path,
             loadWithAjax: true,
             crossOriginPolicy: false,
             ajaxWithCredentials: false,
-            callback: addTileResponse
+            callback: callback
         }
         seaDragonViewer.viewer.imageLoader.addJob(options)
-    })
-    return Promise.all([promiseWrapper])
-
+    });
+    await Promise.all([addJob])
 }
