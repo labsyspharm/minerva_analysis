@@ -55,49 +55,62 @@ export class LfHistoSearch {
                 // Load
                 this.load.config.filterCode.settings.loading = true;
 
-                //create a server query to retrieve ccontours of areas in the image simiar to the current lens area
+                //create a server query to retrieve contours of areas in the image similar to the current lens area
                 if (!lensing.configs.sensitivity){
                     lensing.configs.sensitivity = 0;
                 }
 
                 const bounds = this.image_viewer.viewer.viewport.getBounds(true);
-                const topLeft = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getTopLeft());
-                const bottomRight = this.image_viewer.viewer.viewport.viewportToImageCoordinates(bounds.getBottomRight());
+                const imageItem = this.image_viewer.viewer.viewport.viewer.world.getItemAt(0);
+                const topLeft = imageItem.viewportToImageCoordinates(bounds.getTopLeft());
+                const bottomRight = imageItem.viewportToImageCoordinates(bounds.getBottomRight());
                 const viewportBounds = [topLeft, bottomRight];
-                //convert frm osd to zarr (but when we are zoomed in further than 0 (nagative value), we jump back to 0
-                const zoomlevel = Math.max(0,this.image_viewer.config.maxLevel - 1 - this.image_viewer.viewer.viewport.getZoom());
+                //convert from osd to zarr (but when we are zoomed in further than 0 (negative value), we jump back to 0
+                const zoomlevel = Math.max(0,this.image_viewer.config.maxLevel - this.image_viewer.viewer.viewport.getZoom());
 
                 this.data_layer.getHistogramComparison(datasource, channels, pos[0], pos[1], newRad,
                     viewportBounds, zoomlevel, lensing.configs.sensitivity).then(d => {
                     console.log(d)
                     this.data = d;
 
-                    //wrangle
-                    // var vis = this;
-                    // if (this.data != null && vis.data.contours != null){
-                    //     const map1 = vis.data.contours[0].map( function(d){
-                    //         var point = vis.image_viewer.viewer.viewport.imageToViewportCoordinates(Math.floor(d[0]),Math.floor(d[1]));
-                    //         return [point.x,point.y];
-                    //     });
-                    //
-                    //     var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("selectionPolygon").data(map1);
-                    //     selPoly.enter().append("polygon")
-                    //         .attr('id', 'selectionPolygon')
-                    //         .attr("points",function(d) {
-                    //             return d.map(function(d) {
-                    //                 return [d[0]*10,d[1]*10].join(",");
-                    //             }).join(" ");
-                    //         })
-                    //         .attr("stroke","orange")
-                    //         .attr("stroke-width",2);
-                    //     var d3Rect = d3.select(this.image_viewer.viewer.svg).append("rect")
-                    //             .style('fill', '#ffff00')
-                    //             .attr("x", 0.2)
-                    //             .attr("width", 0.0425)
-                    //             .attr("y", 0.8)
-                    //             .attr("height", 0.0525);
-                    //     console.log(map1);
-                    // }
+                    var vis = this;
+                    if (this.data != null && vis.data.contours != null) {
+
+                        vis.data.contours.forEach(function(d,i){
+                            d.forEach(function(e,j){
+                               let point = imageItem.imageToViewportCoordinates(Math.floor(e[0]), Math.floor(e[1]));
+                               vis.data.contours[i][j] = [point.x, point.y];
+                            })
+                        })
+                        console.log(vis.data.contours[0]);
+                    }
+                    //[
+                    //     var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("selectionPolygon").data(vis.data.contours[0]);
+                        // selPoly.enter().append("polygon")
+                        //     .style('fill', '#f00')
+                        //     .attr('id', 'selectionPolygon')
+                        //     .attr("points",function(d) {
+                        //         return d.map(function(d) { return [d[0],d[1]].join(","); }).join(" ");})
+                        //     .attr("stroke","orange")
+                        //     .attr("stroke-width",2);
+
+                        d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
+                        var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("polygon")
+                            .data(vis.data.contours)
+                          .enter().append("polygon")
+                            .attr("points",function(d) {
+                                return d.map(function(d) { return [d[1],d[0]].join(","); }).join(" ");})
+                            .attr("stroke","orange")
+                            .attr("stroke-width",0.0002)
+                        .attr("fill", "none");
+
+                        var d3Rect = d3.select(this.image_viewer.viewer.svg).append("rect")
+                                .style('fill', '#f00')
+                                .attr("x", 0.1)
+                                .attr("width", 0.025)
+                                .attr("y", 0.5)
+                                .attr("height", 0.025);
+
 
                 });
             }
@@ -243,21 +256,16 @@ export class LfHistoSearch {
 
                             // Define this
                             const vis = this;
-                            console.log('wrangle');
+                            //console.log('wrangle');
                         },
                         render: () => {
-                            console.log('render');
+                            //console.log('render');
                             // Define this
                             const vis = this;
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
 
 
-                            var d3Rect = d3.select(this.image_viewer.viewer.svg).append("rect")
-                                .style('fill', '#f00')
-                                .attr("x", 0.1)
-                                .attr("width", 0.025)
-                                .attr("y", 0.5)
-                                .attr("height", 0.025);
+
 
 
                             // console.log("zoom level:" +this.image_viewer.viewer.viewport.getZoom());

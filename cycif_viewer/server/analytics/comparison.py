@@ -72,8 +72,8 @@ def toWorldCoordinates(contours, originalviewport, viewport):
     # convert viewport by scaling to original ratio and adding offset
     for contour in contours:
         for point in contour:
-            point[0] = point[0] * widthRatio + originalviewport[0];
-            point[1] = point[1] * heightRatio + originalviewport[1];
+            point[1] = point[1] * widthRatio + originalviewport[0];
+            point[0] = point[0] * heightRatio + originalviewport[1];
     return contours;
 
 #convert from whole image viewport to layer viewport (also: zarr has y,x flipped)
