@@ -159,6 +159,15 @@ def get_cells_in_polygon():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/find_custom_neighborhood', methods=['POST'])
+def find_custom_neighborhood():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    neighborhood_composition = post_data['neighborhoodComposition']
+    resp = data_model.find_custom_neighborhood(datasource, neighborhood_composition)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_similar_neighborhood_to_selection', methods=['POST'])
 def get_similar_neighborhood_to_selection():
     post_data = json.loads(request.data)

@@ -185,7 +185,7 @@ function initSmallMultipleStarplots() {
     plots = _.map(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`);
         let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
-        let starplot = new Starplot(`compare_starplot_${i}`, dataLayer.phenotypes, small = true);
+        let starplot = new Starplot(`compare_starplot_${i}`, dataLayer, eventHandler, small = true);
         starplot.init();
         return starplot;
     });

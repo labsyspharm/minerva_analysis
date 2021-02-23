@@ -118,7 +118,7 @@
                                   title="Cell View Mode">
                                 {% include 'cell_icon.html' %}
                             </span>
-                            <span id ="cell_view_title"class="toolbar_title">Single Cell View</span>
+                            <span id="cell_view_title" class="toolbar_title">Single Cell View</span>
 
 
                         </div>
@@ -141,11 +141,28 @@
         <div class="col viewer_col" id="analysis_wrapper">
             <span id="analysis_label">Analysis</span>
             <div id="plots_display" class="col">
-                <div class="row justify-content-md-center">
-                    <div class="col">
+                <div class="row">
+                    <div class="col col-lg-2"></div>
+                    <div class="col-md-8">
                         <h5 id="starplot_label" class="text-center">Neighborhood Composition Space</h5>
                     </div>
+                    <div class="col col-lg-2">
+                        <span id="edit_neighborhood_composition" class="material-icons text-right" data-toggle="tooltip"
+                              data-placement="left"
+                              title="Edit to create custom neighborhood composition">create</span>
+                    </div>
                 </div>
+                <div class="row justify-content-md-center">
+                    <div class="col-md-auto" id="custom_search_col">
+                         <span class="material-icons" id="neighborhood_composition_icon"
+                               data-toggle="tooltip"
+                               data-placement="right"
+                               title="Search for Similar Neighborhoods">search</span>
+                        <span id="custom_neighborhood_search" class="toolbar_title">Find Custom Neighborhoods</span>
+                    </div>
+                </div>
+
+
                 <div class="row" id="starplot_display"></div>
                 <div class="row justify-content-md-center">
                     <div class="col">

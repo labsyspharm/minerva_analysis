@@ -611,7 +611,6 @@ class ImageViewer {
      * @returns void
      */
     updateData(data) {
-
         this.data = data;
         this.forceRepaint();
     }

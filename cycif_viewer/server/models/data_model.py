@@ -351,19 +351,21 @@ def get_individual_neighborhood(x, y, datasource_name, r=100, fields=None):
         load_datasource(datasource_name)
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
-    try:
-        if fields and len(fields) > 0:
-            fields.append('id') if 'id' not in fields else fields
-            if len(fields) > 1:
-                neighborhood = datasource.iloc[neighbors][fields].to_dict(orient='records')
-            else:
-                neighborhood = datasource.iloc[neighbors][fields].to_dict()
+    # try:
+    if fields and len(fields) > 0:
+        fields.append('id') if 'id' not in fields else fields
+        if len(fields) > 1:
+            neighborhood = datasource.iloc[neighbors][fields].to_dict(orient='records')
         else:
-            neighborhood = datasource.iloc[neighbors].to_dict(orient='records')
+            neighborhood = datasource.iloc[neighbors][fields].to_dict()
+    else:
+        neighborhood = datasource.iloc[neighbors].to_dict(orient='records')
 
-        return neighborhood
-    except:
-        return {}
+    return neighborhood
+
+
+# except Error:
+#     return {}
 
 
 def get_number_of_cells_in_circle(x, y, datasource_name, r):
@@ -517,9 +519,34 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     return obj
 
 
-def find_similarity(cluster_summary, similarity, datasource_name):
+def find_custom_neighborhood(datasource_name, neighborhood_composition):
+    global datasource
+    global source
+    # Load if not loaded
+    if datasource_name != source:
+        load_datasource(datasource_name)
+    fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
+              config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
+    phenos = datasource.phenotype.unique().tolist()
+    neighborhood_vector = np.zeros((len(phenos)))
+    disabled = []
+    for i in range(len(phenos)):
+        neighborhood_vector[i] = neighborhood_composition[phenos[i]]['value']
+        if 'disabled' in neighborhood_composition[phenos[i]] and neighborhood_composition[phenos[i]]['disabled']:
+            disabled.append(i)
+
+    similar_ids = find_similarity(neighborhood_vector, 0.9, datasource_name, disabled)
+    obj = get_neighborhood_stats(datasource_name, similar_ids, fields=fields)
+    obj['raw_summary'] = neighborhood_vector
+    return obj
+
+
+def find_similarity(cluster_summary, similarity, datasource_name, disabled=None):
     global config
     neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    if disabled:
+        neighborhoods = np.delete(neighborhoods, disabled, axis=1)
+        cluster_summary = np.delete(cluster_summary, disabled, axis=0)
     distances = 1 - spatial.distance.cdist([cluster_summary], neighborhoods, "cosine")[0]
     greater_than = np.argwhere(distances > similarity).flatten()
     return greater_than

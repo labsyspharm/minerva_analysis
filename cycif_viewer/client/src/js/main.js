@@ -51,7 +51,7 @@ async function init(conf) {
     channelList = new ChannelList(config, dataLayer, eventHandler);
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     legend = new Legend(dataLayer.phenotypes, colorScheme);
-    starplot = new Starplot('starplot_display', dataLayer.phenotypes);
+    starplot = new Starplot('starplot_display', dataLayer, eventHandler);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer, neighborhoodTable);
     console.log('Ending Reg Init', new Date());
     //image viewer

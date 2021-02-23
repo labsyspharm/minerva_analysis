@@ -303,6 +303,27 @@ class DataLayer {
         }
     }
 
+    async findSimilarNeighborhoods(data) {
+        try {
+            let response = await fetch('/find_custom_neighborhood', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        neighborhoodComposition: data
+                    })
+            });
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Custom Neighborhood", e);
+        }
+    }
+
 
     async getScatterplotData() {
         try {

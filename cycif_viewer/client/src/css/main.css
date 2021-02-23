@@ -95,7 +95,7 @@ body {
 }
 
 #starplot_display {
-    height: 40vh;
+    height: 39vh;
     padding-left: 15px;
     width: 100%;
 }
@@ -177,7 +177,8 @@ body {
 #channel_list .list-group {
     border-radius: 0rem;
 }
-#openseadragon_loader{
+
+#openseadragon_loader {
     margin-left: 300px;
 }
 
@@ -532,12 +533,12 @@ polygon:hover {
     color: #c1c1c1;
 }
 
-#selection-options .material-icons {
+#selection-options .material-icons, #openseadragon-toolbar .material-icons {
     font-size: 24px;
 }
 
-#openseadragon-toolbar .material-icons {
-    font-size: 24px;
+#plots_display .material-icons {
+    font-size: 18px;
 }
 
 .selected:hover {
@@ -555,13 +556,13 @@ polygon:hover {
     width: 24px;
 }
 
-#neighborhood_icon {
+#neighborhood_icon, #neighborhood_composition_icon {
     fill: none;
     stroke: #c1c1c1;
     stroke-miterlimit: 10;
 }
 
-#neighborhood_icon:hover {
+#neighborhood_icon:hover, #neighborhood_composition_icon:hover {
     stroke: #8f8f8f;
 }
 
@@ -715,8 +716,20 @@ polygon:hover {
     stroke-miterlimit: 10;
 }
 
-
-
 .inner-circle {
     fill: #FEA50A
+}
+
+
+#custom_search_col {
+    visibility: hidden;
+}
+
+#custom_search_col span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#custom_search_col span {
+    color: black;
 }
