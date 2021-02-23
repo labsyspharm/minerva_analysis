@@ -79,7 +79,7 @@ export class ViewerManager {
             }
         }
 
-        let maxLevel = this.imageViewer.config['maxLevel'] - 1;
+        let maxLevel = this.imageViewer.config['maxLevel'];
 
         // Add tiled image
         this.viewer.addTiledImage({
