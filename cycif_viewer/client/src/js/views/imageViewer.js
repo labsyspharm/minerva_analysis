@@ -81,26 +81,82 @@ class ImageViewer {
             id: "openseadragon",
             prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
-            imageLoaderLimit: 3,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 50,
             timeout: 90000,
+            compositeOperation: 'lighter',
             preload: false,
             homeFillsViewer: true,
             visibilityRatio: 1.0
         };
 
-        // Instantiate viewer
-        that.viewer = OpenSeadragon(viewer_config);
 
-        /************************************************************************************* Create viewer managers */
+        // Instantiate viewer with the ViaWebGL Version of OSD
+        that.viewer = viaWebGL.OpenSeadragon(viewer_config);
 
         // Instantiate viewer managers
         that.viewerManagerVMain = new ViewerManager(that, that.viewer, 'main');
 
         // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain);
+
+        // Define interface to shaders
+        const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
+        seaGL.vShader = '../../shaders/vert.glsl';
+        seaGL.fShader = '../../shaders/frag.glsl';
+        //
+        seaGL.addHandler('tile-drawing', function (callback, e) {
+            // Read parameters from each tile
+            const tile = e.tile;
+            const via = this.viaGL;
+            const viewer = this.openSD;
+            const image = e.tiledImage;
+            const source = image.source;
+
+            // Store channel color and range to send to shader
+            via.color_3fv = new Float32Array(source.many_channel_color);
+            via.range_2fv = new Float32Array(source.many_channel_range);
+            let fmt = 0;
+            if (tile._format == 'u16') {
+                fmt = 16;
+            } else if (tile._format == 'u32') {
+                fmt = 32;
+            }
+
+            via.fmt_1i = fmt;
+
+            // Start webGL rendering
+            callback(e);
+        });
+
+        seaGL.addHandler('gl-drawing', function () {
+            // Send color and range to shader
+            this.gl.uniform3fv(this.u_tile_color, this.color_3fv);
+            this.gl.uniform2fv(this.u_tile_range, this.range_2fv);
+            this.gl.uniform1i(this.u_tile_fmt, this.fmt_1i);
+
+            // Clear before each draw call
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        });
+
+        seaGL.addHandler('gl-loaded', function (program) {
+            // Turn on additive blending
+            this.gl.enable(this.gl.BLEND);
+            this.gl.blendEquation(this.gl.FUNC_ADD);
+            this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+
+            // Uniform variable for coloring
+            this.u_tile_color = this.gl.getUniformLocation(program, 'u_tile_color');
+            this.u_tile_range = this.gl.getUniformLocation(program, 'u_tile_range');
+            this.u_tile_fmt = this.gl.getUniformLocation(program, 'u_tile_fmt');
+        });
+
+        seaGL.addHandler('tile-loaded', (callback, e) => callback(e));
+
+        seaGL.init();
+
+        /************************************************************************************* Create viewer managers */
+
 
         /********************************************************************************************** Emulate click */
 
@@ -137,34 +193,34 @@ class ImageViewer {
         */
 
         // Add event mouse handler (cell selection)
-        this.viewer.addHandler('canvas-nonprimary-press', function (event) {
-
-            // Right click (cell selection)
-            if (event.button === 2) {
-                // The canvas-click event gives us a position in web coordinates.
-                const webPoint = event.position;
-                // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-                // Convert from viewport coordinates to image coordinates.
-                const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-
-                return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
-                    .then(selectedItem => {
-                        if (selectedItem !== null && selectedItem !== undefined) {
-                            // Check if user is doing multi-selection or not
-                            let clearPriors = true;
-                            if (event.originalEvent.ctrlKey) {
-                                clearPriors = false;
-                            }
-                            // Trigger event
-                            that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-                                selectedItem,
-                                clearPriors
-                            });
-                        }
-                    })
-            }
-        });
+        // this.viewer.addHandler('canvas-nonprimary-press', function (event) {
+        //
+        //     // Right click (cell selection)
+        //     if (event.button === 2) {
+        //         // The canvas-click event gives us a position in web coordinates.
+        //         const webPoint = event.position;
+        //         // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+        //         const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+        //         // Convert from viewport coordinates to image coordinates.
+        //         const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+        //
+        //         return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
+        //             .then(selectedItem => {
+        //                 if (selectedItem !== null && selectedItem !== undefined) {
+        //                     // Check if user is doing multi-selection or not
+        //                     let clearPriors = true;
+        //                     if (event.originalEvent.ctrlKey) {
+        //                         clearPriors = false;
+        //                     }
+        //                     // Trigger event
+        //                     that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+        //                         selectedItem,
+        //                         clearPriors
+        //                     });
+        //                 }
+        //             })
+        //     }
+        // });
 
     }
 

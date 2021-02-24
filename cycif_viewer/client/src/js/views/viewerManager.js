@@ -35,7 +35,7 @@ export class ViewerManager {
         this.add_handlers();
 
         // Set filter options
-        this.set_filter_options();
+        // this.set_filter_options();
 
         // Load label image
         this.load_label_image();
@@ -51,8 +51,8 @@ export class ViewerManager {
     add_handlers() {
 
         // Add event load handlers
-        this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind(this.imageViewer));
-        this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind(this.imageViewer));
+        // this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind(this.imageViewer));
+        // this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind(this.imageViewer));
     }
 
     /**
@@ -173,7 +173,7 @@ export class ViewerManager {
     force_repaint() {
 
         // Refilter, redraw
-        this.viewer.forceRefilter();
+        // this.viewer.forceRefilter();
         this.viewer.forceRedraw();
     }
 

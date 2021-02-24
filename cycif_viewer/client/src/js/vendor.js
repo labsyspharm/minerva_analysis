@@ -16,7 +16,8 @@ import Mark from 'mark.js'
 import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert'
-import * as OpenSeadragon from 'openseadragon';
+import 'viawebgl'
+import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
 
 window.convert = convert;
@@ -27,6 +28,8 @@ window.PNG = PNG;
 window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
-window.OpenSeadragon = OpenSeadragon;
+window.OpenSeadragon = viaWebGL.OpenSeadragon;
+window.viaWebGL = viaWebGL;
+window.openSeadragonGL = openSeadragonGL;
 window.ViewerManager = ViewerManager;
 
