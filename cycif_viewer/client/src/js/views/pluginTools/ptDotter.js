@@ -9,11 +9,13 @@ export class PtDotter {
         iconW: 12,
         imageX: [0, 0],
         imageY: [0, 0],
+        markerDims: 24,
         snapshotH: 90,
         snapshotW: 90,
         viewerOverlayH: 0,
         viewerOverlayW: 0,
     };
+    data = [];
     els = {
         album: null,
         container: null,
@@ -53,16 +55,30 @@ export class PtDotter {
         this.imageViewer = seaDragonViewer;
 
         // Snapshots
-        this.snapshotsSubscription = this.imageViewer.viewer.lensing.snapshots.subject.subscribe(next => {
-            this.renderSnapshots();
-            this.renderOverlay();
+        this.snapshotsSubscription = this.imageViewer.viewer.lensing.snapshots.subject.subscribe(datum => {
+            this.wrangleSnapshots([datum]);
+            // this.renderSnapshots();
+            // this.renderOverlay();
         });
-        this.renderSnapshots()
+        this.wrangleSnapshots(this.imageViewer.viewer.lensing.snapshots.album)
+        // this.renderSnapshots()
 
         // OSD changes
         this.imageViewer.viewer.addHandler('viewport-change', this.eventViewerOnViewportChange.bind(this));
 
 
+    }
+
+    /** 3.
+     * @function destroy
+     */
+    destroy() {
+
+        // Unsubscribe
+        this.snapshotsSubscription.unsubscribe();
+
+        // Clear data
+        this.data = [];
     }
 
     /**
@@ -84,11 +100,47 @@ export class PtDotter {
     }
 
     /**
+     * wrangleSnapshots
+     */
+    wrangleSnapshots(data) {
+
+        // Iterate data and form new obj to add to class var
+        data.forEach(d => {
+
+            // Data structure
+            const obj = {
+                channelsViewerMain: [],
+                channelsViewerAuxi: [],
+                date: d.date,
+                description: '',
+                id: d.id,
+                imageData: d.imgData,
+                lensRadius: d.lensingConfigs.rad,
+                lensShape: d.lensingConfigs.shape,
+                name: '',
+                pointerPositionOnFullImage: d.positionData.posFull,
+                pointerOsdRefPointX: d.positionData.refPoint.x,
+                pointerOsdRefPointY: d.positionData.refPoint.y,
+                zoomViewerMain: d.positionData.zoom,
+                zoomViewerAuxi: d.positionData.zoomAux
+            };
+
+            // Append to data
+            this.data.push(obj);
+
+            // Render snapshots
+            this.renderSnapshots();
+            this.renderOverlay();
+
+        });
+    }
+
+    /**
      * renderOverlay
      */
     renderOverlay() {
 
-        const data = this.imageViewer.viewer.lensing.snapshots.album;
+        // const data = this.imageViewer.viewer.lensing.snapshots.album;
 
         // Get image bounds
         const viewportBounds = this.imageViewer.viewer.viewport.getBounds(true);
@@ -113,30 +165,23 @@ export class PtDotter {
         const vis = this;
 
         this.els.viewerOverlay.selectAll('.dotMarker')
-            .data(data)
+            .data(this.data)
             .join('img')
             .attr('class', 'dotMarker')
             .attr('src', '../client/assets/cycif-marker-mobile.svg')
             .attr('alt', 'Dot marker')
             .style('position', 'absolute')
-            .style('height', `${24}px`)
+            .style('height', `${this.configs.markerDims}px`)
             .style('point-events', 'none')
             .each(function (d) {
 
                 const img = d3.select(this);
 
-                // Create new ref point
-                const newPt = new OpenSeadragon.Point({x: 0, y: 0})
-                newPt.x = d.positionData.refPoint.x;
-                newPt.y = d.positionData.refPoint.y;
-
-
-                const imgPt = vis.imageViewer.viewer.world.getItemAt(0).viewportToImageCoordinates(newPt);
-                // console.log(d.positionData.refPoint, newPt)
-                // console.log('Img. pt', vis.togols.overlayX(imgPt.x), vis.tools.overlayY(imgPt.y))
-
-                img.style('left', `${vis.tools.overlayX(d.lensingConfigs.pos_full[0]) - 12}px`);
-                img.style('top', `${vis.tools.overlayY(d.lensingConfigs.pos_full[1]) - 12}px`)
+                // Translate to overlay
+                img.style('left',
+                    `${vis.tools.overlayX(d.pointerPositionOnFullImage[0]) - vis.configs.markerDims / 2}px`);
+                img.style('top',
+                    `${vis.tools.overlayY(d.pointerPositionOnFullImage[1]) - vis.configs.markerDims / 2}px`)
 
 
             });
@@ -152,7 +197,7 @@ export class PtDotter {
         const data = this.imageViewer.viewer.lensing.snapshots.album;
 
         this.els.album.selectAll('.dotter_block')
-            .data(data)
+            .data(this.data)
             .join(
                 enter => enter.append('div')
                     .attr('class', 'dotter_block')
@@ -168,20 +213,20 @@ export class PtDotter {
 
                         const canvas = canvasContainer.append('canvas')
                             .attr('class', 'dotter_block_canvas')
-                            .attr('width', vis.configs.snapshotW * d.lensingConfigs.pxRatio)
-                            .attr('height', vis.configs.snapshotH * d.lensingConfigs.pxRatio)
+                            .attr('width', vis.configs.snapshotW * window.devicePixelRatio)
+                            .attr('height', vis.configs.snapshotH * window.devicePixelRatio)
                             .style('width', `${vis.configs.snapshotW}px`)
                             .style('height', `${vis.configs.snapshotH}px`)
-                            .classed('borderRadius50p', d.lensingConfigs.shape === 'circle');
+                            .classed('borderRadius50p', d.lensShape === 'circle');
 
                         const ctx = canvas.node().getContext('2d');
 
-                        createImageBitmap(d.imgData).then(imgBitmap => {
+                        createImageBitmap(d.imageData).then(imgBitmap => {
                             ctx.drawImage(imgBitmap,
                                 0,
                                 0,
-                                vis.configs.snapshotW * d.lensingConfigs.pxRatio,
-                                vis.configs.snapshotH * d.lensingConfigs.pxRatio
+                                vis.configs.snapshotW * window.devicePixelRatio,
+                                vis.configs.snapshotH * window.devicePixelRatio,
                             );
                         });
 
@@ -195,13 +240,20 @@ export class PtDotter {
                             .text(d.date.toDateString());
 
                         contentContainer.append('textarea')
+                            .attr('class', 'textarea_name')
                             .attr('placeholder', 'Name');
 
                         contentContainer.append('textarea')
+                            .attr('class', 'textarea_descript')
                             .attr('placeholder', 'Description');
 
                         const iconContainer = contentContainer.append('div')
                             .attr('class', 'dotter_block_icon_container');
+
+                        iconContainer.append('a')
+                            .attr('class', 'dotter_block_icon_container_save')
+                            .text('SAVE')
+                            .on('click', vis.saveToDb.bind(vis));
 
                         // iconContainer.append('img')
                         //     .attr('src', '../static/frontend/assets/cycif-notes.svg')
@@ -209,17 +261,17 @@ export class PtDotter {
                         //     .style('width', `${vis.configs.iconW}px`)
                         //     .style('height', `${vis.configs.iconH}px`);
 
-                        iconContainer.append('img')
-                            .attr('src', '../client/assets/cycif-download.svg')
-                            .attr('alt', 'Download')
-                            .style('width', `${vis.configs.iconW}px`)
-                            .style('height', `${vis.configs.iconH}px`);
+                        // iconContainer.append('img')
+                        //     .attr('src', '../client/assets/cycif-download.svg')
+                        //     .attr('alt', 'Download')
+                        //     .style('width', `${vis.configs.iconW}px`)
+                        //     .style('height', `${vis.configs.iconH}px`);
 
-                        iconContainer.append('img')
-                            .attr('src', '../client/assets/cycif-remove.svg')
-                            .attr('alt', 'Remove')
-                            .style('width', `${vis.configs.iconW}px`)
-                            .style('height', `${vis.configs.iconH}px`);
+                        // iconContainer.append('img')
+                        //     .attr('src', '../client/assets/cycif-remove.svg')
+                        //     .attr('alt', 'Remove')
+                        //     .style('width', `${vis.configs.iconW}px`)
+                        //     .style('height', `${vis.configs.iconH}px`);
 
                     })
             );
@@ -235,6 +287,9 @@ export class PtDotter {
         const newPt = new OpenSeadragon.Point({x: 0, y: 0})
         newPt.x = d.positionData.refPoint.x
         newPt.y = d.positionData.refPoint.y
+        const viewportPt = this.imageViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(
+            new OpenSeadragon({x: d.positionData.posFull[0], y: d.positionData.posFull[1]}))
+        console.log(viewportPt);
         this.imageViewer.viewerManagerVMain.viewer.viewport.panTo(newPt);
         this.imageViewer.viewerManagerVMain.viewer.viewport.zoomTo(d.positionData.zoom);
 
@@ -255,5 +310,12 @@ export class PtDotter {
      */
     eventViewerOnKeydown() {
         this.renderOverlay();
+    }
+
+    /**
+     * saveToDb
+     */
+    saveToDb(e, d) {
+        console.log(d)
     }
 }

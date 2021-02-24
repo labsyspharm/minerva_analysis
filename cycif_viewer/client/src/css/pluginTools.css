@@ -90,6 +90,14 @@
     margin: 0 0 6px 0;
 }
 
+.toolboxContainer .dotter_block .dotter_block_content_container textarea.name {
+    height: 14px;
+}
+
+.toolboxContainer .dotter_block .dotter_block_content_container textarea.descript {
+    height: 28px;
+}
+
 .toolboxContainer .dotter_block .dotter_block_content_container textarea:focus {
     outline: 1px solid blue;
 }
@@ -97,6 +105,15 @@
 .toolboxContainer .dotter_block .dotter_block_icon_container {
     display: flex;
     width: 100%;
+}
+
+.toolboxContainer .dotter_block .dotter_block_icon_container_save {
+    background-color: rgba(255, 0, 0, 1);
+    color: rgba(0, 0, 0, 1);
+    font-size: 10px;
+    padding: 1px 5px;
+    margin: 0 0 0 2px;
+    text-decoration: none;
 }
 
 .toolboxContainer .dotter_block .dotter_block_icon_container img {

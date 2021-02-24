@@ -111,7 +111,7 @@ export class LfNearestCellsAll {
                             if (newRad > 500) newRad = 500;
 
                             // Get position of cell and add to data
-                            const pos = lensing.configs.pos_full;
+                            const pos = lensing.positionData.posFull;
 
                             // Load
                             this.load.config.filterCode.settings.loading = true;
@@ -121,7 +121,8 @@ export class LfNearestCellsAll {
                                 this.load.config.filterCode.settings.loading = false;
 
                                 // Send another request if mouse pos is diff
-                                if (pos[0] !== lensing.configs.pos_full[0] && pos[1] !== lensing.configs.pos_full[1]) {
+                                if (pos[0] !== lensing.positionData.posFull[0]
+                                    && pos[1] !== lensing.positionData.posFull[1]) {
                                     this.load.config.filterCode.set_pixel();
                                 }
 
@@ -145,8 +146,8 @@ export class LfNearestCellsAll {
                                             .imageToViewportCoordinates(cell_point)
                                     );
                                     const offset = [
-                                        Math.round(cell_vpoint.x - lensing.configs.pos[0] / lensing.configs.pxRatio),
-                                        Math.round(cell_vpoint.y - lensing.configs.pos[1] / lensing.configs.pxRatio)
+                                        Math.round(cell_vpoint.x - lensing.positionData.pos[0] / lensing.configs.pxRatio),
+                                        Math.round(cell_vpoint.y - lensing.positionData.pos[1] / lensing.configs.pxRatio)
                                     ];
                                     const distance = Math.sqrt(offset[0] ** 2 + offset[1] ** 2);
 

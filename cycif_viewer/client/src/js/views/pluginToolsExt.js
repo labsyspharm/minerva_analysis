@@ -26,6 +26,9 @@ export class PluginToolsExt {
             instance: new PtDotter(this)
         }
     }
+    selections = {
+        activePlugin: ''
+    }
 
     /**
      * @constructor
@@ -66,11 +69,27 @@ export class PluginToolsExt {
         document.addEventListener('keydown', e => {
 
             if (e.key === 'D') {
-                this.trayEventClickForce('plugin_dotter');
-                this.plugins.plugin_dotter.instance.eventViewerOnKeydown();
+                if (this.selections.activePlugin !== 'plugin_dotter') {
+
+                    // Selection
+                    this.selections.activePlugin = 'plugin_dotter';
+
+                    // Emulate click
+                    this.trayEventClickForce('plugin_dotter');
+                }
             }
 
         });
+    }
+
+    /**
+     * @function destroyPluginTool
+     *
+     * @returns void
+     */
+    destroyPluginTool(ref) {
+
+        this.plugins[ref].instance.destroy();
     }
 
     /**
@@ -93,11 +112,25 @@ export class PluginToolsExt {
         // Update
         this.opened = !this.opened;
 
+        // Check
+        if (this.selections.activePlugin !== 'plugin_dotter') {
+
+            // Selection
+            this.selections.activePlugin = e.target.parentElement.id;
+
+            // Load
+            this.loadPluginTool(e.target.parentElement.id);
+        } else {
+
+            // Selection
+            this.selections.activePlugin = '';
+
+            // Load
+            this.destroyPluginTool(e.target.parentElement.id);
+        }
+
         // Widths
         this.trayOpenClose();
-
-        // Load
-        this.loadPluginTool(e.target.parentElement.id);
 
     }
 
@@ -115,7 +148,9 @@ export class PluginToolsExt {
         this.trayOpenClose();
 
         // Load
-        this.loadPluginTool(pluginId);
+        setTimeout(() => {
+            this.loadPluginTool(pluginId);
+        }, this.configs.duration)
 
     }
 
@@ -126,14 +161,13 @@ export class PluginToolsExt {
      */
     trayOpenClose() {
 
-
         //
         if (this.opened) {
-            this.els.openseadragonEl.transition(this.configs.duration).style('width', this.configs.osdOpenW);
-            this.els.toolboxEl.transition(this.configs.duration).style('width', this.configs.tbOpenW);
+            this.els.openseadragonEl.transition().duration(this.configs.duration).style('width', this.configs.osdOpenW);
+            this.els.toolboxEl.transition().duration(this.configs.duration).style('width', this.configs.tbOpenW);
         } else {
-            this.els.openseadragonEl.transition(this.configs.duration).style('width', this.configs.osdClosedW);
-            this.els.toolboxEl.transition(this.configs.duration).style('width', this.configs.tbClosedW);
+            this.els.openseadragonEl.transition().duration(this.configs.duration).style('width', this.configs.osdClosedW);
+            this.els.toolboxEl.transition().duration(this.configs.duration).style('width', this.configs.tbClosedW);
         }
     }
 
