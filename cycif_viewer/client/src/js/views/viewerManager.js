@@ -79,7 +79,7 @@ export class ViewerManager {
             }
         }
 
-        let maxLevel = this.imageViewer.config['maxLevel'] - 1;
+        let maxLevel = this.imageViewer.config['maxLevel'];
 
         // Add tiled image
         this.viewer.addTiledImage({
@@ -163,7 +163,7 @@ export class ViewerManager {
             lerpFactor = 0;
         }
         let rgb = tf.tf[lerpFactor];
-        return [rgb.r, rgb.b, rgb.g];
+        return [rgb.r, rgb.g, rgb.b];
     }
 
     /**

@@ -117,6 +117,29 @@ class ImageViewer {
         const lensing_config = {};
         this.viewer.lensing = Lensing.construct(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
 
+        /************************ SVG Overlay for additional graphics in the image view ***************?*/
+
+        this.viewer.svgOverlay = this.viewer.svgOverlay();
+        this.viewer.svg = this.viewer.svgOverlay.node();
+
+        // $(window).resize(function() {
+        //     this.viewer.svgOverlay.resize();
+        // });
+
+
+
+        /************************ CANVAS Overlay for additional graphics in the image view ***************?*/
+
+        this.viewer.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
+            onRedraw:function(options) {
+                // let context = options.context;
+                // context.fillStyle = "red";
+                // context.fillRect(0, 0, 500, 500);
+            },
+            clearBeforeRedraw:true
+        });
+
+
         /*************************************************** Access OME tiff metadata / activate lensing measurements */
 
         // Get metadata -> share with lensing

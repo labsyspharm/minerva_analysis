@@ -32,11 +32,13 @@ def prepSlidingWindow():
 def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel, sensibility):
     tic = time.perf_counter()
     print("histogram comparison..")
-    # load png at zoom level
     print("load image sections")
+
+    #get image and lens section
     png = loadPngSection(datasource_name, channels[0], zoomlevel, viewport)
     roi = loadPngSection(datasource_name, channels[0], zoomlevel, [x-r,y-r,x+r,y+r])
 
+    #write those sections to file for debugging purposes
     cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', png)
     cv2.imwrite('cycif_viewer/server/analytics/img/roi.png', roi)
 
@@ -48,8 +50,45 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     print("compute contours")
     contours = find_contours(png, sim_map, sensibility)
 
+    #get global contour positions
+    length = len(data_model.channels[0].shape);
+    layerviewport = getLayerViewport( data_model.channels[0].shape[length-2],
+                               data_model.channels[0].shape[length-1],
+                              data_model.channels[zoomlevel].shape[length-2],
+                              data_model.channels[zoomlevel].shape[length-1],
+                              viewport)
+    contours = toWorldCoordinates(contours, viewport, layerviewport)
+    toc = time.perf_counter()
+
+    print("histogram computation time is" + str(toc-tic))
     return {'contours': contours}
 
+
+def toWorldCoordinates(contours, originalviewport, viewport):
+    # calc ratio from local cut to image
+    heightRatio = (originalviewport[3] - originalviewport[1]) / (viewport[3] - viewport[1]);
+    widthRatio = (originalviewport[2] - originalviewport[0]) / (viewport[2] - viewport[0]);
+
+    # convert viewport by scaling to original ratio and adding offset
+    for contour in contours:
+        for point in contour:
+            point[1] = point[1] * widthRatio + originalviewport[0];
+            point[0] = point[0] * heightRatio + originalviewport[1];
+    return contours;
+
+#convert from whole image viewport to layer viewport (also: zarr has y,x flipped)
+def getLayerViewport(imageHeight, imageWidth, layerHeight, layerWidth, viewport):
+    #calc ratio
+    heightRatio = layerHeight/imageHeight
+    widthRatio = layerWidth/imageWidth
+    layerviewport = [0,0,0,0]
+
+    #convert viewport
+    layerviewport[0] = int(viewport[0] * widthRatio);
+    layerviewport[1] = int(viewport[1] * heightRatio);
+    layerviewport[2] = int(viewport[2] * widthRatio);
+    layerviewport[3] = int(viewport[3] * heightRatio);
+    return layerviewport
 
 # load a channel as png using zarr in full width and height
 def loadPngSection(datasource_name, channel,  zoomlevel, viewport):
@@ -65,31 +104,17 @@ def loadPngSection(datasource_name, channel,  zoomlevel, viewport):
                               data_model.channels[zoomlevel].shape[length-1],
                               viewport)
 
-    ix = viewport[0]
-    iy = viewport[1]
     # print(data_model.get_channel_names(datasource_name, shortnames=False))
     channel = data_model.get_channel_names(datasource_name, shortnames=False).index(channel)
 
 
     if isinstance(data_model.channels, zarr.Array):
-        tile = data_model.channels[channel, iy:iy + int(viewport[3] - iy), ix:ix + int(viewport[2] - ix)   ]
+        tile = data_model.channels[channel, viewport[1]:viewport[3], viewport[0]:viewport[2]]
     else:
-        tile = data_model.channels[zoomlevel][channel, iy:iy + int(viewport[3] - iy), ix:ix + int(viewport[2] - ix)]
+        tile = data_model.channels[zoomlevel][channel, viewport[1]:viewport[3], viewport[0]:viewport[2]]
 
     return tile
 
-#convert from whole image viewport to layer viewport (also: zarr has y,x flipped)
-def getLayerViewport(imageHeight, imageWidth, layerHeight, layerWidth, viewport):
-    #calc ratio
-    heightRatio = layerHeight/imageHeight
-    widthRatio = layerWidth/imageWidth
-
-    #convert viewport
-    viewport[0] = viewport[0] * widthRatio;
-    viewport[1] = viewport[1] * heightRatio;
-    viewport[2] = viewport[2] * widthRatio;
-    viewport[3] = viewport[3] * heightRatio;
-    return viewport
 
 # load a channel as png using zarr in full width and height
 def loadPngAtZoomLevel(datasource_name, channel, zoomlevel):
