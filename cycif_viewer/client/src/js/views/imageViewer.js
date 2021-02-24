@@ -82,15 +82,17 @@ class ImageViewer {
         const viewer_config = {
             id: "openseadragon",
             prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
-            maxZoomPixelRatio: 15,
-            imageLoaderLimit: 5,
             loadTilesWithAjax: true,
             maxImageCacheCount: 200,
             timeout: 90000,
             preload: false,
             homeFillsViewer: true,
             visibilityRatio: 1.0,
-            sequenceControlAnchor: 'BOTTOM_RIGHT'
+            sequenceControlAnchor: 'BOTTOM_RIGHT',
+            maxZoomPixelRatio: 10,
+            ajaxHeaders: {
+                "Cache-Control": "no-store"
+            }
         };
 
         // Instantiate viewer
@@ -127,16 +129,15 @@ class ImageViewer {
         // });
 
 
-
         /************************ CANVAS Overlay for additional graphics in the image view ***************?*/
 
         this.viewer.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
-            onRedraw:function(options) {
+            onRedraw: function (options) {
                 // let context = options.context;
                 // context.fillStyle = "red";
                 // context.fillRect(0, 0, 500, 500);
             },
-            clearBeforeRedraw:true
+            clearBeforeRedraw: true
         });
 
 
