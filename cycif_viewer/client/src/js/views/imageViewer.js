@@ -129,11 +129,6 @@ class ImageViewer {
                 // Start webGL rendering
                 callback(e);
                 await that.drawLabels(e);
-            } else {
-                if (!that.tileCache[e.tile.url]) {
-                    that.tileCache[e.tile.url] = new Int32Array(e.tile._array.buffer);
-                    e.tile._array = null;
-                }
             }
         });
 
@@ -161,7 +156,15 @@ class ImageViewer {
 
 
         seaGL.addHandler('tile-loaded', (callback, e) => {
-            return callback(e);
+            const group = e.tile.url.split("/");
+            let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
+            if (isLabel) {
+                e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
+                e.image = null;
+                return e.getCompletionCallback();
+            } else {
+                return callback(e);
+            }
         });
 
 
@@ -249,19 +252,20 @@ class ImageViewer {
             let input = e.rendered.canvas;
             let width = e.rendered.canvas.width;
             let height = e.rendered.canvas.height;
-            let labelTileAdr = getLabelTileAdr(e.tile.url);
+            let labelTileCacheKey = getLabelTileAttribute(e.tile.cacheKey);
             let screenData;
-            let labelTile = self.tileCache[labelTileAdr];
+            let labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
             if (!labelTile) {
-                await addTile(labelTileAdr);
-                labelTile = self.tileCache[labelTileAdr];
+                await addTile(getLabelTileAttribute(e.tile.url));
+                labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
             }
-            if (!labelTileAdr) {
-                getLabeLTileAddr(e.tile.url);
-                labelTile = self.tileCache[labelTileAdr];
+            if (!labelTileCacheKey) {
+                getLabelTileAttribute(e.tile.cacheKey);
+                labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
             }
+            let labelData = labelTile._tiles[0]._array;
             for (let i = 0; i < width * height; i++) {
-                let labelVal = labelTile[i] - 1;
+                let labelVal = labelData[i] - 1;
                 if (labelVal != -1) {
                     if (self.selection.has(labelVal)) {
                         if (!screenData) {
@@ -281,12 +285,12 @@ class ImageViewer {
             }
         }
 
-        function getLabelTileAdr(url) {
-            const group = url.split("/");
+        function getLabelTileAttribute(attribute) {
+            const group = attribute.split("/");
             const somePath = group[group.length - 3];
             const labelPath = self.labelChannel["sub_url"];
-            const labelTileAdr = url.replace(somePath, labelPath);
-            return labelTileAdr;
+            const labelTileCacheKey = attribute.replace(somePath, labelPath);
+            return labelTileCacheKey;
         }
     }
 

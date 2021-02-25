@@ -71,8 +71,9 @@ class ChannelList {
         let showPicker = e => {
             this.colorTransferHandle = d3.select(e.target);
             let color = this.colorTransferHandle.style('fill');
-            this.rainbow.set(d3.hsl(color));
             this.rainbow.show(e.clientX, e.clientY);
+            this.rainbow.set(d3.hsl(color));
+
         };
         // Draws rows in the channel list
         _.each(this.columns, column => {
