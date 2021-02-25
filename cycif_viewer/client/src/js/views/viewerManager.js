@@ -30,31 +30,12 @@ export class ViewerManager {
      * @returns void
      */
     init() {
-
-        // Add event handlers
-        this.add_handlers();
-
         // Load label image
         this.load_label_image();
 
-        // Set filter options
-        this.set_filter_options();
-
 
     }
 
-    /**
-     * @function add_handlers
-     * Adds relevant event handlers to the viewer
-     *
-     * @returns void
-     */
-    add_handlers() {
-
-        // Add event load handlers
-        // this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind(this.imageViewer));
-        // this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind(this.imageViewer));
-    }
 
     /**
      * @function channel_add
@@ -397,21 +378,6 @@ export class ViewerManager {
         // context.putImageData(screenData, 0, 0);
         callback();
 
-    }
-
-    /**
-     * @function set_filter_options
-     * Sets ImageViewer filter
-     *
-     * @returns void
-     */
-    set_filter_options() {
-        this.viewer.setFilterOptions({
-            filters: {
-                processors: this.renderTFWithLabelsMulti.bind(this)
-            }
-
-        });
     }
 
 

@@ -167,7 +167,6 @@ class ImageViewer {
             }
         });
 
-
         // Instantiate viewer managers
         that.viewerManagerVMain = new ViewerManager(that, seaGL.openSD, 'main');
         //
@@ -177,43 +176,6 @@ class ImageViewer {
 
         seaGL.init();
 
-
-        /************************************************************************************* Create viewer managers */
-
-
-        /********************************************************************************************** Emulate click */
-
-        // Click first from channel list
-        // document.querySelector('.channel-list-content').click();
-
-        /******************************************************************************************** Back to normal  */
-        /* TODO - unused
-        // OpenSeadragonCanvasOverlayHd: add canvas overlay - drawing selection rectangles
-        this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
-            onRedraw: function (opts) {
-                const context = opts.context;
-                //area selection polygon
-                if (that.selectionPolygonToDraw && that.selectionPolygonToDraw.length > 0) {
-                    var d = that.selectionPolygonToDraw;
-                    context.globalAlpha = 0.7;
-                    //context.fillStyle = 'orange';
-                    context.strokeStyle = 'orange';
-                    context.lineWidth = 15;
-                    context.beginPath();
-                    d.forEach(function (xVal, i) {
-                        if (i === 0) {
-                            context.moveTo(d[i].x, d[i].y);
-                        } else {
-                            context.lineTo(d[i].x, d[i].y);
-                        }
-                    });
-                    context.closePath();
-                    context.stroke();
-                    // context.globalAlpha = 1.0;
-                }
-            },
-        });
-        */
 
         // Add event mouse handler (cell selection)
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
@@ -284,7 +246,6 @@ class ImageViewer {
                 e.rendered.putImageData(screenData, 0, 0);
             }
         }
-
         function getLabelTileAttribute(attribute) {
             const group = attribute.split("/");
             const somePath = group[group.length - 3];
@@ -328,85 +289,8 @@ class ImageViewer {
         });
     }
 
-    // =================================================================================================================
-    // Tile cache management
-    // =================================================================================================================
 
-    createTFArray(min, max, rgb1, rgb2, numBins) {
 
-        const tfArray = [];
-
-        const numBinsF = parseFloat(numBins);
-        const col1 = d3.rgb(rgb1);
-        const col2 = d3.rgb(rgb2);
-
-        for (let i = 0; i < numBins; i++) {
-            const rgbTupel = {};
-            const lerpFactor = (i / (numBinsF - 1.0));
-
-            rgbTupel.r = col1.r + (col2.r - col1.r) * lerpFactor;
-            rgbTupel.g = col1.g + (col2.g - col1.g) * lerpFactor;
-            rgbTupel.b = col1.b + (col2.b - col1.b) * lerpFactor;
-
-            const lerpCol = d3.rgb(rgbTupel.r, rgbTupel.g, rgbTupel.b);
-            tfArray.push(lerpCol);
-        }
-
-        return {
-            min: min, max: max, start_color: rgb1, end_color: rgb2,
-            num_bins: numBins,
-            tf: tfArray
-        }
-    }
-
-    /**
-     * @function tileLoaded
-     * Raised when tile loaded with openSeaDragon, we want to store it locally so we can access it later (to manually filter, etc.)
-     *
-     * @param event
-     */
-    tileLoaded(event) {
-
-        if (event === null || event === undefined || event.tileRequest === null) {
-            return;
-        }
-
-        // Full 24bit png handling: get buffer, parse it into png, save in cache
-        if (event.tileRequest) {
-            const buffer = new Buffer(event.tileRequest.response);
-            //e.rendered.canvas.width
-            if (buffer) {
-                const tile = event.tile;
-
-                // Save tile in tileCache
-
-                // this.addToTileCache(tile.url, PNG.sync.read(buffer, {colortype: 0}))
-            } else {
-                // console.log('[TILE LOADED]: buffer UNDEFINED');
-            }
-        }
-    }
-
-    /**
-     * @function tileUnloaded
-     * Raised when tile is being unloaded by openSeaDragon; we also purge it from local tile cache
-     *
-     * @param event
-     */
-    tileUnloaded(event) {
-        this.removeTileFromCache(event.tile.url)
-
-    }
-
-    removeTileFromCache(tileName) {
-        if (this.tileCache.hasOwnProperty(tileName)) {
-            delete this.tileCache[tileName];
-        }
-    }
-
-    addToTileCache(tileName, data) {
-        this.tileCache[tileName] = data;
-    }
 
     // =================================================================================================================
     // Rendering
