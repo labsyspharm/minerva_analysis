@@ -61,10 +61,9 @@ const actionColorTransferChange = (d) => {
 
     //map to full name
     d.name = dataLayer.getFullChannelName(d.name);
-
-    d3.select('body').style('cursor', 'progress');
+    // d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
-    d3.select('body').style('cursor', 'default');
+    // d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
@@ -138,24 +137,15 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 
 //current fast solution for seadragon updates
+//current fast solution for seadragon updates
 function updateSeaDragonSelection(repaint = true) {
-    let selection = dataLayer.getCurrentSelection();
-    var arr = Array.from(selection);
-    var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
-    // This is the neighborhood viewer, uncomment to show cell info on click
-    if (_.size(selection) == 0) {
-        document.getElementById("cell_wrapper").style.display = "none";
-    } else {
-        document.getElementById("cell_wrapper").style.display = "none";
-    }
-    seaDragonViewer.updateSelection(selectionHashMap, repaint);
+    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
 }
 
 //feature range selection changed in ridge plot
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
-    // console.log("gating event executed");
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 

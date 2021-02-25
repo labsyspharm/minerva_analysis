@@ -29,7 +29,8 @@ class ImageViewer {
         // Local storage of image tiles (for all loaded channels)
         this.tileCache = {};
         // Stores the ordered contents of the tile cache, so that once we hit max size we remove oldest elements
-        this.tileCacheQueue = []
+        this.pendingTiles = new Map();
+
 
         // Map of selected ids, key is id
         this.selection = new Map();
@@ -94,39 +95,46 @@ class ImageViewer {
         // Instantiate viewer with the ViaWebGL Version of OSD
         that.viewer = viaWebGL.OpenSeadragon(viewer_config);
 
-        // Instantiate viewer managers
-        that.viewerManagerVMain = new ViewerManager(that, that.viewer, 'main');
-
-        // Append to viewers
-        that.viewerManagers.push(that.viewerManagerVMain);
 
         // Define interface to shaders
         const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
-        seaGL.vShader = '../../shaders/vert.glsl';
-        seaGL.fShader = '../../shaders/frag.glsl';
+        seaGL.vShader = '/client/src/shaders/vert.glsl';
+        seaGL.fShader = '/client/src/shaders/frag.glsl';
         //
-        seaGL.addHandler('tile-drawing', function (callback, e) {
+        seaGL.addHandler('tile-drawing', async function (callback, e) {
+
             // Read parameters from each tile
             const tile = e.tile;
-            const via = this.viaGL;
-            const viewer = this.openSD;
-            const image = e.tiledImage;
-            const source = image.source;
+            const group = e.tile.url.split("/");
+            const sub_url = group[group.length - 3];
 
-            // Store channel color and range to send to shader
-            via.color_3fv = new Float32Array(source.many_channel_color);
-            via.range_2fv = new Float32Array(source.many_channel_range);
-            let fmt = 0;
-            if (tile._format == 'u16') {
-                fmt = 16;
-            } else if (tile._format == 'u32') {
-                fmt = 32;
+            let channel = _.find(that.currentChannels, e => {
+                return e.sub_url == sub_url;
+            })
+            if (channel) {
+                const color = _.get(channel, 'color', d3.color("white"));
+                const floatColor = [color.r / 255., color.g / 255., color.b / 255.];
+                const range = _.get(channel, 'range', that.dataLayer.getImageBitRange(true));
+                const via = this.viaGL;
+                // Store channel color and range to send to shader
+                via.color_3fv = new Float32Array(floatColor);
+                via.range_2fv = new Float32Array(range);
+                let fmt = 0;
+                if (tile._format == 'u16') {
+                    fmt = 16;
+                } else if (tile._format == 'u32') {
+                    fmt = 32;
+                }
+                via.fmt_1i = fmt;
+                // Start webGL rendering
+                callback(e);
+                await that.drawLabels(e);
+            } else {
+                if (!that.tileCache[e.tile.url]) {
+                    that.tileCache[e.tile.url] = new Int32Array(e.tile._array.buffer);
+                    e.tile._array = null;
+                }
             }
-
-            via.fmt_1i = fmt;
-
-            // Start webGL rendering
-            callback(e);
         });
 
         seaGL.addHandler('gl-drawing', function () {
@@ -151,9 +159,21 @@ class ImageViewer {
             this.u_tile_fmt = this.gl.getUniformLocation(program, 'u_tile_fmt');
         });
 
-        seaGL.addHandler('tile-loaded', (callback, e) => callback(e));
+
+        seaGL.addHandler('tile-loaded', (callback, e) => {
+            return callback(e);
+        });
+
+
+        // Instantiate viewer managers
+        that.viewerManagerVMain = new ViewerManager(that, seaGL.openSD, 'main');
+        //
+        // // Append to viewers
+        that.viewerManagers.push(that.viewerManagerVMain);
+
 
         seaGL.init();
+
 
         /************************************************************************************* Create viewer managers */
 
@@ -193,35 +213,81 @@ class ImageViewer {
         */
 
         // Add event mouse handler (cell selection)
-        // this.viewer.addHandler('canvas-nonprimary-press', function (event) {
-        //
-        //     // Right click (cell selection)
-        //     if (event.button === 2) {
-        //         // The canvas-click event gives us a position in web coordinates.
-        //         const webPoint = event.position;
-        //         // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-        //         const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-        //         // Convert from viewport coordinates to image coordinates.
-        //         const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-        //
-        //         return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
-        //             .then(selectedItem => {
-        //                 if (selectedItem !== null && selectedItem !== undefined) {
-        //                     // Check if user is doing multi-selection or not
-        //                     let clearPriors = true;
-        //                     if (event.originalEvent.ctrlKey) {
-        //                         clearPriors = false;
-        //                     }
-        //                     // Trigger event
-        //                     that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-        //                         selectedItem,
-        //                         clearPriors
-        //                     });
-        //                 }
-        //             })
-        //     }
-        // });
+        this.viewer.addHandler('canvas-nonprimary-press', function (event) {
 
+            // Right click (cell selection)
+            if (event.button === 2) {
+                // The canvas-click event gives us a position in web coordinates.
+                const webPoint = event.position;
+                // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+                const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                // Convert from viewport coordinates to image coordinates.
+                const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+
+                return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
+                    .then(selectedItem => {
+                        if (selectedItem !== null && selectedItem !== undefined) {
+                            // Check if user is doing multi-selection or not
+                            let clearPriors = true;
+                            if (event.originalEvent.ctrlKey) {
+                                clearPriors = false;
+                            }
+                            // Trigger event
+                            that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+                                selectedItem,
+                                clearPriors
+                            });
+                        }
+                    })
+            }
+        });
+    }
+
+    async drawLabels(e) {
+        const self = this;
+        if ((self.show_selection) && self.selection.size > 0) {
+            let input = e.rendered.canvas;
+            let width = e.rendered.canvas.width;
+            let height = e.rendered.canvas.height;
+            let labelTileAdr = getLabelTileAdr(e.tile.url);
+            let screenData;
+            let labelTile = self.tileCache[labelTileAdr];
+            if (!labelTile) {
+                await addTile(labelTileAdr);
+                labelTile = self.tileCache[labelTileAdr];
+            }
+            if (!labelTileAdr) {
+                getLabeLTileAddr(e.tile.url);
+                labelTile = self.tileCache[labelTileAdr];
+            }
+            for (let i = 0; i < width * height; i++) {
+                let labelVal = labelTile[i] - 1;
+                if (labelVal != -1) {
+                    if (self.selection.has(labelVal)) {
+                        if (!screenData) {
+                            screenData = e.rendered.getImageData(0, 0, input.width, input.height);
+                        }
+                        let index = i * 4;
+                        let color = [255, 255, 255, 255];
+                        screenData['data'][index] = color[0];
+                        screenData['data'][index + 1] = color[1];
+                        screenData['data'][index + 2] = color[2];
+                        screenData['data'][index + 3] = color[3];
+                    }
+                }
+            }
+            if (screenData) {
+                e.rendered.putImageData(screenData, 0, 0);
+            }
+        }
+
+        function getLabelTileAdr(url) {
+            const group = url.split("/");
+            const somePath = group[group.length - 3];
+            const labelPath = self.labelChannel["sub_url"];
+            const labelTileAdr = url.replace(somePath, labelPath);
+            return labelTileAdr;
+        }
     }
 
     /**
@@ -301,39 +367,18 @@ class ImageViewer {
             return;
         }
 
-        const handlePngAs8Bit = false;
-        if (handlePngAs8Bit) {
-            const img = new Image();
-            img.onload = () => {
-
+        // Full 24bit png handling: get buffer, parse it into png, save in cache
+        if (event.tileRequest) {
+            const buffer = new Buffer(event.tileRequest.response);
+            //e.rendered.canvas.width
+            if (buffer) {
                 const tile = event.tile;
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
 
-                // This gets back an 8 bit RGBA image
+                // Save tile in tileCache
 
-                this.addToTileCache(img.src, ctx.getImageData(0, 0, img.width, img.height));
-
-            };
-            img.src = event.tile.url;
-
-        } else {
-
-            // Full 24bit png handling: get buffer, parse it into png, save in cache
-            if (event.tileRequest) {
-                const buffer = new Buffer(event.tileRequest.response);
-                if (buffer) {
-                    const tile = event.tile;
-
-                    // Save tile in tileCache
-
-                    this.addToTileCache(tile.url, PNG.sync.read(buffer, {colortype: 0}))
-                } else {
-                    // console.log('[TILE LOADED]: buffer UNDEFINED');
-                }
+                // this.addToTileCache(tile.url, PNG.sync.read(buffer, {colortype: 0}))
+            } else {
+                // console.log('[TILE LOADED]: buffer UNDEFINED');
             }
         }
     }
@@ -468,17 +513,12 @@ class ImageViewer {
      * @returns void
      */
     updateChannelRange(name, tfmin, tfmax) {
-
+        const self = this;
+        let range = self.dataLayer.getImageBitRange();
         const channelIdx = imageChannels[name];
-
-        const min = tfmin;
-        const max = tfmax;
-        const rgb1 = this.channelTF[channelIdx].start_color;
-        const rgb2 = this.channelTF[channelIdx].end_color;
-        const tf_def = this.createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
-        tf_def.name = dataLayer.getShortChannelName(name);
-
-        this.channelTF[channelIdx] = tf_def;
+        if (self.currentChannels[channelIdx]) {
+            self.currentChannels[channelIdx]['range'] = [tfmin / range[1], tfmax / range[1]];
+        }
         this.forceRepaint();
     }
 
@@ -492,22 +532,11 @@ class ImageViewer {
      * @returns void
      */
     updateChannelColors(name, color, type) {
-
+        const self = this;
         const channelIdx = imageChannels[name];
-
-        const min = this.channelTF[channelIdx].min;
-        const max = this.channelTF[channelIdx].max;
-        let rgb1 = this.channelTF[channelIdx].start_color;
-        let rgb2 = this.channelTF[channelIdx].end_color;
-        if (type === "black") {
-            rgb1 = color;
-        } else {
-            rgb2 = color;
+        if (self.currentChannels[channelIdx]) {
+            self.currentChannels[channelIdx]['color'] = color;
         }
-        const tf_def = this.createTFArray(min, max, rgb1, rgb2, seaDragonViewer.numTFBins);
-        tf_def.name = dataLayer.getShortChannelName(name);
-
-        this.channelTF[channelIdx] = tf_def;
         this.forceRepaint();
     }
 
@@ -561,29 +590,51 @@ class ImageViewer {
     }
 }
 
+
 // Static vars
-ImageViewer.events = {
+ImageViewer
+    .events = {
     imageClickedMultiSel: 'image_clicked_multi_selection',
     renderingMode: 'renderingMode'
 };
 
-async function addTile(path) {
+async function
 
-    const promiseWrapper = new Promise((resolve, reject) => {
-        function addTileResponse(success, error) {
-            // console.log("Emergency Added Tile:", path);
+addTile(path) {
+    const addJob = new Promise((resolve, reject) => {
+        if (seaDragonViewer.tileCache[path]) {
             resolve();
         }
+
+        // If we're currently waiting for a tile to load, just use it's callback
+        if (seaDragonViewer.pendingTiles.has(path)) {
+            return seaDragonViewer.pendingTiles.get(path);
+        }
+
+        // seaDragonViewer.pendingTiles.add(path);
+        function callback(success, error, request) {
+            if (success) {
+                let event = {'tileRequest': request, 'tile': {'url': path}}
+                seaDragonViewer.tileLoaded(event);
+                console.log("Emergency Added Tile:", path);
+                seaDragonViewer.pendingTiles.delete(path)
+                resolve(success);
+            } else {
+                error();
+            }
+        }
+
+        seaDragonViewer.pendingTiles.set(path, callback);
+
 
         const options = {
             src: path,
             loadWithAjax: true,
             crossOriginPolicy: false,
             ajaxWithCredentials: false,
-            callback: addTileResponse
+            callback: callback
         }
         seaDragonViewer.viewer.imageLoader.addJob(options)
-    })
-    return Promise.all([promiseWrapper])
-
+    });
+    await Promise.all([addJob])
 }

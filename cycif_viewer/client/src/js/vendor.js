@@ -28,8 +28,7 @@ window.PNG = PNG;
 window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
-window.OpenSeadragon = viaWebGL.OpenSeadragon;
+window.OpenSeadragon = OpenSeadragon;
 window.viaWebGL = viaWebGL;
-window.openSeadragonGL = openSeadragonGL;
 window.ViewerManager = ViewerManager;
 
