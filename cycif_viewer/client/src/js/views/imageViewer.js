@@ -140,11 +140,12 @@ class ImageViewer {
                 via.fmt_1i = fmt;
                 // Start webGL rendering
                 callback(e);
-                // After the callback, call the labels
-                // await that.drawLabels(e);
             } else {
+                if (e.tile._redrawLabel) {
+                    that.drawLabelTile(e.tile, e.tile._tileImageData.width, e.tile._tileImageData.height);
+                }
                 if (e.tile.containsLabel) {
-                    e.rendered.putImageData(e.tile._array, 0, 0);
+                    e.rendered.putImageData(e.tile._tileImageData, 0, 0);
                 }
             }
         });
@@ -177,66 +178,10 @@ class ImageViewer {
             let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
             // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
             if (isLabel) {
-                console.log("Loaded", e.tile.url);
                 e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
-                let canvasTile = new Uint8ClampedArray(e.tile._array.length * 4);
-                if (that.show_selection && that.selection.size > 0) {
-                    e.tile._array.forEach((val, i) => {
-                            if (val != 0 && that.selection.has(val - 1)) {
-                                let labelValue = val - 1;
-                                let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype');
-                                let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
-                                let width = e.image.width;
-                                let height = e.image.height;
-                                let index = i * 4;
-                                const grid = [
-                                    index - 4,
-                                    index + 4,
-                                    index - width * 4,
-                                    index + height * 4
-                                ];
-                                const test = [
-                                    index % (width * 4) !== 0,
-                                    index % (width * 4) !== (width - 1) * 4,
-                                    index >= width * 4,
-                                    index < width * 4 * (height - 1)
-                                ];
 
-                                // If outline
-                                if (this.sel_outlines) {
-                                    // Iterate grid
-                                    for (let j = 0; j < grid.length; j++) {
-                                        // if pass test (not on tile border)
-                                        if (test[j]) {
-                                            // Neighbor label value
-                                            const altLabelValue = e.tile._array[grid[j] / 4] - 1;
-                                            // Color
-                                            if (altLabelValue !== labelValue) {
-                                                canvasTile[index] = color[0];
-                                                canvasTile[index + 1] = color[1];
-                                                canvasTile[index + 2] = color[2];
-                                                canvasTile[index + 3] = 255;
-                                                e.tile.containsLabel = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    canvasTile[index] = color[0];
-                                    canvasTile[index + 1] = color[1];
-                                    canvasTile[index + 2] = color[2];
-                                    canvasTile[index + 3] = 255;
-                                    e.tile.containsLabel = true;
-                                }
-                                /************************ newend */
+                that.drawLabelTile(e.tile, e.image.width, e.image.height);
 
-                            }
-                        }
-                    )
-                }
-
-                let imageData = new ImageData(canvasTile, e.image.width, e.image.height);
-                e.tile._array = imageData;
                 // We're hence skipping that OpenseadragonGL callback since we only care about the vales
                 return e.getCompletionCallback()();
             } else {
@@ -479,9 +424,64 @@ class ImageViewer {
         });
     }
 
-// =================================================================================================================
-// Tile cache management
-// =================================================================================================================
+    drawLabelTile(tile, width, height) {
+        const self = this;
+        let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
+        tile._tileImageData = imageData;
+        if (self.show_selection && self.selection.size > 0) {
+            tile._array.forEach((val, i) => {
+                    if (val != 0 && self.selection.has(val - 1)) {
+                        let labelValue = val - 1;
+                        let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype');
+                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        let index = i * 4;
+                        const grid = [
+                            index - 4,
+                            index + 4,
+                            index - width * 4,
+                            index + height * 4
+                        ];
+                        const test = [
+                            index % (width * 4) !== 0,
+                            index % (width * 4) !== (width - 1) * 4,
+                            index >= width * 4,
+                            index < width * 4 * (height - 1)
+                        ];
+
+                        // If outline
+                        if (this.sel_outlines) {
+                            // Iterate grid
+                            for (let j = 0; j < grid.length; j++) {
+                                // if pass test (not on tile border)
+                                if (test[j]) {
+                                    // Neighbor label value
+                                    const altLabelValue = tile._array[grid[j] / 4] - 1;
+                                    // Color
+                                    if (altLabelValue !== labelValue) {
+                                        tile._tileImageData.data[index] = color[0];
+                                        tile._tileImageData.data[index + 1] = color[1];
+                                        tile._tileImageData.data[index + 2] = color[2];
+                                        tile._tileImageData.data[index + 3] = 255;
+                                        tile.containsLabel = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
+                            tile._tileImageData.data[index] = color[0];
+                            tile._tileImageData.data[index + 1] = color[1];
+                            tile._tileImageData.data[index + 2] = color[2];
+                            tile._tileImageData.data[index + 3] = 255;
+                            tile.containsLabel = true;
+                        }
+                        /************************ newend */
+
+                    }
+                }
+            )
+        }
+    }
+
 
     createTFArray(min, max, rgb1, rgb2, numBins) {
 
@@ -569,7 +569,6 @@ class ImageViewer {
      */
     forceRepaint() {
         // Refilter, redraw
-        this.viewer.world.getItemAt(0).reset();
         this.viewerManagers.forEach(vM => {
             vM.viewer.forceRefilter();
             vM.viewer.forceRedraw();
@@ -691,9 +690,18 @@ class ImageViewer {
      * @returns void
      */
     updateSelection(selection, repaint = true) {
-        this.neighborhoodButton.style.stroke = "#8f8f8f";
         this.selection = selection;
+        // Reload Label Tiles
+        let tileLevels = this.viewer.world.getItemAt(0).tilesMatrix;
+        for (const [levelKey, level] of Object.entries(tileLevels)) {
+            for (const [levelKey, tile] of Object.entries(level)) {
+                for (const [subLevelKey, subTile] of Object.entries(tile)) {
+                    subTile._redrawLabel = true;
+                }
 
+            }
+        }
+        this.viewer.forceRedraw();
         if (repaint) this.forceRepaint();
 
     }
@@ -709,9 +717,7 @@ ImageViewer
     displayNeighborhoodSelection: 'displayNeighborhoodSelection'
 };
 
-async function
-
-addTile(path) {
+async function addTile(path) {
 
     const promiseWrapper = new Promise((resolve, reject) => {
         function addTileResponse(success, error) {
