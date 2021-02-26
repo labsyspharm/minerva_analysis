@@ -278,7 +278,7 @@ window.addEventListener("resize", function () {
     if (typeof channelList != "undefined" && channelList) {
         channelList.sliders.forEach(function (slider, name) {
             d3.select('div#channel-slider_' + name).select('svg').remove();
-            channelList.addSlider(dataLayer.getImageBitRange, slider.value(), name,
+            channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
                 document.getElementById("channel_list").getBoundingClientRect().width);
         });
     }
