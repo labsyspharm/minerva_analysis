@@ -303,6 +303,38 @@ class ImageViewer {
 
 
     // =================================================================================================================
+    // Tile cache management
+    // =================================================================================================================
+
+    createTFArray(min, max, rgb1, rgb2, numBins) {
+
+        const tfArray = [];
+
+        const numBinsF = parseFloat(numBins);
+        const col1 = d3.rgb(rgb1);
+        const col2 = d3.rgb(rgb2);
+
+        for (let i = 0; i < numBins; i++) {
+            const rgbTupel = {};
+            const lerpFactor = (i / (numBinsF - 1.0));
+
+            rgbTupel.r = col1.r + (col2.r - col1.r) * lerpFactor;
+            rgbTupel.g = col1.g + (col2.g - col1.g) * lerpFactor;
+            rgbTupel.b = col1.b + (col2.b - col1.b) * lerpFactor;
+
+            const lerpCol = d3.rgb(rgbTupel.r, rgbTupel.g, rgbTupel.b);
+            tfArray.push(lerpCol);
+        }
+
+        return {
+            min: min, max: max, start_color: rgb1, end_color: rgb2,
+            num_bins: numBins,
+            tf: tfArray
+        }
+    }
+
+
+    // =================================================================================================================
     // Rendering
     // =================================================================================================================
 
