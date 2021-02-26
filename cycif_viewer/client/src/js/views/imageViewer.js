@@ -165,7 +165,7 @@ class ImageViewer {
                 e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
                 e.image = null;
                 // We're hence skipping that OpenseadragonGL callback since we only care about the vales
-                return e.getCompletionCallback();
+                return e.getCompletionCallback()();
             } else {
                 // This goes to OpenseadragonGL which does the necessary bit stuff.
                 return callback(e);
@@ -385,7 +385,7 @@ class ImageViewer {
 
     }
 
-    /**
+    /**Z
      * @function forceRepaint
      *
      * @returns void
@@ -544,8 +544,7 @@ addTile(path) {
         // seaDragonViewer.pendingTiles.add(path);
         function callback(success, error, request) {
             if (success) {
-                let event = {'tileRequest': request, 'tile': {'url': path}}
-                seaDragonViewer.tileLoaded(event);
+
                 console.log("Emergency Added Tile:", path);
                 seaDragonViewer.pendingTiles.delete(path)
                 resolve(success);
