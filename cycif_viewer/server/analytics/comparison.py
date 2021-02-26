@@ -39,12 +39,13 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     roi = loadPngSection(datasource_name, channels[0], zoomlevel, [x-r,y-r,x+r,y+r])
 
     #write those sections to file for debugging purposes
-    cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', png)
-    cv2.imwrite('cycif_viewer/server/analytics/img/roi.png', roi)
+    # cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', png)
+    # cv2.imwrite('cycif_viewer/server/analytics/img/roi.png', roi)
 
     # calc image similarity map
     print("calculate image similarity")
     sim_map = calc_sim(png, roi)
+    # cv2.imwrite('cycif_viewer/server/analytics/img/sim_map.jpg', sim_map)
 
     # find contours
     print("compute contours")
@@ -208,9 +209,9 @@ def calc_sim(img, coin):
     # if coin.shape[-1]==3:
     #     coin= rgbTOgray(coin)
     # coin = coin.astype('uint8')
-    coin= img_as_ubyte(coin)\
+    coin= img_as_ubyte(coin)
 
-
+    #we detect 16 steps histograms, so we shrink the intensity span to 16
     img = img // 16
     coin = coin // 16
 
@@ -228,7 +229,6 @@ def calc_sim(img, coin):
     print('compute similarity across image')
     similarity = windowed_histogram_similarity(img, selem, coin_hist, coin_hist.shape[0])
 
-    cv2.imwrite('cycif_viewer/server/analytics/img/sim_map.jpg', similarity)
     print('sim computation done')
     return similarity
 

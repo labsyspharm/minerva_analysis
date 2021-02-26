@@ -22,11 +22,11 @@ export class LfHistoSearch {
                 lensing.configs.sensitivity = 0.05;
             }
             if (e.key === 'j'){
-                lensing.configs.sensitivity += 0.001;
+                lensing.configs.sensitivity = Math.min(lensing.configs.sensitivity+0.005,1);
                 console.log('increased sensitivity to: ' + lensing.configs.sensitivity);
             }
             if (e.key === 'k'){
-                lensing.configs.sensitivity -= 0.001;
+                lensing.configs.sensitivity =  Math.max(lensing.configs.sensitivity-0.005, 0);
                 console.log('decreased sensitivity to: ' + lensing.configs.sensitivity);
             }
             if (e.key === 'H') {
@@ -50,15 +50,12 @@ export class LfHistoSearch {
                 if (newRad > 500) newRad = 500;
 
                 // Get position of cell and add to data
-                const pos = lensing.configs.pos_full;
+                const pos = lensing.positionData.posFull;
 
                 // Load
                 this.load.config.filterCode.settings.loading = true;
 
                 //create a server query to retrieve contours of areas in the image similar to the current lens area
-                if (!lensing.configs.sensitivity){
-                    lensing.configs.sensitivity = 0;
-                }
 
                 const bounds = this.image_viewer.viewer.viewport.getBounds(true);
                 const imageItem = this.image_viewer.viewer.viewport.viewer.world.getItemAt(0);
@@ -94,6 +91,8 @@ export class LfHistoSearch {
                         //     .attr("stroke","orange")
                         //     .attr("stroke-width",2);
 
+
+
                         d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
                         var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("polygon")
                             .data(vis.data.contours)
@@ -104,16 +103,19 @@ export class LfHistoSearch {
                             .attr("stroke-width",0.0002)
                         .attr("fill", "none");
 
-                        var d3Rect = d3.select(this.image_viewer.viewer.svg).append("rect")
-                                .style('fill', '#f00')
-                                .attr("x", 0.1)
-                                .attr("width", 0.025)
-                                .attr("y", 0.5)
-                                .attr("height", 0.025);
+                        // var d3Rect = d3.select(this.image_viewer.viewer.svg).append("rect")
+                        //         .style('fill', '#f00')
+                        //         .attr("x", 0.1)
+                        //         .attr("width", 0.025)
+                        //         .attr("y", 0.5)
+                        //         .attr("height", 0.025);
 
 
                 });
             }
+            // Trigger update
+            lensing.viewfinder.setup.wrangle()
+            lensing.viewfinder.setup.render();
         }
     };
 
@@ -256,18 +258,87 @@ export class LfHistoSearch {
 
                             // Define this
                             const vis = this;
-                            //console.log('wrangle');
+
+
+                            //set sensitivity to 0.5
+                            if (!vis.image_viewer.viewer.lensing.configs.sensitivity){
+                                vis.image_viewer.viewer.lensing.configs.sensitivity = 0.5;
+                            }
+
+                            vis.pies = d3.pie()
+                                .value( d => d)
+                                .sort(null)
+                                .startAngle(0 * Math.PI)
+	                            .endAngle(0.6 * Math.PI);
+
+                            vis.colors = ["#000000", '#ffffff'];
+
+                            const sens = 1-vis.image_viewer.viewer.lensing.configs.sensitivity;
+                            vis.threshold = [100-sens*100, sens*100]
+                            vis.ticks = [100-(sens*100), 0, 10,20,30,40,50,60,70,80,90,100]
+
+                            vis.arc = d3.arc()
+                                .outerRadius(vis.image_viewer.viewer.lensing.configs.rad + 12)
+                                .innerRadius(vis.image_viewer.viewer.lensing.configs.rad + 3)
                         },
                         render: () => {
                             //console.log('render');
-                            // Define this
+                            // // Define this
                             const vis = this;
-                            const vf = this.image_viewer.viewer.lensing.viewfinder;
+                            const vf = this.image_viewer.viewer.lensing.viewfinder
+                            const f = d3.format(",")
 
+                            vis.vars.el_radialExtG.selectAll("path").remove();
 
+                            this.vars.el_radialExtG.selectAll("path")
+                                .data(vis.pies(vis.threshold))
+                                .enter()
+                                .append("path")
+                                .attr("fill", (d, i) => vis.colors[i])
+                                .attr("fill-opacity","0.5")
+                                .attr("d", vis.arc)
 
+                            this.vars.el_radialExtG.selectAll("line").remove();
 
+                            this.vars.el_radialExtG.selectAll("line")
+                                .data(vis.ticks)
+                                .enter().append("line")
+                                .attr("x2", 0)
+                                .attr("y1", function(d,i){
+                                    if (i==0){return vis.image_viewer.viewer.lensing.configs.rad + 20+10;}
+                                    return vis.image_viewer.viewer.lensing.configs.rad + 20+4;
+                                })
+                                .attr("stroke-width", function(d,i){
+                                    if (i==0){return 5;}
+                                    return 1;
+                                })
+                                .attr("y2", vis.image_viewer.viewer.lensing.configs.rad + 20-2)
+                                .attr("stroke", "white")
+                                .attr("stroke-opacity","0.75")
+                                .attr("transform", function(d) {
+                                  return "rotate(" + (d + 270 * Math.PI+0.6 * Math.PI/2 * (180/Math.PI)) + ")" });
 
+                                // Labels erzeugen und positioneren
+                            this.vars.el_radialExtG.selectAll("text").remove();
+                            this.vars.el_radialExtG.selectAll("text").data(vis.ticks).enter().append("text")
+                                .attr("class", "value")
+                                .attr("transform", function(d,i) {
+                                    let margin = 30
+                                    if (i==0){margin=45}
+                                return "translate(" + ((vis.image_viewer.viewer.lensing.configs.rad+margin)*Math.cos((d-90)*2*Math.PI/365)) +
+                                               "," + ((vis.image_viewer.viewer.lensing.configs.rad+margin)*Math.sin((d-90)*2*Math.PI/365)) + ")" +
+                                               "rotate(" + ((d-90)*360/365) + ")";
+                                    })
+
+                                .attr("text-anchor", "left")
+                                .style("font-size", function(d,i){
+                                    if (i==0){return "10px"}
+                                    return "6px"
+                                })
+                                .style('fill', 'white')
+                                .text(function(d){
+                                  return f(d);
+                                });
                             // console.log("zoom level:" +this.image_viewer.viewer.viewport.getZoom());
 
                             // Update vf box size
