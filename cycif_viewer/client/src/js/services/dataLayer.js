@@ -8,6 +8,8 @@ class DataLayer {
         this.config = config;
         //all image channels
         this.imageChannels = imageChannels;
+
+        this.imageBitRange = [0, 65536];
         //selections
         this.currentSelection = new Map();
         this.currentRawSelection = {};
@@ -369,6 +371,15 @@ class DataLayer {
         this.currentSelection.clear();
         this.currentRawSelection.clear();
 
+    }
+
+    getImageBitRange(float = false) {
+        const self = this;
+        if (!float) {
+            return self.imageBitRange;
+        } else {
+            return [0.0, 1.0];
+        }
     }
 
 

@@ -733,3 +733,7 @@ polygon:hover {
 #custom_search_col span {
     color: black;
 }
+
+.col-svg-wrapper {
+    padding-left: 30px !important;
+}

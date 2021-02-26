@@ -9,7 +9,6 @@ class ChannelList {
         this.ranges = {};
         this.sliders = new Map();
         var that = this;
-        this.imageBitRange = [0, 65536];
         this.sel = {};
 
         //  create a color picker
@@ -22,7 +21,7 @@ class ChannelList {
                     let packet = {
                         name: data.name,  // cell name :  string
                         type: data.color,         // white, black :  string
-                        color,     // parse using d3.rgb(color) : https://github.com/d3/d3-color#rgb
+                        color: d3.rgb(color),     // parse using d3.rgb(color) : https://github.com/d3/d3-color#rgb
                     };
                     this.eventHandler.trigger(ChannelList.events.COLOR_TRANSFER_CHANGE, packet);
                     this.colorTransferHandle.style('fill', color);
@@ -42,10 +41,11 @@ class ChannelList {
     }
 
     selectChannel(name) {
+        const self = this;
 
         // Update selections
-        this.selections.push(name);
-        this.sel[dataLayer.getFullChannelName(name)] = this.imageBitRange;
+        self.selections.push(name);
+        self.sel[dataLayer.getFullChannelName(name)] = self.dataLayer.getImageBitRange();
 
         // Trigger
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
@@ -58,6 +58,7 @@ class ChannelList {
     }
 
     async init() {
+        const self = this;
         this.rainbow.hide();
         this.columns = await this.dataLayer.getChannelNames(true);
         // Hide the Loader
@@ -67,8 +68,9 @@ class ChannelList {
         let showPicker = e => {
             this.colorTransferHandle = d3.select(e.target);
             let color = this.colorTransferHandle.style('fill');
-            let hsl = d3.hsl(color);
             this.rainbow.show(e.clientX, e.clientY);
+            this.rainbow.set(d3.hsl(color));
+
         };
         // Draws rows in the channel list
         _.each(this.columns, column => {
@@ -114,10 +116,10 @@ class ChannelList {
 
             let svg = d3.select(svgCol)
                 .append("svg")
-                .attr("width", 30)
+                .attr("width", 15)
                 .attr("height", 15)
             svg.selectAll("circle")
-                .data([{"color": "black", "name": column}, {"color": "white", "name": column}])
+                .data([{"color": "white", "name": column}])
                 .enter().append("rect")
                 .attr("class", "color-transfer")
                 .attr("cursor", "pointer")
@@ -127,13 +129,7 @@ class ChannelList {
                 .attr("height", "10")
                 .attr("rx", "2")
                 .attr("ry", "2")
-                .attr("x", d => {
-                    if (d.color == "black") {
-                        return 3;
-                    } else { //black
-                        return 17;
-                    }
-                })
+                .attr("x", "5")
                 .attr("y", "2")
                 .on('pointerup', showPicker);
             //<rect class="color-transfer" cursor="pointer" stroke="#757575" fill="black" width="10" height="10" rx="2" ry="2" x="-5" y="4.725680443548387" transform="translate(65,0)"></rect>
@@ -148,7 +144,7 @@ class ChannelList {
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
-            this.addSlider(this.imageBitRange, this.imageBitRange, column, document.getElementById("channel_list").getBoundingClientRect().width);
+            this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").getBoundingClientRect().width);
             d3.select('div#channel-slider_' + column).style('display', "none");
         });
     }
@@ -279,7 +275,7 @@ window.addEventListener("resize", function () {
     if (typeof channelList != "undefined" && channelList) {
         channelList.sliders.forEach(function (slider, name) {
             d3.select('div#channel-slider_' + name).select('svg').remove();
-            channelList.addSlider(channelList.imageBitRange, slider.value(), name,
+            channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
                 document.getElementById("channel_list").getBoundingClientRect().width);
         });
     }
