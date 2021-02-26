@@ -84,6 +84,7 @@ class ImageViewer {
             maxZoomPixelRatio: 15,
             loadTilesWithAjax: true,
             immediateRender: false,
+            maxImageCacheCount: 100,
             timeout: 90000,
             compositeOperation: 'lighter',
             preload: false,
@@ -128,6 +129,7 @@ class ImageViewer {
                 via.fmt_1i = fmt;
                 // Start webGL rendering
                 callback(e);
+                // After the callback, call the labels
                 await that.drawLabels(e);
             }
         });
@@ -158,11 +160,14 @@ class ImageViewer {
         seaGL.addHandler('tile-loaded', (callback, e) => {
             const group = e.tile.url.split("/");
             let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
+            // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
             if (isLabel) {
                 e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
                 e.image = null;
+                // We're hence skipping that OpenseadragonGL callback since we only care about the vales
                 return e.getCompletionCallback();
             } else {
+                // This goes to OpenseadragonGL which does the necessary bit stuff.
                 return callback(e);
             }
         });
@@ -208,33 +213,38 @@ class ImageViewer {
         });
     }
 
+    // This draws labels on top of the image after WebGL filtering and other drawing
     async drawLabels(e) {
         const self = this;
-        if ((self.show_selection) && self.selection.size > 0) {
+        // Only attempt this if there's a selection and we want to view it
+        if (self.show_selection && self.selection.size > 0) {
             let input = e.rendered.canvas;
-            let width = e.rendered.canvas.width;
-            let height = e.rendered.canvas.height;
             let labelTileCacheKey = getLabelTileAttribute(e.tile.cacheKey);
             let screenData;
             let labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
+            // This takes place if the label tile isn't loaded, so i'll force it to load and then pull it from the cache
             if (!labelTile) {
                 await addTile(getLabelTileAttribute(e.tile.url));
                 labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
             }
+            // For some reason sometimes I need to pull this from the cache again
             if (!labelTileCacheKey) {
                 getLabelTileAttribute(e.tile.cacheKey);
                 labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
             }
             let labelData = labelTile._tiles[0]._array;
-            for (let i = 0; i < width * height; i++) {
+            for (let i = 0; i < input.width * input.height; i++) {
                 let labelVal = labelData[i] - 1;
                 if (labelVal != -1) {
                     if (self.selection.has(labelVal)) {
+                        // Doing this because i don't need to pull in the tile data unless I'm drawing to it
                         if (!screenData) {
+                            // Only load the tile data once
                             screenData = e.rendered.getImageData(0, 0, input.width, input.height);
                         }
                         let index = i * 4;
                         let color = [255, 255, 255, 255];
+                        // Making the pixel white and transparent
                         screenData['data'][index] = color[0];
                         screenData['data'][index + 1] = color[1];
                         screenData['data'][index + 2] = color[2];
@@ -243,9 +253,11 @@ class ImageViewer {
                 }
             }
             if (screenData) {
+                // Only draw if we've had to pull in and change the tile data
                 e.rendered.putImageData(screenData, 0, 0);
             }
         }
+
         function getLabelTileAttribute(attribute) {
             const group = attribute.split("/");
             const somePath = group[group.length - 3];
@@ -288,8 +300,6 @@ class ImageViewer {
             vM.viewer.viewport.fitBounds(box1);
         });
     }
-
-
 
 
     // =================================================================================================================
