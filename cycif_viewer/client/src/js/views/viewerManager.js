@@ -118,9 +118,7 @@ export class ViewerManager {
             for (let i = 0; i < img_count; i = i + 1) {
                 const url = this.viewer.world.getItemAt(i).source['channelUrl'];
                 if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
-
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
-
                     delete this.imageViewer.currentChannels[srcIdx];
                     delete this.viewer_channels[srcIdx];
                     break;
@@ -189,7 +187,7 @@ export class ViewerManager {
                     }
                 },
                 index: 0,
-                opacity: 0.00000000000000000000000000000001,
+                opacity: 1,
                 success: (e) => {
                     const url0 = url
                     this.viewer.world.getItemAt(0).source['channelUrl'] = url;

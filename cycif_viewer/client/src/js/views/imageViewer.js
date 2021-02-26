@@ -26,8 +26,6 @@ class ImageViewer {
 
         // OSD plugins
 
-        // Local storage of image tiles (for all loaded channels)
-        this.tileCache = {};
         // Stores the ordered contents of the tile cache, so that once we hit max size we remove oldest elements
         this.pendingTiles = new Map();
 
@@ -104,6 +102,7 @@ class ImageViewer {
         //
         seaGL.addHandler('tile-drawing', async function (callback, e) {
 
+
             // Read parameters from each tile
             const tile = e.tile;
             const group = e.tile.url.split("/");
@@ -130,7 +129,11 @@ class ImageViewer {
                 // Start webGL rendering
                 callback(e);
                 // After the callback, call the labels
-                await that.drawLabels(e);
+                // await that.drawLabels(e);
+            } else {
+                if (e.tile.containsLabel) {
+                    e.rendered.putImageData(e.tile._array, 0, 0);
+                }
             }
         });
 
@@ -162,8 +165,23 @@ class ImageViewer {
             let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
             // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
             if (isLabel) {
+                console.log("Loaded", e.tile.url);
                 e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
-                e.image = null;
+                let canvasTile = new Uint8ClampedArray(e.tile._array.length * 4);
+                if (that.show_selection && that.selection.size > 0) {
+                    e.tile._array.forEach((val, i) => {
+                        if (val != 0 && that.selection.has(val - 1)) {
+                            let index = i * 4;
+                            canvasTile[index] = 255;
+                            canvasTile[index + 1] = 255;
+                            canvasTile[index + 2] = 255;
+                            canvasTile[index + 3] = 255;
+                            e.tile.containsLabel = true;
+                        }
+                    })
+                }
+                let imageData = new ImageData(canvasTile, e.image.width, e.image.height);
+                e.tile._array = imageData;
                 // We're hence skipping that OpenseadragonGL callback since we only care about the vales
                 return e.getCompletionCallback()();
             } else {
@@ -213,59 +231,37 @@ class ImageViewer {
         });
     }
 
-    // This draws labels on top of the image after WebGL filtering and other drawing
-    async drawLabels(e) {
-        const self = this;
-        // Only attempt this if there's a selection and we want to view it
-        if (self.show_selection && self.selection.size > 0) {
-            let input = e.rendered.canvas;
-            let labelTileCacheKey = getLabelTileAttribute(e.tile.cacheKey);
-            let screenData;
-            let labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
-            // This takes place if the label tile isn't loaded, so i'll force it to load and then pull it from the cache
-            if (!labelTile) {
-                await addTile(getLabelTileAttribute(e.tile.url));
-                labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
-            }
-            // For some reason sometimes I need to pull this from the cache again
-            if (!labelTileCacheKey) {
-                getLabelTileAttribute(e.tile.cacheKey);
-                labelTile = self.viewer.tileCache.getImageRecord(labelTileCacheKey);
-            }
-            let labelData = labelTile._tiles[0]._array;
-            for (let i = 0; i < input.width * input.height; i++) {
-                let labelVal = labelData[i] - 1;
-                if (labelVal != -1) {
-                    if (self.selection.has(labelVal)) {
-                        // Doing this because i don't need to pull in the tile data unless I'm drawing to it
-                        if (!screenData) {
-                            // Only load the tile data once
-                            screenData = e.rendered.getImageData(0, 0, input.width, input.height);
-                        }
-                        let index = i * 4;
-                        let color = [255, 255, 255, 255];
-                        // Making the pixel white and transparent
-                        screenData['data'][index] = color[0];
-                        screenData['data'][index + 1] = color[1];
-                        screenData['data'][index + 2] = color[2];
-                        screenData['data'][index + 3] = color[3];
-                    }
-                }
-            }
-            if (screenData) {
-                // Only draw if we've had to pull in and change the tile data
-                e.rendered.putImageData(screenData, 0, 0);
-            }
+    // =================================================================================================================
+    // Tile cache management
+    // =================================================================================================================
+
+    createTFArray(min, max, rgb1, rgb2, numBins) {
+
+        const tfArray = [];
+
+        const numBinsF = parseFloat(numBins);
+        const col1 = d3.rgb(rgb1);
+        const col2 = d3.rgb(rgb2);
+
+        for (let i = 0; i < numBins; i++) {
+            const rgbTupel = {};
+            const lerpFactor = (i / (numBinsF - 1.0));
+
+            rgbTupel.r = col1.r + (col2.r - col1.r) * lerpFactor;
+            rgbTupel.g = col1.g + (col2.g - col1.g) * lerpFactor;
+            rgbTupel.b = col1.b + (col2.b - col1.b) * lerpFactor;
+
+            const lerpCol = d3.rgb(rgbTupel.r, rgbTupel.g, rgbTupel.b);
+            tfArray.push(lerpCol);
         }
 
-        function getLabelTileAttribute(attribute) {
-            const group = attribute.split("/");
-            const somePath = group[group.length - 3];
-            const labelPath = self.labelChannel["sub_url"];
-            const labelTileCacheKey = attribute.replace(somePath, labelPath);
-            return labelTileCacheKey;
+        return {
+            min: min, max: max, start_color: rgb1, end_color: rgb2,
+            num_bins: numBins,
+            tf: tfArray
         }
     }
+
 
     /**
      * @function actionFocus
@@ -299,38 +295,6 @@ class ImageViewer {
         this.viewerManagers.forEach(vM => {
             vM.viewer.viewport.fitBounds(box1);
         });
-    }
-
-
-    // =================================================================================================================
-    // Tile cache management
-    // =================================================================================================================
-
-    createTFArray(min, max, rgb1, rgb2, numBins) {
-
-        const tfArray = [];
-
-        const numBinsF = parseFloat(numBins);
-        const col1 = d3.rgb(rgb1);
-        const col2 = d3.rgb(rgb2);
-
-        for (let i = 0; i < numBins; i++) {
-            const rgbTupel = {};
-            const lerpFactor = (i / (numBinsF - 1.0));
-
-            rgbTupel.r = col1.r + (col2.r - col1.r) * lerpFactor;
-            rgbTupel.g = col1.g + (col2.g - col1.g) * lerpFactor;
-            rgbTupel.b = col1.b + (col2.b - col1.b) * lerpFactor;
-
-            const lerpCol = d3.rgb(rgbTupel.r, rgbTupel.g, rgbTupel.b);
-            tfArray.push(lerpCol);
-        }
-
-        return {
-            min: min, max: max, start_color: rgb1, end_color: rgb2,
-            num_bins: numBins,
-            tf: tfArray
-        }
     }
 
 
@@ -392,6 +356,7 @@ class ImageViewer {
      */
     forceRepaint() {
         // Refilter, redraw
+        this.viewer.world.getItemAt(0).reset();
         this.viewerManagers.forEach(vM => {
             vM.viewer.forceRefilter();
             vM.viewer.forceRedraw();
@@ -528,9 +493,7 @@ ImageViewer
     renderingMode: 'renderingMode'
 };
 
-async function
-
-addTile(path) {
+async function addTile(path) {
     const addJob = new Promise((resolve, reject) => {
         if (seaDragonViewer.tileCache[path]) {
             resolve();
@@ -544,7 +507,6 @@ addTile(path) {
         // seaDragonViewer.pendingTiles.add(path);
         function callback(success, error, request) {
             if (success) {
-
                 console.log("Emergency Added Tile:", path);
                 seaDragonViewer.pendingTiles.delete(path)
                 resolve(success);
