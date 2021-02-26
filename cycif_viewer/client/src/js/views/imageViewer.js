@@ -131,8 +131,11 @@ class ImageViewer {
                 // After the callback, call the labels
                 // await that.drawLabels(e);
             } else {
+                if (e.tile._redrawLabel) {
+                    that.drawLabelTile(e.tile, e.tile._tileImageData.width, e.tile._tileImageData.height);
+                }
                 if (e.tile.containsLabel) {
-                    e.rendered.putImageData(e.tile._array, 0, 0);
+                    e.rendered.putImageData(e.tile._tileImageData, 0, 0);
                 }
             }
         });
@@ -165,23 +168,10 @@ class ImageViewer {
             let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
             // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
             if (isLabel) {
-                console.log("Loaded", e.tile.url);
                 e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
-                let canvasTile = new Uint8ClampedArray(e.tile._array.length * 4);
-                if (that.show_selection && that.selection.size > 0) {
-                    e.tile._array.forEach((val, i) => {
-                        if (val != 0 && that.selection.has(val - 1)) {
-                            let index = i * 4;
-                            canvasTile[index] = 255;
-                            canvasTile[index + 1] = 255;
-                            canvasTile[index + 2] = 255;
-                            canvasTile[index + 3] = 255;
-                            e.tile.containsLabel = true;
-                        }
-                    })
-                }
-                let imageData = new ImageData(canvasTile, e.image.width, e.image.height);
-                e.tile._array = imageData;
+
+                that.drawLabelTile(e.tile, e.image.width, e.image.height);
+
                 // We're hence skipping that OpenseadragonGL callback since we only care about the vales
                 return e.getCompletionCallback()();
             } else {
@@ -229,6 +219,25 @@ class ImageViewer {
                     })
             }
         });
+    }
+
+    drawLabelTile(tile, width, height) {
+        const self = this;
+        let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
+        tile._tileImageData = imageData;
+        if (self.show_selection && self.selection.size > 0) {
+            const imageData = tile._tileImageData;
+            tile._array.forEach((val, i) => {
+                if (val != 0 && self.selection.has(val - 1)) {
+                    let index = i * 4;
+                    imageData.data[index] = 255;
+                    imageData.data[index + 1] = 255;
+                    imageData.data[index + 2] = 255;
+                    imageData.data[index + 3] = 255;
+                    tile.containsLabel = true;
+                }
+            })
+        }
     }
 
     // =================================================================================================================
@@ -356,7 +365,6 @@ class ImageViewer {
      */
     forceRepaint() {
         // Refilter, redraw
-        this.viewer.world.getItemAt(0).reset();
         this.viewerManagers.forEach(vM => {
             vM.viewer.forceRefilter();
             vM.viewer.forceRedraw();
@@ -479,7 +487,17 @@ class ImageViewer {
      */
     updateSelection(selection, repaint = true) {
         this.selection = selection;
+        // Reload Label Tiles
+        let tileLevels = this.viewer.world.getItemAt(0).tilesMatrix;
+        for (const [levelKey, level] of Object.entries(tileLevels)) {
+            for (const [levelKey, tile] of Object.entries(level)) {
+                for (const [subLevelKey, subTile] of Object.entries(tile)) {
+                    subTile._redrawLabel = true;
+                }
 
+            }
+        }
+        this.viewer.forceRedraw();
         if (repaint) this.forceRepaint();
 
     }
@@ -493,7 +511,9 @@ ImageViewer
     renderingMode: 'renderingMode'
 };
 
-async function addTile(path) {
+async function
+
+addTile(path) {
     const addJob = new Promise((resolve, reject) => {
         if (seaDragonViewer.tileCache[path]) {
             resolve();
