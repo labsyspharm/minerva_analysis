@@ -37,8 +37,8 @@ body {
 
 #container {
     position: relative;
-    height: 92.5vh;
-    margin: 1px 0 0 0;
+    height: 95vh;
+    margin: 0 0 0 0;
     width: 100vw;
     max-width: 100vw;
     z-index: 100;
