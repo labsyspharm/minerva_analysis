@@ -61,10 +61,9 @@ const actionColorTransferChange = (d) => {
 
     //map to full name
     d.name = dataLayer.getFullChannelName(d.name);
-
-    d3.select('body').style('cursor', 'progress');
+    // d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
-    d3.select('body').style('cursor', 'default');
+    // d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
@@ -121,6 +120,7 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 
 //current fast solution for seadragon updates
+//current fast solution for seadragon updates
 function updateSeaDragonSelection(repaint = true) {
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
 }
@@ -129,7 +129,6 @@ function updateSeaDragonSelection(repaint = true) {
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
-    // console.log("gating event executed");
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 

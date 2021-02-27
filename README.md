@@ -4,7 +4,13 @@
 This is  an [openseadragon](https://openseadragon.github.io/) based **Cellular Image Viewing and Analysis Tool**. 
 It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.js](https://nodejs.org/en/) javascript frontend.
 
-### Install
+## Executables (for Users)
+Releases can be found here:
+https://github.com/labsyspharm/cycif_viewer/releases
+These are executables for Windows and MacOS that can be run locally without any installations.
+
+
+## Clone and Run Codebase (for Developers)
 #### 1. Checkout Project
 `git clone https://github.com/labsyspharm/cycif_viewer.git`
 #### 2. Checkout Necessary Branch
@@ -16,47 +22,31 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 #### 2. Conda Install Instructions. 
 ##### Install Conda
 * Install [miniconda](https://conda.io/miniconda.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html). 
-* Create env:  `conda env create -n [myenvname] -f requirements.yml`
+* Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
-* Active environment: `conda activate [myenvname]`. 
+* Active environment: `conda activate cycif_viewer`
 
 
 ##### Start the Server
 
-* `python app.py` - Runs the webserver
+* `python run.py` - Runs the webserver
 ##### Start the Server
 
 * Access the tool via `http://localhost:8000/`
 
 
-<!--#### 2a. Docker Instructions
+## Packaging/Bundling Code as Executable (for Developers)
 
-##### Install and Run Docker
-* Download and Install [Docker Desktop](https://www.docker.com/products/docker-desktop)
-* Run the Docker Desktop App
+##### Windows
 
-##### Build the Docker Image
-* Open a the Command Prompt and navigate to the `cycif_viewer` directory.
-* e.g. `cd Documents\cycif_viewer`
-* run `docker build --tag cv .` to build the docker image. This may take some time.
+* Create alternative conda env without mkl: `conda create --name [name] nomkl`
+* Active environment: `conda activate [name]`
+* Run `pip install -r requirements.txt`
+* Run `package_win.bat`
 
-##### Run the Docker Container
-* Run `docker run --publish 8000:8000 --name cv_container cv` to a container with the docker image
+##### MacOS
 
-#####  Access the app
-* Open your web browser and go to [http://localhost:8000/](http://localhost:8000/) to use the app
-
-#####  Stop the Container
-* Run `CTRL+C` to access the terminal and run `docker container stop cv_container` 
-
-##### (Optional) Delete and Rebuild Image
-* Delete the Docker container with `docker container rm cv_container`
-* Delete the image with `docker image rm cv`
-* Update the repository with `git pull`
-* Rebuild the image: `docker build --tag cv .` 
-* Create and a run a new container `docker run --publish 8000:8000 --name cv_container cv`
-
-
--->
-
+* Create env:  `conda env create -f requirements.yml`
+* Active environment: `conda activate cycif_viewer`
+* Run `bash package_mac.sh`

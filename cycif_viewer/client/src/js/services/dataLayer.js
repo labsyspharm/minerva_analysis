@@ -8,6 +8,8 @@ class DataLayer {
         this.config = config;
         //all image channels
         this.imageChannels = imageChannels;
+
+        this.imageBitRange = [0, 65536];
         //selections
         this.currentSelection = new Map();
         //x,z coords
@@ -127,6 +129,7 @@ class DataLayer {
         return this.getNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);
     }
 
+
     getCurrentSelection() {
         return this.currentSelection;
     }
@@ -135,6 +138,14 @@ class DataLayer {
         this.currentSelection.clear();
     }
 
+    getImageBitRange(float = false) {
+        const self = this;
+        if (!float) {
+            return self.imageBitRange;
+        } else {
+            return [0.0, 1.0];
+        }
+    }
 
     addToCurrentSelection(item, allowDelete, clearPriors) {
 
@@ -158,7 +169,7 @@ class DataLayer {
         }
 
         // add new item
-        this.currentSelection.add(item);
+        this.currentSelection.set(item.id, item);
 
         // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {

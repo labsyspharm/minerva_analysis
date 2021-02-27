@@ -15,7 +15,6 @@ import tifffile as tf
 import re
 import zarr
 from dask import dataframe as dd
-import cv2
 
 ball_tree = None
 database = None
@@ -47,9 +46,8 @@ def load_datasource(datasource_name, reload=False):
 
     print("Reading csv single cell data..")
     start = time.time()
-    datasource = pd.read_csv(csvPath)
-    # datasource = dd.read_csv(csvPath)
-    # datasource = datasource.compute()
+    datasource = dd.read_csv(csvPath)
+    datasource = datasource.compute()
     end = time.time()
     print("Read csv with dask: ", (end - start), "sec")
     datasource['id'] = datasource.index
@@ -456,10 +454,7 @@ def generate_zarr_png(datasource_name, channel, level, tile):
             tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
-    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
-
-    png = np.append(png, np.zeros((png.shape[0], png.shape[1], 1), dtype='uint8'), axis=2)
-    # png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
+    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
     return png
 
 
