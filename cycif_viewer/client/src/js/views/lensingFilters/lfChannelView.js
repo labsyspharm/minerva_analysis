@@ -36,13 +36,13 @@ export class LfChannelView {
                 const auxiManager = this.image_viewer.viewerManagerVAuxi;
 
                 // Get keys
-                const keys = Object.keys(mainManager.viewer_channels);
+                const keys = Object.keys(mainManager.viewerChannels);
                 keys.forEach((k, i) => {
                     if (+k === this.vars.currentChannel.index) {
                         if (i < keys.length - 1) {
-                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[i + 1]].short_name;
+                            this.vars.currentChannel.name = mainManager.viewerChannels[keys[i + 1]].short_name;
                         } else {
-                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[0]].short_name;
+                            this.vars.currentChannel.name = mainManager.viewerChannels[keys[0]].short_name;
                         }
                         this.vars.forceUpdate = true;
                     }
@@ -215,20 +215,20 @@ export class LfChannelView {
                             const auxiManager = this.image_viewer.viewerManagerVAuxi;
 
                             // If multi channel
-                            if (Object.keys(auxiManager.viewer_channels).length > 1 || this.vars.forceUpdate) {
+                            if (Object.keys(auxiManager.viewerChannels).length > 1 || this.vars.forceUpdate) {
 
                                 // Undo force status
                                 this.vars.forceUpdate = false;
 
                                 // Update viewer channels
-                                for (let k in mainManager.viewer_channels) {
+                                for (let k in mainManager.viewerChannels) {
 
                                     // Reduce to single channel
-                                    if (mainManager.viewer_channels[k].short_name === this.vars.currentChannel.name) {
+                                    if (mainManager.viewerChannels[k].short_name === this.vars.currentChannel.name) {
                                         auxiManager.viewer_channels = {};
-                                        auxiManager.viewer_channels[`${k}`] = mainManager.viewer_channels[k];
+                                        auxiManager.viewerChannels[`${k}`] = mainManager.viewerChannels[k];
                                         this.vars.currentChannel.index = +k;
-                                        auxiManager.force_repaint();
+                                        auxiManager.forceRepaint();
                                         break;
                                     }
                                 }
@@ -268,7 +268,7 @@ export class LfChannelView {
                                     if (channelTF) {
 
                                         // Retrieve color
-                                        const rgb = vis.image_viewer.viewerManagerVMain.evaluateTF(
+                                        const rgb = vis.image_viewer.viewerManagerVMain.evaluateTf(
                                             value, channelTF);
                                         return `rgb(${Math.round(rgb.r)}, 
                                                         ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
@@ -349,8 +349,8 @@ export class LfChannelView {
 
                             // Re-establish channels
                             this.image_viewer.viewerManagerVAuxi.viewer_channels =
-                                this.image_viewer.viewerManagerVMain.viewer_channels;
-                            this.image_viewer.viewerManagerVAuxi.force_repaint();
+                                this.image_viewer.viewerManagerVMain.viewerChannels;
+                            this.image_viewer.viewerManagerVAuxi.forceRepaint();
 
                             // Remove
                             this.vars.el_radialExtG.remove();

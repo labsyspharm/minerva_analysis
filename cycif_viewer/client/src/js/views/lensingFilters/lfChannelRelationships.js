@@ -327,7 +327,7 @@ export class LfChannelRelationships {
                                     if (channelTF) {
 
                                         // Retrieve color
-                                        const rgb = vis.image_viewer.viewerManagerVMain.evaluateTF(
+                                        const rgb = vis.image_viewer.viewerManagerVMain.evaluateTf(
                                             value, channelTF);
                                         return `rgb(${Math.round(rgb.r)}, 
                                                         ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;

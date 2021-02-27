@@ -48,13 +48,13 @@ export class LfMultiModal {
                 const auxiManager = this.image_viewer.viewerManagerVAuxi;
 
                 // Get keys
-                const keys = Object.keys(mainManager.viewer_channels);
+                const keys = Object.keys(mainManager.viewerChannels);
                 keys.forEach((k, i) => {
                     if (+k === this.vars.currentChannel.index) {
                         if (i < keys.length - 1) {
-                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[i + 1]].short_name;
+                            this.vars.currentChannel.name = mainManager.viewerChannels[keys[i + 1]].short_name;
                         } else {
-                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[0]].short_name;
+                            this.vars.currentChannel.name = mainManager.viewerChannels[keys[0]].short_name;
                         }
                         this.vars.forceUpdate = true;
                     }
@@ -231,9 +231,9 @@ export class LfMultiModal {
                             // Check current sels
                             if (selMM && !selMM.loaded) {
                                 // Empty
-                                const items = Object.keys(this.image_viewer.viewerManagerVMain.viewer_channels);
+                                const items = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
                                 items.forEach(item => {
-                                    this.image_viewer.viewerManagerVAuxi.channel_remove(+item);
+                                    this.image_viewer.viewerManagerVAuxi.channelRemove(+item);
                                 })
                                 // Loads
                                 selMM.channels.forEach((c, i) => {
@@ -241,10 +241,11 @@ export class LfMultiModal {
                                     const channelTF = this.image_viewer.channelTF.find(tf => tf.name === c);
                                     const rgba = selMM.colors[i].split(',');
                                     const d3rgba = d3.rgb(+rgba[0], +rgba[1], +rgba[2], +rgba[3]);
-                                    this.image_viewer.updateChannelColors(c, d3rgba, 'white', false);
+                                    this.image_viewer
+                                        .viewerManagerVAuxi.updateChannelColors(c, d3rgba, 'white', false);
 
                                     const index = Utils.getChannelIndex(c, this.image_viewer);
-                                    this.image_viewer.viewerManagerVAuxi.channel_add(index);
+                                    this.image_viewer.viewerManagerVAuxi.channelAdd(index);
                                 });
                                 // Mark as loaded
                                 selMM.loaded = true;
@@ -289,13 +290,13 @@ export class LfMultiModal {
                             document.removeEventListener('keydown', this.vars.keydown);
 
                             // Clear prev channels and reload from main
-                            const itemsAuxi = Object.keys(this.image_viewer.viewerManagerVAuxi.viewer_channels);
+                            const itemsAuxi = Object.keys(this.image_viewer.viewerManagerVAuxi.viewerChannels);
                             itemsAuxi.forEach(item => {
-                                this.image_viewer.viewerManagerVAuxi.channel_remove(+item);
+                                this.image_viewer.viewerManagerVAuxi.channelRemove(+item);
                             });
-                            const itemsMain = Object.keys(this.image_viewer.viewerManagerVMain.viewer_channels);
+                            const itemsMain = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
                             itemsMain.forEach(item => {
-                                this.image_viewer.viewerManagerVAuxi.channel_add(+item);
+                                this.image_viewer.viewerManagerVAuxi.channelAdd(+item);
                             });
 
                             // Mark all as not loaded

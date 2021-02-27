@@ -34,8 +34,8 @@ export class LfHistoSearch {
                 // Access auxi viewer manager (lensing instance) //lenses was not updated correctly
                 const mainManager = this.image_viewer.viewerManagerVMain;
                 const channels = [];
-                for (let k in mainManager.viewer_channels) {
-                    channels.push(mainManager.viewer_channels[k].name);
+                for (let k in mainManager.viewerChannels) {
+                    channels.push(mainManager.viewerChannels[k].name);
                 }
 
                 // Measure relative

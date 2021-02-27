@@ -36,7 +36,7 @@ export class Utils {
             }
             if (channelTF) {
                 // Retrieve color
-                const rgb = imageViewer.viewerManagerVMain.evaluateTF(val, channelTF);
+                const rgb = imageViewer.viewerManagerVMain.evaluateTf(val, channelTF);
                 return `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
             }
         }

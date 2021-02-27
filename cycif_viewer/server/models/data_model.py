@@ -14,6 +14,8 @@ import pickle
 import tifffile as tf
 import re
 import zarr
+from dask import dataframe as dd
+import cv2
 
 ball_tree = None
 database = None
@@ -200,21 +202,22 @@ def get_phenotypes(datasource_name):
 
 def get_neighborhood(x, y, datasource_name, r=100, fields=None):
     global database
+    global datasource
     global source
     global ball_tree
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
     try:
         if fields and len(fields) > 0:
             fields.append('id') if 'id' not in fields else fields
             if len(fields) > 1:
-                neighborhood = database.iloc[neighbors][fields].to_dict(orient='records')
+                neighborhood = datasource.iloc[neighbors][fields].to_dict(orient='records')
             else:
-                neighborhood = database.iloc[neighbors][fields].to_dict()
+                neighborhood = datasource.iloc[neighbors][fields].to_dict()
         else:
-            neighborhood = database.iloc[neighbors].to_dict(orient='records')
+            neighborhood = datasource.iloc[neighbors].to_dict(orient='records')
 
         return neighborhood
     except:

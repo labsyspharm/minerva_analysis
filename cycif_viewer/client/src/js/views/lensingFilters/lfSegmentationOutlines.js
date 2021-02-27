@@ -75,13 +75,11 @@ export class LfSegmentationOutlines {
                             vf.els.svg.attr('opacity', 0);
 
                             // Show outlines
-                            this.image_viewer.show_selection = false;
+                            this.image_viewer.viewerManagerVMain.show_sel = false;
                             this.image_viewer.viewerManagerVAuxi.show_sel = true;
 
                             // Trigger channel list data request
                             this.channel_list.triggerChannelSelect();
-
-                            // this.image_viewer.viewerManagerVAuxi.force_repaint();
 
                         },
                         wrangle: () => {
@@ -98,9 +96,8 @@ export class LfSegmentationOutlines {
 
                             // Hide outlines
                             this.image_viewer.selection = new Map();
-                            this.image_viewer.show_selection = false;
-                            this.image_viewer.viewerManagerVAuxi.show_sel = false;
-                            this.image_viewer.viewerManagerVAuxi.force_repaint();
+                            this.image_viewer.viewerManagerVMain.show_sel = true;
+                            this.image_viewer.viewerManagerVAuxi.forceRepaint();
 
                         }
                     }

@@ -5,8 +5,8 @@ import "regenerator-runtime/runtime.js";
  */
 export class ViewerManager {
 
-    show_sel = false;
-    sel_outlines = true;
+    show_sel = true;
+    sel_outlines = false;
 
     /**
      * @constructor
@@ -19,8 +19,8 @@ export class ViewerManager {
     constructor(_imageViewer, _viewer, _viewerName) {
         this.viewer = _viewer;
         this.imageViewer = _imageViewer;
-        this.viewer_name = _viewerName;
-        this.viewer_channels = {};
+        this.viewerName = _viewerName;
+        this.viewerChannels = {};
 
         this.init();
     }
@@ -33,33 +33,11 @@ export class ViewerManager {
      */
     init() {
 
-    //     // Add event handlers
-    //     this.add_handlers();
-    //
-    //     // Set filter options
-    //     this.set_filter_options();
-    //
-    //     // Load label image
-    //     this.load_label_image();
-    //
-    // }
-    //
-    // /**
-    //  * @function add_handlers
-    //  * Adds relevant event handlers to the viewer
-    //  *
-    //  * @returns void
-    //  */
-    // add_handlers() {
-    //
-    //     // Add event load handlers
-    //     this.viewer.addHandler('tile-loaded', this.imageViewer.tileLoaded.bind(this.imageViewer));
-    //     this.viewer.addHandler('tile-unloaded', this.imageViewer.tileUnloaded.bind(this.imageViewer));
-    // }
-
         // Load label image
-        this.load_label_image();
+        this.loadLabelImage();
 
+        // configure webgl
+        this.configWebgl();
 
     }
 
@@ -69,12 +47,13 @@ export class ViewerManager {
      *
      * @param srcIdx
      */
-    channel_add(srcIdx) {
+    channelAdd(srcIdx) {
 
-        const self = this;
+        // This is that
+        const that = this;
 
         // If already exists
-        if ((srcIdx in this.imageViewer.currentChannels)) {
+        if ((srcIdx in this.viewerChannels)) {
             return;
         }
 
@@ -123,7 +102,7 @@ export class ViewerManager {
                     "color": d3.color("white"),
                     "range": dataLayer.getImageBitRange(true)
                 };
-                this.viewer_channels[srcIdx] = {"url": url, "sub_url": sub_url, 'name': name, 'short_name': name_short};
+                this.viewerChannels[srcIdx] = {"url": url, "sub_url": sub_url, 'name': name, 'short_name': name_short};
             }
         });
     }
@@ -134,7 +113,7 @@ export class ViewerManager {
      *
      * @param srcIdx
      */
-    channel_remove(srcIdx) {
+    channelRemove(srcIdx) {
 
         const src = this.imageViewer.config["imageData"][srcIdx]["src"];
 
@@ -151,22 +130,208 @@ export class ViewerManager {
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
 
                     delete this.imageViewer.currentChannels[srcIdx];
-                    delete this.viewer_channels[srcIdx];
+                    delete this.viewerChannels[srcIdx];
                     break;
                 }
             }
         }
     }
 
+    /**
+     * @function config_webgl
+     *
+     * @returns void
+     */
+    configWebgl() {
+
+        // This is that
+        const that = this;
+
+        // Define interface to shaders
+        const seaGL = new viaWebGL.openSeadragonGL(this.viewer);
+        seaGL.vShader = '/client/src/shaders/vert.glsl';
+        seaGL.fShader = '/client/src/shaders/frag.glsl';
+
+        // Events
+        seaGL.addHandler('tile-drawing', async function (callback, e) {
+
+            // Read parameters from each tile
+            const tile = e.tile;
+            const group = e.tile.url.split("/");
+            const sub_url = group[group.length - 3];
+
+            let channel = _.find(that.imageViewer.currentChannels, e => {
+                return e.sub_url === sub_url;
+            })
+            if (channel) {
+                const color = _.get(channel, 'color', d3.color("white"));
+                const floatColor = [color.r / 255., color.g / 255., color.b / 255.];
+                const range = _.get(channel, 'range', that.imageViewer.dataLayer.getImageBitRange(true));
+                const via = this.viaGL;
+
+                // Store channel color and range to send to shader
+                via.color_3fv = new Float32Array(floatColor);
+                via.range_2fv = new Float32Array(range);
+                let fmt = 0;
+                if (tile._format === 'u16') {
+                    fmt = 16;
+                } else if (tile._format === 'u32') {
+                    fmt = 32;
+                }
+                via.fmt_1i = fmt;
+
+                // Start webGL rendering
+                callback(e);
+
+                // After the callback, call the labels
+                // await that.drawLabels(e);
+            } else {
+                if (e.tile._redrawLabel) {
+                    that.drawLabelTile(e.tile, e.tile._tileImageData.width, e.tile._tileImageData.height);
+                }
+                if (e.tile.containsLabel) {
+                    e.rendered.putImageData(e.tile._tileImageData, 0, 0);
+                }
+            }
+        });
+
+        seaGL.addHandler('gl-drawing', function () {
+            // Send color and range to shader
+            this.gl.uniform3fv(this.u_tile_color, this.color_3fv);
+            this.gl.uniform2fv(this.u_tile_range, this.range_2fv);
+            this.gl.uniform1i(this.u_tile_fmt, this.fmt_1i);
+
+            // Clear before each draw call
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        });
+
+        seaGL.addHandler('gl-loaded', function (program) {
+
+            // Turn on additive blending
+            this.gl.enable(this.gl.BLEND);
+            this.gl.blendEquation(this.gl.FUNC_ADD);
+            this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+
+            // Uniform variable for coloring
+            this.u_tile_color = this.gl.getUniformLocation(program, 'u_tile_color');
+            this.u_tile_range = this.gl.getUniformLocation(program, 'u_tile_range');
+            this.u_tile_fmt = this.gl.getUniformLocation(program, 'u_tile_fmt');
+        });
+
+        seaGL.addHandler('tile-loaded', (callback, e) => {
+
+            const group = e.tile.url.split("/");
+            let isLabel = group[group.length - 3] === that.imageViewer.labelChannel.sub_url;
+
+            // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
+            if (isLabel) {
+                e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
+
+                that.drawLabelTile(e.tile, e.image.width, e.image.height);
+
+                // We're hence skipping that OpenseadragonGL callback since we only care about the vales
+                return e.getCompletionCallback()();
+            } else {
+
+                // This goes to OpenseadragonGL which does the necessary bit stuff.
+                return callback(e);
+            }
+        });
+
+        // Initialize
+        seaGL.init();
+    }
 
     /**
-     * @function evaluateTF
+     * @function draw_label_tile
+     *
+     * @param tile
+     * @param width
+     * @param height
+     */
+    drawLabelTile(tile, width, height) {
+
+        // This is that
+        const that = this;
+
+        // Empty data
+        let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
+        tile._tileImageData = imageData;
+
+        // Iterate if selection
+        if (that.show_sel && that.imageViewer.selection.size > 0) {
+
+            imageData = tile._tileImageData;
+
+            tile._array.forEach((val, i) => {
+
+                // If direct hit
+                if (val !== 0 && that.imageViewer.selection.has(val - 1)) {
+
+                    // Pixel size index
+                    let index = i * 4;
+
+                    // If outline
+                    this.sel_outlines = true
+                    if (this.sel_outlines) {
+
+                        // Init grid and tests (4 pts v 8 working for now)
+                        const grid = [
+                            i - 1,
+                            i + 1,
+                            i - width * 1,
+                            i + width * 1
+                        ];
+                        const test = [
+                            i % (width) !== 0,
+                            i % (width) !== (width - 1),
+                            i >= width,
+                            i < width * (height - 1)
+                        ];
+
+                        // Iterate grid
+                        for (let j = 0; j < grid.length; j++) {
+
+                            // If pass test (i.e., not on tile border)
+                            if (test[j]) {
+
+                                // Neighbor label value
+                                const altLabelValue = tile._array[grid[j]] - 1;
+
+                                // Check and color if edge
+                                if (altLabelValue !== val - 1) {
+                                    imageData.data[index] = 255;
+                                    imageData.data[index + 1] = 255;
+                                    imageData.data[index + 2] = 255;
+                                    imageData.data[index + 3] = 255;
+                                    tile.containsLabel = true;
+                                    break;
+                                }
+                            }
+                        }
+                    } else  {
+
+                        // If fill
+                        imageData.data[index] = 255;
+                        imageData.data[index + 1] = 255;
+                        imageData.data[index + 2] = 255;
+                        imageData.data[index + 3] = 255;
+                        tile.containsLabel = true;
+                    }
+
+                }
+            });
+        }
+    }
+
+    /**
+     * @function evaluate_tf
      *
      * @param val
      * @param tf
      * @returns {*}
      */
-    evaluateTF(val, tf) {
+    evaluateTf(val, tf) {
 
         let lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
 
@@ -186,10 +351,9 @@ export class ViewerManager {
      *
      * @returns void
      */
-    force_repaint() {
+    forceRepaint() {
 
-        // Refilter, redraw
-        // this.viewer.forceRefilter();
+        // Redraw
         this.viewer.forceRedraw();
     }
 
@@ -198,7 +362,7 @@ export class ViewerManager {
      *
      * @returns void
      */
-    load_label_image() {
+    loadLabelImage() {
 
         const self = this;
 
@@ -237,176 +401,24 @@ export class ViewerManager {
     }
 
     /**
-     * @function renderTFWithLabelsMulti
-     * Apply TF on multi-channel tile, also accesses the label image
+     * @function update_selection
      *
-     * @param context
-     * @param callback
-     * @param tile
-     * @returns {Promise<void>}
+     * @returns void
      */
-    renderTFWithLabelsMulti(context, callback, tile) {
-        // console.log('L', tile.url);
-        //
-        // // Ck for tile
-        // if (tile == null) {
-        //     console.log("No Tile");
-        //     callback();
-        //     return;
-        // }
-        // // Render multi-channel image
-        // const group = tile.url.split("/");
-        // const somePath = group[group.length - 3];
-        // let isLabel = group[group.length - 3] == this.imageViewer.labelChannel.sub_url;
-        // if (isLabel) {
-        //     return;
-        // }
-        //
-        //
-        // // Label data
-        // let labelTileAdr = '';
-        // let labelTile = '';
-        // const labelPath = this.imageViewer.labelChannel["sub_url"];
-        // labelTileAdr = tile.url.replace(somePath, labelPath);
-        // labelTile = this.imageViewer.tileCache[labelTileAdr];
-        // let labelTileData = _.get(labelTile, 'data');
-        // // Get 24bit label data
-        // // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        // if (labelTile == null && !this.imageViewer.noLabel) {
-        //     console.log("Missing Label");
-        //     await addTile(labelTileAdr);
-        //     labelTile = this.imageViewer.tileCache[labelTileAdr];
-        //     labelTileData = _.get(labelTile, 'data');
-        //     console.log("Loaded Label");
-        // }
-        // if (!labelTile.converted) {
-        //     let int32Array = new Int32Array(labelTile.data.buffer)
-        //     this.imageViewer.tileCache[labelTileAdr].data = int32Array;
-        //     this.imageViewer.tileCache[labelTileAdr].converted = true;
-        // }
-        //
-        //
-        // // Channel data
-        // const channelsTileData = [];
-        // const tfs = [];
-        // const tfs_min = [];
-        // const tileurl = tile.url;
-        //
-        // // Get tfs for channels
-        // for (const key in this.viewer_channels) {
-        //
-        //     const channelIdx = key;
-        //
-        //     // First check main
-        //     const channelPath = this.viewer_channels[channelIdx]["sub_url"];
-        //     const channelTileAdr = tileurl.replace(somePath, channelPath);
-        //     let channelTile = this.imageViewer.tileCache[channelTileAdr];
-        //
-        //     if (channelTile == null) {
-        //         console.log("Missing Channel")
-        //         await addTile(channelTileAdr);
-        //         channelTile = this.imageViewer.tileCache[channelTileAdr];
-        //         console.log("Loaded Channel")
-        //     }
-        //     if (!channelTile.converted) {
-        //         // Since my data is 32 bit, but the last 16 bits are all 0, view as 32 bit and then convert to 16 bit for size
-        //         let uInt16Array = new Uint16Array(new Int32Array(channelTile.data.buffer));
-        //         this.imageViewer.tileCache[channelTileAdr].data = uInt16Array;
-        //         this.imageViewer.tileCache[channelTileAdr].converted = true;
-        //     }
-        //     channelsTileData.push(channelTile.data);
-        //     tfs.push(this.imageViewer.channelTF[channelIdx]);
-        //     tfs_min.push(this.imageViewer.channelTF[channelIdx].min);
-        // }
-        //
-        // // get screen pixels to write into
-        // const screenData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
-        // const pixels = screenData.data;
-        //
-        //
-        // // Init
-        // let labelValue = -1;
-        // let channelValue = 0;
-        // // iterate over all tile pixels
-        // for (let i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
-        //     pixels[i] = 0;
-        //     pixels[i + 1] = 0;
-        //     pixels[i + 2] = 0;
-        //     pixels[i + 3] = 255;
-        //     // Iterate over all image channels
-        //     for (let channel = 0; channel < channelsTileData.length; channel++) {
-        //
-        //         // get 16 bit image data (stored in G and B channels)
-        //         //                channelValue = channelsTileData[channel][i] + (channelsTileData[channel][i + 1] << 8);
-        //         channelValue = channelsTileData[channel][i / 4];
-        //
-        //         // apply TF
-        //         const rgb = this.evaluateTF(channelValue, tfs[channel]);
-        //
-        //         // if (!this.imageViewer.show_subset) { // render everything with TF
-        //         if (channelValue >= tfs_min[channel]) {
-        //             pixels[i] += rgb[0];
-        //             pixels[i + 1] += rgb[1];
-        //             pixels[i + 2] += rgb[2];
-        //         }
-        //         // Render selection ids as highlighted
-        //         if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-        //
-        //             if (labelTileData) {
-        //                 labelValue = labelTileData[i / 4] - 1;
-        //             }
-        //             if (labelValue !== -1) {
-        //                 if (this.imageViewer.selection.has(labelValue)) {
-        //                     let color = [255, 255, 255]
-        //
-        //                     /************************ new */
-        //                         // Init grid and tests (4 pts v 8 working for now)
-        //                     const grid = [
-        //                             i - 4,
-        //                             i + 4,
-        //                             i - inputTile.width * 4,
-        //                             i + inputTile.width * 4
-        //                         ];
-        //                     const test = [
-        //                         i % (inputTile.width * 4) !== 0,
-        //                         i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
-        //                         i >= inputTile.width * 4,
-        //                         i < inputTile.width * 4 * (inputTile.height - 1)
-        //                     ];
-        //
-        //                     // If outline
-        //                     if (this.sel_outlines) {
-        //                         // Iterate grid
-        //                         for (let j = 0; j < grid.length; j++) {
-        //                             // if pass test (not on tile border)
-        //                             if (test[j]) {
-        //                                 // Neighbor label value
-        //                                 const altLabelValue = labelTileData[grid[j] / 4] - 1;
-        //                                 // Color
-        //                                 if (altLabelValue !== labelValue) {
-        //                                     pixels[i] = 255;
-        //                                     pixels[i + 1] = 255;
-        //                                     pixels[i + 2] = 255;
-        //                                     break;
-        //                                 }
-        //                             }
-        //                         }
-        //                     } else {
-        //                         pixels[i] = color[0];
-        //                         pixels[i + 1] = color[1];
-        //                         pixels[i + 2] = color[2];
-        //                     }
-        //                     /************************ newend */
-        //                 }
-        //             }
-        //         }
-        //
-        //     }
-        // }
+    updateSelection() {
 
-        // context.putImageData(screenData, 0, 0);
-        callback();
+        // Reload Label Tiles
+        let tileLevels = this.viewer.world.getItemAt(0).tilesMatrix;
+        for (const [levelKey, level] of Object.entries(tileLevels)) {
+            for (const [levelKey, tile] of Object.entries(level)) {
+                for (const [subLevelKey, subTile] of Object.entries(tile)) {
+                    subTile._redrawLabel = true;
+                }
+            }
+        }
 
+        // Repaint
+        this.forceRepaint();
     }
 
 }
