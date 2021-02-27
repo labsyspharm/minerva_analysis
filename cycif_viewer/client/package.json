@@ -13,7 +13,7 @@
     "buffer": "^5.6.0",
     "color-convert": "^2.0.1",
     "css-loader": "^3.6.0",
-    "d3": "^6.2.0",
+    "d3": "^6.5.0",
     "d3-simple-slider": "latest",
     "expose-loader": "^1.0.0",
     "file-loader": "^6.0.0",

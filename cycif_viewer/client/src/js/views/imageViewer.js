@@ -11,8 +11,14 @@
 
 class ImageViewer {
 
-    // Vars
-    viewerManagers = [];
+    // Class vars
+    viewers = [];
+    viewerManagerVMain = null;
+    viewerManagerVAuxi = null;
+    viewerManagers = [
+        this.viewerManagerVMain,
+        this.viewerManagerVAuxi
+    ];
     imageMetadata = null;
 
     constructor(config, dataLayer, eventHandler, colorScheme) {
@@ -88,185 +94,192 @@ class ImageViewer {
             visibilityRatio: 1.0
         };
 
-        // // Get and shrink all button images
-        // this.parent = d3.select(`#openseadragon`);
-        // const imgs = this.parent.selectAll('img')
-        //     .attr('height', 40);
-        //
-        // // Force controls to bottom right
-        // const controlsAnchor = this.parent.select('img').node().parentElement.parentElement.parentElement.parentElement;
-        // controlsAnchor.style.left = 'unset';
-        // controlsAnchor.style.top = 'unset';
-        // controlsAnchor.style.right = '5px';
-        // controlsAnchor.style.bottom = '5px';
-        //
-        // /************************************************************************************* Lensing Implementation */
-        //
-        //     // Get lensingFilters data
-        // const dataLoad = LensingFiltersExt.getFilters(this);
-        //
-        // // Instantiate viewer
-        // const lensing_config = {};
-        // this.viewer.lensing = Lensing.construct(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
-        //
-        // /************************ SVG Overlay for additional graphics in the image view ***************?*/
-        //
-        // this.viewer.svgOverlay = this.viewer.svgOverlay();
-        // this.viewer.svg = this.viewer.svgOverlay.node();
-        //
-        // // $(window).resize(function() {
-        // //     this.viewer.svgOverlay.resize();
-        // // });
-        //
-        //
-        // /************************ CANVAS Overlay for additional graphics in the image view ***************?*/
-        //
-        // this.viewer.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
-        //     onRedraw: function (options) {
-        //         // let context = options.context;
-        //         // context.fillStyle = "red";
-        //         // context.fillRect(0, 0, 500, 500);
-        //     },
-        //     clearBeforeRedraw: true
-        // });
-        //
-        //
-        // /*************************************************** Access OME tiff metadata / activate lensing measurements */
-        //
-        // // Get metadata -> share with lensing
-        // this.dataLayer.getMetadata().then(d => {
-        //
-        //     // Add magnification
-        //     this.imageMetadata = d;
-        //
-        //     //
-        //     const unitConversion = {
-        //         inputUnit: d.physical_size_x_unit,
-        //         outputUnit: 'nm',
-        //         inputOutputRatio: [1, 1000]
-        //     }
-        //
-        //     // Update lensing
-        //     this.viewer.lensing.config_update({
-        //         compassOn: true,
-        //         compassUnitConversion: unitConversion,
-        //         imageMetadata: this.imageMetadata,
-        //     });
-        //
-        //
-        // }).catch(err => console.log(err));
-        //
-        // /************************************************************************************* Create viewer managers */
-        //
-        // // Instantiate viewer managers
-        // that.viewerManagerVMain = new ViewerManager(that, that.viewer, 'main');
-        // that.viewerManagerVAuxi = new ViewerManager(that, that.viewer.lensing.viewer_aux, 'auxi');
-        //
-        // // Append to viewers
-        // that.viewerManagers.push(that.viewerManagerVMain, that.viewerManagerVAuxi);
-        //
-        // /************************************************************************************** Create viewer overlay */
-        //
-        // this.viewer.overlay = new ViewerOverlay(this);
-        //
-        // /******************************************************************************************** Back to normal  */
-
         // Instantiate viewer with the ViaWebGL Version of OSD
         that.viewer = viaWebGL.OpenSeadragon(viewer_config);
 
+        /****************************************************************************************** OSD style changes */
 
-        // Define interface to shaders
-        const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
-        seaGL.vShader = '/client/src/shaders/vert.glsl';
-        seaGL.fShader = '/client/src/shaders/frag.glsl';
-        //
-        seaGL.addHandler('tile-drawing', async function (callback, e) {
+        // Get and shrink all button images
+        this.parent = d3.select(`#openseadragon`);
+        this.parent.selectAll('img')
+            .attr('height', 40);
 
+        // Force controls to bottom right
+        const controlsAnchor = this.parent.select('img').node().parentElement.parentElement.parentElement.parentElement;
+        controlsAnchor.style.left = 'unset';
+        controlsAnchor.style.top = 'unset';
+        controlsAnchor.style.right = '5px';
+        controlsAnchor.style.bottom = '5px';
 
-            // Read parameters from each tile
-            const tile = e.tile;
-            const group = e.tile.url.split("/");
-            const sub_url = group[group.length - 3];
+        /************************************************************************************* Lensing Implementation */
 
-            let channel = _.find(that.currentChannels, e => {
-                return e.sub_url === sub_url;
-            })
-            if (channel) {
-                const color = _.get(channel, 'color', d3.color("white"));
-                const floatColor = [color.r / 255., color.g / 255., color.b / 255.];
-                const range = _.get(channel, 'range', that.dataLayer.getImageBitRange(true));
-                const via = this.viaGL;
-                // Store channel color and range to send to shader
-                via.color_3fv = new Float32Array(floatColor);
-                via.range_2fv = new Float32Array(range);
-                let fmt = 0;
-                if (tile._format === 'u16') {
-                    fmt = 16;
-                } else if (tile._format === 'u32') {
-                    fmt = 32;
-                }
-                via.fmt_1i = fmt;
-                // Start webGL rendering
-                callback(e);
-                // After the callback, call the labels
-                // await that.drawLabels(e);
-            } else {
-                if (e.tile._redrawLabel) {
-                    that.drawLabelTile(e.tile, e.tile._tileImageData.width, e.tile._tileImageData.height);
-                }
-                if (e.tile.containsLabel) {
-                    e.rendered.putImageData(e.tile._tileImageData, 0, 0);
-                }
+            // Get lensingFilters data
+        const dataLoad = LensingFiltersExt.getFilters(this);
+
+        // Instantiate lensing
+        const lensing_config = {};
+        this.viewer.lensing = Lensing.construct(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
+
+        /************************ SVG Overlay for additional graphics in the image view ***************?*/
+
+        this.viewer.svgOverlay = this.viewer.svgOverlay();
+        this.viewer.svg = this.viewer.svgOverlay.node();
+
+        // $(window).resize(function () {
+        //     this.viewer.svgOverlay.resize();
+        // });
+
+        /************************ CANVAS Overlay for additional graphics in the image view ***************?*/
+
+        this.viewer.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
+            onRedraw: function (options) {
+                // let context = options.context;
+                // context.fillStyle = "red";
+                // context.fillRect(0, 0, 500, 500);
+            },
+            clearBeforeRedraw: true
+        });
+
+        /*************************************************** Access OME tiff metadata / activate lensing measurements */
+
+        // Get metadata -> share with lensing
+        this.dataLayer.getMetadata().then(d => {
+
+            // Add magnification
+            this.imageMetadata = d;
+
+            //
+            const unitConversion = {
+                inputUnit: d.physical_size_x_unit,
+                outputUnit: 'nm',
+                inputOutputRatio: [1, 1000]
             }
-        });
 
-        seaGL.addHandler('gl-drawing', function () {
-            // Send color and range to shader
-            this.gl.uniform3fv(this.u_tile_color, this.color_3fv);
-            this.gl.uniform2fv(this.u_tile_range, this.range_2fv);
-            this.gl.uniform1i(this.u_tile_fmt, this.fmt_1i);
+            // Update lensing
+            this.viewer.lensing.config_update({
+                compassOn: true,
+                compassUnitConversion: unitConversion,
+                imageMetadata: this.imageMetadata,
+            });
 
-            // Clear before each draw call
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-        });
+        }).catch(err => console.log(err));
 
-        seaGL.addHandler('gl-loaded', function (program) {
-            // Turn on additive blending
-            this.gl.enable(this.gl.BLEND);
-            this.gl.blendEquation(this.gl.FUNC_ADD);
-            this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+        /************************************************************************************** Create viewer overlay */
 
-            // Uniform variable for coloring
-            this.u_tile_color = this.gl.getUniformLocation(program, 'u_tile_color');
-            this.u_tile_range = this.gl.getUniformLocation(program, 'u_tile_range');
-            this.u_tile_fmt = this.gl.getUniformLocation(program, 'u_tile_fmt');
-        });
+        this.viewer.overlay = new ViewerOverlay(this);
 
-        seaGL.addHandler('tile-loaded', (callback, e) => {
-            const group = e.tile.url.split("/");
-            let isLabel = group[group.length - 3] === that.labelChannel.sub_url;
-            // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
-            if (isLabel) {
-                e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
+        /************************************************************************************************* Use webgl  */
 
-                that.drawLabelTile(e.tile, e.image.width, e.image.height);
-
-                // We're hence skipping that OpenseadragonGL callback since we only care about the vales
-                return e.getCompletionCallback()();
-            } else {
-                // This goes to OpenseadragonGL which does the necessary bit stuff.
-                return callback(e);
+        // For multiple viewers
+        this.viewers = [
+            {
+                name: 'main',
+                viewer: this.viewer
+            },
+            {
+                name: 'auxi',
+                viewer: this.viewer.lensing.viewer_aux
             }
+        ];
+        this.viewers.forEach((v, i) => {
+
+            // Define interface to shaders
+            const seaGL = new viaWebGL.openSeadragonGL(v.viewer);
+            seaGL.vShader = '/client/src/shaders/vert.glsl';
+            seaGL.fShader = '/client/src/shaders/frag.glsl';
+
+            // Events
+            seaGL.addHandler('tile-drawing', async function (callback, e) {
+
+                // Read parameters from each tile
+                const tile = e.tile;
+                const group = e.tile.url.split("/");
+                const sub_url = group[group.length - 3];
+
+                let channel = _.find(that.currentChannels, e => {
+                    return e.sub_url === sub_url;
+                })
+                if (channel) {
+                    const color = _.get(channel, 'color', d3.color("white"));
+                    const floatColor = [color.r / 255., color.g / 255., color.b / 255.];
+                    const range = _.get(channel, 'range', that.dataLayer.getImageBitRange(true));
+                    const via = this.viaGL;
+
+                    // Store channel color and range to send to shader
+                    via.color_3fv = new Float32Array(floatColor);
+                    via.range_2fv = new Float32Array(range);
+                    let fmt = 0;
+                    if (tile._format === 'u16') {
+                        fmt = 16;
+                    } else if (tile._format === 'u32') {
+                        fmt = 32;
+                    }
+                    via.fmt_1i = fmt;
+
+                    // Start webGL rendering
+                    callback(e);
+
+                    // After the callback, call the labels
+                    // await that.drawLabels(e);
+                } else {
+                    if (e.tile._redrawLabel) {
+                        that.drawLabelTile(e.tile, e.tile._tileImageData.width, e.tile._tileImageData.height);
+                    }
+                    if (e.tile.containsLabel) {
+                        e.rendered.putImageData(e.tile._tileImageData, 0, 0);
+                    }
+                }
+            });
+
+            seaGL.addHandler('gl-drawing', function () {
+                // Send color and range to shader
+                this.gl.uniform3fv(this.u_tile_color, this.color_3fv);
+                this.gl.uniform2fv(this.u_tile_range, this.range_2fv);
+                this.gl.uniform1i(this.u_tile_fmt, this.fmt_1i);
+
+                // Clear before each draw call
+                this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            });
+
+            seaGL.addHandler('gl-loaded', function (program) {
+
+                // Turn on additive blending
+                this.gl.enable(this.gl.BLEND);
+                this.gl.blendEquation(this.gl.FUNC_ADD);
+                this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+
+                // Uniform variable for coloring
+                this.u_tile_color = this.gl.getUniformLocation(program, 'u_tile_color');
+                this.u_tile_range = this.gl.getUniformLocation(program, 'u_tile_range');
+                this.u_tile_fmt = this.gl.getUniformLocation(program, 'u_tile_fmt');
+            });
+
+            seaGL.addHandler('tile-loaded', (callback, e) => {
+
+                const group = e.tile.url.split("/");
+                let isLabel = group[group.length - 3] === that.labelChannel.sub_url;
+
+                // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
+                if (isLabel) {
+                    e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
+
+                    that.drawLabelTile(e.tile, e.image.width, e.image.height);
+
+                    // We're hence skipping that OpenseadragonGL callback since we only care about the vales
+                    return e.getCompletionCallback()();
+                } else {
+
+                    // This goes to OpenseadragonGL which does the necessary bit stuff.
+                    return callback(e);
+                }
+            });
+
+            // Instantiate viewer managers
+            that.viewerManagers[i] = new ViewerManager(that, seaGL.openSD, v.name);
+
+            // Initialize
+            seaGL.init();
         });
-
-        // Instantiate viewer managers
-        that.viewerManagerVMain = new ViewerManager(that, seaGL.openSD, 'main');
-        //
-        // // Append to viewers
-        that.viewerManagers.push(that.viewerManagerVMain);
-
-
-        seaGL.init();
 
         // Add event mouse handler (cell selection)
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
@@ -294,7 +307,7 @@ class ImageViewer {
                                 clearPriors
                             });
                         }
-                    })
+                    });
             }
         });
     }
@@ -578,7 +591,6 @@ class ImageViewer {
         }
         this.viewer.forceRedraw();
         if (repaint) this.forceRepaint();
-
     }
 }
 

@@ -17,9 +17,9 @@ import $ from 'jquery'
 import 'node-fetch'
 import convert from 'color-convert';
 import * as OpenSeadragon from 'openseadragon';
-import * as Lensing from 'lensing';
-import 'viawebgl'
+// import 'viawebgl'
 import * as viaWebGL from 'viawebgl';
+import * as Lensing from 'lensing';
 import {ViewerManager} from './views/viewerManager';
 import {ViewerOverlay} from './views/viewerOverlay';
 import {LensingFiltersExt} from './views/lensingFiltersExt';

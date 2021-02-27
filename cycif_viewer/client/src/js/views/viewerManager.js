@@ -12,7 +12,9 @@ export class ViewerManager {
      * @constructor
      * Constructs a ColorManager instance before delegating initialization.
      *
+     * @param {Object} _imageViewer
      * @param {Object} _viewer
+     * @param {String} _viewerName
      */
     constructor(_imageViewer, _viewer, _viewerName) {
         this.viewer = _viewer;
@@ -25,10 +27,7 @@ export class ViewerManager {
 
     /**
      * @function init
-<<<<<<< HEAD
-=======
-     * Setups up the color manager.
->>>>>>> webgl
+     * Setups up the color manager
      *
      * @returns void
      */
@@ -409,19 +408,5 @@ export class ViewerManager {
         callback();
 
     }
-
-    // /**
-    //  * @function set_filter_options
-    //  * Sets ImageViewer filter
-    //  *
-    //  * @returns void
-    //  */
-    // set_filter_options() {
-    //     this.viewer.setFilterOptions({
-    //         filters: {
-    //             processors: this.renderTFWithLabelsMulti.bind(this)
-    //         }
-    //     });
-    // }
 
 }
