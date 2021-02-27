@@ -313,18 +313,26 @@ class ImageViewer {
     }
 
     drawLabelTile(tile, width, height) {
+
+        //
         const self = this;
+
+        // Empty data
         let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
         tile._tileImageData = imageData;
+
+        // Iterate if selection
         if (self.show_selection && self.selection.size > 0) {
+
             imageData = tile._tileImageData;
             tile._array.forEach((val, i) => {
                 if (val !== 0 && self.selection.has(val - 1)) {
                     let index = i * 4;
+                    console.log('DING', index)
                     imageData.data[index] = 255;
                     imageData.data[index + 1] = 255;
                     imageData.data[index + 2] = 255;
-                    imageData.data[index + 3] = 255;
+                    imageData.data[index + 3] = 1;
                     tile.containsLabel = true;
                 }
             })
@@ -589,15 +597,14 @@ class ImageViewer {
 
             }
         }
-        this.viewer.forceRedraw();
+        // this.viewer.forceRedraw();
         if (repaint) this.forceRepaint();
     }
 }
 
 
 // Static vars
-ImageViewer
-    .events = {
+ImageViewer.events = {
     imageClickedMultiSel: 'image_clicked_multi_selection',
     renderingMode: 'renderingMode'
 };

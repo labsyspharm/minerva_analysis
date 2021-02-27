@@ -120,7 +120,6 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 
 //current fast solution for seadragon updates
-//current fast solution for seadragon updates
 function updateSeaDragonSelection(repaint = true) {
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
 }
