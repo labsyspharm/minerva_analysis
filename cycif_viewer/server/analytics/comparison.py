@@ -34,9 +34,10 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     print("histogram comparison..")
     print("load image sections")
 
+    viewport = np.array(viewport.split(",")).astype(float).astype(int);
     #get image and lens section
     png = loadPngSection(datasource_name, channels[0], zoomlevel, viewport)
-    roi = loadPngSection(datasource_name, channels[0], zoomlevel, [x-r,y-r,x+r,y+r])
+    roi = loadPngSection(datasource_name, channels[0], zoomlevel, np.array([x-r,y-r,x+r,y+r]).astype(int))
 
     #write those sections to file for debugging purposes
     # cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', png)
@@ -95,7 +96,6 @@ def getLayerViewport(imageHeight, imageWidth, layerHeight, layerWidth, viewport)
 def loadPngSection(datasource_name, channel,  zoomlevel, viewport):
     print("chosen zoom level:")
     print(zoomlevel)
-    viewport = np.array(viewport).astype(int);
 
     # convert viewport to image layer: image height, width, layer height width, viewport
     length = len(data_model.channels[0].shape)
