@@ -19,14 +19,14 @@ export class LfHistoSearch {
         keydown: e => {
             const lensing = this.image_viewer.viewer.lensing;
             if (!lensing.configs.sensitivity){
-                lensing.configs.sensitivity = 0.05;
+                lensing.configs.sensitivity = 0.25;
             }
             if (e.key === 'j'){
-                lensing.configs.sensitivity = Math.min(lensing.configs.sensitivity+0.005,1);
+                lensing.configs.sensitivity = Math.min(lensing.configs.sensitivity+0.0025,0.25);
                 console.log('increased sensitivity to: ' + lensing.configs.sensitivity);
             }
             if (e.key === 'k'){
-                lensing.configs.sensitivity =  Math.max(lensing.configs.sensitivity-0.005, 0);
+                lensing.configs.sensitivity =  Math.max(lensing.configs.sensitivity-0.0025, 0);
                 console.log('decreased sensitivity to: ' + lensing.configs.sensitivity);
             }
             if (e.key === 'H') {
@@ -81,17 +81,6 @@ export class LfHistoSearch {
                         })
                         console.log(vis.data.contours[0]);
                     }
-                    //[
-                    //     var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("selectionPolygon").data(vis.data.contours[0]);
-                        // selPoly.enter().append("polygon")
-                        //     .style('fill', '#f00')
-                        //     .attr('id', 'selectionPolygon')
-                        //     .attr("points",function(d) {
-                        //         return d.map(function(d) { return [d[0],d[1]].join(","); }).join(" ");})
-                        //     .attr("stroke","orange")
-                        //     .attr("stroke-width",2);
-
-
 
                         d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
                         var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("polygon")
@@ -100,17 +89,10 @@ export class LfHistoSearch {
                             .attr("points",function(d) {
                                 return d.map(function(d) { return [d[1],d[0]].join(","); }).join(" ");})
                             .attr("stroke","orange")
-                            .attr("stroke-width",0.0002)
-                        .attr("fill", "none");
-
-                        // var d3Rect = d3.select(this.image_viewer.viewer.svg).append("rect")
-                        //         .style('fill', '#f00')
-                        //         .attr("x", 0.1)
-                        //         .attr("width", 0.025)
-                        //         .attr("y", 0.5)
-                        //         .attr("height", 0.025);
-
-
+                            .attr("stroke-width",0.0001)
+                            .attr("stroke-opacity", 0.5)
+                            .attr("fill", "orange")
+                            .attr("fill-opacity", 0.2);
                 });
             }
             // Trigger update
@@ -260,23 +242,28 @@ export class LfHistoSearch {
                             const vis = this;
 
 
-                            //set sensitivity to 0.5
-                            if (!vis.image_viewer.viewer.lensing.configs.sensitivity){
-                                vis.image_viewer.viewer.lensing.configs.sensitivity = 0.5;
+                            //set sensitivity to 0.5 if not initialized
+                            if (vis.image_viewer.viewer.lensing.configs.sensitivity == undefined ||
+                                vis.image_viewer.viewer.lensing.configs.sensitivity == null) {
+                                vis.image_viewer.viewer.lensing.configs.sensitivity = 0.25;
                             }
 
+                            //create pie arc
                             vis.pies = d3.pie()
                                 .value( d => d)
                                 .sort(null)
                                 .startAngle(0 * Math.PI)
 	                            .endAngle(0.6 * Math.PI);
 
+                            //mini colorscheme
                             vis.colors = ["#000000", '#ffffff'];
 
-                            const sens = 1-vis.image_viewer.viewer.lensing.configs.sensitivity;
+                            //we have it running from 0.0 till 0.25 but show with 0 to 100
+                            const sens = 1-vis.image_viewer.viewer.lensing.configs.sensitivity*4;
                             vis.threshold = [100-sens*100, sens*100]
                             vis.ticks = [100-(sens*100), 0, 10,20,30,40,50,60,70,80,90,100]
 
+                            //arc sizes
                             vis.arc = d3.arc()
                                 .outerRadius(vis.image_viewer.viewer.lensing.configs.rad + 12)
                                 .innerRadius(vis.image_viewer.viewer.lensing.configs.rad + 3)
@@ -288,8 +275,8 @@ export class LfHistoSearch {
                             const vf = this.image_viewer.viewer.lensing.viewfinder
                             const f = d3.format(",")
 
+                            //draw arc (could be redone with join but not necessary)
                             vis.vars.el_radialExtG.selectAll("path").remove();
-
                             this.vars.el_radialExtG.selectAll("path")
                                 .data(vis.pies(vis.threshold))
                                 .enter()
@@ -298,8 +285,8 @@ export class LfHistoSearch {
                                 .attr("fill-opacity","0.5")
                                 .attr("d", vis.arc)
 
+                            //draw ticks on arc (could be redone with join but not necessary)
                             this.vars.el_radialExtG.selectAll("line").remove();
-
                             this.vars.el_radialExtG.selectAll("line")
                                 .data(vis.ticks)
                                 .enter().append("line")
@@ -318,7 +305,7 @@ export class LfHistoSearch {
                                 .attr("transform", function(d) {
                                   return "rotate(" + (d + 270 * Math.PI+0.6 * Math.PI/2 * (180/Math.PI)) + ")" });
 
-                                // Labels erzeugen und positioneren
+                            //draw labels
                             this.vars.el_radialExtG.selectAll("text").remove();
                             this.vars.el_radialExtG.selectAll("text").data(vis.ticks).enter().append("text")
                                 .attr("class", "value")
@@ -339,8 +326,7 @@ export class LfHistoSearch {
                                 .text(function(d){
                                   return f(d);
                                 });
-                            // console.log("zoom level:" +this.image_viewer.viewer.viewport.getZoom());
-
+                            
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
                             vf.configs.boxH = this.vars.config_boxH;
@@ -351,7 +337,8 @@ export class LfHistoSearch {
                             // Remove handler
                             document.removeEventListener('keydown', this.vars.keydown);
 
-                            // Remove
+                            // remove lens shapes and clear svg overlay with polygons
+                            d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
                             this.vars.el_radialExtG.remove();
                             this.vars.el_boxExtG.remove();
                         }

@@ -192,7 +192,7 @@ def histogram_comparison():
     y = float(request.args.get('point_y'))
     max_distance = float(request.args.get('max_distance'))
     datasource = request.args.get('datasource')
-    viewport = request.args.getlist('viewport')
+    viewport = request.args.getlist('viewport')[0]
     zoomlevel = int(float(request.args.get('zoomlevel')))
     sensitivity = float(request.args.get('sensitivity'))
 
