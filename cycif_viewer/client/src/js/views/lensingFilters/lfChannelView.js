@@ -1,3 +1,4 @@
+import {Utils} from './utils'
 
 /**
  * @class LfChannelView
@@ -225,11 +226,17 @@ export class LfChannelView {
 
                                     // Reduce to single channel
                                     if (mainManager.viewerChannels[k].short_name === this.vars.currentChannel.name) {
-                                        auxiManager.viewer_channels = {};
-                                        auxiManager.viewerChannels[`${k}`] = mainManager.viewerChannels[k];
+                                        if (!auxiManager.viewerChannels[k]) {
+                                            auxiManager.colorConnector[`${k}`] = {
+                                                color: mainManager.colorConnector[`${k}`].color
+                                            }
+                                            auxiManager.channelAdd(k);
+                                        }
                                         this.vars.currentChannel.index = +k;
-                                        auxiManager.forceRepaint();
-                                        break;
+                                    } else {
+                                        if (auxiManager.viewerChannels[k]) {
+                                            auxiManager.channelRemove(k);
+                                        }
                                     }
                                 }
 
@@ -249,34 +256,6 @@ export class LfChannelView {
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH
                                 + channels.length * this.vars.config_channelExtH);
                             vf.configs.boxH = this.vars.config_boxH + channels.length * this.vars.config_channelExtH;
-
-                            /*
-                            aux function :: getChannelColor
-                             */
-                            function getChannelColor(name, value) {
-
-                                if (channels.includes(name)) {
-                                    // Find channel TF
-                                    let channelTF = null;
-                                    for (let k in vis.image_viewer.channelTF) {
-                                        if (vis.image_viewer.channelTF.hasOwnProperty(k) &&
-                                            vis.image_viewer.channelTF[k].name === name) {
-                                            channelTF = vis.image_viewer.channelTF[k];
-                                            break;
-                                        }
-                                    }
-                                    if (channelTF) {
-
-                                        // Retrieve color
-                                        const rgb = vis.image_viewer.viewerManagerVMain.evaluateTf(
-                                            value, channelTF);
-                                        return `rgb(${Math.round(rgb.r)}, 
-                                                        ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
-                                    }
-
-                                }
-                                return 'none';
-                            }
 
                             // Append chart for each channel
                             this.vars.el_chartsG.selectAll('.viewfinder_charts_g_chart_g')
@@ -298,7 +277,9 @@ export class LfChannelView {
                                             labelG.append('circle')
                                                 .attr('class', 'viewfinder_charts_g_chart_g_circle')
                                                 .attr('r', vis.vars.config_colorR)
-                                                .attr('fill', getChannelColor(d, vis.vars.cellIntensityRange[1]))
+                                                // .attr('fill', getChannelColor(d, vis.vars.cellIntensityRange[1]))
+                                                .attr('fill', Utils.getChannelColor(d, vis.vars.cellIntensityRange[1],
+                                                    vis.image_viewer, vis.channel_list))
                                                 .attr('stroke', () => {
                                                     if (channels.includes(d)) return 'rgba(255, 255, 255, 1)';
                                                     return 'rgba(255, 255, 255, 0)';
@@ -328,7 +309,8 @@ export class LfChannelView {
 
                                         // update channel color
                                         labelG.select('.viewfinder_charts_g_chart_g_circle')
-                                            .attr('fill', getChannelColor(d, vis.vars.cellIntensityRange[1]))
+                                            .attr('fill', Utils.getChannelColor(d, vis.vars.cellIntensityRange[1],
+                                                vis.image_viewer, vis.channel_list))
                                             .attr('stroke', () => {
                                                 if (channels.includes(d)) return 'rgba(255, 255, 255, 1)';
                                                 return 'rgba(255, 255, 255, 0)';
@@ -348,9 +330,15 @@ export class LfChannelView {
                             document.removeEventListener('keydown', this.vars.keydown);
 
                             // Re-establish channels
-                            this.image_viewer.viewerManagerVAuxi.viewer_channels =
-                                this.image_viewer.viewerManagerVMain.viewerChannels;
-                            this.image_viewer.viewerManagerVAuxi.forceRepaint();
+                            const itemsMain = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
+                            itemsMain.forEach(item => {
+                                if (!this.image_viewer.viewerManagerVAuxi.viewerChannels[`${item}`]) {
+                                    this.image_viewer.viewerManagerVAuxi.colorConnector[`${item}`] = {
+                                        color: this.image_viewer.viewerManagerVMain.colorConnector[`${item}`].color
+                                    }
+                                    this.image_viewer.viewerManagerVAuxi.channelAdd(+item);
+                                }
+                            });
 
                             // Remove
                             this.vars.el_radialExtG.remove();

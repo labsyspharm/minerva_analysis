@@ -5,8 +5,12 @@ import "regenerator-runtime/runtime.js";
  */
 export class ViewerManager {
 
+    // Class vars
+    colorConnector = {};
     show_sel = true;
     sel_outlines = false;
+    viewerChannels = {};
+
 
     /**
      * @constructor
@@ -20,7 +24,6 @@ export class ViewerManager {
         this.viewer = _viewer;
         this.imageViewer = _imageViewer;
         this.viewerName = _viewerName;
-        this.viewerChannels = {};
 
         this.init();
     }
@@ -48,9 +51,6 @@ export class ViewerManager {
      * @param srcIdx
      */
     channelAdd(srcIdx) {
-
-        // This is that
-        const that = this;
 
         // If already exists
         if ((srcIdx in this.viewerChannels)) {
@@ -95,14 +95,14 @@ export class ViewerManager {
                 const url = src;
                 const group = url.split("/");
                 const sub_url = group[group.length - 2];
-                // Attach
-                this.imageViewer.currentChannels[srcIdx] = {
+                this.viewerChannels[srcIdx] = {
                     "url": url,
                     "sub_url": sub_url,
-                    "color": d3.color("white"),
+                    'name': name,
+                    'short_name': name_short,
+                    "color": this.colorConnector[srcIdx] ? this.colorConnector[srcIdx].color : d3.color("white"),
                     "range": dataLayer.getImageBitRange(true)
                 };
-                this.viewerChannels[srcIdx] = {"url": url, "sub_url": sub_url, 'name': name, 'short_name': name_short};
             }
         });
     }
@@ -120,17 +120,18 @@ export class ViewerManager {
         const img_count = this.viewer.world.getItemCount();
 
         // remove channel
-        if ((srcIdx in this.imageViewer.currentChannels)) {
+        if ((srcIdx in this.viewerChannels)) {
 
             // remove channel - first find it
             for (let i = 0; i < img_count; i = i + 1) {
                 const url = this.viewer.world.getItemAt(i).source['channelUrl'];
-                if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
+                if (url === this.viewerChannels[srcIdx]["url"]) {
 
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
 
-                    delete this.imageViewer.currentChannels[srcIdx];
+                    // delete this.imageViewer.currentChannels[srcIdx];
                     delete this.viewerChannels[srcIdx];
+                    delete this.colorConnector[srcIdx];
                     break;
                 }
             }
@@ -160,11 +161,13 @@ export class ViewerManager {
             const group = e.tile.url.split("/");
             const sub_url = group[group.length - 3];
 
-            let channel = _.find(that.imageViewer.currentChannels, e => {
+            let channel = _.find(that.viewerChannels, e => {
                 return e.sub_url === sub_url;
             })
             if (channel) {
-                const color = _.get(channel, 'color', d3.color("white"));
+                // console.log(channel)
+                // console.log(channel.color)
+                const color = _.get(channel, 'color', channel.color);
                 const floatColor = [color.r / 255., color.g / 255., color.b / 255.];
                 const range = _.get(channel, 'range', that.imageViewer.dataLayer.getImageBitRange(true));
                 const via = this.viaGL;
@@ -309,7 +312,7 @@ export class ViewerManager {
                                 }
                             }
                         }
-                    } else  {
+                    } else {
 
                         // If fill
                         imageData.data[index] = 255;
@@ -398,6 +401,23 @@ export class ViewerManager {
         } else {
             this.imageViewer.noLabel = true;
         }
+    }
+
+    /**
+     * @function updateChannelColor
+     *
+     * @returns void
+     */
+    updateChannelColor(name, color) {
+
+        // Change current channel
+        const channelIdx = imageChannels[name];
+        this.colorConnector[`${channelIdx}`] = {
+            color: color
+        };
+
+        // Force repaint
+        this.forceRepaint();
     }
 
     /**

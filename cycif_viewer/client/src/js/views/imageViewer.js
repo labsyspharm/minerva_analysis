@@ -439,11 +439,14 @@ class ImageViewer {
     updateChannelColors(name, color, type) {
 
         const channelIdx = imageChannels[name];
-        if (this.currentChannels[channelIdx]) {
-            this.currentChannels[channelIdx]['color'] = color;
-        }
+        this.viewerManagers.forEach(vM => {
+            if (vM.viewerChannels[`${channelIdx}`]) {
+                vM.colorConnector[`${channelIdx}`] = {color: color};
+                vM.viewerChannels[`${channelIdx}`]['color'] = color;
+            }
 
-        this.forceRepaint();
+            vM.forceRepaint();
+        });
     }
 
     /**

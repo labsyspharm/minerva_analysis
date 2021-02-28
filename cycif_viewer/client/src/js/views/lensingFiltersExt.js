@@ -44,8 +44,8 @@ export class LensingFiltersExt {
         return [
             lfSegmentationOutlines.load,
             lfHistoSearch.load,
-            // lfChannelView.load,
-            // lfMultiModal.load,
+            lfMultiModal.load,
+            lfChannelView.load,
             lfNearestCellsSel.load,
             lfNearestCellsAll.load,
             // lfChannelRelationships.load

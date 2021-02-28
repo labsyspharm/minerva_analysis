@@ -17,7 +17,7 @@ export class Utils {
 
     /**
      * @function getChannelColor
-     * @param {any} d
+     * @param {any} name
      * @param {number} val
      * @param {any} imageViewer
      * @param {any} channelList
@@ -25,20 +25,12 @@ export class Utils {
      * @returns {string}
      */
     static getChannelColor(name, val, imageViewer, channelList) {
-        if (channelList.selections.includes(name)) {
-            // Find channel TF
-            let channelTF = null;
-            for (let k in imageViewer.channelTF) {
-                if (imageViewer.channelTF.hasOwnProperty(k) && imageViewer.channelTF[k].name === name) {
-                    channelTF = imageViewer.channelTF[k];
-                    break;
-                }
-            }
-            if (channelTF) {
-                // Retrieve color
-                const rgb = imageViewer.viewerManagerVMain.evaluateTf(val, channelTF);
-                return `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
-            }
+
+        const channelmap = Object.values(imageViewer.viewerManagerVMain.viewerChannels);
+        const channel = channelmap.find(vc => vc.short_name === name);
+        if (channel) {
+            const rgb = channel.color;
+            return `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
         }
         return 'none';
     }
@@ -46,8 +38,8 @@ export class Utils {
     /**
      * @function getChannelIndex
      */
-    static getChannelIndex(name ,imageViewer) {
-       return imageViewer.config.imageData.findIndex(d => d.name === name);
+    static getChannelIndex(name, imageViewer) {
+        return imageViewer.config.imageData.findIndex(d => d.name === name);
     }
 
     /**

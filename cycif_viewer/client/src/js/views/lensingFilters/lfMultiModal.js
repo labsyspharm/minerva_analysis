@@ -238,12 +238,13 @@ export class LfMultiModal {
                                 // Loads
                                 selMM.channels.forEach((c, i) => {
 
-                                    const channelTF = this.image_viewer.channelTF.find(tf => tf.name === c);
+                                    // Push new colors
+                                    // const channelTF = this.image_viewer.channelTF.find(tf => tf.name === c);
                                     const rgba = selMM.colors[i].split(',');
                                     const d3rgba = d3.rgb(+rgba[0], +rgba[1], +rgba[2], +rgba[3]);
-                                    this.image_viewer
-                                        .viewerManagerVAuxi.updateChannelColors(c, d3rgba, 'white', false);
+                                    this.image_viewer.viewerManagerVAuxi.updateChannelColor(c, d3rgba);
 
+                                    // Add channels
                                     const index = Utils.getChannelIndex(c, this.image_viewer);
                                     this.image_viewer.viewerManagerVAuxi.channelAdd(index);
                                 });
@@ -296,12 +297,15 @@ export class LfMultiModal {
                             });
                             const itemsMain = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
                             itemsMain.forEach(item => {
+                                this.image_viewer.viewerManagerVAuxi.colorConnector[`${item}`] = {
+                                    color: this.image_viewer.viewerManagerVMain.colorConnector[`${item}`].color
+                                }
                                 this.image_viewer.viewerManagerVAuxi.channelAdd(+item);
                             });
 
                             // Mark all as not loaded
                             const selMM = this.vars.mmOptions.find(o => o.name === this.vars.mmSelected);
-                            if (selMM != null && selMM != undefined){
+                            if (selMM !== null && selMM !== undefined){
                                 selMM.loaded = false;
                             }
 
