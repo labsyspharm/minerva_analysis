@@ -7,17 +7,15 @@ export class LfSegmentationOutlines {
     // Class vars (and chart 'vars')
     data = [];
     load = [];
-    vars = {};
+    vars = {
+        active: false
+    };
 
     /**
      * @constructor
      */
     constructor(_imageViewer) {
-        this.image_viewer = _imageViewer;
-
-        // From global vars
-        this.data_layer = dataLayer;
-        this.channel_list = channelList;
+        this.imageViewer = _imageViewer;
 
         // Init
         this.init()
@@ -60,7 +58,7 @@ export class LfSegmentationOutlines {
                     update: (i, index) => {
 
                         // Magnify (simply pass through after filter)
-                        this.image_viewer.viewer.lensing.lenses.selections.magnifier.update(i, index);
+                        this.imageViewer.viewer.lensing.lenses.selections.magnifier.update(i, index);
                     },
                     fill: 'rgba(255, 255, 255, 0)',
                     stroke: 'rgba(0, 0, 0, 1)'
@@ -71,15 +69,30 @@ export class LfSegmentationOutlines {
                         init: () => {
 
                             // Hide vf
-                            const vf = this.image_viewer.viewer.lensing.viewfinder;
+                            const vf = this.imageViewer.viewer.lensing.viewfinder;
                             vf.els.svg.attr('opacity', 0);
 
-                            // Show outlines
-                            this.image_viewer.viewerManagerVMain.show_sel = false;
-                            this.image_viewer.viewerManagerVAuxi.show_sel = true;
+                            // Mark filter as active
+                            this.vars.active = true;
 
                             // Trigger channel list data request
-                            this.channel_list.triggerChannelSelect();
+                            dataLayer.getChannelCellIds(channelList.sel).then(channelCells => {
+
+                                // Check if still active
+                                if (this.vars.active) {
+
+                                    // Show outlines
+                                    this.imageViewer.viewerManagerVMain.show_sel = false;
+                                    this.imageViewer.viewerManagerVAuxi.show_sel = true;
+
+                                    // Add to selection
+                                    dataLayer.addAllToCurrentSelection(channelCells);
+
+                                    // Update selection in viewers
+                                    this.imageViewer.updateSelection(dataLayer.getCurrentSelection(), true);
+                                }
+
+                            }).catch(err => console.log(err))
 
                         },
                         wrangle: () => {
@@ -91,13 +104,16 @@ export class LfSegmentationOutlines {
                         destroy: () => {
 
                             // Show vf
-                            const vf = this.image_viewer.viewer.lensing.viewfinder;
+                            const vf = this.imageViewer.viewer.lensing.viewfinder;
                             vf.els.svg.attr('opacity', 1);
 
+                            // Mark as inactive
+                            this.vars.active = false;
+
                             // Hide outlines
-                            this.image_viewer.selection = new Map();
-                            this.image_viewer.viewerManagerVMain.show_sel = true;
-                            this.image_viewer.viewerManagerVAuxi.forceRepaint();
+                            this.imageViewer.selection = new Map();
+                            this.imageViewer.viewerManagerVMain.show_sel = true;
+                            this.imageViewer.viewerManagerVAuxi.forceRepaint();
 
                         }
                     }
