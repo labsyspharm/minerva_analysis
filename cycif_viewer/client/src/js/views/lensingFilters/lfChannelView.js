@@ -60,7 +60,6 @@ export class LfChannelView {
 
         // From global vars
         this.data_layer = dataLayer;
-        this.channel_list = channelList;
 
         // Init
         this.init()
@@ -201,7 +200,7 @@ export class LfChannelView {
                         wrangle: () => {
 
                             // Get channels
-                            const channels = this.channel_list.selections;
+                            const channels = channelList.selections;
 
                             // Manually set current channel FIXME
                             if (channels.length === 0) {
@@ -250,7 +249,7 @@ export class LfChannelView {
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
 
                             // Get channels
-                            const channels = this.channel_list.selections;
+                            const channels = channelList.selections;
 
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH
@@ -332,7 +331,8 @@ export class LfChannelView {
                             // Re-establish channels
                             const itemsMain = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
                             itemsMain.forEach(item => {
-                                if (!this.image_viewer.viewerManagerVAuxi.viewerChannels[`${item}`]) {
+                                if (!this.image_viewer.viewerManagerVAuxi.viewerChannels[`${item}`] &&
+                                    this.image_viewer.viewerManagerVMain.colorConnector[`${item}`]) {
                                     this.image_viewer.viewerManagerVAuxi.colorConnector[`${item}`] = {
                                         color: this.image_viewer.viewerManagerVMain.colorConnector[`${item}`].color
                                     }

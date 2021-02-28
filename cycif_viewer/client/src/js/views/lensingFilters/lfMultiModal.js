@@ -297,15 +297,22 @@ export class LfMultiModal {
                             });
                             const itemsMain = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
                             itemsMain.forEach(item => {
-                                this.image_viewer.viewerManagerVAuxi.colorConnector[`${item}`] = {
-                                    color: this.image_viewer.viewerManagerVMain.colorConnector[`${item}`].color
+
+                                // Color from main
+                                if (this.image_viewer.viewerManagerVMain.colorConnector[`${item}`]) {
+                                    this.image_viewer.viewerManagerVAuxi.colorConnector[`${item}`] = {
+                                        color: this.image_viewer.viewerManagerVMain.colorConnector[`${item}`].color
+                                    }
                                 }
+
+                                // Add channel
                                 this.image_viewer.viewerManagerVAuxi.channelAdd(+item);
+
                             });
 
                             // Mark all as not loaded
                             const selMM = this.vars.mmOptions.find(o => o.name === this.vars.mmSelected);
-                            if (selMM !== null && selMM !== undefined){
+                            if (selMM !== null && selMM !== undefined) {
                                 selMM.loaded = false;
                             }
 
