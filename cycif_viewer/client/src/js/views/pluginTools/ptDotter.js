@@ -282,19 +282,19 @@ export class PtDotter {
      * eventCanvasOnClick
      */
     eventCanvasOnClick(e, d) {
+        console.log(d)
 
         // Zoom main viewer
         const newPt = new OpenSeadragon.Point({x: 0, y: 0})
-        newPt.x = d.positionData.refPoint.x
-        newPt.y = d.positionData.refPoint.y
+        newPt.x = d.pointerOsdRefPointX
+        newPt.y = d.pointerOsdRefPointY
         const viewportPt = this.imageViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(
-            new OpenSeadragon({x: d.positionData.posFull[0], y: d.positionData.posFull[1]}))
-        console.log(viewportPt);
+            new OpenSeadragon.Point({x: d.pointerPositionOnFullImage[0], y: d.pointerPositionOnFullImage[1]}))
         this.imageViewer.viewerManagerVMain.viewer.viewport.panTo(newPt);
-        this.imageViewer.viewerManagerVMain.viewer.viewport.zoomTo(d.positionData.zoom);
+        this.imageViewer.viewerManagerVMain.viewer.viewport.zoomTo(d.zoomViewerMain);
 
         // Zoom aux viewer
-        this.imageViewer.viewerManagerVAuxi.viewer.viewport.zoomTo(d.positionData.zoomAux);
+        this.imageViewer.viewerManagerVAuxi.viewer.viewport.zoomTo(d.zoomViewerAuxi);
 
     }
 
