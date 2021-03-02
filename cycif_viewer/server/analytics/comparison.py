@@ -51,6 +51,7 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     # find contours
     print("compute contours")
     contours = find_contours(png, sim_map, sensibility)
+    # labels = find_labels(png, sim_map, sensibility)
 
     #get global contour positions
     length = len(data_model.channels[0].shape);
@@ -138,7 +139,18 @@ def loadPngAtZoomLevel(datasource_name, channel, zoomlevel):
     return png
 
 
+def find_labels(img, sim_map, eta):
+    # Apply thresholding to the surface
+    threshold = 0.8
+    mask = sim_map > 1.7
+    # Make a labelled image based on the thresholding regions
+    blobs_labels = measure.label(mask, background=0)
+    props = measure.regionprops(blobs_labels, intensity_image=sim_map)
+    return blobs_labels
+
+
 def find_contours(img, sim_map, eta):
+    sim_map = np.pad(sim_map, pad_width=1, mode='constant', constant_values=0)
     sim_map = sim_map / sim_map.max()
     contours = measure.find_contours(sim_map, eta, fully_connected='high')
 
