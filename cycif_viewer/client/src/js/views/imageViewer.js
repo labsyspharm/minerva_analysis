@@ -421,9 +421,11 @@ class ImageViewer {
         const self = this;
         let range = self.dataLayer.getImageBitRange();
         const channelIdx = imageChannels[name];
-        if (self.currentChannels[channelIdx]) {
-            self.currentChannels[channelIdx]['range'] = [tfmin / range[1], tfmax / range[1]];
-        }
+        self.viewerManagers.forEach(vM => {
+            if (vM.viewerChannels[`${channelIdx}`]) {
+                vM.viewerChannels[channelIdx]['range'] = [tfmin / range[1], tfmax / range[1]];
+            }
+        })
         this.forceRepaint();
     }
 
