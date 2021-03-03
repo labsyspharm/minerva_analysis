@@ -32,7 +32,7 @@ class Starplot {
         this.tool_angleScale = d3.scaleLinear()
             .range([0, 2 * Math.PI]);
         this.tool_areaMaker = d3.areaRadial()
-            .curve(d3.curveCardinalClosed)
+            .curve(d3.curveCardinalClosed.tension(1))
 
         this.tool_channelScale = d3.scaleLinear()
             .range([Math.PI, -Math.PI]);
@@ -77,7 +77,7 @@ class Starplot {
         // Actual area chart
         this.el_chartAreaPath = this.el_chartG.append('path')
             .attr('class', 'viewfinder_chart_area_path')
-            .attr('fill', 'rgba(155, 155, 155, 0.9');
+            .attr('fill', 'rgba(255, 255, 255, 0')
 
         // Lines and labels for the chart
         this.el_chartLabelsG = this.el_chartG.append('g')
@@ -117,7 +117,7 @@ class Starplot {
         this.tool_radiusScale
             .range([this.config_chartR0, this.config_chartR1])
         this.tool_areaMaker
-            .innerRadius(d => this.tool_logRadiusScale(0))
+            .innerRadius(d => this.tool_logRadiusScale(d.value))
             .outerRadius(d => this.tool_logRadiusScale(d.value))
             .angle(d => this.tool_angleScale(d.index));
         return this.draw()
@@ -323,13 +323,8 @@ class Starplot {
                     return self.tool_areaMaker(d);
                 }
 
-            });
-        self.el_chartG.append("circle")
-            .style("stroke", "none")
-            .style("fill", "white")
-            .attr("r", self.config_chartR0)
-            .attr("cx", 0)
-            .attr("cy", 0);
+            })
+            .attr('stroke', 'rgba(0,0,0,0.9)');
     }
 
     dragging(self, d, e) {
