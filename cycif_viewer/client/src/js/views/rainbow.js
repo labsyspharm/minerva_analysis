@@ -242,8 +242,7 @@
 	    //     picker.set(d3.hsl('black'));
 	    //     listeners.apply("handleend", this, [d3.hsl('black').toString(),null,...arguments]);
 		// }
-		function textChanged(){
-			let hsl = d3.hsl(this.value);
+		function textChanged(value){
 			let sl = {
 				x:satScale.invert(hsl.s?hsl.s:sat),
 				y:lumScale.invert(hsl.l)

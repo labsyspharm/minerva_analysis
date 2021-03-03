@@ -412,3 +412,7 @@ label {
     stroke-width: 3px;
     vector-effect: non-scaling-stroke;
 }
+
+.col-svg-wrapper {
+    padding-left: 30px !important;
+}

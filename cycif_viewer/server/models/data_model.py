@@ -431,15 +431,19 @@ def generate_zarr_png(datasource_name, channel, level, tile):
         segmentation = True
     if segmentation:
         tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
+
+        tile = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
+        tile = np.append(tile, np.zeros((tile.shape[0], tile.shape[1], 1), dtype='uint8'), axis=2)
     else:
         if isinstance(channels, zarr.Array):
             tile = channels[channel_num, iy:iy + tile_height, ix:ix + tile_width]
         else:
             tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
+            tile = tile.astype('uint16')
 
-    tile = np.ascontiguousarray(tile, dtype='uint32')
-    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
-    return png
+    # tile = np.ascontiguousarray(tile, dtype='uint32')
+    # png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
+    return tile
 
 
 def get_ome_metadata(datasource_name):
