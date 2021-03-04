@@ -252,80 +252,145 @@ export class ViewerManager {
      * @param width
      * @param height
      */
-    drawLabelTile(tile, width, height) {
 
-        // This is that
-        const that = this;
-
-        // Empty data
+     drawLabelTile(tile, width, height) {
+        const self = this;
         let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
         tile._tileImageData = imageData;
-
-        // Iterate if selection
-        if (that.show_sel && that.imageViewer.selection.size > 0) {
-
-            imageData = tile._tileImageData;
-
+        if (self.show_sel && self.imageViewer.selection.size > 0) {
             tile._array.forEach((val, i) => {
+                    if (val != 0 && self.imageViewer.selection.has(val - 1)) {
+                        let labelValue = val - 1;
+                        let phenotype = _.get(seaDragonViewer.selection.get(labelValue), dataLayer.phenotypeColumnName);
 
-                // If direct hit
-                if (val !== 0 && that.imageViewer.selection.has(val - 1)) {
+                        //set color to white but when phenotype column in passed selection, use that for coloring
+                        let color = [255,255,255];
+                        if (phenotype != undefined){
+                            color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        }
 
-                    // Pixel size index
-                    let index = i * 4;
-
-                    // If outline
-                    this.sel_outlines = true
-                    if (this.sel_outlines) {
-
-                        // Init grid and tests (4 pts v 8 working for now)
+                        let index = i * 4;
                         const grid = [
-                            i - 1,
-                            i + 1,
-                            i - width * 1,
-                            i + width * 1
+                            index - 4,
+                            index + 4,
+                            index - width * 4,
+                            index + height * 4
                         ];
                         const test = [
-                            i % (width) !== 0,
-                            i % (width) !== (width - 1),
-                            i >= width,
-                            i < width * (height - 1)
+                            index % (width * 4) !== 0,
+                            index % (width * 4) !== (width - 1) * 4,
+                            index >= width * 4,
+                            index < width * 4 * (height - 1)
                         ];
 
-                        // Iterate grid
-                        for (let j = 0; j < grid.length; j++) {
-
-                            // If pass test (i.e., not on tile border)
-                            if (test[j]) {
-
-                                // Neighbor label value
-                                const altLabelValue = tile._array[grid[j]] - 1;
-
-                                // Check and color if edge
-                                if (altLabelValue !== val - 1) {
-                                    imageData.data[index] = 255;
-                                    imageData.data[index + 1] = 255;
-                                    imageData.data[index + 2] = 255;
-                                    imageData.data[index + 3] = 255;
-                                    tile.containsLabel = true;
-                                    break;
+                        // If outline
+                        if (this.sel_outlines) {
+                            // Iterate grid
+                            for (let j = 0; j < grid.length; j++) {
+                                // if pass test (not on tile border)
+                                if (test[j]) {
+                                    // Neighbor label value
+                                    const altLabelValue = tile._array[grid[j] / 4] - 1;
+                                    // Color
+                                    if (altLabelValue !== labelValue) {
+                                        tile._tileImageData.data[index] = color[0];
+                                        tile._tileImageData.data[index + 1] = color[1];
+                                        tile._tileImageData.data[index + 2] = color[2];
+                                        tile._tileImageData.data[index + 3] = 255;
+                                        tile.containsLabel = true;
+                                        break;
+                                    }
                                 }
                             }
+                        } else {
+                            tile._tileImageData.data[index] = color[0];
+                            tile._tileImageData.data[index + 1] = color[1];
+                            tile._tileImageData.data[index + 2] = color[2];
+                            tile._tileImageData.data[index + 3] = 255;
+                            tile.containsLabel = true;
                         }
-                    } else {
+                        /************************ newend */
 
-                        // If fill
-                        imageData.data[index] = 255;
-                        imageData.data[index + 1] = 255;
-                        imageData.data[index + 2] = 255;
-                        imageData.data[index + 3] = 255;
-                        tile.containsLabel = true;
                     }
-
                 }
-            });
+            )
         }
     }
+
+    // drawLabelTile(tile, width, height) {
+    //
+    //     // This is that
+    //     const that = this;
+    //
+    //     // Empty data
+    //     let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
+    //     tile._tileImageData = imageData;
+    //
+    //     // Iterate if selection
+    //     if (that.show_sel && that.imageViewer.selection.size > 0) {
+    //
+    //         imageData = tile._tileImageData;
+    //
+    //         tile._array.forEach((val, i) => {
+    //
+    //             // If direct hit
+    //             if (val !== 0 && that.imageViewer.selection.has(val - 1)) {
+    //
+    //                 // Pixel size index
+    //                 let index = i * 4;
+    //
+    //                 // If outline
+    //                 this.sel_outlines = true
+    //                 if (this.sel_outlines) {
+    //
+    //                     // Init grid and tests (4 pts v 8 working for now)
+    //                     const grid = [
+    //                         i - 1,
+    //                         i + 1,
+    //                         i - width * 1,
+    //                         i + width * 1
+    //                     ];
+    //                     const test = [
+    //                         i % (width) !== 0,
+    //                         i % (width) !== (width - 1),
+    //                         i >= width,
+    //                         i < width * (height - 1)
+    //                     ];
+    //
+    //                     // Iterate grid
+    //                     for (let j = 0; j < grid.length; j++) {
+    //
+    //                         // If pass test (i.e., not on tile border)
+    //                         if (test[j]) {
+    //
+    //                             // Neighbor label value
+    //                             const altLabelValue = tile._array[grid[j]] - 1;
+    //
+    //                             // Check and color if edge
+    //                             if (altLabelValue !== val - 1) {
+    //                                 imageData.data[index] = 255;
+    //                                 imageData.data[index + 1] = 255;
+    //                                 imageData.data[index + 2] = 255;
+    //                                 imageData.data[index + 3] = 255;
+    //                                 tile.containsLabel = true;
+    //                                 break;
+    //                             }
+    //                         }
+    //                     }
+    //                 } else {
+    //
+    //                     // If fill
+    //                     imageData.data[index] = 255;
+    //                     imageData.data[index + 1] = 255;
+    //                     imageData.data[index + 2] = 255;
+    //                     imageData.data[index + 3] = 255;
+    //                     tile.containsLabel = true;
+    //                 }
+    //
+    //             }
+    //         });
+    //     }
+    // }
 
     /**
      * @function evaluate_tf

@@ -16,6 +16,7 @@ class DataLayer {
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
         this.phenotypes = [];
+        this.phenotypeColumnName = '';
     }
 
     async init() {
@@ -26,6 +27,7 @@ class DataLayer {
             }))
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();
+            this.phenotypeColumnName =  await this.getPhenotypeColumnName();
             document.body.style.cursor = 'default';
         } catch (e) {
             console.log("Error Initializing Dataset", e);
@@ -45,6 +47,19 @@ class DataLayer {
         }
     }
 
+    async getCellIdsPhenotype(sels) {
+        try {
+            let response = await fetch('/get_cell_ids_phenotype?' + new URLSearchParams({
+                filter: JSON.stringify(sels),
+                datasource: datasource
+            }))
+            let cellIds = await response.json();
+            return cellIds;
+        } catch (e) {
+            console.log("Error Getting Channel Cell Ids", e);
+        }
+    }
+
     async getChannelCellIds(sels) {
         try {
             let response = await fetch('/get_channel_cell_ids?' + new URLSearchParams({
@@ -55,6 +70,21 @@ class DataLayer {
             return cellIds;
         } catch (e) {
             console.log("Error Getting Channel Cell Ids", e);
+        }
+    }
+
+    async getPhenotypeColumnName() {
+        if (this.phenotypeColumnName != ''){
+            return this.phenotypeColumnName;
+        }
+        try {
+            let response = await fetch('/get_phenotype_column_name?' + new URLSearchParams({
+                datasource: datasource,
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Sample Row", e);
         }
     }
 

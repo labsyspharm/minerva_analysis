@@ -43,22 +43,26 @@ def load_datasource(datasource_name, reload=False):
     if reload:
         load_ball_tree(datasource_name, reload=reload)
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
+    print("Loading csv data.. (this can take some time)")
     datasource = pd.read_csv(csvPath)
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
     source = datasource_name
+    print("Loading segmentation.")
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
     else:
         seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+    print("Loading image descriptions.")
     try:
         xml = channel_io.pages[0].tags['ImageDescription'].value
         metadata = from_xml(xml).images[0].pixels
     except:
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
+    print("Data loading done.")
 
 
 def load_config(datasource_name):
@@ -104,8 +108,9 @@ def load_ball_tree(datasource_name_name, reload=False):
     if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
+        print("Pickled KD Tree Loaded.")
     else:
-        print("Creating KD Tree")
+        print("Creating KD Tree.")
         xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
         yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
         csvPath = Path(config[datasource_name_name]['featureData'][0]['src'])
@@ -113,6 +118,7 @@ def load_ball_tree(datasource_name_name, reload=False):
         points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
         pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
+        print('Creating KD Tree done.')
 
 
 def query_for_closest_cell(x, y, datasource_name):
@@ -178,6 +184,37 @@ def get_channel_cells(datasource_name, channels):
     if query_string == None or query_string == "":
         return []
     query = datasource.query(query_string)[['id']].to_dict(orient='records')
+    return query
+
+
+def get_phenotype_column_name(datasource):
+    try:
+        return config[datasource]['featureData'][0]['phenotype']
+    except KeyError:
+        return ''
+    except TypeError:
+        return ''
+
+
+def get_cells_phenotype(datasource_name):
+    global datasource
+    global source
+    global ball_tree
+
+    range = [0, 65536]
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+
+    try:
+        phenotype_field = config[datasource_name]['featureData'][0]['phenotype']
+    except KeyError:
+        phenotype_field = 'phenotype'
+    except TypeError:
+        phenotype_field = 'phenotype'
+
+    query = datasource[['id', phenotype_field]].to_dict(orient='records')
     return query
 
 

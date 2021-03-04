@@ -150,7 +150,7 @@ def find_labels(img, sim_map, eta):
 
 
 def find_contours(img, sim_map, eta):
-    sim_map = np.pad(sim_map, pad_width=1, mode='constant', constant_values=0)
+    sim_map = np.pad(sim_map, pad_width=5, mode='constant', constant_values=0)
     sim_map = sim_map / sim_map.max()
     contours = measure.find_contours(sim_map, eta, fully_connected='high')
 

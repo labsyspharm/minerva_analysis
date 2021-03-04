@@ -5,6 +5,7 @@ import {LfSegmentationOutlines} from "./lensingFilters/lfSegmentationOutlines";
 import {LfChannelRelationships} from "./lensingFilters/LfChannelRelationships";
 import {LfHistoSearch} from "./lensingFilters/lfHistoSearch";
 import {LfMultiModal} from "./lensingFilters/lfMultiModal";
+import {LfCellTypeAll} from "./lensingFilters/LfCellTypeAll";
 
 /**
  * @class LensingFiltersExt
@@ -40,6 +41,9 @@ export class LensingFiltersExt {
         ////////////////////////////////////////////////////////////////////////////////////////// Data load - histosnap
         const lfMultiModal = new LfMultiModal(_imageViewer);
 
+                ////////////////////////////////////////////////////////////////////////////////////////// Data load - cell type
+        const lFCellType = new LfCellTypeAll(_imageViewer);
+
         // Add in reverse order
         return [
             lfSegmentationOutlines.load,
@@ -48,6 +52,7 @@ export class LensingFiltersExt {
             lfChannelView.load,
             lfNearestCellsSel.load,
             lfNearestCellsAll.load,
+            lFCellType.load
             // lfChannelRelationships.load
         ];
 

@@ -43,6 +43,20 @@ def get_channel_cell_ids():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_cell_ids_phenotype', methods=['GET'])
+def get_cell_ids_phenotype():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_cells_phenotype(datasource)
+    return serialize_and_submit_json(resp)
+
+# Gets a row based on the index
+@app.route('/get_phenotype_column_name', methods=['GET'])
+def get_phenotype_column_name():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_phenotype_column_name(datasource)
+    return serialize_and_submit_json(resp)
+
+
 # Gets a row based on the index
 @app.route('/get_database_row', methods=['GET'])
 def get_database_row():
