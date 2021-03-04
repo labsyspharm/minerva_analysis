@@ -752,3 +752,7 @@ polygon:hover {
 .col-svg-wrapper {
     padding-left: 30px !important;
 }
+
+.par_cor_label {
+    font-size: 0.5rem;
+}
