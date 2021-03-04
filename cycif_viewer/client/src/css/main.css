@@ -671,6 +671,10 @@ polygon:hover {
 .radarstarplot_display {
     display: block;
     margin: auto;
+    z-index: 2;
+    position: absolute;
+    left: 0;
+    top: 0;
 }
 
 #custom_cluster {
@@ -730,8 +734,19 @@ polygon:hover {
     vertical-align: middle;
 }
 
+#regl-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+}
+
 #custom_search_col span {
     color: black;
+}
+
+.regl-plots-wrapper {
+    position: relative;
 }
 
 .col-svg-wrapper {
