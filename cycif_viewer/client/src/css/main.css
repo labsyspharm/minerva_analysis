@@ -96,8 +96,9 @@ body {
 
 #starplot_display {
     height: 39vh;
-    padding-left: 15px;
+    margin-left: 15px;
     width: 100%;
+    position: relative;
 }
 
 .legend {
@@ -734,11 +735,19 @@ polygon:hover {
     vertical-align: middle;
 }
 
-#regl-canvas {
+#parallel_coords {
     position: absolute;
     left: 0;
     top: 0;
     z-index: 1;
+}
+
+#regl-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+
 }
 
 #custom_search_col span {

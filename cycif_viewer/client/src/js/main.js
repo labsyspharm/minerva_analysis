@@ -122,8 +122,7 @@ eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMul
 
 const displaySelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
-    let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
-    starplot.wrangle(starplotData);
+    starplot.wrangle(selection);
     scatterplot.recolor();
     updateSeaDragonSelection(false, false);
 }
@@ -131,9 +130,9 @@ eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 
 const displayNeighborhoodSelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
-    let starplotData = _.get(selection, 'cluster_summary.weighted_contribution');
+    // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution');
     if (starplotData) {
-        starplot.wrangle(starplotData);
+        starplot.wrangle(selection);
         scatterplot.recolor();
     }
     updateSeaDragonSelection(false, false);
@@ -143,8 +142,8 @@ eventHandler.bind(ImageViewer.events.displayNeighborhoodSelection, displayNeighb
 const selectNeighborhood = async (d) => {
     let selection = await dataLayer.getNeighborhood(d[0]);
     dataLayer.addAllToCurrentSelection(selection);
-    let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
-    starplot.wrangle(starplotData);
+    // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
+    starplot.wrangle(selection);
     scatterplot.recolor();
     updateSeaDragonSelection(false, false);
 }

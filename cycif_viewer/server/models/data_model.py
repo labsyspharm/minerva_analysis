@@ -651,6 +651,7 @@ def get_datasource_description(datasource_name):
         description[column]['histogram'] = dat
     return description
 
+
 def generate_zarr_png(datasource_name, channel, level, tile):
     if config is None:
         load_datasource(datasource_name)
@@ -684,6 +685,7 @@ def generate_zarr_png(datasource_name, channel, level, tile):
     # tile = np.ascontiguousarray(tile, dtype='uint32')
     # png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
     return tile
+
 
 def get_ome_metadata(datasource_name):
     if config is None:
@@ -746,13 +748,19 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
     else:
         cluster_cells = cluster_cells[default_fields]
     neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
-    cluster_summary = np.mean(neighborhoods[indices, :], axis=0)
-    summary_stats = {'weighted_contribution': {}}
-    phenotypes = datasource.phenotype.unique().tolist()
-    for i in range(len(phenotypes)):
-        weight = cluster_summary[i]
-        summary_stats['weighted_contribution'][phenotypes[i]] = weight
-    obj = {'cells': cluster_cells.to_dict(orient='records'), 'cluster_summary': summary_stats}
+    full_neighborhoods = neighborhoods[indices, :]
+    cluster_summary = np.mean(full_neighborhoods, axis=0)
+    summary_stats = {'weighted_contribution': {}, 'full_neighborhoods': full_neighborhoods}
+    phenotypes = sorted(datasource.phenotype.unique().tolist())
+    summary_stats['weighted_contribution'] = tuple(zip(phenotypes, cluster_summary))
+    # summary_stats['']
+    # for i in range(len(phenotypes)):
+    #     weight = cluster_summary[i]
+    obj = {
+        'cells': cluster_cells.to_dict(orient='records'),
+        'cluster_summary': summary_stats,
+        'phenotypes_list': phenotypes
+    }
     points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
                            'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
     neighbors = ball_tree.query_radius(points, r=46.15)
