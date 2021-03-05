@@ -21,7 +21,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 
 #### 3. Conda Install Instructions. 
 ##### Install Conda
-* Install [miniconda](https://conda.io/miniconda.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html). 
+ * Install [miniconda](https://conda.io/miniconda.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html). 
 * Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
