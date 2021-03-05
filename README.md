@@ -21,7 +21,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 
 #### 3. Conda Install Instructions. 
 ##### Install Conda
- * Install [miniconda](https://conda.io/miniconda.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html). 
+* Install [miniconda](https://conda.io/miniconda.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html). 
 * Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
@@ -37,7 +37,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 
 
 #### (4. Node.js installation and packages)
-* This step is only needed when you plan to edit js code. The codebase already included bundled js files.
+  This step is only needed when you plan to edit js code. The codebase already included bundled js files.
 * Install [Node.js](https://nodejs.org/en/), then navigate to `/cycif_viewer/client` and run `npm install` to install all packages listed in package.json.
 * Run `npm run start` to package the Javascript, or run `npm run watch` if you plan on editing dependencies
 
