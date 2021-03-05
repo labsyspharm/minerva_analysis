@@ -36,6 +36,12 @@ These are executables for Windows and MacOS that can be run locally without any 
 * Access the tool via `http://localhost:8000/`
 
 
+#### (3. Node.js installation and packages)
+* This step is only needed when you plan to edit js code. The codebase already included bundled js files.
+* Install [Node.js](https://nodejs.org/en/), then navigate to `/cycif_viewer/client` and run `npm install` to install all packages listed in package.json.
+* Run `npm run start` to package the Javascript, or run `npm run watch` if you plan on editing dependencies
+
+
 ## Packaging/Bundling Code as Executable (for Developers)
 
 ##### Windows
