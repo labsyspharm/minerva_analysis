@@ -529,3 +529,17 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         pyramid_assemble.main(py_args=args)
 
         return {'segmentation': str(directory)}
+
+
+def save_dot(datasource_name, dot):
+    database_model.create_or_update(database_model.Dot, id=dot['id'], datasource=datasource_name, group=dot['group'],
+                                    name=dot['name'],
+                                    description=dot['description'], shape_type=dot['shape_type'],
+                                    shape_info=dot['shape_info'],
+                                    cell_ids=dot['cell_ids'],
+                                    viewer_info=dot['viewer_info'], channel_info=dot['channel_info'])
+
+
+def get_dot(datasource_name, id):
+    dot = database_model.get(database_model.Dot, datasource=datasource_name, id=id)
+    return dot

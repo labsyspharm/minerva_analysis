@@ -317,5 +317,8 @@ export class PtDotter {
      */
     saveToDb(e, d) {
         console.log(d)
+        dataLayer.saveDot(d);
+
+
     }
 }

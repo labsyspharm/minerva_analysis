@@ -27,7 +27,7 @@ class DataLayer {
             }))
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();
-            this.phenotypeColumnName =  await this.getPhenotypeColumnName();
+            this.phenotypeColumnName = await this.getPhenotypeColumnName();
             document.body.style.cursor = 'default';
         } catch (e) {
             console.log("Error Initializing Dataset", e);
@@ -74,7 +74,7 @@ class DataLayer {
     }
 
     async getPhenotypeColumnName() {
-        if (this.phenotypeColumnName != ''){
+        if (this.phenotypeColumnName != '') {
             return this.phenotypeColumnName;
         }
         try {
@@ -273,19 +273,69 @@ class DataLayer {
     async getHistogramComparison(datasource, channels, x, y, maxDistance, viewportBounds, zoomlevel, sensitivity) {
         try {
             let response = await fetch('/histogram_comparison?' +
-            new URLSearchParams({
-                point_x: x,
-                point_y: y,
-                max_distance: maxDistance,
-                channels: channels,
-                datasource: datasource,
-                viewport: [viewportBounds[0].x, viewportBounds[0].y,viewportBounds[1].x, viewportBounds[1].y],
-                zoomlevel: zoomlevel,
-                sensitivity: sensitivity
-            }));
+                new URLSearchParams({
+                    point_x: x,
+                    point_y: y,
+                    max_distance: maxDistance,
+                    channels: channels,
+                    datasource: datasource,
+                    viewport: [viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x, viewportBounds[1].y],
+                    zoomlevel: zoomlevel,
+                    sensitivity: sensitivity
+                }));
             return await response.json();
         } catch (e) {
             console.log("Error getting histogram comparison", e);
+        }
+    }
+
+    async saveDot(data) {
+        //
+        //              channel_color_schemes,
+        //              channel_intensities)
+        try {
+            let response = await fetch('/save_dot', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        dot: {
+                            'id': data.id,
+                            'name': data.name || '',
+                            'description': data.description || '',
+                            group: data.group || '',
+                            shape_type: data.lensShape || '',
+                            shape_info: {
+                                radius: data.lensRadius || '',
+                                x: data.pointerOsdRefPointX || '',
+                                y: data.pointerOsdRefPointY || '',
+                            },
+                            cell_ids: [], // Hook this up if we're actually saving something here
+                            // This doesn't seem to be working, both arrays are empty
+                            viewer_info: {
+                                x: data.pointerPositionOnFullImage[0],
+                                y: data.pointerPositionOnFullImage[1],
+                                zoomViewerAuxi: data.zoomViewerAuxi,
+                                zoomViewerMain: data.zoomViewerMain,
+                            },
+                            channel_info: {
+                                channel_color_schemes: {},
+                                channel_intensities: {},
+                                channelsViewerAuxi: data.channelsViewerAuxi || [],
+                                channelsViewerMain: data.channelsViewerMain || [],
+                            }
+                        }
+                    })
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Saving Dot", e);
         }
     }
 
