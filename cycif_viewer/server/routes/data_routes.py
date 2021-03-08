@@ -57,6 +57,13 @@ def get_phenotype_column_name():
     resp = data_model.get_phenotype_column_name(datasource)
     return serialize_and_submit_json(resp)
 
+# Gets a row based on the index
+@app.route('/get_phenotype_description', methods=['GET'])
+def get_phenotype_description():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_phenotype_description(datasource)
+    return serialize_and_submit_json(resp)
+
 
 # Gets a row based on the index
 @app.route('/get_database_row', methods=['GET'])

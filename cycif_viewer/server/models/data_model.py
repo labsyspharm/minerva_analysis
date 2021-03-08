@@ -186,6 +186,19 @@ def get_channel_cells(datasource_name, channels):
     query = datasource.query(query_string)[['id']].to_dict(orient='records')
     return query
 
+def get_phenotype_description(datasource):
+    try:
+        data = ''
+        csvPath = config[datasource]['featureData'][0]['phenotypeData']
+        if os.path.isfile(csvPath):
+            data = pd.read_csv(csvPath)
+            data = data.to_numpy().tolist()
+            # data = data.to_json(orient='records', lines=True)
+        return data;
+    except KeyError:
+        return ''
+    except TypeError:
+        return ''
 
 def get_phenotype_column_name(datasource):
     try:
