@@ -50,51 +50,10 @@ class Starplot {
             .classed("average_path", true)
             .attr("stroke", "black")
 
-        // this.line2d = Line2D(regl({canvas: '#regl-canvas', extensions: 'angle_instanced_arrays'}))
-        self.drawReglLine()
+        this.line2d = Line2D(regl({canvas: '#regl-canvas', extensions: 'angle_instanced_arrays'}))
         return this.wrangle(emptyData);
     }
 
-    drawReglLine() {
-        const self = this;
-        const regl_instance = regl({canvas: '#regl-canvas'})
-
-        var lineWidth = 3
-        if (lineWidth > regl_instance.limits.lineWidthDims[1]) {
-            lineWidth = regl_instance.limits.lineWidthDims[1]
-        }
-
-        regl_instance({
-            frag: `
-    precision mediump float;
-    uniform vec4 color;
-    void main() {
-      gl_FragColor = color;
-    }`,
-
-            vert: `
-    precision mediump float;
-    attribute vec2 position;
-    void main() {
-      gl_Position = vec4(position, 0, 1);
-    }`,
-
-            attributes: {
-                position: [0, 0, 1, 1]
-            },
-
-            uniforms: {
-                color: [1, 0, 0, 1]
-            },
-            count: 2,
-
-            // elements: [
-            //     [0, 1]
-            // ],
-
-            lineWidth: lineWidth
-        })()
-    }
 
     wrangle(rawData, order = null) {
         const self = this;
@@ -200,21 +159,23 @@ class Starplot {
                     return self.y(d.value);
                 })
             )
-        // if (self.full_neighborhoods) {
-        //     _.forEach(self.full_neighborhoods, row => {
-        //         let points = _.map(row, (e, i) => {
-        //             return [self.webglX(i), self.webglY(e)]
-        //         })
-        //         self.line2d.render([{
-        //             thickness: 1,
-        //             points: points,
-        //             color: [0, 0, 0, 0.2],
-        //             range: [0, 0, 1, 1],
-        //         },
-        //         ])
-        //     })
-        // }
-        // self.line2d.destroy()
+        if (self.full_neighborhoods) {
+            _.forEach(_.sampleSize(self.full_neighborhoods, 2000), row => {
+                let points = _.map(row, (e, i) => {
+                    return [self.webglX(i), self.webglY(e)]
+                })
+                self.line2d.render([{
+                    thickness: 1,
+                    points: points,
+                    join: 'join',
+                    color: [0.3, 0.3, 0.3, 0.01],
+                    range: [0, 0, 1, 1],
+                    overlay: true,
+                },
+                ])
+            })
+        }
+        self.line2d.destroy()
 
 
     }
