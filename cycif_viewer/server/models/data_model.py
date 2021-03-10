@@ -186,6 +186,19 @@ def get_channel_cells(datasource_name, channels):
     query = datasource.query(query_string)[['id']].to_dict(orient='records')
     return query
 
+def get_phenotype_description(datasource):
+    try:
+        data = ''
+        csvPath = config[datasource]['featureData'][0]['phenotypeData']
+        if os.path.isfile(csvPath):
+            data = pd.read_csv(csvPath)
+            data = data.to_numpy().tolist()
+            # data = data.to_json(orient='records', lines=True)
+        return data;
+    except KeyError:
+        return ''
+    except TypeError:
+        return ''
 
 def get_phenotype_column_name(datasource):
     try:
@@ -529,3 +542,17 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         pyramid_assemble.main(py_args=args)
 
         return {'segmentation': str(directory)}
+
+
+def save_dot(datasource_name, dot):
+    database_model.create_or_update(database_model.Dot, id=dot['id'], datasource=datasource_name, group=dot['group'],
+                                    name=dot['name'],
+                                    description=dot['description'], shape_type=dot['shape_type'],
+                                    shape_info=dot['shape_info'],
+                                    cell_ids=dot['cell_ids'],
+                                    viewer_info=dot['viewer_info'], channel_info=dot['channel_info'])
+
+
+def get_dot(datasource_name, id):
+    dot = database_model.get(database_model.Dot, datasource=datasource_name, id=id)
+    return dot

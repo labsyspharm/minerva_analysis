@@ -11,13 +11,20 @@ export class LfCellTypeAll {
     vars = {
         areaTerm: '',
         cellChannels: [],
+        cellTypes: [],
+        cellCount: 0,
+        cellTypeSort: false,
+        cellTypeColumnName: null,
+        cellTypeMap: new Map(),
         cellIntensityRange: [0, 65536],
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
-        config_boxW: 300,
-        config_boxH: 300,
+        config_chartsMargin: {top: 50, right: 30, bottom: 10, left: 30},
+        config_boxW: 250,
+        config_boxH: 200,
         config_channelR: 3,
         config_chartR0: 20,
         config_chartR1: 70,
+        config_colorR: 8,
         config_fontSm: 9,
         config_fontMd: 11,
         config_nucleusMargin: {top: 0, right: 0, bottom: 30, left: 30},
@@ -31,6 +38,7 @@ export class LfCellTypeAll {
         el_radialExtG: null,
         el_textReportG: null,
         imageChannels: [],
+        colorMap : seaDragonViewer.colorScheme.colorMap,
         c10 : d3.scaleOrdinal(d3.schemeCategory10),
         tool_angleScale: d3.scaleLinear()
             .range([0, 2 * Math.PI]),
@@ -45,7 +53,15 @@ export class LfCellTypeAll {
             .range([3, 8]),
         tool_radiusScale: d3.scaleLinear()
             .domain([0, 1]),
-        xyPosKeys: []
+        xyPosKeys: [],
+        keydown: e => {
+            //whether to sort celltype order by count in current range query
+            if (e.key === 'j'){
+                this.vars.cellTypeSort = !this.vars.cellTypeSort;
+                this.image_viewer.viewer.lensing.viewfinder.setup.wrangle();
+                this.image_viewer.viewer.lensing.viewfinder.setup.render();
+            }
+        }
     };
 
     /**
@@ -97,6 +113,9 @@ export class LfCellTypeAll {
 
                         if (!this.load.config.filterCode.settings.loading) {
 
+                            //rename object
+                            let _this = this;
+
                             // Lensing ref
                             const lensing = this.image_viewer.viewer.lensing;
 
@@ -134,13 +153,6 @@ export class LfCellTypeAll {
                                     return;
                                 }
 
-                                // remove and add to selection
-                                // dataLayer.clearCurrentSelection();
-                                // dataLayer.addAllToCurrentSelection(darr);
-                                //
-                                // // Update selection in viewers
-                                // this.image_viewer.updateSelection(dataLayer.getCurrentSelection(), true);
-
                                 // Clear data to vis
                                 this.data = [];
 
@@ -168,14 +180,28 @@ export class LfCellTypeAll {
                                     }
                                 });
 
+                                //update cell type structure (we keep to original map as reference)
+                                this.vars.cellCount = darr.length;
+                                this.vars.cellTypeMap.forEach((value, key, map) => map.set(key, 0));
+                                let cellTypeCounts = this.vars.cellTypeMap;
+                                darr.forEach(function(d,i) {
+                                    if (d[_this.vars.cellTypeColumnName] != null) {
+                                        let fieldName = dataLayer.getNameForPhenotypeId(d[_this.vars.cellTypeColumnName]);
+                                        if (!cellTypeCounts.has(fieldName)) {
+                                            cellTypeCounts.set(fieldName, 0);
+                                        }
+                                        cellTypeCounts.set(fieldName, cellTypeCounts.get(fieldName) + 1);
+                                    }
+                                });
+                                this.vars.cellTypes = Array.from(cellTypeCounts);
+
+
                                 // Trigger update
                                 lensing.viewfinder.setup.wrangle()
                                 lensing.viewfinder.setup.render();
 
                             }).catch(err => console.log(err));
-
                         }
-
                     },
 
                     update: (i, index) => {
@@ -191,14 +217,9 @@ export class LfCellTypeAll {
                         name: 'vis_data_cell_type',
                         init: () => {
 
+                            let _this = this;
                             // Define this
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
-
-                            // Update vf box size
-                            vf.els.blackboardRect.attr('height', this.vars.config_boxH);
-                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
-                            vf.configs.boxH = this.vars.config_boxH;
-                            vf.configs.boxW = this.vars.config_boxW;
 
                             // Add extensions (to later remove)
                             this.vars.el_radialExtG = vf.els.radialG.append('g')
@@ -210,7 +231,24 @@ export class LfCellTypeAll {
                             this.vars.el_cellsG = this.vars.el_radialExtG.append('g')
                                 .attr('class', 'viewfinder_cells_g');
 
-                            // Append textReportG
+                            // Append chartG
+                            this.vars.el_chartG = this.vars.el_boxExtG.append('g')
+                                .attr('class', 'viewfinder_chart_g')
+                                .style('transform', `translate(${this.vars.config_boxW / 2}px, 
+                                    ${this.vars.config_boxW / 2 + this.vars.config_boxMargin.top}px)`);
+                            this.vars.el_chartLabelsG = this.vars.el_chartG.append('g')
+                                .attr('class', 'viewfinder_chart_label_g');
+                            this.vars.el_chartAreaPath = this.vars.el_chartG.append('path')
+                                .attr('class', 'viewfinder_chart_area_path')
+                                .attr('fill', 'rgba(255, 255, 255, 0.9');
+
+                            // Append chartG
+                            this.vars.el_chartsG = this.vars.el_boxExtG.append('g')
+                                .attr('class', 'viewfinder_charts_g')
+                                .style('transform', `translate(${this.vars.config_chartsMargin.left}px, 
+                                    ${this.vars.config_chartsMargin.top}px)`);
+
+                                // Append textReportG
                             this.vars.el_textReportG = this.vars.el_boxExtG.append('g')
                                 .attr('class', 'viewfinder_text_report_g');
                             this.vars.el_textReportG.append('text')
@@ -225,62 +263,20 @@ export class LfCellTypeAll {
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
                                 .style('letter-spacing', 1)
-                                .text('Cell Types');
-                            this.vars.el_textReportG.append('text')
-                                .attr('class', 'viewfinder_text_report_text2')
-                                .attr('x', this.vars.config_boxMargin.left * 2.5)
-                                .attr('y', this.vars.config_boxMargin.top * 3.5)
-                                .attr('text-anchor', 'start')
-                                .attr('dominant-baseline', 'hanging')
-                                .attr('fill', 'white')
-                                .attr('font-family', 'sans-serif')
-                                .attr('font-size', this.vars.config_fontSm)
-                                .attr('font-style', 'italic')
-                                .attr('font-weight', 'lighter');
+                                .text('Cell Type view');
 
-                            // Append chartG
-                            this.vars.el_chartG = this.vars.el_boxExtG.append('g')
-                                .attr('class', 'viewfinder_chart_g')
-                                .style('transform', `translate(${this.vars.config_boxW / 2}px, 
-                                    ${this.vars.config_boxW / 2 + this.vars.config_boxMargin.top}px)`);
-                            this.vars.el_chartLabelsG = this.vars.el_chartG.append('g')
-                                .attr('class', 'viewfinder_chart_label_g');
-                            this.vars.el_chartAreaPath = this.vars.el_chartG.append('path')
-                                .attr('class', 'viewfinder_chart_area_path')
-                                .attr('fill', 'rgba(255, 255, 255, 0.9');
-
-                            // Append nucleusG
-                            this.vars.el_nucleusG = this.vars.el_boxExtG.append('g')
-                                .attr('class', 'viewfinder_nucleus_g')
-                                .style('transform', `translate(${this.vars.config_nucleusMargin.left}px, 
-                                    ${this.vars.config_boxH - this.vars.config_nucleusMargin.bottom}px)`);
-                            this.vars.el_nucleusG.append('circle')
-                                .attr('class', 'viewfinder_nucleus_g_circle')
-                                .attr('fill', 'rgba(255, 255, 255, 0.9)');
-                            this.vars.el_nucleusG.append('text')
-                                .attr('class', 'viewfinder_chart_nucleus_g_text1')
-                                .attr('y', 1)
-                                .attr('fill', 'rgba(0, 0, 0, 0.95)')
-                                .attr('font-family', 'sans-serif')
-                                .attr('font-size', this.vars.config_fontMd)
-                                .attr('text-anchor', 'middle')
-                                .attr('dominant-baseline', 'middle');
-                            this.vars.el_nucleusG.append('text')
-                                .attr('class', 'viewfinder_nucleus_g_text2')
-                                .attr('x', this.vars.config_nucleusR / 2)
-                                .attr('y', this.vars.config_nucleusR / 2)
-                                .attr('fill', 'rgba(255, 255, 255, 0.95)')
-                                .attr('font-family', 'sans-serif')
-                                .attr('font-size', this.vars.config_fontSm)
-                                .attr('font-style', 'italic')
-                                .attr('text-anchor', 'start')
-                                .html(`Area, &micro;<tspan font-size=\'${this.vars.config_fontMd / 2}\' ` +
-                                    `dx=\'1\' dy=\'-5\'>2</tspan>`);
+                            //Set Visual Containers
+                            // Update vf box width
+                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
+                            vf.configs.boxW = this.vars.config_boxW;
 
 
                             this.vars.active = true;
                             // Trigger channel list data request
-                            dataLayer.getCellIdsPhenotype(channelList.sel).then(channelCells => {
+                            dataLayer.getCellIdsPhenotype(channelList.sel).then(cellTypes => {
+
+                                //Set cell type column name
+                                this.vars.cellTypeColumnName = dataLayer.phenotypeColumnName;
 
                                 // Check if still active
                                 if (this.vars.active) {
@@ -290,64 +286,76 @@ export class LfCellTypeAll {
                                     this.image_viewer.viewerManagerVAuxi.show_sel = true;
 
                                     // Add to selection
-                                    dataLayer.addAllToCurrentSelection(channelCells);
+                                    dataLayer.addAllToCurrentSelection(cellTypes);
+
+                                    //Cell type description (names)
+                                    let cellTypeDescription = dataLayer.phenotypeDescription;
+
+                                    //If description is there we use these names for naming
+                                    if (cellTypeDescription != '' && cellTypeDescription != undefined){
+                                        cellTypeDescription.forEach(function(d,i){
+                                            _this.vars.cellTypeMap.set(d[1], 0);
+                                        });
+                                    }
+                                    //if not we build a map from the direct entries in the single cell data
+                                    else {
+                                        let cellTypeCounts = this.vars.cellTypeMap;
+                                        cellTypes.forEach(function (d, i) {
+                                            if (d[_this.vars.cellTypeColumnName] != undefined) {
+                                                if (!cellTypeCounts.has(d[_this.vars.cellTypeColumnName])) {
+                                                    cellTypeCounts.set(d[_this.vars.cellTypeColumnName], 0);
+                                                }
+                                                cellTypeCounts.set(d[_this.vars.cellTypeColumnName], cellTypeCounts.get(d[_this.vars.cellTypeColumnName]) + 1);
+                                            }
+                                        });
+                                        this.vars.cellTypeMap = cellTypeCounts;
+                                    }
+
+                                    //depending on how many cell types we have, we set the height of the box
+                                    this.vars.config_boxH = this.vars.cellTypeMap.size*24 + 25;
+
+                                    //Set types to vars
+                                    this.vars.cellTypes = cellTypes;
 
                                     // Update selection in viewers
                                     this.image_viewer.updateSelection(dataLayer.getCurrentSelection(), true);
                                 }
+
+                            vf.els.blackboardRect.attr('height', this.vars.config_boxH);
+                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
+                            vf.configs.boxH = this.vars.config_boxH;
+                            vf.configs.boxW = this.vars.config_boxW;
+
+                            // Add listener
+                            this.vars.keydown = this.vars.keydown.bind(this)
+                            document.addEventListener('keydown', this.vars.keydown);
+
 
                             }).catch(err => console.log(err))
 
                         },
                         wrangle: () => {
 
-                            // Define cell
-                            let cell = {};
-                            if (this.data && this.data[0] && this.data[0].data) {
-                                cell = this.data[0].data;
-                            }
+                            // Define this
+                            const vis = this;
 
-                            // Set image channels (whitelist)
-                            if (this.vars.imageChannels.length === 0) {
-                                this.vars.imageChannels = Utils.getImageChannels(this.data[0].data, this.image_viewer)
-                            }
 
-                            // Clear then update cell channels
-                            this.vars.cellChannels = [];
-                            for (let k in cell) {
-                                if (cell.hasOwnProperty(k) && this.vars.imageChannels.includes(k)) {
-                                    this.vars.cellChannels.push({
-                                        key: k,
-                                        short: this.data_layer.getShortChannelName(k),
-                                        value: this.data
-                                            ? this.data.map(d => d.data[k]).reduce((acc, cur) => acc + cur)
-                                            : 0
-                                    });
-                                }
-                            }
-                            this.vars.cellChannels.sort((a, b) => {
-                                if (a.key.toLowerCase() < b.key.toLowerCase()) return -1;
-                                if (a.key.toLowerCase() > b.key.toLowerCase()) return 1;
-                                return 0;
-                            });
-                            this.vars.cellChannels.forEach((d, i) => {
-                                // Add index
-                                d.index = i;
-                            });
+                            //overall cell count:
+                            vis.vars.barScale = d3.scaleLinear()
+                              .domain([0, vis.vars.cellCount])
+                              .range([0, 80]);
 
-                            // Config
-                            this.vars.tool_angleScale.domain([0, this.vars.cellChannels.length]);
-                            this.vars.tool_channelScale.domain([0, this.vars.cellChannels.length]);
-                            this.vars.tool_nucleusScale.range([7, this.vars.config_nucleusR])
-                            this.vars.tool_radiusScale
-                                .domain([0, d3.max(this.vars.cellChannels, d => d.value)])
-                                .range([this.vars.config_chartR0, this.vars.config_chartR1]);
-                            this.vars.tool_rCellScale.domain([this.image_viewer.viewer.viewport.getMinZoom(),
-                                this.image_viewer.viewer.viewport.getMaxZoom()]);
-                            this.vars.tool_areaMaker
-                                .innerRadius(() => this.vars.tool_radiusScale(this.vars.cellIntensityRange[0]))
-                                .outerRadius(d => this.vars.tool_radiusScale(d.value))
-                                .angle(d => this.vars.tool_angleScale(d.index));
+
+                            //sort cell types by count in current range query?
+                            if (vis.vars.cellTypeSort){
+                                let sorting = vis.vars.cellTypes;
+                                sorting.sort(function(a,b){
+                                    return b[1] - a[1];
+                                });
+                                vis.vars.cellTypes = sorting;
+                               };
+                             d3.select('.viewfinder_charts_g').selectAll(".viewfinder_charts_g_celltypes").remove();
+
 
                         },
                         render: () => {
@@ -355,211 +363,79 @@ export class LfCellTypeAll {
                             // Define this
                             const vis = this;
 
-                            // Define cell, channels
-                            let cell = {};
-                            if (this.data && this.data[0] && this.data[0].data) {
-                                cell = this.data[0].data;
-                            }
-
                             // Get zoom
                             const zoom = vis.image_viewer.viewer.viewport.getZoom();
                             const cellR = vis.vars.tool_rCellScale(zoom);
 
                             const kF = function(d, i) { return d.item };
 
-                            // Append cell center circles
-                            //
 
-                            /*
-                            aux func :: getCoorthis.vars.el_cellsG.selectAll('.cell')
-                            //     .data(this.data, kF)
-                            //     .join(
-                            //         enter => enter.append('g')
-                            //             .attr('class', 'cell')
-                            //             .each(function (d) {
-                            //                 const g = d3.select(this)
-                            //                     .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
-                            //                 g.append('circle')
-                            //                     .attr('r', cellR)
-                            //                     .attr('fill', function(d,i){
-                            //                         return vis.vars.c10(d.data['phenotype']);
-                            //                     })
-                            //                     .attr('stroke-width', 0);
-                            //                 g.append('circle')
-                            //                     .attr('r', cellR)
-                            //                     .attr('fill', 'none')
-                            //                     .attr('stroke', 'white')
-                            //                     .attr('stroke-width', 1);
-                            //             }),
-                            //         update => update
-                            //             .each(function (d) {
-                            //                 const g = d3.select(this)
-                            //                     .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
-                            //             }),
-                            //         exit => exit.remove()
-                            //     );dsTranslation
-                             */
-                            function getCoordsTranslation(r, pos) {
-                                const x = Math.round(r * Math.sin(vis.vars.tool_channelScale(pos)));
-                                const y = Math.round(r * Math.cos(vis.vars.tool_channelScale(pos)));
-                                return [x, y];
-                            }
+                            // Draw something
+                            d3.select('.viewfinder_charts_g').selectAll(".viewfinder_charts_g_celltypes").data(vis.vars.cellTypes, function(d) { return  d[0] + "-" +  d[1] })
+                                .join(function(group) {
+                                    let enter = group.append("g")
+                                    .attr('class', 'viewfinder_charts_g_celltypes');
 
-                            // // Draw lines / labels
-                            // this.vars.el_chartLabelsG.selectAll('.viewfinder_chart_label_g_g')
-                            //     .data(this.vars.cellChannels, d => d.key)
-                            //     .join(
-                            //         enter => enter
-                            //             .append('g')
-                            //             .attr('class', 'viewfinder_chart_label_g_g')
-                            //             .each(function (d, i) {
-                            //
-                            //                 // Get g
-                            //                 const g = d3.select(this);
-                            //
-                            //                 // Coords
-                            //                 const coords = [
-                            //                     getCoordsTranslation(vis.vars.config_chartR0, i),
-                            //                     getCoordsTranslation(vis.vars.config_chartR1, i)
-                            //                 ];
-                            //
-                            //                 // Line
-                            //                 const labelLine = g.append('path')
-                            //                     .attr('class', 'labelLine')
-                            //                     .attr('stroke', 'rgba(255, 255, 255, 1)')
-                            //                     .attr('stroke-width', 0.5);
-                            //                 labelLine.transition()
-                            //                     .attr('d', d3.line()(coords));
-                            //
-                            //                 // Label group
-                            //                 const textCoords = getCoordsTranslation(vis.vars.config_chartR1 + 5, i)
-                            //                 const angle = vis.vars.tool_angleScale(i);
-                            //                 g.append('g')
-                            //                     .attr('class', 'viewfinder_chart_label_g_g_text_g')
-                            //                     .style('transform',
-                            //                         `translate(${textCoords[0]}px, ${textCoords[1]}px)`)
-                            //                     .append('text')
-                            //                     .attr('fill', () => {
-                            //                         if (vis.channel_list.selections.includes(d.short)) {
-                            //                             return 'rgba(255, 255, 255, 1)';
-                            //                         }
-                            //                         return 'rgba(255, 255, 255, 0.75)';
-                            //                     })
-                            //                     .attr('font', 'sans-serif')
-                            //                     .attr('font-size', vis.vars.config_fontSm)
-                            //                     .attr('font-weight', () => {
-                            //                         if (vis.channel_list.selections.includes(d.short)) return 'bold';
-                            //                         return 'normal';
-                            //                     })
-                            //                     .attr('text-anchor', () => {
-                            //                         if (angle >= Math.PI) return `end`;
-                            //                         return `start`;
-                            //                     })
-                            //                     .attr('dominant-baseline', 'middle')
-                            //                     .style('transform', () => {
-                            //                         if (angle >= Math.PI) return `rotate(${angle + Math.PI / 2}rad)`;
-                            //                         return `rotate(${angle - Math.PI / 2}rad)`;
-                            //                     })
-                            //                     .text(d => {
-                            //                         if (d.short.length <= 4) return d.short;
-                            //                         return d.short;
-                            //                     });
-                            //
-                            //                 // Label group
-                            //                 const channelCoords =
-                            //                     getCoordsTranslation(vis.vars.config_chartR1, i + 0.05)
-                            //                 g.append('circle')
-                            //                     .attr('class', 'viewfinder_chart_label_g_g_circle')
-                            //                     .attr('r', vis.vars.config_channelR)
-                            //                     .attr('cx', channelCoords[0])
-                            //                     .attr('cy', channelCoords[1])
-                            //                     .attr('fill', Utils.getChannelColor(d.short, d.value, vis.image_viewer,
-                            //                         vis.channel_list))
-                            //                     .attr('stroke', () => {
-                            //                         if (vis.channel_list.selections.includes(d.short)) {
-                            //                             return 'rgba(255, 255, 255, 1)';
-                            //                         }
-                            //                         return 'rgba(255, 255, 255, 0)';
-                            //                     })
-                            //                     .attr('stroke-width', 0.5);
-                            //             }),
-                            //         update => update
-                            //             .each(function (d, i) {
-                            //
-                            //                 // Get g
-                            //                 const g = d3.select(this);
-                            //
-                            //                 // Label groups
-                            //                 g.select('.viewfinder_chart_label_g_g_text_g text')
-                            //                     .attr('class', 'viewfinder_chart_label_g_g_text_g')
-                            //                     .attr('fill', () => {
-                            //                         if (vis.channel_list.selections.includes(d.short)) {
-                            //                             return 'rgba(255, 255, 255, 1)';
-                            //                         }
-                            //                         return 'rgba(255, 255, 255, 0.75)';
-                            //                     })
-                            //                     .attr('font-weight', () => {
-                            //                         if (vis.channel_list.selections.includes(d.short)) return 'bold';
-                            //                         return 'normal';
-                            //                     });
-                            //
-                            //                 // Label group
-                            //                 g.select('.viewfinder_chart_label_g_g_circle')
-                            //                     .attr('fill', Utils.getChannelColor(d.short, d.value, vis.image_viewer,
-                            //                         vis.channel_list))
-                            //                     .attr('stroke', () => {
-                            //                         if (vis.channel_list.selections.includes(d.short)) {
-                            //                             return 'rgba(255, 255, 255, 1)';
-                            //                         }
-                            //                         return 'rgba(255, 255, 255, 0)';
-                            //                     });
-                            //
-                            //             }),
-                            //         exit => exit
-                            //     );
+                                        //draw color legend (colored circles by cell type)
+                                        enter.append('circle')
+                                        .attr('cx', function (d, i) {
+                                            return 10
+                                        })
+                                        .attr('cy', function (d, i) {
+                                            return i * 20;
+                                        })
+                                        .attr('r', 5)
+                                        .attr('stroke', 'black')
+                                        .attr('fill', function (d, i) {
 
-                            // // Draw path
-                            // this.vars.el_chartAreaPath
-                            //     .datum(this.vars.cellChannels)
-                            //     .transition()
-                            //     .attr('d', d => this.vars.tool_areaMaker(d));
+                                            //we get the index if the original map (so that colors stay consistent if filtered)
+                                            let index = Array.from(vis.vars.cellTypeMap)
+                                                .map(function(val) {
+                                                    return val.slice(0, -1)[0];
+                                                }).indexOf(d[0]);
 
-                            // Update nucleus area report
-                            this.vars.el_nucleusG
-                                .datum(cell)
-                                .each(function (d) {
-                                    // Define this
-                                    const g = d3.select(this);
-
-                                    // Set image channels (whitelist)
-                                    if (vis.vars.areaTerm === '') {
-                                        vis.vars.areaTerm = Utils.getAreaTerm(d);
-                                    }
-
-                                    // Update
-                                    g.select('circle')
-                                        .transition()
-                                        .attr('r', () => {
-                                            if (d.hasOwnProperty(vis.vars.areaTerm)) {
-                                                return vis.vars.tool_nucleusScale(d[vis.vars.areaTerm]);
+                                            if (vis.vars.colorMap[index]){
+                                                return '' + vis.vars.colorMap[index].hex;
+                                            }else{
+                                                return "#FFFFFF";
                                             }
-                                            return vis.vars.tool_nucleusScale(0);
-                                        });
-                                    g.select('.viewfinder_chart_nucleus_g_text1')
-                                        .text(() => {
-                                            if (d.hasOwnProperty(vis.vars.areaTerm)) {
-                                                return Math.round(d[vis.vars.areaTerm])
-                                            }
-                                            return '';
-                                        });
+                                        })
+
+                                        //draw bars (currently linear scaling)
+                                        enter.append("rect")
+                                            .attr("x", function(d,i){
+                                                return 135;
+                                            })
+                                            .attr("y", function(d,i){
+                                                return (i * 20) -5
+                                            })
+                                            .attr("width", function(d,i){
+                                                return vis.vars.barScale(d[1]);
+                                            })
+                                            .attr("height", function(d,i){
+                                                return 10;
+                                            })
+                                            .attr("fill", "#ffffff");
+
+                                        //draw phenotype names and counts
+                                        enter.append("text")
+                                        .attr("x", function (d,i) {
+                                            return 30;
+                                        })
+                                        .attr("y", function (d,i) {
+                                            return (i * 20) + 2.5;
+                                        })
+                                        .text(function(d,i){
+                                            return d[0] + "  (" +   d[1] + ")";
+                                        })
+                                        .attr('fill', 'white')
+                                        .attr('font-family', 'sans-serif')
+                                        .attr('font-size', vis.vars.config_fontSm)
+                                        .attr('font-style', 'italic')
+                                        .attr('font-weight', 'lighter');
+
+                                        return enter;
                                 });
-
-                            // Update cell count
-                            this.vars.el_textReportG.select('.viewfinder_text_report_text2')
-                                .text(() => {
-                                    if (this.data.length > 0) return `Cell count: ${this.data.length}`;
-                                    return '';
-                                })
 
                         },
                         destroy: () => {

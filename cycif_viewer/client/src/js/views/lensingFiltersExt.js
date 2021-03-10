@@ -52,12 +52,12 @@ export class LensingFiltersExt {
         return [
             lfSegmentationOutlines.load,
             lfHistoSearch.load,
+            lfMultiModal.load,
+            lfSplit.load,
             lfChannelView.load,
             lfNearestCellsSel.load,
             lfNearestCellsAll.load,
             lFCellType.load,
-            lfMultiModal.load,
-            lfSplit.load
             // lfChannelRelationships.load
         ];
 

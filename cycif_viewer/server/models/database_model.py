@@ -13,6 +13,17 @@ def create(model, **kwargs):
     return instance
 
 
+def create_or_update(model, **kwargs):
+    instance = get(model, id=kwargs['id'])
+    if instance:
+        instance = model(**kwargs)
+    else:
+        instance = model(**kwargs)
+        db.session.add(instance)
+    db.session.commit()
+    return instance
+
+
 def get(model, **kwargs):
     return db.session.query(model).filter_by(**kwargs).one_or_none()
 
@@ -39,6 +50,22 @@ def get_or_create(model, **kwargs):
         db.session.add(instance)
         db.session.commit()
         return instance
+
+
+class Dot(db.Model):
+    __tablename__ = 'Dots'
+    id = db.Column(db.Integer, primary_key=True)
+    group = db.Column(db.String(40))
+    datasource = db.Column(db.String(80), unique=False, nullable=False)
+    name = db.Column(db.String(40))
+    description = db.Column(db.String(140))
+    shape_type = db.Column(db.String(20))
+    # Contains information about lense, e.g. screen_x, screen_y, radius
+    shape_info = db.Column(db.PickleType())
+    # Contains IDs in lense
+    cell_ids = db.Column(db.PickleType())
+    viewer_info = db.Column(db.PickleType())
+    channel_info = db.Column(db.PickleType())
 
 
 

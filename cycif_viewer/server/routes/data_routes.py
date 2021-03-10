@@ -49,11 +49,19 @@ def get_cell_ids_phenotype():
     resp = data_model.get_cells_phenotype(datasource)
     return serialize_and_submit_json(resp)
 
+
 # Gets a row based on the index
 @app.route('/get_phenotype_column_name', methods=['GET'])
 def get_phenotype_column_name():
     datasource = request.args.get('datasource')
     resp = data_model.get_phenotype_column_name(datasource)
+    return serialize_and_submit_json(resp)
+
+# Gets a row based on the index
+@app.route('/get_phenotype_description', methods=['GET'])
+def get_phenotype_description():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_phenotype_description(datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -218,6 +226,16 @@ def histogram_comparison():
     # call functionality
     resp = comparison.histogramComparison(x, y, datasource, max_distance, channels, viewport, zoomlevel, sensitivity)
     return serialize_and_submit_json(resp)
+
+
+@app.route('/save_dot', methods=['POST'])
+def save_dot():
+
+        post_data = json.loads(request.data)
+        datasource = post_data['datasource']
+        dot = post_data['dot']
+        resp = data_model.save_dot(datasource, dot )
+        return serialize_and_submit_json(resp)
 
 
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
