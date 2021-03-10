@@ -52,7 +52,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 * Run `package_win.bat`
 
 ##### MacOS
-
+* Add conda-forge to conda channels `conda config --add channels conda-forge`
 * Create env:  `conda env create -f requirements.yml`
 * Active environment: `conda activate cycif_viewer`
 * Run `bash package_mac.sh`
