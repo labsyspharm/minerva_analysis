@@ -9,6 +9,8 @@ export class PtDotter {
         iconW: 12,
         imageX: [0, 0],
         imageY: [0, 0],
+        isOpen: false,
+        justOpened: false,
         markerDims: 24,
         snapshotH: 90,
         snapshotW: 90,
@@ -16,6 +18,7 @@ export class PtDotter {
         viewerOverlayW: 0,
     };
     data = [];
+    dataIdsMap = [];
     els = {
         album: null,
         container: null,
@@ -34,14 +37,15 @@ export class PtDotter {
      */
     constructor(_parent) {
         this.parent = _parent;
+
+        // Some globals
+        this.imageViewer = seaDragonViewer;
     }
 
     /** 1.
      * @function init
      */
     init() {
-
-
     }
 
     /** 2.
@@ -49,19 +53,24 @@ export class PtDotter {
      */
     load() {
 
+        // Show
+        this.configs.isOpen = true;
+
         //
         this.buildBasicStructure();
 
-        this.imageViewer = seaDragonViewer;
+        // Set as just opened
+        this.configs.justOpened = true;
+
+        // Reset zooms
+        this.imageViewer.viewer.viewport.zoomTo(Math.round(this.imageViewer.viewer.viewport.getZoom()));
 
         // Snapshots
         this.snapshotsSubscription = this.imageViewer.viewer.lensing.snapshots.subject.subscribe(datum => {
+            this.configs.justOpened = false;
             this.wrangleSnapshots([datum]);
-            // this.renderSnapshots();
-            // this.renderOverlay();
         });
-        this.wrangleSnapshots(this.imageViewer.viewer.lensing.snapshots.album)
-        // this.renderSnapshots()
+        this.wrangleSnapshots(this.imageViewer.viewer.lensing.snapshots.album);
 
         // OSD changes
         this.imageViewer.viewer.addHandler('viewport-change', this.eventViewerOnViewportChange.bind(this));
@@ -74,11 +83,11 @@ export class PtDotter {
      */
     destroy() {
 
+        // Hide
+        this.configs.isOpen = false;
+
         // Unsubscribe
         this.snapshotsSubscription.unsubscribe();
-
-        // Clear data
-        this.data = [];
     }
 
     /**
@@ -105,42 +114,58 @@ export class PtDotter {
     wrangleSnapshots(data) {
 
         // Iterate data and form new obj to add to class var
-        data.forEach(d => {
+        data.forEach((d, i) => {
 
-            // Data structure
-            const obj = {
-                channelsViewerMain: [],
-                channelsViewerAuxi: [],
-                date: d.date,
-                description: '',
-                id: d.id,
-                imageData: d.imgData,
-                lensRadius: d.lensingConfigs.rad,
-                lensShape: d.lensingConfigs.shape,
-                name: '',
-                pointerPositionOnFullImage: d.positionData.posFull,
-                pointerOsdRefPointX: d.positionData.refPoint.x,
-                pointerOsdRefPointY: d.positionData.refPoint.y,
-                zoomViewerMain: d.positionData.zoom,
-                zoomViewerAuxi: d.positionData.zoomAux
-            };
+            if (!this.dataIdsMap.includes(d.id)) {
 
-            // Append to data
-            this.data.push(obj);
+                // Add id
+                this.dataIdsMap.push(d.id);
 
-            // Render snapshots
-            this.renderSnapshots();
-            this.renderOverlay();
+                // Init zoom
+                let zoom = d.positionData.zoom;
+                let zoomAux = d.positionData.zoomAux;
+
+                // Check zoom
+                if (this.configs.justOpened && i === data.length - 1) {
+                    zoom = this.imageViewer.viewer.viewport.getZoom();
+                    zoomAux = this.imageViewer.viewer.lensing.viewer.viewport.getZoom();
+                }
+
+                // Data structure
+                const obj = {
+                    channelsViewerMain: JSON.parse(JSON.stringify(this.imageViewer.viewerManagerVMain.viewerChannels)),
+                    channelsViewerAuxi: JSON.parse(JSON.stringify(this.imageViewer.viewerManagerVMain.viewerChannels)),
+                    date: d.date,
+                    description: '',
+                    id: d.id,
+                    imageData: d.imgData,
+                    lensRadius: d.lensingConfigs.rad,
+                    lensShape: d.lensingConfigs.shape,
+                    name: '',
+                    pointerPositionOnFullImage: d.positionData.posFull,
+                    pointerOsdRefPointX: d.positionData.refPoint.x,
+                    pointerOsdRefPointY: d.positionData.refPoint.y,
+                    zoomViewerMain: d.positionData.zoom,
+                    zoomViewerAuxi: d.positionData.zoomAux,
+                    zoomViewerMainDisplay: zoom,
+                    zoomViewerAuxiDisplay: zoomAux
+                };
+
+                // Append to data
+                this.data.push(obj);
+            }
 
         });
+
+        // Render snapshots
+        this.renderSnapshots();
+        this.renderOverlay();
     }
 
     /**
      * renderOverlay
      */
     renderOverlay() {
-
-        // const data = this.imageViewer.viewer.lensing.snapshots.album;
 
         // Get image bounds
         const viewportBounds = this.imageViewer.viewer.viewport.getBounds(true);
@@ -159,13 +184,66 @@ export class PtDotter {
             .range([0, this.configs.viewerOverlayW]);
         this.tools.overlayY.domain(this.configs.imageY)
             .range([0, this.configs.viewerOverlayH]);
-        // console.log(this.tools.overlayX.domain(), this.tools.overlayX.range())
-        // console.log(this.tools.overlayY.domain(), this.tools.overlayY.range())
 
+        // This vis
         const vis = this;
 
+        // Dots
+        this.els.viewerOverlay.selectAll('.dotDrop')
+            .data(this.configs.isOpen ? this.data : [])
+            .join('canvas')
+            .attr('class', 'dotDrop')
+            .style('position', 'absolute')
+            .style('border', '1px solid white')
+            .style('border-radius', d => d.lensShape === 'circle' ? '50%' : '0')
+            .style('padding', `1px`)
+            .style('pointer-events', 'none')
+            .each(function (d) {
+
+                // Canvas el
+                const canvas = d3.select(this);
+
+                // Get main viewer zoom
+                const currentZoom = vis.imageViewer.viewer.viewport.getZoom();
+                const multiplier = currentZoom / d.zoomViewerMainDisplay;
+
+                // W and H
+                const w = (d.imageData.width / window.devicePixelRatio) * multiplier;
+                const h = (d.imageData.height / window.devicePixelRatio) * multiplier;
+                canvas
+                    .attr('width', w * window.devicePixelRatio)
+                    .attr('height', h * window.devicePixelRatio)
+                    .style('width', `${w}px`)
+                    .style('height', `${h}px`)
+
+                // Translate to overlay
+                canvas.style('left',
+                    `${vis.tools.overlayX(d.pointerPositionOnFullImage[0]) - (w / 2)}px`);
+                canvas.style('top',
+                    `${vis.tools.overlayY(d.pointerPositionOnFullImage[1]) - (h / 2)}px`)
+
+                // Change opacity if magnifying
+                if (multiplier > 1) {
+                    canvas.style('opacity', `${1 / multiplier}`);
+                } else {
+                    canvas.style('opacity', `1`);
+                }
+
+                // Draw
+                const context = canvas.node().getContext('2d');
+                context.save();
+                createImageBitmap(d.imageData).then(imgBitmap => {
+                    context.clearRect(0, 0, w * window.devicePixelRatio, h * window.devicePixelRatio)
+                    context.scale(multiplier, multiplier)
+                    context.drawImage(imgBitmap, 0, 0);
+                    context.restore();
+                }).catch(err => console.log(err));
+
+            });
+
+        // Markers
         this.els.viewerOverlay.selectAll('.dotMarker')
-            .data(this.data)
+            .data(this.configs.isOpen ? this.data : [])
             .join('img')
             .attr('class', 'dotMarker')
             .attr('src', '../client/assets/cycif-marker-mobile.svg')
@@ -181,10 +259,11 @@ export class PtDotter {
                 img.style('left',
                     `${vis.tools.overlayX(d.pointerPositionOnFullImage[0]) - vis.configs.markerDims / 2}px`);
                 img.style('top',
-                    `${vis.tools.overlayY(d.pointerPositionOnFullImage[1]) - vis.configs.markerDims / 2}px`)
+                    `${vis.tools.overlayY(d.pointerPositionOnFullImage[1]) - vis.configs.markerDims}px`)
 
 
-            });
+            })
+            .on('click', this.onMarkerClick.bind(this));
     }
 
     /**
@@ -282,7 +361,6 @@ export class PtDotter {
      * eventCanvasOnClick
      */
     eventCanvasOnClick(e, d) {
-        console.log(d)
 
         // Zoom main viewer
         const newPt = new OpenSeadragon.Point({x: 0, y: 0})
@@ -291,10 +369,10 @@ export class PtDotter {
         const viewportPt = this.imageViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(
             new OpenSeadragon.Point({x: d.pointerPositionOnFullImage[0], y: d.pointerPositionOnFullImage[1]}))
         this.imageViewer.viewerManagerVMain.viewer.viewport.panTo(newPt);
-        this.imageViewer.viewerManagerVMain.viewer.viewport.zoomTo(d.zoomViewerMain);
+        this.imageViewer.viewerManagerVMain.viewer.viewport.zoomTo(d.zoomViewerMainDisplay);
 
         // Zoom aux viewer
-        this.imageViewer.viewerManagerVAuxi.viewer.viewport.zoomTo(d.zoomViewerAuxi);
+        this.imageViewer.viewerManagerVAuxi.viewer.viewport.zoomTo(d.zoomViewerAuxiDisplay);
 
     }
 
@@ -310,6 +388,46 @@ export class PtDotter {
      */
     eventViewerOnKeydown() {
         this.renderOverlay();
+    }
+
+    /**
+     * onMarkerClick
+     */
+    onMarkerClick(e, d) {
+
+        // Clear old TODO - this is pretty inefficient (don't remove/load already matched channels
+        const itemsMainOld = Object.keys(this.imageViewer.viewerManagerVMain.viewerChannels);
+        itemsMainOld.forEach(i => {
+            this.imageViewer.viewerManagerVMain.channelRemove(+i);
+        })
+        const itemsAuxiOld = Object.keys(this.imageViewer.viewerManagerVAuxi.viewerChannels);
+        itemsAuxiOld.forEach(i => {
+            this.imageViewer.viewerManagerVAuxi.channelRemove(+i);
+        })
+
+        // Add new
+        const itemsMainNew = Object.keys(d.channelsViewerMain);
+        itemsMainNew.forEach(i => {
+            this.imageViewer.viewerManagerVMain.colorConnector[i] = {
+                color: d.channelsViewerMain[i].color
+            }
+            this.imageViewer.viewerManagerVMain.channelAdd(+i);
+        })
+        const itemsAuxiNew = Object.keys(d.channelsViewerMain);
+        itemsAuxiNew.forEach(i => {
+            this.imageViewer.viewerManagerVAuxi.colorConnector[i] = {
+                color: d.channelsViewerAuxi[i].color
+            }
+            this.imageViewer.viewerManagerVAuxi.channelAdd(+i);
+        })
+
+        // Update configurations in lensing
+        this.imageViewer.viewer.lensing.events.remoteLensUpdate({
+            lensingConfigs: {
+                rad: d.lensRadius,
+                shape: d.lensShape
+            }
+        });
     }
 
     /**

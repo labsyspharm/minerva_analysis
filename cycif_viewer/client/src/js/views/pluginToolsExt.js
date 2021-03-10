@@ -78,7 +78,6 @@ export class PluginToolsExt {
                     this.trayEventClickForce('plugin_dotter');
                 }
             }
-
         });
     }
 
@@ -99,7 +98,9 @@ export class PluginToolsExt {
      */
     loadPluginTool(ref) {
 
-        this.plugins[ref].instance.load();
+        setTimeout(() => {
+            this.plugins[ref].instance.load();
+        }, this.configs.duration * 2);
     }
 
     /**
@@ -148,9 +149,7 @@ export class PluginToolsExt {
         this.trayOpenClose();
 
         // Load
-        setTimeout(() => {
-            this.loadPluginTool(pluginId);
-        }, this.configs.duration)
+        this.loadPluginTool(pluginId);
 
     }
 

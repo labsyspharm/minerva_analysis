@@ -253,7 +253,7 @@ export class ViewerManager {
      * @param height
      */
 
-     drawLabelTile(tile, width, height) {
+    drawLabelTile(tile, width, height) {
         const self = this;
         let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
         tile._tileImageData = imageData;
@@ -264,8 +264,8 @@ export class ViewerManager {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValue), dataLayer.phenotypeColumnName);
 
                         //set color to white but when phenotype column in passed selection, use that for coloring
-                        let color = [255,255,255];
-                        if (phenotype != undefined){
+                        let color = [255, 255, 255];
+                        if (phenotype != undefined) {
                             color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
                         }
 
@@ -473,7 +473,7 @@ export class ViewerManager {
      *
      * @returns void
      */
-    updateChannelColor(name, color) {
+    updateChannelColor(name, color, repaint = true) {
 
         // Change current channel
         const channelIdx = imageChannels[name];
@@ -482,7 +482,9 @@ export class ViewerManager {
         };
 
         // Force repaint
-        this.forceRepaint();
+        if (repaint) {
+            this.forceRepaint();
+        }
     }
 
     /**
