@@ -9,6 +9,7 @@ from ome_types import from_xml
 from cycif_viewer import config_json_path, data_path
 from cycif_viewer.server.utils import pyramid_assemble
 from cycif_viewer.server.models import database_model
+import dateutil.parser
 import time
 import pickle
 import tifffile as tf
@@ -186,6 +187,7 @@ def get_channel_cells(datasource_name, channels):
     query = datasource.query(query_string)[['id']].to_dict(orient='records')
     return query
 
+
 def get_phenotype_description(datasource):
     try:
         data = ''
@@ -199,6 +201,7 @@ def get_phenotype_description(datasource):
         return ''
     except TypeError:
         return ''
+
 
 def get_phenotype_column_name(datasource):
     try:
@@ -546,13 +549,17 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
 
 def save_dot(datasource_name, dot):
     database_model.create_or_update(database_model.Dot, id=dot['id'], datasource=datasource_name, group=dot['group'],
-                                    name=dot['name'],
-                                    description=dot['description'], shape_type=dot['shape_type'],
-                                    shape_info=dot['shape_info'],
-                                    cell_ids=dot['cell_ids'],
+                                    name=dot['name'], description=dot['description'], shape_type=dot['shape_type'],
+                                    shape_info=dot['shape_info'], cell_ids=dot['cell_ids'],
+                                    date=dateutil.parser.parse(dot['date']), image_data=dot['image_data'],
                                     viewer_info=dot['viewer_info'], channel_info=dot['channel_info'])
 
 
-def get_dot(datasource_name, id):
-    dot = database_model.get(database_model.Dot, datasource=datasource_name, id=id)
-    return dot
+def load_dots(datasource_name):
+    dots = database_model.get_all(database_model.Dot, datasource=datasource_name)
+    return dots
+
+
+def delete_dot(datasource_name, id):
+    database_model.edit(database_model.Dot, id, 'is_deleted', True)
+    return True

@@ -106,9 +106,9 @@ class DataLayer {
     }
 
     //helper function
-    getNameForPhenotypeId(id){
-        if (this.phenotypeDescription != '' && this.phenotypeDescription != undefined){
-            if (this.phenotypeDescription[id]){
+    getNameForPhenotypeId(id) {
+        if (this.phenotypeDescription != '' && this.phenotypeDescription != undefined) {
+            if (this.phenotypeDescription[id]) {
                 return this.phenotypeDescription[id][1];
             }
         }
@@ -317,10 +317,13 @@ class DataLayer {
     }
 
     async saveDot(data) {
-        //
-        //              channel_color_schemes,
-        //              channel_intensities)
+
         try {
+            let imageData = {
+                'height': data.imageData.height,
+                'width': data.imageData.width,
+                'data': Array.from(data.imageData.data)
+            }
             let response = await fetch('/save_dot', {
                 method: 'POST',
                 headers: {
@@ -348,14 +351,18 @@ class DataLayer {
                                 x: data.pointerPositionOnFullImage[0],
                                 y: data.pointerPositionOnFullImage[1],
                                 zoomViewerAuxi: data.zoomViewerAuxi,
+                                zoomViewerAuxiDisplay: data.zoomViewerAuxiDisplay,
                                 zoomViewerMain: data.zoomViewerMain,
+                                zoomViewerMainDisplay: data.zoomViewerMainDisplay,
                             },
                             channel_info: {
                                 channel_color_schemes: {},
                                 channel_intensities: {},
                                 channelsViewerAuxi: data.channelsViewerAuxi || [],
                                 channelsViewerMain: data.channelsViewerMain || [],
-                            }
+                            },
+                            image_data: imageData,
+                            date: data.date
                         }
                     })
             });
@@ -366,4 +373,51 @@ class DataLayer {
         }
     }
 
+    async loadDots() {
+        try {
+            let response = await fetch('/load_dots?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            let dots = _.map(response_data, dot => {
+                let obj = {
+                    channelsViewerAuxi: dot.channel_info.channelsViewerAuxi || [],
+                    channelsViewerMain: dot.channel_info.channelsViewerMain || [],
+                    date: new Date(dot.date),
+                    description: dot.description,
+                    name: dot.name,
+                    id: dot.id,
+                    lensRadius: dot.shape_info.radius,
+                    lensShape: dot.shape_type,
+                    pointerOsdRefPointX: dot.shape_info.x,
+                    pointerOsdRefPointY: dot.shape_info.y,
+                    pointerPositionOnFullImage: [dot.viewer_info.x, dot.viewer_info.y],
+                    zoomViewerAuxi: dot.viewer_info.zoomViewerAuxi,
+                    zoomViewerAuxiDisplay: dot.viewer_info.zoomViewerAuxiDisplay,
+                    zoomViewerMain: dot.viewer_info.zoomViewerMain,
+                    zoomViewerMainDisplay: dot.viewer_info.zoomViewerMainDisplay,
+                    fromDb: true
+                }
+                let imageData = new ImageData(new Uint8ClampedArray(dot.image_data.data), dot.image_data.width, dot.image_data.height);
+                obj.imageData = imageData;
+                return obj;
+            })
+            return dots;
+        } catch (e) {
+            console.log("Error Loading Dots", e);
+        }
+    }
+
+    async deleteDot(id) {
+        try {
+            let response = await fetch('/delete_dot?' + new URLSearchParams({
+                datasource: datasource,
+                id: id
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error deleting Dots", e);
+        }
+    }
 }

@@ -55,6 +55,7 @@ def get_or_create(model, **kwargs):
 class Dot(db.Model):
     __tablename__ = 'Dots'
     id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime)
     group = db.Column(db.String(40))
     datasource = db.Column(db.String(80), unique=False, nullable=False)
     name = db.Column(db.String(40))
@@ -62,11 +63,12 @@ class Dot(db.Model):
     shape_type = db.Column(db.String(20))
     # Contains information about lense, e.g. screen_x, screen_y, radius
     shape_info = db.Column(db.PickleType())
+    image_data = db.Column(db.PickleType())
     # Contains IDs in lense
     cell_ids = db.Column(db.PickleType())
     viewer_info = db.Column(db.PickleType())
     channel_info = db.Column(db.PickleType())
-
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
 
 
 db.create_all()
