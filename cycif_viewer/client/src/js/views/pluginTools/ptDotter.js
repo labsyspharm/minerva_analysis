@@ -280,14 +280,19 @@ export class PtDotter {
     /**
      * renderSnapshots
      */
-    renderSnapshots() {
+    renderSnapshots(redraw = false) {
 
         const vis = this;
-
-        const data = this.imageViewer.viewer.lensing.snapshots.album;
+        let data;
+        // const data = this.imageViewer.viewer.lensing.snapshots.album;
+        if (redraw) {
+            data = [];
+        } else {
+            data = this.data;
+        }
 
         this.els.album.selectAll('.dotter_block')
-            .data(this.data)
+            .data(data)
             .join(
                 enter => enter.append('div')
                     .attr('class', 'dotter_block')
@@ -376,29 +381,29 @@ export class PtDotter {
                         //     .style('height', `${vis.configs.iconH}px`);
 
                     }),
-                update => update
-                    .each(function (dat, i) {
-                        const div = d3.select(this);
-                        div.select('.dotter_block_icon_container')
-                            .select('a')
-                            .attr('class', () => {
-                                if (dat.fromDb) {
-                                    return 'dotter_block_icon_container_from_db';
-                                } else {
-                                    return 'dotter_block_icon_container_save';
-                                }
-                            })
-                            .text(() => {
-                                if (dat.fromDb) {
-                                    return 'DELETE FROM DB';
-                                } else {
-                                    return 'SAVE';
-                                }
-                            })
-                    }),
+                update => update,
+                //     .each(function (dat, i) {
+                //         const div = d3.select(this);
+                //         // div.select('.dotter_block_icon_container')
+                //         //     .select('a')
+                //         //     .attr('class', () => {
+                //         //         if (dat.fromDb) {
+                //         //             return 'dotter_block_icon_container_from_db';
+                //         //         } else {
+                //         //             return 'dotter_block_icon_container_save';
+                //         //         }
+                //         //     })
+                //         //     .text(() => {
+                //         //         if (dat.fromDb) {
+                //         //             return 'DELETE FROM DB';
+                //         //         } else {
+                //         //             return 'SAVE';
+                //         //         }
+                //         //     })
+                //     }),
+
                 exit => exit
-                    .transition()
-                    .remove()
+                    .call(e => e.remove())
             );
 
     }
@@ -491,9 +496,9 @@ export class PtDotter {
             })
             this.data = _.remove(this.data, elem => {
                 return elem.id != d.id
-
             })
         }
+        this.renderSnapshots(true);
         this.renderSnapshots();
 
     }
