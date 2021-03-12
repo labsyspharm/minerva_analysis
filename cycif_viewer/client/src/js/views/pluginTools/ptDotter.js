@@ -487,10 +487,10 @@ export class PtDotter {
         } else {
             await dataLayer.deleteDot(d.id);
             this.imageViewer.viewer.lensing.snapshots.album = _.remove(this.imageViewer.viewer.lensing.snapshots.album, elem => {
-                return elem.id == d.id;
+                return elem.id != d.id;
             })
             this.data = _.remove(this.data, elem => {
-                return elem.id == d.id
+                return elem.id != d.id
 
             })
         }
