@@ -260,7 +260,7 @@ export class LfNearestCellsAll {
                                 .attr('class', 'viewfinder_chart_area_path_ref_2')
                                 .attr('fill', 'none')
                                 .attr('stroke', 'rgba(255, 128, 0, 1)')
-                                .attr('stroke-width', 2);
+                                .attr('stroke-width', 1);
 
                             // Append nucleusG
                             this.vars.el_nucleusG = this.vars.el_boxExtG.append('g')
@@ -335,7 +335,8 @@ export class LfNearestCellsAll {
                             this.vars.tool_channelScale.domain([0, this.vars.cellChannels.length]);
                             this.vars.tool_nucleusScale.range([7, this.vars.config_nucleusR])
                             this.vars.tool_radiusScale
-                                .domain(this.vars.cellIntensityRange)
+                                .domain([0, Math.max(d3.max(this.vars.cellChannels, d => d.value),
+                                    d3.max(this.vars.cellChannels, d => d.refMean))])
                                 .range([this.vars.config_chartR0, this.vars.config_chartR1]);
                             this.vars.tool_rCellScale.domain([this.imageViewer.viewer.viewport.getMinZoom(),
                                 this.imageViewer.viewer.viewport.getMaxZoom()]);
