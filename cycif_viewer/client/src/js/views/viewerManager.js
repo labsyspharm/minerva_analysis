@@ -8,7 +8,7 @@ export class ViewerManager {
     // Class vars
     colorConnector = {};
     show_sel = true;
-    sel_outlines = false;
+    sel_outlines = true;
     viewerChannels = {};
 
 

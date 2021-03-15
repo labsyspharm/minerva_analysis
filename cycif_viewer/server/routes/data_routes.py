@@ -57,6 +57,7 @@ def get_phenotype_column_name():
     resp = data_model.get_phenotype_column_name(datasource)
     return serialize_and_submit_json(resp)
 
+
 # Gets a row based on the index
 @app.route('/get_phenotype_description', methods=['GET'])
 def get_phenotype_description():
@@ -230,12 +231,32 @@ def histogram_comparison():
 
 @app.route('/save_dot', methods=['POST'])
 def save_dot():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    dot = post_data['dot']
+    resp = data_model.save_dot(datasource, dot)
+    return serialize_and_submit_json(resp)
 
-        post_data = json.loads(request.data)
-        datasource = post_data['datasource']
-        dot = post_data['dot']
-        resp = data_model.save_dot(datasource, dot )
-        return serialize_and_submit_json(resp)
+
+@app.route('/load_dots', methods=['GET'])
+def load_dots():
+    datasource = request.args.get('datasource')
+    dots = data_model.load_dots(datasource)
+    dots_dict = [to_dict(dot) for dot in dots]
+    return serialize_and_submit_json(dots_dict)
+
+
+@app.route('/delete_dot', methods=['GET'])
+def delete_dot():
+    datasource = request.args.get('datasource')
+    id = int(request.args.get('id'))
+    dots = data_model.delete_dot(datasource, id)
+    return serialize_and_submit_json(True)
+
+
+def to_dict(row):
+    return {column.name: getattr(row, row.__mapper__.get_property_by_column(column).key) for column in
+            row.__table__.columns}
 
 
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png

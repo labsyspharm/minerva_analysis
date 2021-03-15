@@ -51,7 +51,7 @@ export class PtDotter {
     /** 2.
      * @function load
      */
-    load() {
+    async load() {
 
         // Show
         this.configs.isOpen = true;
@@ -65,11 +65,22 @@ export class PtDotter {
         // Reset zooms
         this.imageViewer.viewer.viewport.zoomTo(Math.round(this.imageViewer.viewer.viewport.getZoom()));
 
+        // Load Screenshots from the DB
+        let dbDots = await dataLayer.loadDots();
+        if (dbDots && _.size(dbDots) > 0) {
+            this.imageViewer.viewer.lensing.snapshots.album = this.imageViewer.viewer.lensing.snapshots.album.concat(dbDots);
+            _.each(dbDots, dot => {
+                this.data.push(dot);
+                this.dataIdsMap.push(dot.id);
+            })
+        }
+
+
         // Snapshots
         this.snapshotsSubscription = this.imageViewer.viewer.lensing.snapshots.subject.subscribe(datum => {
-            this.configs.justOpened = false;
             this.wrangleSnapshots([datum]);
         });
+        console.log("Other Datum", this.imageViewer.viewer.lensing.snapshots.album);
         this.wrangleSnapshots(this.imageViewer.viewer.lensing.snapshots.album);
 
         // OSD changes
@@ -269,19 +280,24 @@ export class PtDotter {
     /**
      * renderSnapshots
      */
-    renderSnapshots() {
+    renderSnapshots(redraw = false) {
 
         const vis = this;
-
-        const data = this.imageViewer.viewer.lensing.snapshots.album;
+        let data;
+        // const data = this.imageViewer.viewer.lensing.snapshots.album;
+        if (redraw) {
+            data = [];
+        } else {
+            data = this.data;
+        }
 
         this.els.album.selectAll('.dotter_block')
-            .data(this.data)
+            .data(data)
             .join(
                 enter => enter.append('div')
                     .attr('class', 'dotter_block')
                     .each(function (d, i) {
-
+                        console.log("Dat", d, i);
                         const div = d3.select(this);
 
                         const canvasContainer = div.append('div')
@@ -330,8 +346,20 @@ export class PtDotter {
                             .attr('class', 'dotter_block_icon_container');
 
                         iconContainer.append('a')
-                            .attr('class', 'dotter_block_icon_container_save')
-                            .text('SAVE')
+                            .attr('class', (d, i) => {
+                                if (d.fromDb) {
+                                    return 'dotter_block_icon_container_from_db';
+                                } else {
+                                    return 'dotter_block_icon_container_save';
+                                }
+                            })
+                            .text((d, i) => {
+                                if (d.fromDb) {
+                                    return 'DELETE FROM DB';
+                                } else {
+                                    return 'SAVE';
+                                }
+                            })
                             .on('click', vis.saveToDb.bind(vis));
 
                         // iconContainer.append('img')
@@ -352,7 +380,30 @@ export class PtDotter {
                         //     .style('width', `${vis.configs.iconW}px`)
                         //     .style('height', `${vis.configs.iconH}px`);
 
-                    })
+                    }),
+                update => update,
+                //     .each(function (dat, i) {
+                //         const div = d3.select(this);
+                //         // div.select('.dotter_block_icon_container')
+                //         //     .select('a')
+                //         //     .attr('class', () => {
+                //         //         if (dat.fromDb) {
+                //         //             return 'dotter_block_icon_container_from_db';
+                //         //         } else {
+                //         //             return 'dotter_block_icon_container_save';
+                //         //         }
+                //         //     })
+                //         //     .text(() => {
+                //         //         if (dat.fromDb) {
+                //         //             return 'DELETE FROM DB';
+                //         //         } else {
+                //         //             return 'SAVE';
+                //         //         }
+                //         //     })
+                //     }),
+
+                exit => exit
+                    .call(e => e.remove())
             );
 
     }
@@ -433,10 +484,24 @@ export class PtDotter {
     /**
      * saveToDb
      */
-    saveToDb(e, d) {
-        console.log(d)
-        dataLayer.saveDot(d);
-
+    async saveToDb(e, d) {
+        if (!d.fromDb) {
+            await dataLayer.saveDot(d);
+            _.find(this.imageViewer.viewer.lensing.snapshots.album, elem => elem.id == d.id).fromDb = true;
+            _.find(this.data, elem => elem.id == d.id).fromDb = true;
+        } else {
+            await dataLayer.deleteDot(d.id);
+            this.imageViewer.viewer.lensing.snapshots.album = _.remove(this.imageViewer.viewer.lensing.snapshots.album, elem => {
+                return elem.id != d.id;
+            })
+            this.data = _.remove(this.data, elem => {
+                return elem.id != d.id
+            })
+        }
+        this.renderSnapshots(true);
+        this.renderSnapshots();
 
     }
+
+
 }
