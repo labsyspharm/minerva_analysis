@@ -21,7 +21,7 @@ class Starplot {
         const self = this;
         this.totalWidth = this.parent.node().getBoundingClientRect().width;
         this.totalHeight = this.parent.node().getBoundingClientRect().height;
-        this.margin = {top: 10, right: 10, bottom: 100, left: 10},
+        this.margin = {top: 20, right: 10, bottom: 100, left: 10},
             this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
 
@@ -53,6 +53,7 @@ class Starplot {
         this.y = d3.scaleLinear()
             .domain([0, 1])
             .range([self.height, 0]);
+        this.y.clamp(true);
 
         this.lineY = d3.scaleLinear()
             .domain([0, 1])
@@ -61,7 +62,6 @@ class Starplot {
         let emptyData = _.map(this.phenotypes, pheno => {
             return [pheno, 0];
         })
-
         self.svgGroup.append("path")
             .attr("fill", "none")
             .classed("average_path", true)
@@ -104,6 +104,7 @@ class Starplot {
                 index: _.indexOf(order, k)
             }
         })
+
         this.visData = _.filter(this.visData, elem => {
             return elem.index !== -1; // Remove elements not in my order list
         });
@@ -163,6 +164,28 @@ class Starplot {
                         .tickValues([]));
                 }
             })
+
+        let avgLineLegend = self.svgGroup.selectAll('.average_line')
+            .data([0])
+        avgLineLegend.enter()
+            .append('line')
+            .classed('average_line', true)
+            .attr('x1', self.margin.left + 20)
+            .attr('y1', -15)
+            .attr('x2', self.margin.left + 40)
+            .attr('y2', -15)
+            .attr("stroke-width", 3)
+            .attr('stroke', 'black')
+
+        let avgLineLabel = self.svgGroup.selectAll('.average_line_label')
+            .data([0])
+        avgLineLegend.enter()
+            .append('text')
+            .classed('average_line_label', true)
+            .attr('x', self.margin.left + 43)
+            .attr('y', -13)
+            .attr('font-size', '0.5rem')
+            .text('Avg.')
 
 
         self.svgGroup.select(".average_path")

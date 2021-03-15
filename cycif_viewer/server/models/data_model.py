@@ -527,7 +527,7 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition):
         load_datasource(datasource_name)
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    phenos = datasource.phenotype.unique().tolist()
+    phenos = sorted(datasource.phenotype.unique().tolist())
     neighborhood_vector = np.zeros((len(phenos)))
     disabled = []
     for i in range(len(phenos)):
