@@ -55,9 +55,9 @@ export class LensingFiltersExt {
             lfMultiModal.load,
             lfSplit.load,
             lfChannelView.load,
+            lFCellType.load,
             lfNearestCellsSel.load,
             lfNearestCellsAll.load,
-            lFCellType.load,
             // lfChannelRelationships.load
         ];
 

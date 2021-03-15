@@ -297,6 +297,7 @@ def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
             return color_scheme
     if label_field == 'phenotype':
         labels = get_phenotypes(datasource_name)
+        print(labels)
     labels.append('SelectedCluster')
     color_scheme = {}
     colors = ["#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059", "#FFDBE5", "#7A4900",

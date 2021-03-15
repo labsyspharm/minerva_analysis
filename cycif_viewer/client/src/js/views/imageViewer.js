@@ -8,6 +8,7 @@
 class ImageViewer {
 
     // Class vars
+    databaseDescription = null;
     imageMetadata = null;
     viewer = null;
     viewers = [];
@@ -184,6 +185,16 @@ class ImageViewer {
                 selection_outlined: true
             }
         ];
+
+        /************************************************************************************** Database description  */
+
+        dataLayer.getDatabaseDescription().then(result => {
+
+            this.databaseDescription = result;
+
+        }).catch(err => console.log(err))
+
+        /************************************************************************************* Right click selection  */
 
         // Add event mouse handler (cell selection)
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {

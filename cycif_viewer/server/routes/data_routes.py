@@ -128,7 +128,7 @@ def get_gated_cell_ids():
 @app.route('/get_database_description', methods=['GET'])
 def get_database_description():
     datasource = request.args.get('datasource')
-    resp = data_model.get_database_description(datasource)
+    resp = data_model.get_datasource_description(datasource)
     return serialize_and_submit_json(resp)
 
 

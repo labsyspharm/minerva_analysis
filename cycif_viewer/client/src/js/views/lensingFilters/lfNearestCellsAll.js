@@ -26,6 +26,8 @@ export class LfNearestCellsAll {
         el_cellsG: null,
         el_chartG: null,
         el_chartAreaPath: null,
+        el_chartAreaPathRef1: null,
+        el_chartAreaPathRef2: null,
         el_chartLabelsG: null,
         el_nucleusG: null,
         el_radialExtG: null,
@@ -34,7 +36,20 @@ export class LfNearestCellsAll {
         tool_angleScale: d3.scaleLinear()
             .range([0, 2 * Math.PI]),
         tool_areaMaker: d3.areaRadial()
-            .curve(d3.curveCardinalClosed),
+            .curve(d3.curveCardinalClosed)
+            .innerRadius(() => this.vars.tool_radiusScale(this.vars.cellIntensityRange[0]))
+            .outerRadius(d => this.vars.tool_radiusScale(d.value))
+            .angle(d => this.vars.tool_angleScale(d.index)),
+        tool_areaMakerRef1: d3.areaRadial()
+            .curve(d3.curveCardinalClosed)
+            .innerRadius(() => this.vars.tool_radiusScale(this.vars.cellIntensityRange[0]))
+            .outerRadius(d => this.vars.tool_radiusScale(d.refMean))
+            .angle(d => this.vars.tool_angleScale(d.index)),
+        tool_areaMakerRef2: d3.areaRadial()
+            .curve(d3.curveCardinalClosed)
+            .innerRadius(d => this.vars.tool_radiusScale(d.refMean))
+            .outerRadius(d => this.vars.tool_radiusScale(d.refMean))
+            .angle(d => this.vars.tool_angleScale(d.index)),
         tool_channelScale: d3.scaleLinear()
             .range([Math.PI, -Math.PI]),
         tool_nucleusScale: d3.scaleSqrt()
@@ -42,8 +57,7 @@ export class LfNearestCellsAll {
         tool_rCellScale: d3.scalePow()
             .exponent(0.5)
             .range([0.5, 10]),
-        tool_radiusScale: d3.scaleLinear()
-            .domain([0, 1]),
+        tool_radiusScale: d3.scaleSymlog(),
         xyPosKeys: []
     };
 
@@ -51,7 +65,7 @@ export class LfNearestCellsAll {
      * @constructor
      */
     constructor(_imageViewer) {
-        this.image_viewer = _imageViewer;
+        this.imageViewer = _imageViewer;
 
         // From global vars
         this.data_layer = dataLayer;
@@ -97,16 +111,16 @@ export class LfNearestCellsAll {
                         if (!this.load.config.filterCode.settings.loading) {
 
                             // Lensing ref
-                            const lensing = this.image_viewer.viewer.lensing;
+                            const lensing = this.imageViewer.viewer.lensing;
 
                             // Measure relative
                             const screenPt1 = new OpenSeadragon.Point(0, 0);
                             const screenPt2 =
                                 new OpenSeadragon.Point(lensing.configs.rad / lensing.configs.pxRatio, 0);
                             const contextPt1 =
-                                this.image_viewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
+                                this.imageViewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
                             const contextPt2 =
-                                this.image_viewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
+                                this.imageViewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
                             let newRad = Math.round(contextPt2.x - contextPt1.x)
                             if (newRad > 500) newRad = 500;
 
@@ -128,7 +142,7 @@ export class LfNearestCellsAll {
 
                                 // Check if same filter (in case async return arrives after change)
                                 if (this.load.config.filterCode.name !==
-                                    this.image_viewer.viewer.lensing.lenses.selections.filter.name) {
+                                    this.imageViewer.viewer.lensing.lenses.selections.filter.name) {
                                     (this.load.config.get_vf_setup()).destroy();
                                     return;
                                 }
@@ -172,7 +186,7 @@ export class LfNearestCellsAll {
                     update: (i, index) => {
 
                         // Magnify (simply pass through after filter)
-                        this.image_viewer.viewer.lensing.lenses.selections.magnifier.update(i, index);
+                        this.imageViewer.viewer.lensing.lenses.selections.magnifier.update(i, index);
                     },
                     fill: 'rgba(255, 255, 255, 0)',
                     stroke: 'rgba(0, 0, 0, 1)'
@@ -183,7 +197,7 @@ export class LfNearestCellsAll {
                         init: () => {
 
                             // Define this
-                            const vf = this.image_viewer.viewer.lensing.viewfinder;
+                            const vf = this.imageViewer.viewer.lensing.viewfinder;
 
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
@@ -216,7 +230,7 @@ export class LfNearestCellsAll {
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
                                 .style('letter-spacing', 1)
-                                .text('Multiplex distributions (all)');
+                                .text('Multiplex mean distributions (all)');
                             this.vars.el_textReportG.append('text')
                                 .attr('class', 'viewfinder_text_report_text2')
                                 .attr('x', this.vars.config_boxMargin.left * 2.5)
@@ -236,9 +250,17 @@ export class LfNearestCellsAll {
                                     ${this.vars.config_boxW / 2 + this.vars.config_boxMargin.top}px)`);
                             this.vars.el_chartLabelsG = this.vars.el_chartG.append('g')
                                 .attr('class', 'viewfinder_chart_label_g');
+                            this.vars.el_chartAreaPathRef1 = this.vars.el_chartG.append('path')
+                                .attr('class', 'viewfinder_chart_area_path_ref_1')
+                                .attr('fill', 'rgba(255, 128, 0, 0.8)');
                             this.vars.el_chartAreaPath = this.vars.el_chartG.append('path')
                                 .attr('class', 'viewfinder_chart_area_path')
-                                .attr('fill', 'rgba(255, 255, 255, 0.9');
+                                .attr('fill', 'rgba(255, 255, 255, 1)');
+                            this.vars.el_chartAreaPathRef2 = this.vars.el_chartG.append('path')
+                                .attr('class', 'viewfinder_chart_area_path_ref_2')
+                                .attr('fill', 'none')
+                                .attr('stroke', 'rgba(255, 128, 0, 1)')
+                                .attr('stroke-width', 2);
 
                             // Append nucleusG
                             this.vars.el_nucleusG = this.vars.el_boxExtG.append('g')
@@ -268,6 +290,7 @@ export class LfNearestCellsAll {
                                 .html(`Area, &micro;<tspan font-size=\'${this.vars.config_fontMd / 2}\' ` +
                                     `dx=\'1\' dy=\'-5\'>2</tspan>`);
 
+
                         },
                         wrangle: () => {
 
@@ -279,18 +302,20 @@ export class LfNearestCellsAll {
 
                             // Set image channels (whitelist)
                             if (this.vars.imageChannels.length === 0) {
-                                this.vars.imageChannels = Utils.getImageChannels(this.data[0].data, this.image_viewer)
+                                this.vars.imageChannels = Utils.getImageChannels(this.data[0].data, this.imageViewer)
                             }
 
-                            // Clear then update cell channels
+                            // Clear then update cell channels (value is average)
                             this.vars.cellChannels = [];
                             for (let k in cell) {
                                 if (cell.hasOwnProperty(k) && this.vars.imageChannels.includes(k)) {
                                     this.vars.cellChannels.push({
                                         key: k,
+                                        refMean: this.imageViewer.databaseDescription[k].mean,
                                         short: this.data_layer.getShortChannelName(k),
                                         value: this.data
-                                            ? this.data.map(d => d.data[k]).reduce((acc, cur) => acc + cur)
+                                            ? this.data.map(d => d.data[k]).reduce((acc, cur) => acc + cur) /
+                                            this.data.length
                                             : 0
                                     });
                                 }
@@ -310,14 +335,10 @@ export class LfNearestCellsAll {
                             this.vars.tool_channelScale.domain([0, this.vars.cellChannels.length]);
                             this.vars.tool_nucleusScale.range([7, this.vars.config_nucleusR])
                             this.vars.tool_radiusScale
-                                .domain([0, d3.max(this.vars.cellChannels, d => d.value)])
+                                .domain(this.vars.cellIntensityRange)
                                 .range([this.vars.config_chartR0, this.vars.config_chartR1]);
-                            this.vars.tool_rCellScale.domain([this.image_viewer.viewer.viewport.getMinZoom(),
-                                this.image_viewer.viewer.viewport.getMaxZoom()]);
-                            this.vars.tool_areaMaker
-                                .innerRadius(() => this.vars.tool_radiusScale(this.vars.cellIntensityRange[0]))
-                                .outerRadius(d => this.vars.tool_radiusScale(d.value))
-                                .angle(d => this.vars.tool_angleScale(d.index));
+                            this.vars.tool_rCellScale.domain([this.imageViewer.viewer.viewport.getMinZoom(),
+                                this.imageViewer.viewer.viewport.getMaxZoom()]);
 
                         },
                         render: () => {
@@ -332,7 +353,7 @@ export class LfNearestCellsAll {
                             }
 
                             // Get zoom
-                            const zoom = vis.image_viewer.viewer.viewport.getZoom();
+                            const zoom = vis.imageViewer.viewer.viewport.getZoom();
                             const cellR = vis.vars.tool_rCellScale(zoom);
 
                             // Append cell center circles
@@ -440,7 +461,7 @@ export class LfNearestCellsAll {
                                                 .attr('r', vis.vars.config_channelR)
                                                 .attr('cx', channelCoords[0])
                                                 .attr('cy', channelCoords[1])
-                                                .attr('fill', Utils.getChannelColor(d.short, d.value, vis.image_viewer,
+                                                .attr('fill', Utils.getChannelColor(d.short, d.value, vis.imageViewer,
                                                     vis.channel_list))
                                                 .attr('stroke', () => {
                                                     if (vis.channel_list.selections.includes(d.short)) {
@@ -472,7 +493,7 @@ export class LfNearestCellsAll {
 
                                             // Label group
                                             g.select('.viewfinder_chart_label_g_g_circle')
-                                                .attr('fill', Utils.getChannelColor(d.short, d.value, vis.image_viewer,
+                                                .attr('fill', Utils.getChannelColor(d.short, d.value, vis.imageViewer,
                                                     vis.channel_list))
                                                 .attr('stroke', () => {
                                                     if (vis.channel_list.selections.includes(d.short)) {
@@ -490,6 +511,16 @@ export class LfNearestCellsAll {
                                 .datum(this.vars.cellChannels)
                                 .transition()
                                 .attr('d', d => this.vars.tool_areaMaker(d));
+
+                            // Draw path
+                            this.vars.el_chartAreaPathRef1
+                                .datum(this.vars.cellChannels)
+                                .transition()
+                                .attr('d', d => this.vars.tool_areaMakerRef1(d));
+                            this.vars.el_chartAreaPathRef2
+                                .datum(this.vars.cellChannels)
+                                .transition()
+                                .attr('d', d => this.vars.tool_areaMakerRef2(d));
 
                             // Update nucleus area report
                             this.vars.el_nucleusG
