@@ -36,21 +36,51 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
 
     viewport = np.array(viewport.split(",")).astype(float).astype(int);
     #get image and lens section
-    png = loadPngSection(datasource_name, channels[0], zoomlevel, viewport)
-    roi = loadPngSection(datasource_name, channels[0], zoomlevel, np.array([x-r,y-r,x+r,y+r]).astype(int))
+
+    png =[]
+    roi = []
+    for channel in channels:
+        png.append(loadPngSection(datasource_name, channel, zoomlevel, viewport))
+        roi.append(loadPngSection(datasource_name, channel, zoomlevel, np.array([x-r,y-r,x+r,y+r]).astype(int)))
+
+
+    tac = time.perf_counter()
+    print("cropped sections loaded after " + str(tac-tic))
 
     #write those sections to file for debugging purposes
     # cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', png)
     # cv2.imwrite('cycif_viewer/server/analytics/img/roi.png', roi)
 
     # calc image similarity map
-    print("calculate image similarity")
-    sim_map = calc_sim(png, roi)
+    print("calculate image similarity maps for each channel...")
+    i = 0
+    sim_map = []
+    combined_png = []
+    combined_roi = []
+    for channel in channels:
+        print("sim map for " + str(channel))
+        if (i == 0):
+            combined_png = png[i]
+            combined_roi = roi[i]
+        if (i > 0):
+            combined_png = np.add(combined_png, png[i])
+            combined_roi = np.add(combined_roi, roi[i])
+        i += 1
     # cv2.imwrite('cycif_viewer/server/analytics/img/sim_map.jpg', sim_map)
+
+    # normalize by num channels considered
+    print("combining whole channels, combine lens parts. Norm by num channels")
+    if (len(channels) > 1):
+        combined_png = np.floor_divide(combined_png, len(channels))
+        combined_roi = np.floor_divide(combined_roi, len(channels))
+
+
+    print("compute similarity maps")
+    combined_sim_map = calc_sim(combined_png, combined_roi)
 
     # find contours
     print("compute contours")
-    contours = find_contours(png, sim_map, sensibility)
+    contours = find_contours(combined_sim_map, sensibility)
     # labels = find_labels(png, sim_map, sensibility)
 
     #get global contour positions
@@ -65,6 +95,62 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
 
     print("histogram computation time is" + str(toc-tic))
     return {'contours': contours}
+
+
+
+    # tic = time.perf_counter()
+    # print("histogram comparison..")
+    # print("load image sections")
+    #
+    # viewport = np.array(viewport.split(",")).astype(float).astype(int);
+    # #get image and lens section
+    #
+    # png =[]
+    # roi = []
+    # for channel in channels:
+    #     png.append(loadPngSection(datasource_name, channel, zoomlevel, viewport))
+    #     roi.append(loadPngSection(datasource_name, channel, zoomlevel, np.array([x-r,y-r,x+r,y+r]).astype(int)))
+    #
+    # #write those sections to file for debugging purposes
+    # # cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', png)
+    # # cv2.imwrite('cycif_viewer/server/analytics/img/roi.png', roi)
+    #
+    # # calc image similarity map
+    # print("calculate image similarity maps for each channel...")
+    # i = 0
+    # sim_map = []
+    # combined_sim_map = []
+    # for channel in channels:
+    #     print("sim map for " + str(channel))
+    #     sim_map.append(calc_sim(png[i], roi[i]))
+    #     if (i == 0):
+    #         combined_sim_map = sim_map[i]
+    #     if (i > 0):
+    #         combined_sim_map = np.add(combined_sim_map, sim_map[i])
+    #     i += 1
+    # # cv2.imwrite('cycif_viewer/server/analytics/img/sim_map.jpg', sim_map)
+    #
+    # # normalize by num channels considered
+    # print("combining sim maps")
+    # combined_sim_map = np.true_divide(combined_sim_map, len(channels))
+    #
+    # # find contours
+    # print("compute contours")
+    # contours = find_contours(combined_sim_map, sensibility)
+    # # labels = find_labels(png, sim_map, sensibility)
+    #
+    # #get global contour positions
+    # length = len(data_model.channels[0].shape);
+    # layerviewport = getLayerViewport( data_model.channels[0].shape[length-2],
+    #                            data_model.channels[0].shape[length-1],
+    #                           data_model.channels[zoomlevel].shape[length-2],
+    #                           data_model.channels[zoomlevel].shape[length-1],
+    #                           viewport)
+    # contours = toWorldCoordinates(contours, viewport, layerviewport)
+    # toc = time.perf_counter()
+    #
+    # print("histogram computation time is" + str(toc-tic))
+    # return {'contours': contours}
 
 
 def toWorldCoordinates(contours, originalviewport, viewport):
@@ -149,19 +235,19 @@ def find_labels(img, sim_map, eta):
     return blobs_labels
 
 
-def find_contours(img, sim_map, eta):
+def find_contours(sim_map, eta):
     sim_map = np.pad(sim_map, pad_width=5, mode='constant', constant_values=0)
     sim_map = sim_map / sim_map.max()
     contours = measure.find_contours(sim_map, eta, fully_connected='high')
 
-    print(data_path)
-    f = open('cycif_viewer/server/analytics/measures/centers.txt', 'w')
-    f.write('x,y\n')
-    for contour in contours:
-        # calculate centers
-        f.write('{},{}\n'.format(round(contour[:, 1].mean(), 3),
-                                 round(contour[:, 1].mean(), 3)))
-    f.close()
+    # print(data_path)
+    # f = open('cycif_viewer/server/analytics/measures/centers.txt', 'w')
+    # f.write('x,y\n')
+    # for contour in contours:
+    #     # calculate centers
+    #     f.write('{},{}\n'.format(round(contour[:, 1].mean(), 3),
+    #                              round(contour[:, 1].mean(), 3)))
+    # f.close()
 
     return contours
 

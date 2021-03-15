@@ -7,8 +7,8 @@ export class LfHistoSearch {
     data = [];
     load = [];
     vars = {
-        config_boxW: 300,
-        config_boxH: 80,
+        config_boxW: 200,
+        config_boxH: 100,
         config_boxMargin: {top: 8, right: 6, bottom: 7, left: 6},
         config_fontSm: 9,
         config_fontMd: 11,
@@ -16,6 +16,7 @@ export class LfHistoSearch {
         el_radialExtG: null,
         el_textReportG: null,
         el_toggleNoteG: null,
+        channelCombo: new Map(),
         keydown: e => {
             const lensing = this.image_viewer.viewer.lensing;
             if (!lensing.configs.sensitivity){
@@ -37,6 +38,8 @@ export class LfHistoSearch {
                 for (let k in mainManager.viewerChannels) {
                     channels.push(mainManager.viewerChannels[k].name);
                 }
+
+
 
                 // Measure relative
                 const screenPt1 = new OpenSeadragon.Point(0, 0);
@@ -172,6 +175,13 @@ export class LfHistoSearch {
                             // Define this
                             const vf = this.image_viewer.viewer.lensing.viewfinder;
 
+
+
+                            const mainManager = this.image_viewer.viewerManagerVMain;
+                            for (let k in mainManager.viewerChannels) {
+                                this.vars.channelCombo.set(mainManager.viewerChannels[k].name, true);
+                            }
+
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
                             vf.els.blackboardRect.attr('width', this.vars.config_boxW);
@@ -219,7 +229,7 @@ export class LfHistoSearch {
                                 .html('&#9740;');
                             this.vars.el_toggleNoteG.append('text')
                                 .attr('class', 'viewfinder_toggle_note_g_char')
-                                .attr('x', -25)
+                                .attr('x', -40)
                                 .attr('y', 2)
                                 .attr('text-anchor', 'end')
                                 .attr('dominant-baseline', 'hanging')
@@ -228,11 +238,14 @@ export class LfHistoSearch {
                                 .attr('font-size', 8)
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
-                                .html('Countours: SHIFT H -- Increase: j -- Decrease: k');
+                                .html('Contours: shift h - Increase/Decrease: k/j');
 
                             // Add listener
                             this.vars.keydown = this.vars.keydown.bind(this)
                             document.addEventListener('keydown', this.vars.keydown);
+
+                            vf.els.blackboardRect.attr('height', this.vars.config_boxH);
+                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
 
 
                         },
@@ -240,6 +253,18 @@ export class LfHistoSearch {
 
                             // Define this
                             const vis = this;
+
+                            //update list of active channels and maintain their toggles
+                            const mainManager = this.image_viewer.viewerManagerVMain;
+                            let tempCombo = new Map();
+                            for (let k in mainManager.viewerChannels) {
+                                let isSet = true;
+                                if (this.vars.channelCombo.has(mainManager.viewerChannels[k].name)){
+                                    isSet = this.vars.channelCombo.get(mainManager.viewerChannels[k].name);
+                                }
+                                tempCombo.set(mainManager.viewerChannels[k].name, isSet);
+                            }
+                            this.vars.channelCombo = tempCombo;
 
 
                             //set sensitivity to 0.5 if not initialized
@@ -326,6 +351,40 @@ export class LfHistoSearch {
                                 .text(function(d){
                                   return f(d);
                                 });
+
+
+                            this.vars.el_boxExtG.select("#dynamic_text_elements").remove();
+
+                            let dynamic = this.vars.el_boxExtG.append("g")
+                                .attr('id', 'dynamic_text_elements');
+
+                            dynamic.selectAll(".combo_channels")
+                                .data(this.vars.channelCombo, function(d){return  d}).enter()
+                                        .append("text")
+                                        .attr('class', 'combo_channels')
+                                        .attr("x", function(d,i){ return 100} )
+                                        .attr("y", function(d,i){ return 50 + 10*i} )
+                                        .text(function(d,i){ return d[0] + ":     " + d[1]})
+                                        .attr('text-anchor', 'end')
+                                        .attr('fill', 'rgba(255, 255, 255, 0.9)')
+                                        .attr('font-family', 'sans-serif')
+                                        .attr('font-size', 8)
+                                        .attr('font-style', 'italic')
+                                        .attr('font-weight', 'lighter');
+
+                            // const sens = 1-vis.image_viewer.viewer.lensing.configs.sensitivity*4;
+                            // dynamic
+                            //     .append("text")
+                            //     .attr("x", 150)
+                            //     .attr("y", 80)
+                            //     .text(100-(f(sens*100)))
+                            //     .attr('font-family', 'sans-serif')
+                            //     .attr('font-size', 22)
+                            //     .attr('font-style', 'italic')
+                            //     .attr('font-weight', 'lighter')
+                            //     .attr('fill', 'rgba(255, 255, 255, 0.9)');
+
+
                             
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
