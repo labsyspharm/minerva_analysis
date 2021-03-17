@@ -54,8 +54,11 @@ export class Utils {
         // Iterate, recognize, place, return
         const imgData = imageViewer.config.imageData.map(img => img.fullname);
         const arr = [];
+        const blacklist = ['Area']
         for (const [k, v] of Object.entries(d)) {
-            if (d.hasOwnProperty(k) && imgData.includes(k) && v) arr.push(k);
+            if (d.hasOwnProperty(k) && imgData.includes(k) && v >= 0 && !blacklist.includes(k)) {
+                arr.push(k)
+            }
         }
         return arr;
     }
