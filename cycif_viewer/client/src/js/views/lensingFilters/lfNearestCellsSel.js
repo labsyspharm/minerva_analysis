@@ -32,9 +32,9 @@ export class LfNearestCellsSel {
             .range([0.5, 10]),
         tool_scX: d3.scaleLinear(),
         tool_scY: d3.scaleLinear(),
-        tool_normalScale: d3.scaleSymlog()
-            .domain([0, 65536])
-            .range([0, 1]),
+        tool_normalScale: d3.scaleLinear()
+            .domain([0, 1])
+            .range([0, 65536]),
     };
 
     /**
@@ -258,12 +258,15 @@ export class LfNearestCellsSel {
                                         this.vars.channelSelections.includes(short)) {
                                         const map = this.data.map(c => c.data[k]);
                                         const normalMap = [];
-                                        map.forEach(val => normalMap.push(this.vars.tool_normalScale(val)))
-                                        // const sum = map.reduce((acc, cur) => acc + cur);
-                                        console.log(this.imageViewer.databaseDescription[k])
+                                        map.forEach(val => {
+                                            if (val > 0) {
+                                                normalMap.push(this.vars.tool_normalScale(val))
+                                            }
+                                        })
+                                        console.log(normalMap)
+                                        // console.log(this.imageViewer.databaseDescription[k])
                                         this.vars.histRange.push({
                                             key: k,
-                                            // mean: sum / map.length,
                                             short: short,
                                             values: map,
                                             normalValues: normalMap
@@ -287,11 +290,13 @@ export class LfNearestCellsSel {
 
                                 // Config
                                 let max = 0;
+                                console.log(this.vars.histRange)
                                 this.vars.histRange.forEach(d => {
                                     d.bins.forEach(b => {
                                         if (b.length > max) max = b.length;
                                     });
                                 });
+                                console.log(max)
                                 this.vars.tool_scY.domain([0, max]);
 
                             }
