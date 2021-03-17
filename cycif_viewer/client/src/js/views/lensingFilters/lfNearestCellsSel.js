@@ -258,12 +258,13 @@ export class LfNearestCellsSel {
                                         this.vars.channelSelections.includes(short)) {
                                         const map = this.data.map(c => c.data[k]);
                                         const normalMap = [];
+                                        const pMin = this.imageViewer.databaseDescription[k]['1%'];
+                                        const pMax = this.imageViewer.databaseDescription[k]['99%'];
                                         map.forEach(val => {
-                                            if (val > 0) {
+                                            if (val > pMin && val < pMax) {
                                                 normalMap.push(this.vars.tool_normalScale(val))
                                             }
                                         })
-                                        // console.log(this.imageViewer.databaseDescription[k])
                                         this.vars.histRange.push({
                                             key: k,
                                             short: short,
