@@ -57,7 +57,7 @@ export class LfNearestCellsAll {
         tool_rCellScale: d3.scalePow()
             .exponent(0.5)
             .range([0.5, 10]),
-        tool_radiusScale: d3.scaleSymlog(),
+        tool_radiusScale: d3.scaleLinear(),
         xyPosKeys: []
     };
 
