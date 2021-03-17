@@ -182,7 +182,7 @@ export class LfNearestCellsSel {
                             // Configurations
                             this.vars.tool_scX.range([0, this.vars.config_boxW - (this.vars.config_chartsMargin.right
                                 + this.vars.config_chartsMargin.left)])
-                                .domain([0, 1]);
+                                .domain(this.vars.cellIntensityRange);
                             this.vars.tool_scY.range([0.5, this.vars.config_channelExtH -
                             (this.vars.config_chartsMargin.top + this.vars.config_chartsMargin.bottom)]);
                             this.vars.tool_rCellScale.domain([this.imageViewer.viewer.viewport.getMinZoom(),
@@ -263,7 +263,6 @@ export class LfNearestCellsSel {
                                                 normalMap.push(this.vars.tool_normalScale(val))
                                             }
                                         })
-                                        console.log(normalMap)
                                         // console.log(this.imageViewer.databaseDescription[k])
                                         this.vars.histRange.push({
                                             key: k,
@@ -290,13 +289,11 @@ export class LfNearestCellsSel {
 
                                 // Config
                                 let max = 0;
-                                console.log(this.vars.histRange)
                                 this.vars.histRange.forEach(d => {
                                     d.bins.forEach(b => {
                                         if (b.length > max) max = b.length;
                                     });
                                 });
-                                console.log(max)
                                 this.vars.tool_scY.domain([0, max]);
 
                             }
