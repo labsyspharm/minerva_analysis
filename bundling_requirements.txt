@@ -18,5 +18,5 @@ matplotlib
 tornado
 opencv-python
 dask
-dask[dataframe] --upgrade
+dask[dataframe]
 
