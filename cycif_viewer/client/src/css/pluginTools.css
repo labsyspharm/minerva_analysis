@@ -116,7 +116,7 @@
     text-decoration: none;
 }
 
-.dotter_block_icon_container_from_db{
+.dotter_block_icon_container_from_db {
     background-color: rgb(255, 134, 37);
     color: rgba(0, 0, 0, 1);
     font-size: 10px;
@@ -129,6 +129,20 @@
 .toolboxContainer .dotter_block .dotter_block_icon_container img {
     margin: 0 6px 0 0;
     opacity: 0.75;
+}
+
+.nopadding {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#dotter_search {
+    margin: 5px;
+    color: #5b5b5b !important;
+    background-color: #1b1b1b !important;
+    font-size: 0.5rem;
+    width: 80%;
+
 }
 
 

@@ -112,8 +112,26 @@ export class PtDotter {
         // Add container
         this.els.container = this.parent.els.toolboxEl.append('div')
             .attr('class', 'toolboxContainer')
-        this.els.container.append('h1')
+        let row = this.els.container.append('div')
+            .classed('row', true)
+        row.append('div')
+            .classed('col-auto-sm nopadding', true)
+            .append('h1')
             .text('Dotter');
+        row.append('div')
+            .classed('col nopadding', true)
+            .append('input')
+            .classed('form-control', true)
+            .attr('id', 'dotter_search')
+            .attr('type', 'search')
+            .attr('placeholder', 'Search')
+            .attr('hidden', 'true');
+
+        this.parent.els.searchbox = document.getElementById('dotter_search');
+
+        this.parent.els.searchbox.addEventListener('change', this.searchDots.bind(this))
+
+        this.els.container
         this.els.album = this.els.container.append('div')
             .attr('class', 'dotter_album');
 
@@ -278,17 +296,21 @@ export class PtDotter {
     }
 
     /**
-     * renderSnapshots
+     * rendrenderSnapshotserSnapshots
      */
-    renderSnapshots(redraw = false) {
+    renderSnapshots(optionalData = null) {
 
         const vis = this;
         let data;
         // const data = this.imageViewer.viewer.lensing.snapshots.album;
-        if (redraw) {
-            data = [];
+        if (optionalData) {
+            data = optionalData;
         } else {
             data = this.data;
+        }
+
+        if (_.size(data) > 0) {
+            this.parent.els.searchbox.hidden = false;
         }
 
         this.els.album.selectAll('.dotter_block')
@@ -336,11 +358,32 @@ export class PtDotter {
 
                         contentContainer.append('textarea')
                             .attr('class', 'textarea_name')
-                            .attr('placeholder', 'Name');
+                            .attr('placeholder', 'Name')
+                            .property('value', d => {
+                                if (d.name && d.name != '') {
+                                    return d.name;
+                                } else {
+                                    return null;
+                                }
+                            })
+                            .on('change', (e, d) => {
+                                d.name = e.target.value;
+                            })
 
                         contentContainer.append('textarea')
                             .attr('class', 'textarea_descript')
-                            .attr('placeholder', 'Description');
+                            .attr('placeholder', 'Description')
+                            .property('value', d => {
+                                if (d.description && d.description != '') {
+                                    return d.description;
+                                } else {
+                                    return null;
+                                }
+                            })
+                            .on('change', (e, d) => {
+                                d.description = e.target.value;
+                            })
+
 
                         const iconContainer = contentContainer.append('div')
                             .attr('class', 'dotter_block_icon_container');
@@ -484,6 +527,23 @@ export class PtDotter {
     /**
      * saveToDb
      */
+    searchDots() {
+        let text = this.parent.els.searchbox.value || '';
+        let filterdData;
+        text = _.trim(_.lowerCase(text))
+        if (text && text != '') {
+            filterdData = _.filter(this.data, elem => {
+                return _.includes(_.lowerCase(elem.name), text) || _.includes(_.lowerCase(elem.description), text)
+            })
+        } else {
+            filterdData = this.data;
+        }
+        this.renderSnapshots(filterdData);
+    }
+
+    /**
+     * saveToDb
+     */
     async saveToDb(e, d) {
         if (!d.fromDb) {
             await dataLayer.saveDot(d);
@@ -498,7 +558,8 @@ export class PtDotter {
                 return elem.id != d.id
             })
         }
-        this.renderSnapshots(true);
+        // This essentially forces a redraw
+        this.renderSnapshots([]);
         this.renderSnapshots();
 
     }
