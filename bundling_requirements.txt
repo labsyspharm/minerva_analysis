@@ -3,7 +3,7 @@ flask-sqlalchemy
 numpy
 orjson
 pandas
-pillow==8.0.0
+pillow==8.1.1
 requests
 scikit-learn==0.20.2
 scikit-image==0.14.2
