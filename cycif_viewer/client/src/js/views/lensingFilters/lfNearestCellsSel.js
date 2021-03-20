@@ -270,8 +270,8 @@ export class LfNearestCellsSel {
                                         this.vars.histRange.push({
                                             histogram: histogram,
                                             histogramScaleY: d3.scaleLinear()
-                                                // .domain([0, d3.max(histogram, bin => bin.y)])
-                                                .domain([0, 1])
+                                                .domain([0, d3.max(histogram, bin => bin.y)])
+                                                // .domain([0, 1])
                                                 .range([0.5, this.vars.config_channelExtH -
                                                 (this.vars.config_chartsMargin.top +
                                                     this.vars.config_chartsMargin.bottom)]),
@@ -317,7 +317,6 @@ export class LfNearestCellsSel {
                                 });
 
                             }
-
                         },
                         render: () => {
 
@@ -387,8 +386,8 @@ export class LfNearestCellsSel {
                                     .attr('width', w - pad)
                                     .attr('height', d => bins.histogramScaleY(d.y))
                                     .attr('fill', d => {
-                                        if (d.y > 0) return 'rgba(255, 160, 0, 0.75)';
-                                        return 'rgba(255, 160, 0, 0.5)';
+                                        if (d.y > 0) return 'rgba(255, 160, 0, 0.5)';
+                                        return 'rgba(255, 160, 0, 0.25)';
                                     });
 
                                 // Build bars
@@ -411,7 +410,7 @@ export class LfNearestCellsSel {
 
                             // Append chart for each channel
                             this.vars.el_chartsG.selectAll('.viewfinder_charts_g_chart_g')
-                                .data(vis.vars.channelSelections, d => d)
+                                .data(vis.vars.channelSelections)
                                 .join(
                                     enter => enter
                                         .append('g')
@@ -423,6 +422,7 @@ export class LfNearestCellsSel {
 
                                             // Find histogram
                                             const bins = vis.vars.histRange.find(h => d === h.short);
+                                            console.log(vis.vars.histRange)
                                             console.log(d, bins)
                                             if (bins) {
 
@@ -432,7 +432,6 @@ export class LfNearestCellsSel {
                                                     .style('transform',
                                                         `translate(${-vis.vars.config_chartsMargin.left / 2}px, 
                                                         ${-vis.vars.config_chartsMargin.top / 2}px)`);
-                                                console.log(d, labelG)
 
                                                 // Append label
                                                 labelG.append('circle')
