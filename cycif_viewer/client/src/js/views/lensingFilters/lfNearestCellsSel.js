@@ -270,7 +270,8 @@ export class LfNearestCellsSel {
                                         this.vars.histRange.push({
                                             histogram: histogram,
                                             histogramScaleY: d3.scaleLinear()
-                                                .domain([0, d3.max(histogram, bin => bin.y)])
+                                                // .domain([0, d3.max(histogram, bin => bin.y)])
+                                                .domain([0, 1])
                                                 .range([0.5, this.vars.config_channelExtH -
                                                 (this.vars.config_chartsMargin.top +
                                                     this.vars.config_chartsMargin.bottom)]),
