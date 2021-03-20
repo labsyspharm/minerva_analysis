@@ -37,18 +37,18 @@ export class LfNearestCellsAll {
             .range([0, 2 * Math.PI]),
         tool_areaMaker: d3.areaRadial()
             .curve(d3.curveCardinalClosed)
-            .innerRadius(() => this.vars.tool_radiusScale(this.vars.cellIntensityRange[0]))
-            .outerRadius(d => this.vars.tool_radiusScale(d.value))
+            .innerRadius(() => this.vars.config_chartR0)
+            .outerRadius(d => d.scale(d.value ? d.value : 0))
             .angle(d => this.vars.tool_angleScale(d.index)),
         tool_areaMakerRef1: d3.areaRadial()
             .curve(d3.curveCardinalClosed)
-            .innerRadius(() => this.vars.tool_radiusScale(this.vars.cellIntensityRange[0]))
-            .outerRadius(d => this.vars.tool_radiusScale(d.refMean))
+            .innerRadius(() => this.vars.config_chartR0)
+            .outerRadius(d => d.scale(d.refMean))
             .angle(d => this.vars.tool_angleScale(d.index)),
         tool_areaMakerRef2: d3.areaRadial()
             .curve(d3.curveCardinalClosed)
-            .innerRadius(d => this.vars.tool_radiusScale(d.refMean))
-            .outerRadius(d => this.vars.tool_radiusScale(d.refMean))
+            .innerRadius(d => d.scale(d.refMean))
+            .outerRadius(d => d.scale(d.refMean) + 1)
             .angle(d => this.vars.tool_angleScale(d.index)),
         tool_channelScale: d3.scaleLinear()
             .range([Math.PI, -Math.PI]),
@@ -57,7 +57,6 @@ export class LfNearestCellsAll {
         tool_rCellScale: d3.scalePow()
             .exponent(0.5)
             .range([0.5, 10]),
-        tool_radiusScale: d3.scaleLinear(),
         xyPosKeys: []
     };
 
@@ -250,17 +249,32 @@ export class LfNearestCellsAll {
                                     ${this.vars.config_boxW / 2 + this.vars.config_boxMargin.top}px)`);
                             this.vars.el_chartLabelsG = this.vars.el_chartG.append('g')
                                 .attr('class', 'viewfinder_chart_label_g');
+
+                            // Clipping mask
+                            this.vars.el_chartG.append('defs')
+                                .append('clipPath')
+                                .attr('id', 'radialClip')
+                                .append('path')
+                                .attr('d', () => {
+                                    return d3.arc()
+                                        .innerRadius(this.vars.config_chartR0)
+                                        .outerRadius(this.vars.config_chartR1)
+                                        .startAngle(0)
+                                        .endAngle(Math.PI * 2)();
+                                });
                             this.vars.el_chartAreaPathRef1 = this.vars.el_chartG.append('path')
                                 .attr('class', 'viewfinder_chart_area_path_ref_1')
-                                .attr('fill', 'rgba(255, 128, 0, 0.8)');
+                                .attr('clip-path', 'url(#radialClip)')
+                                .attr('fill', 'rgba(255, 160, 0, 0.8)');
                             this.vars.el_chartAreaPath = this.vars.el_chartG.append('path')
                                 .attr('class', 'viewfinder_chart_area_path')
-                                .attr('fill', 'rgba(255, 255, 255, 1)');
+                                .attr('clip-path', 'url(#radialClip)')
+                                .attr('fill', 'rgba(255, 255, 255, 0.9)');
                             this.vars.el_chartAreaPathRef2 = this.vars.el_chartG.append('path')
                                 .attr('class', 'viewfinder_chart_area_path_ref_2')
+                                .attr('clip-path', 'url(#radialClip)')
                                 .attr('fill', 'none')
-                                .attr('stroke', 'rgba(255, 128, 0, 1)')
-                                .attr('stroke-width', 1);
+                                .attr('stroke', 'rgba(255, 160, 0, 1)');
 
                             // Append nucleusG
                             this.vars.el_nucleusG = this.vars.el_boxExtG.append('g')
@@ -309,14 +323,21 @@ export class LfNearestCellsAll {
                             this.vars.cellChannels = [];
                             for (let k in cell) {
                                 if (cell.hasOwnProperty(k) && this.vars.imageChannels.includes(k)) {
+
+                                    const pMin = this.imageViewer.databaseDescription[k]['1%']
+                                    const pMax = this.imageViewer.databaseDescription[k]['99%']
+
                                     this.vars.cellChannels.push({
                                         key: k,
                                         refMean: this.imageViewer.databaseDescription[k].mean,
+                                        scale: d3.scaleLinear()
+                                            .domain([pMin, pMax])
+                                            .range([this.vars.config_chartR0, this.vars.config_chartR1]),
                                         short: this.data_layer.getShortChannelName(k),
                                         value: this.data
                                             ? this.data.map(d => d.data[k]).reduce((acc, cur) => acc + cur) /
                                             this.data.length
-                                            : 0
+                                            : pMin
                                     });
                                 }
                             }
@@ -334,10 +355,6 @@ export class LfNearestCellsAll {
                             this.vars.tool_angleScale.domain([0, this.vars.cellChannels.length]);
                             this.vars.tool_channelScale.domain([0, this.vars.cellChannels.length]);
                             this.vars.tool_nucleusScale.range([7, this.vars.config_nucleusR])
-                            this.vars.tool_radiusScale
-                                .domain([0, Math.max(d3.max(this.vars.cellChannels, d => d.value),
-                                    d3.max(this.vars.cellChannels, d => d.refMean))])
-                                .range([this.vars.config_chartR0, this.vars.config_chartR1]);
                             this.vars.tool_rCellScale.domain([this.imageViewer.viewer.viewport.getMinZoom(),
                                 this.imageViewer.viewer.viewport.getMaxZoom()]);
 
