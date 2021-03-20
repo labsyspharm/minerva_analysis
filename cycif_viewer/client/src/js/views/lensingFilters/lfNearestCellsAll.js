@@ -48,7 +48,7 @@ export class LfNearestCellsAll {
         tool_areaMakerRef2: d3.areaRadial()
             .curve(d3.curveCardinalClosed)
             .innerRadius(d => d.scale(d.refMean))
-            .outerRadius(d => d.scale(d.refMean) + 1)
+            .outerRadius(d => d.scale(d.refMean) + 0.5)
             .angle(d => this.vars.tool_angleScale(d.index)),
         tool_channelScale: d3.scaleLinear()
             .range([Math.PI, -Math.PI]),
@@ -398,6 +398,8 @@ export class LfNearestCellsAll {
                                         .each(function (d) {
                                             const g = d3.select(this)
                                                 .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                                            g.selectAll('circle')
+                                                .attr('r', cellR)
                                         }),
                                     exit => exit.remove()
                                 );

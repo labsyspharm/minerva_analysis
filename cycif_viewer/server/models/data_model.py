@@ -453,9 +453,12 @@ def get_datasource_description(datasource_name):
     # Load if not loaded
     if datasource_name != source:
         load_ball_tree(datasource_name)
-    description = datasource.describe(percentiles=[.005,  .01, .25, .5, .75, .95, .99, .995]).to_dict()
+    description = datasource.describe(percentiles=[.005, .01, .25, .5, .75, .95, .99, .995]).to_dict()
     for column in description:
-        [hist, bin_edges] = np.histogram(datasource[column].to_numpy(), bins=50, density=True)
+        col = datasource[column]
+        col = col[(col >= description[column]['1%']) & (col <= description[column]['99%'])]
+        col = col.to_numpy()
+        [hist, bin_edges] = np.histogram(col, bins=25, density=True)
         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
         description[column]['histogram'] = {}
         dat = []

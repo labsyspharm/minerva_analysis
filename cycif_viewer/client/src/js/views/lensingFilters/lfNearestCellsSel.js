@@ -11,6 +11,7 @@ export class LfNearestCellsSel {
     vars = {
         areaTerm: '',
         cellIntensityRange: [0, 65536],
+        channelSelections: [],
         config_colorR: 4,
         config_boxW: 300,
         config_boxH: 50,
@@ -19,14 +20,14 @@ export class LfNearestCellsSel {
         config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 30},
         config_fontSm: 9,
         config_fontMd: 11,
-        config_rectPad: 0.15,
+        config_rectPad: 0.25,
         el_boxExtG: null,
         el_cellsG: null,
         el_chartsG: null,
         el_radialExtG: null,
         el_textReportG: null,
         histRange: [],
-        channelSelections: [],
+        tickCt: 25,
         tool_rCellScale: d3.scalePow()
             .exponent(0.5)
             .range([0.5, 10]),
@@ -256,21 +257,34 @@ export class LfNearestCellsSel {
                                     // Add channels
                                     if (this.data[0].data.hasOwnProperty(k) &&
                                         this.vars.channelSelections.includes(short)) {
-                                        const map = this.data.map(c => c.data[k]);
-                                        const normalMap = [];
-                                        console.log(this.imageViewer.databaseDescription[k])
+
                                         const pMin = this.imageViewer.databaseDescription[k]['1%'];
                                         const pMax = this.imageViewer.databaseDescription[k]['99%'];
-                                        map.forEach(val => {
-                                            if (val > pMin && val < pMax) {
-                                                normalMap.push(this.vars.tool_normalScale(val))
+                                        const histogram = this.imageViewer.databaseDescription[k]['histogram'];
+
+                                        const map = this.data.map(c => {
+                                            if (c.data[k] > pMin && c.data[k] < pMax) {
+                                                return c.data[k]
                                             }
-                                        })
+                                        });
                                         this.vars.histRange.push({
+                                            histogram: histogram,
+                                            histogramScaleY: d3.scaleLinear()
+                                                .domain([0, d3.max(histogram, bin => bin.y)])
+                                                .range([0.5, this.vars.config_channelExtH -
+                                                (this.vars.config_chartsMargin.top +
+                                                    this.vars.config_chartsMargin.bottom)]),
                                             key: k,
+                                            scaleX: d3.scaleLinear()
+                                                .domain([pMin, pMax])
+                                                .range([0, this.vars.config_boxW - (this.vars.config_chartsMargin.right
+                                                    + this.vars.config_chartsMargin.left)]),
+                                            scaleY: d3.scaleLinear()
+                                                .range([0.5, this.vars.config_channelExtH -
+                                                (this.vars.config_chartsMargin.top +
+                                                    this.vars.config_chartsMargin.bottom)]),
                                             short: short,
                                             values: map,
-                                            normalValues: normalMap
                                         });
                                     }
 
@@ -283,20 +297,23 @@ export class LfNearestCellsSel {
 
                                 // Histogram
                                 this.vars.histRange.forEach(d => {
+
+                                    const step = (d.scaleX.domain()[1] - d.scaleX.domain()[0]) / this.vars.tickCt;
+
                                     d.bins = d3.bin()
-                                        .domain(this.vars.tool_scX.domain())
-                                        .thresholds(this.vars.tool_scX.ticks(25))
-                                        (d.normalValues);
+                                        .domain(d.scaleX.domain())
+                                        .thresholds(d3.range(d.scaleX.domain()[0], d.scaleX.domain()[1], step))
+                                        (d.values);
                                 })
 
                                 // Config
-                                let max = 0;
                                 this.vars.histRange.forEach(d => {
+                                    let max = 0;
                                     d.bins.forEach(b => {
                                         if (b.length > max) max = b.length;
                                     });
+                                    d.scaleY.domain([0, max]);
                                 });
-                                this.vars.tool_scY.domain([0, max]);
 
                             }
 
@@ -350,24 +367,41 @@ export class LfNearestCellsSel {
                             /*
                             aux func :: nestedJoin()
                              */
-                            function nestedJoin(chart, b) {
+                            function nestedJoin(chart, bins) {
 
                                 // Config
-                                const w = vis.vars.tool_scX(b.bins[0].x1);
+                                let w = bins.scaleX.range()[1] / vis.vars.tickCt;
                                 const pad = w * vis.vars.config_rectPad;
 
                                 // Build bars
+                                chart.selectAll('.viewfinder_charts_g_chart_g_bin_g_bkgd')
+                                    .data(bins.histogram)
+                                    .join('rect')
+                                    .transition()
+                                    .attr('class', 'viewfinder_charts_g_chart_g_bin_g_bkgd')
+                                    .attr('x', (d, i) => (w * i) + (pad / 2))
+                                    .attr('y', d => {
+                                        return (bins.histogramScaleY.range()[1] - bins.histogramScaleY(d.y)) / 2;
+                                    })
+                                    .attr('width', w - pad)
+                                    .attr('height', d => bins.histogramScaleY(d.y))
+                                    .attr('fill', d => {
+                                        if (d.y > 0) return 'rgba(255, 160, 0, 0.75)';
+                                        return 'rgba(255, 160, 0, 0.5)';
+                                    });
+
+                                // Build bars
                                 chart.selectAll('.viewfinder_charts_g_chart_g_bin_g')
-                                    .data(b.bins)
+                                    .data(bins.bins)
                                     .join('rect')
                                     .transition()
                                     .attr('class', 'viewfinder_charts_g_chart_g_bin_g')
                                     .attr('x', (d, i) => w * i + pad)
                                     .attr('y', d => {
-                                        return (vis.vars.tool_scY.range()[1] - vis.vars.tool_scY(d.length)) / 2;
+                                        return (bins.scaleY.range()[1] - bins.scaleY(d.length)) / 2;
                                     })
                                     .attr('width', w - pad * 2)
-                                    .attr('height', d => vis.vars.tool_scY(d.length))
+                                    .attr('height', d => bins.scaleY(d.length))
                                     .attr('fill', d => {
                                         if (d.length > 0) return 'rgba(255, 255, 255, 1)';
                                         return 'rgba(255, 255, 255, 0.5)';
@@ -376,7 +410,7 @@ export class LfNearestCellsSel {
 
                             // Append chart for each channel
                             this.vars.el_chartsG.selectAll('.viewfinder_charts_g_chart_g')
-                                .data(vis.vars.channelSelections)
+                                .data(vis.vars.channelSelections, d => d)
                                 .join(
                                     enter => enter
                                         .append('g')
@@ -388,6 +422,7 @@ export class LfNearestCellsSel {
 
                                             // Find histogram
                                             const bins = vis.vars.histRange.find(h => d === h.short);
+                                            console.log(d, bins)
                                             if (bins) {
 
                                                 // Label g
@@ -396,6 +431,7 @@ export class LfNearestCellsSel {
                                                     .style('transform',
                                                         `translate(${-vis.vars.config_chartsMargin.left / 2}px, 
                                                         ${-vis.vars.config_chartsMargin.top / 2}px)`);
+                                                console.log(d, labelG)
 
                                                 // Append label
                                                 labelG.append('circle')
