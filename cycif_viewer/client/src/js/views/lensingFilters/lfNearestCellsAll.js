@@ -265,7 +265,7 @@ export class LfNearestCellsAll {
                             this.vars.el_chartAreaPathRef1 = this.vars.el_chartG.append('path')
                                 .attr('class', 'viewfinder_chart_area_path_ref_1')
                                 .attr('clip-path', 'url(#radialClip)')
-                                .attr('fill', 'rgba(255, 160, 0, 0.8)');
+                                .attr('fill', 'rgba(255, 160, 0, 0.5)');
                             this.vars.el_chartAreaPath = this.vars.el_chartG.append('path')
                                 .attr('class', 'viewfinder_chart_area_path')
                                 .attr('clip-path', 'url(#radialClip)')
@@ -274,7 +274,7 @@ export class LfNearestCellsAll {
                                 .attr('class', 'viewfinder_chart_area_path_ref_2')
                                 .attr('clip-path', 'url(#radialClip)')
                                 .attr('fill', 'none')
-                                .attr('stroke', 'rgba(255, 160, 0, 1)');
+                                .attr('stroke', 'rgba(255, 160, 0, 0.75)');
 
                             // Append nucleusG
                             this.vars.el_nucleusG = this.vars.el_boxExtG.append('g')

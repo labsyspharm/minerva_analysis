@@ -365,7 +365,49 @@ export class LfNearestCellsSel {
                                 );
 
                             /*
-                            aux func :: nestedJoin()
+                            outer func :: joinLabel
+                             */
+                            function joinLabel(chart, bins) {
+
+                                let labelG = chart.select('.viewfinder_charts_g_chart_g_label_g');
+                                if (labelG.size() === 0) {
+                                    labelG = chart.append('g')
+                                        .attr('class', 'viewfinder_charts_g_chart_g_label_g')
+                                        .style('transform',
+                                            `translate(${-vis.vars.config_chartsMargin.left / 2}px, 
+                                                        ${-vis.vars.config_chartsMargin.top / 2}px)`);
+
+                                    // Append label
+                                    labelG.append('circle')
+                                        .attr('class', 'viewfinder_charts_g_chart_g_circle')
+                                        .attr('r', vis.vars.config_colorR)
+                                        .attr('cy', -vis.vars.config_colorR)
+                                        .attr('stroke-width', 0.5);
+                                    labelG.append('text')
+                                        .attr('class', 'viewfinder_charts_g_chart_g_text')
+                                        .attr('x', vis.vars.config_colorR * 2)
+                                        .attr('fill', 'rgba(255, 255, 255, 0.95)')
+                                        .attr('font-family', 'sans-serif')
+                                        .attr('font-size', 9)
+                                        .attr('text-anchor', 'start');
+                                }
+                                labelG.select('circle')
+                                    .attr('fill', Utils.getChannelColor(bins.short,
+                                        vis.vars.cellIntensityRange[1],
+                                        vis.imageViewer, vis.channel_list))
+                                    .attr('stroke', () => {
+                                        if (vis.vars.channelSelections.includes(bins.short)) {
+                                            return 'rgba(255, 255, 255, 1)';
+                                        }
+                                        return 'rgba(255, 255, 255, 0)';
+                                    });
+                                labelG.select('text')
+                                    .text(bins.short);
+
+                            }
+
+                            /*
+                            outer func :: nestedJoin
                              */
                             function nestedJoin(chart, bins) {
 
@@ -422,40 +464,10 @@ export class LfNearestCellsSel {
 
                                             // Find histogram
                                             const bins = vis.vars.histRange.find(h => d === h.short);
-                                            console.log(vis.vars.histRange)
-                                            console.log(d, bins)
                                             if (bins) {
 
-                                                // Label g
-                                                const labelG = g.append('g')
-                                                    .attr('class', 'viewfinder_charts_g_chart_g_label_g')
-                                                    .style('transform',
-                                                        `translate(${-vis.vars.config_chartsMargin.left / 2}px, 
-                                                        ${-vis.vars.config_chartsMargin.top / 2}px)`);
-
-                                                // Append label
-                                                labelG.append('circle')
-                                                    .attr('class', 'viewfinder_charts_g_chart_g_circle')
-                                                    .attr('r', vis.vars.config_colorR)
-                                                    .attr('cy', -vis.vars.config_colorR)
-                                                    .attr('fill', Utils.getChannelColor(bins.short,
-                                                        vis.vars.cellIntensityRange[1],
-                                                        vis.imageViewer, vis.channel_list))
-                                                    .attr('stroke', () => {
-                                                        if (vis.vars.channelSelections.includes(d)) {
-                                                            return 'rgba(255, 255, 255, 1)';
-                                                        }
-                                                        return 'rgba(255, 255, 255, 0)';
-                                                    })
-                                                    .attr('stroke-width', 0.5);
-                                                labelG.append('text')
-                                                    .attr('class', 'viewfinder_charts_g_chart_g_text')
-                                                    .attr('x', vis.vars.config_colorR * 2)
-                                                    .attr('fill', 'rgba(255, 255, 255, 0.95)')
-                                                    .attr('font-family', 'sans-serif')
-                                                    .attr('font-size', 9)
-                                                    .attr('text-anchor', 'start')
-                                                    .text(d);
+                                                // Join label
+                                                joinLabel(g, bins)
 
                                                 // Join bins
                                                 nestedJoin(g, bins);
@@ -472,20 +484,8 @@ export class LfNearestCellsSel {
                                             const bins = vis.vars.histRange.find(h => d === h.short);
                                             if (bins) {
 
-                                                // Label g
-                                                const labelG = g.select('.viewfinder_charts_g_chart_g_label_g');
-
-                                                // update channel color
-                                                labelG.select('.viewfinder_charts_g_chart_g_circle')
-                                                    .attr('fill', Utils.getChannelColor(bins.short,
-                                                        vis.vars.cellIntensityRange[1],
-                                                        vis.imageViewer, vis.channel_list))
-                                                    .attr('stroke', () => {
-                                                        if (vis.vars.channelSelections.includes(d)) {
-                                                            return 'rgba(255, 255, 255, 1)';
-                                                        }
-                                                        return 'rgba(255, 255, 255, 0)';
-                                                    });
+                                                // Join label
+                                                joinLabel(g, bins)
 
                                                 // Join bins
                                                 nestedJoin(g, bins);
