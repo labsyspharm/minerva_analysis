@@ -7,6 +7,7 @@ import {LfHistoSearch} from "./lensingFilters/lfHistoSearch";
 import {LfMultiModal} from "./lensingFilters/lfMultiModal";
 import {LfCellTypeAll} from "./lensingFilters/LfCellTypeAll";
 import {LfSplit} from "./lensingFilters/LfSplit";
+import {LfSpatialCorrelation} from "./lensingFilters/lfSpatialCorrelation";
 
 /**
  * @class LensingFiltersExt
@@ -48,16 +49,20 @@ export class LensingFiltersExt {
         ///////////////////////////////////////////////////////////////////////////////////////// Data load - split lens
         const lfSplit= new LfSplit(_imageViewer);
 
+        //////////////////////////////////////////////////////////////////////////////// Data load - spatial correlation
+        const lfSpatialCorrelation= new LfSpatialCorrelation(_imageViewer);
+
         // Add in reverse order
         return [
             lfSegmentationOutlines.load,
-            lfHistoSearch.load,
-            lfMultiModal.load,
             lfSplit.load,
+            lfMultiModal.load,
             lfChannelView.load,
+            lfHistoSearch.load,
             lFCellType.load,
             lfNearestCellsSel.load,
             lfNearestCellsAll.load,
+            // lfSpatialCorrelation.load,
             // lfChannelRelationships.load
         ];
 
