@@ -229,7 +229,8 @@ export class LfMultiModal {
                             const selMM = this.vars.mmOptions.find(o => o.name === this.vars.mmSelected);
 
                             // Check current sels
-                            if (selMM && !selMM.loaded) {
+                            const keys = Object.keys(this.image_viewer.viewerManagerVAuxi.viewerChannels);
+                            if (selMM && (!selMM.loaded || keys.length > 3)) {
                                 // Empty
                                 const items = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
                                 items.forEach(item => {
@@ -250,6 +251,8 @@ export class LfMultiModal {
                                 });
                                 // Mark as loaded
                                 selMM.loaded = true;
+                                console.log(this.image_viewer.viewerManagerVMain.viewerChannels)
+                                console.log(this.image_viewer.viewerManagerVAuxi.viewerChannels)
                             }
 
 
