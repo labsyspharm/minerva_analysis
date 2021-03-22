@@ -83,7 +83,7 @@ export class LfHistoSearch {
                 const channels = [];
                 for (let k in mainManager.viewerChannels) {
                     channels.push(mainManager.viewerChannels[k].name);
-                }
+                } 
 
 
 
