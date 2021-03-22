@@ -328,6 +328,25 @@ class DataLayer {
         }
     }
 
+    async getHistogramComparisonSimMap(datasource, channels, x, y, maxDistance, viewportBounds, zoomlevel, sensitivity) {
+        try {
+            let response = await fetch('/histogram_comparison_simmap?' +
+                new URLSearchParams({
+                    point_x: x,
+                    point_y: y,
+                    max_distance: maxDistance,
+                    channels: channels,
+                    datasource: datasource,
+                    viewport: [viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x, viewportBounds[1].y],
+                    zoomlevel: zoomlevel,
+                    sensitivity: sensitivity
+                }));
+            return await response.json();
+        } catch (e) {
+            console.log("Error getting histogram comparison", e);
+        }
+    }
+
     async saveDot(data) {
 
         try {

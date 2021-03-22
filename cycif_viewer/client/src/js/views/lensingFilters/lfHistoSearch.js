@@ -30,6 +30,52 @@ export class LfHistoSearch {
                 lensing.configs.sensitivity =  Math.max(lensing.configs.sensitivity-0.0025, 0);
                 console.log('decreased sensitivity to: ' + lensing.configs.sensitivity);
             }
+            if (e.key === 'G') {
+                // Access auxi viewer manager (lensing instance) //lenses was not updated correctly
+                const mainManager = this.image_viewer.viewerManagerVMain;
+                const channels = [];
+                for (let k in mainManager.viewerChannels) {
+                    channels.push(mainManager.viewerChannels[k].name);
+                }
+
+
+
+                // Measure relative
+                const screenPt1 = new OpenSeadragon.Point(0, 0);
+                const screenPt2 =
+                    new OpenSeadragon.Point(lensing.configs.rad / lensing.configs.pxRatio, 0);
+                const contextPt1 =
+                    this.image_viewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
+                const contextPt2 =
+                    this.image_viewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
+                let newRad = Math.round(contextPt2.x - contextPt1.x)
+                if (newRad > 500) newRad = 500;
+
+                // Get position of cell and add to data
+                const pos = lensing.positionData.posFull;
+
+                // Load
+                this.load.config.filterCode.settings.loading = true;
+
+                //create a server query to retrieve contours of areas in the image similar to the current lens area
+
+                const bounds = this.image_viewer.viewer.viewport.getBounds(true);
+                const imageItem = this.image_viewer.viewer.viewport.viewer.world.getItemAt(0);
+                const topLeft = imageItem.viewportToImageCoordinates(bounds.getTopLeft());
+                const bottomRight = imageItem.viewportToImageCoordinates(bounds.getBottomRight());
+                const viewportBounds = [topLeft, bottomRight];
+                //convert from osd to zarr (but when we are zoomed in further than 0 (negative value), we jump back to 0
+                const zoomlevel = Math.max(0,this.image_viewer.config.maxLevel - this.image_viewer.viewer.viewport.getZoom());
+
+                this.data_layer.getHistogramComparisonSimMap(datasource, channels, pos[0], pos[1], newRad,
+                    viewportBounds, zoomlevel, lensing.configs.sensitivity).then(d => {
+
+                      //d is a 2 d array with values between 0 and 1. All under the sim threshold was set to 0
+                      //you can either treat is as 0 or something (mask) or render intensity values.
+
+                    console.log("pressed G to get a 2D similarity array for values larger than the set theshold.");
+                });
+            }
             if (e.key === 'H') {
 
                 // Access auxi viewer manager (lensing instance) //lenses was not updated correctly

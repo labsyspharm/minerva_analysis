@@ -78,6 +78,7 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     print("compute similarity maps")
     combined_sim_map = calc_sim(combined_png, combined_roi)
 
+
     # find contours
     print("compute contours")
     contours = find_contours(combined_sim_map, sensibility)
@@ -95,6 +96,72 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
 
     print("histogram computation time is" + str(toc-tic))
     return {'contours': contours}
+
+def histogramComparisonSimMap(x, y, datasource_name, r, channels, viewport, zoomlevel, sensibility):
+        tic = time.perf_counter()
+        print("histogram comparison..")
+        print("load image sections")
+
+        viewport = np.array(viewport.split(",")).astype(float).astype(int);
+        # get image and lens section
+
+        png = []
+        roi = []
+        for channel in channels:
+            png.append(loadPngSection(datasource_name, channel, zoomlevel, viewport))
+            roi.append(
+                loadPngSection(datasource_name, channel, zoomlevel, np.array([x - r, y - r, x + r, y + r]).astype(int)))
+
+        tac = time.perf_counter()
+        print("cropped sections loaded after " + str(tac - tic))
+
+        # write those sections to file for debugging purposes
+        # cv2.imwrite('cycif_viewer/server/analytics/img/testcut.png', png)
+        # cv2.imwrite('cycif_viewer/server/analytics/img/roi.png', roi)
+
+        # calc image similarity map
+        print("calculate image similarity maps for each channel...")
+        i = 0
+        sim_map = []
+        combined_png = []
+        combined_roi = []
+        for channel in channels:
+            print("sim map for " + str(channel))
+            if (i == 0):
+                combined_png = png[i]
+                combined_roi = roi[i]
+            if (i > 0):
+                combined_png = np.add(combined_png, png[i])
+                combined_roi = np.add(combined_roi, roi[i])
+            i += 1
+        # cv2.imwrite('cycif_viewer/server/analytics/img/sim_map.jpg', sim_map)
+
+        # normalize by num channels considered
+        print("combining whole channels, combine lens parts. Norm by num channels")
+        if (len(channels) > 1):
+            combined_png = np.floor_divide(combined_png, len(channels))
+            combined_roi = np.floor_divide(combined_roi, len(channels))
+
+        print("compute similarity maps")
+        combined_sim_map = calc_sim(combined_png, combined_roi)
+        combined_sim_map = combined_sim_map / combined_sim_map.max()
+        combined_sim_map[combined_sim_map < sensibility] = 0
+        # mask_sim_map = combined_sim_map > 500 * combined_sim_map
+
+
+        # get global contour positions
+        length = len(data_model.channels[0].shape);
+        layerviewport = getLayerViewport(data_model.channels[0].shape[length - 2],
+                                         data_model.channels[0].shape[length - 1],
+                                         data_model.channels[zoomlevel].shape[length - 2],
+                                         data_model.channels[zoomlevel].shape[length - 1],
+                                         viewport)
+        mask = imageToWorldCoordinates(combined_sim_map, viewport, layerviewport)
+        mask = mask.astype('uint8')
+        toc = time.perf_counter()
+
+        print("histogram computation time is" + str(toc - tic))
+        return {'mask': mask}
 
 
 
@@ -152,6 +219,12 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     # print("histogram computation time is" + str(toc-tic))
     # return {'contours': contours}
 
+def imageToWorldCoordinates(image, originalviewport, viewport):
+    # calc ratio from local cut to image
+    # resize to viewport
+    heightRatio = (originalviewport[3] - originalviewport[1]) / (viewport[3] - viewport[1]);
+    image = np.resize(image, (viewport[2] - viewport[0], viewport[3] - viewport[1]));
+    return image;
 
 def toWorldCoordinates(contours, originalviewport, viewport):
     # calc ratio from local cut to image
