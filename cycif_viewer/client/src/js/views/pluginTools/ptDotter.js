@@ -194,7 +194,7 @@ export class PtDotter {
     /**
      * renderOverlay
      */
-    renderOverlay() {
+    renderOverlay(data = null) {
 
         // Get image bounds
         const viewportBounds = this.imageViewer.viewer.viewport.getBounds(true);
@@ -219,7 +219,7 @@ export class PtDotter {
 
         // Dots
         this.els.viewerOverlay.selectAll('.dotDrop')
-            .data(this.configs.isOpen ? this.data : [])
+            .data(this.configs.isOpen ? data || this.data : [])
             .join('canvas')
             .attr('class', 'dotDrop')
             .style('position', 'absolute')
@@ -272,7 +272,7 @@ export class PtDotter {
 
         // Markers
         this.els.viewerOverlay.selectAll('.dotMarker')
-            .data(this.configs.isOpen ? this.data : [])
+            .data(this.configs.isOpen ? data || this.data : [])
             .join('img')
             .attr('class', 'dotMarker')
             .attr('src', '../client/assets/cycif-marker-mobile.svg')
@@ -539,6 +539,7 @@ export class PtDotter {
             filterdData = this.data;
         }
         this.renderSnapshots(filterdData);
+        this.renderOverlay(filterdData);
     }
 
     /**
@@ -561,6 +562,7 @@ export class PtDotter {
         // This essentially forces a redraw
         this.renderSnapshots([]);
         this.renderSnapshots();
+        this.renderOverlay();
 
     }
 
