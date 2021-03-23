@@ -471,6 +471,95 @@ def get_datasource_description(datasource_name):
     return description
 
 
+
+def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid',y_coordinate='Y_centroid',
+                  marker=None, k=500, label='spatial_corr'):
+    """
+    Parameters
+    ----------
+    adata : TYPE
+        DESCRIPTION.
+    raw : TYPE, optional
+        DESCRIPTION. The default is False.
+    log : TYPE, optional
+        DESCRIPTION. The default is False.
+    threshold : TYPE, optional
+        DESCRIPTION. The default is None.
+    x_coordinate : TYPE, optional
+        DESCRIPTION. The default is 'X_centroid'.
+    y_coordinate : TYPE, optional
+        DESCRIPTION. The default is 'Y_centroid'.
+    marker : TYPE, optional
+        DESCRIPTION. The default is None.
+    k : TYPE, optional
+        DESCRIPTION. The default is 500.
+    label : TYPE, optional
+        DESCRIPTION. The default is 'spatial_corr'.
+    Returns
+    -------
+    corrfunc : TYPE
+        DESCRIPTION.
+    Example
+    -------
+    adata = spatial_corr (adata, threshold=0.5, x_coordinate='X_position',y_coordinate='Y_position',marker=None)
+    """
+    # Start
+    bdata = adata.copy()
+    # Create a DataFrame with the necessary inforamtion
+    data = pd.DataFrame({'x': bdata.obs[x_coordinate], 'y': bdata.obs[y_coordinate]})
+    # user defined expression matrix
+    if raw is True:
+        exp =  pd.DataFrame(bdata.raw.X, index= bdata.obs.index, columns=bdata.var.index)
+    else:
+        exp =  pd.DataFrame(bdata.X, index= bdata.obs.index, columns=bdata.var.index)
+    # log the data if needed
+    if log is True:
+        exp = np.log1p(exp)
+    # set a threshold if needed
+    if threshold is not None:
+        exp[exp >= threshold] = 1
+        exp[exp < threshold] = 0
+    # subset markers if needed
+    if marker is not None:
+        if isinstance(marker, str):
+            marker = [marker]
+        exp = exp[marker]
+    # find the nearest neighbours
+    tree = BallTree(data, leaf_size= 2)
+    dist, ind = tree.query(data, k=k, return_distance= True)
+    neighbours = pd.DataFrame(ind, index = bdata.obs.index)
+    # find the mean dist
+    rad_approx = np.mean(dist, axis=0)
+    # Calculate the correlation
+    mean = np.mean(exp).values
+    std = np.std(exp).values
+    A = (exp - mean) / std
+    def corrfunc (marker, A, neighbours, ind):
+        print('Processing ' + str(marker))
+        # Map phenotype
+        ind_values = dict(zip(list(range(len(ind))), A[marker])) # Used for mapping
+        # Loop through (all functionized methods were very slow)
+        neigh = neighbours.copy()
+        for i in neigh.columns:
+            neigh[i] = neigh[i].dropna().map(ind_values, na_action='ignore')
+        # multiply the matrices
+        Y = neigh.T * A[marker]
+        corrfunc = np.mean(Y, axis=1)
+        # return
+        return corrfunc
+    # apply function to all markers    # Create lamda function
+    r_corrfunc = lambda x: corrfunc(marker=x,A=A, neighbours=neighbours, ind=ind)
+    all_data = list(map(r_corrfunc, exp.columns)) # Apply function
+    # Merge all the results into a single dataframe
+    df = pd.concat(all_data, axis=1)
+    df.columns = exp.columns
+    df['distance'] = rad_approx
+    # add it to anndata object
+    adata.uns[label] = df
+    # return
+    return adata
+
+
 def generate_zarr_png(datasource_name, channel, level, tile):
     if config is None:
         load_datasource(datasource_name)
