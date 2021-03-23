@@ -27,6 +27,7 @@ class ImageViewer {
         this.viewer = {};
 
         // OSD pluginTools
+        this.canvasImg = []; //an overlay to render
 
         // Stores the ordered contents of the tile cache, so that once we hit max size we remove oldest elements
         this.pendingTiles = new Map();
@@ -128,9 +129,12 @@ class ImageViewer {
 
         this.viewer.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
             onRedraw: function (options) {
-                // let context = options.context;
-                // context.fillStyle = "red";
-                // context.fillRect(0, 0, 500, 500);
+                let context = options.context;
+                //some checks to be safe..
+                if (context != null && context != undefined && Object.keys(context).length === 0 && that.canvasImg.mask) {
+                    context.drawImage(that.canvasImg.mask, that.canvasImg.shift_x, that.canvasImg.shift_y,
+                        that.canvasImg.width,that.canvasImg.height,);
+                }
             },
             clearBeforeRedraw: true
         });

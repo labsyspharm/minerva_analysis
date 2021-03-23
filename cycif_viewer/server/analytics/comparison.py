@@ -40,8 +40,8 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     png =[]
     roi = []
     for channel in channels:
-        png.append(loadPngSection(datasource_name, channel, zoomlevel, viewport))
-        roi.append(loadPngSection(datasource_name, channel, zoomlevel, np.array([x-r,y-r,x+r,y+r]).astype(int)))
+        png.append(loadPngSection(datasource_name, channel, min(zoomlevel+1, len(data_model.channels)-1), viewport))
+        roi.append(loadPngSection(datasource_name, channel, min(zoomlevel+1, len(data_model.channels)-1), np.array([x-r,y-r,x+r,y+r]).astype(int)))
 
 
     tac = time.perf_counter()
@@ -88,8 +88,8 @@ def histogramComparison(x, y, datasource_name, r, channels, viewport, zoomlevel,
     length = len(data_model.channels[0].shape);
     layerviewport = getLayerViewport( data_model.channels[0].shape[length-2],
                                data_model.channels[0].shape[length-1],
-                              data_model.channels[zoomlevel].shape[length-2],
-                              data_model.channels[zoomlevel].shape[length-1],
+                              data_model.channels[min(zoomlevel+1, len(data_model.channels)-1)].shape[length-2],
+                              data_model.channels[min(zoomlevel+1, len(data_model.channels)-1)].shape[length-1],
                               viewport)
     contours = toWorldCoordinates(contours, viewport, layerviewport)
     toc = time.perf_counter()
@@ -108,9 +108,9 @@ def histogramComparisonSimMap(x, y, datasource_name, r, channels, viewport, zoom
         png = []
         roi = []
         for channel in channels:
-            png.append(loadPngSection(datasource_name, channel, zoomlevel, viewport))
+            png.append(loadPngSection(datasource_name, channel, zoomlevel+1, viewport))
             roi.append(
-                loadPngSection(datasource_name, channel, zoomlevel, np.array([x - r, y - r, x + r, y + r]).astype(int)))
+                loadPngSection(datasource_name, channel, min(zoomlevel+1, len(data_model.channels)-1), np.array([x - r, y - r, x + r, y + r]).astype(int)))
 
         tac = time.perf_counter()
         print("cropped sections loaded after " + str(tac - tic))
@@ -146,24 +146,30 @@ def histogramComparisonSimMap(x, y, datasource_name, r, channels, viewport, zoom
         combined_sim_map = calc_sim(combined_png, combined_roi)
         combined_sim_map = combined_sim_map / combined_sim_map.max()
         combined_sim_map[combined_sim_map < sensibility] = 0
-        # mask_sim_map = combined_sim_map > 500 * combined_sim_map
+        # combined_sim_map = combined_sim_map * 255
+        # mask_sim_map = combined_sim_map > 500 * combined_sim_map * 255
 
 
         # get global contour positions
         length = len(data_model.channels[0].shape);
         layerviewport = getLayerViewport(data_model.channels[0].shape[length - 2],
                                          data_model.channels[0].shape[length - 1],
-                                         data_model.channels[zoomlevel].shape[length - 2],
-                                         data_model.channels[zoomlevel].shape[length - 1],
+                                         data_model.channels[min(zoomlevel+1, len(data_model.channels)-1)].shape[length - 2],
+                                         data_model.channels[min(zoomlevel+1, len(data_model.channels)-1)].shape[length - 1],
                                          viewport)
+        cv2.imwrite('cycif_viewer/server/analytics/img/sim_map_strange.jpg', combined_sim_map)
         mask = imageToWorldCoordinates(combined_sim_map, viewport, layerviewport)
-        mask = mask.astype('uint8')
+        # cv2.imwrite('cycif_viewer/server/analytics/img/sim_map_strange_after.jpg', mask)
         toc = time.perf_counter()
 
         print("histogram computation time is" + str(toc - tic))
-        return {'mask': mask}
+        return {'mask': mask, 'shift_x' : viewport[0], 'shift_y': viewport[1]}
 
-
+def scale(im, nR, nC):
+  nR0 = len(im)     # source number of rows
+  nC0 = len(im[0])  # source number of columns
+  return [[ im[int(nR0 * r / nR)][int(nC0 * c / nC)]
+             for c in range(nC)] for r in range(nR)]
 
     # tic = time.perf_counter()
     # print("histogram comparison..")
@@ -223,7 +229,8 @@ def imageToWorldCoordinates(image, originalviewport, viewport):
     # calc ratio from local cut to image
     # resize to viewport
     heightRatio = (originalviewport[3] - originalviewport[1]) / (viewport[3] - viewport[1]);
-    image = np.resize(image, (viewport[2] - viewport[0], viewport[3] - viewport[1]));
+    widthRatio = (originalviewport[2] - originalviewport[0]) / (viewport[2] - viewport[0]);
+    image = scale(image, (viewport[3] - viewport[1]), (viewport[2] - viewport[0]))
     return image;
 
 def toWorldCoordinates(contours, originalviewport, viewport):
@@ -261,8 +268,8 @@ def loadPngSection(datasource_name, channel,  zoomlevel, viewport):
     length = len(data_model.channels[0].shape)
     viewport = getLayerViewport( data_model.channels[0].shape[length-2],
                                data_model.channels[0].shape[length-1],
-                              data_model.channels[zoomlevel].shape[length-2],
-                              data_model.channels[zoomlevel].shape[length-1],
+                              data_model.channels[min(zoomlevel, len(data_model.channels)-1)].shape[length-2],
+                              data_model.channels[min(zoomlevel, len(data_model.channels)-1)].shape[length-1],
                               viewport)
 
     # print(data_model.get_channel_names(datasource_name, shortnames=False))
@@ -272,7 +279,7 @@ def loadPngSection(datasource_name, channel,  zoomlevel, viewport):
     if isinstance(data_model.channels, zarr.Array):
         tile = data_model.channels[channel, viewport[1]:viewport[3], viewport[0]:viewport[2]]
     else:
-        tile = data_model.channels[zoomlevel][channel, viewport[1]:viewport[3], viewport[0]:viewport[2]]
+        tile = data_model.channels[min(zoomlevel, len(data_model.channels)-1)][channel, viewport[1]:viewport[3], viewport[0]:viewport[2]]
 
     return tile
 
@@ -289,7 +296,7 @@ def loadPngAtZoomLevel(datasource_name, channel, zoomlevel):
         tile = data_model.channels[channel, ix:data_model.config[datasource_name]["width"],
                iy:data_model.config[datasource_name]["height"]]
     else:
-        tile = data_model.channels[zoomlevel][channel, ix:data_model.config[datasource_name]["width"],
+        tile = data_model.channels[min(zoomlevel, len(data_model.channels)-1)][channel, ix:data_model.config[datasource_name]["width"],
                iy:data_model.config[datasource_name]["height"]]
 
     tile = np.ascontiguousarray(tile, dtype='uint32')
@@ -399,7 +406,7 @@ def calc_sim(img, coin):
     # Compute the similarity across the complete image
     print('compute similarity across image')
     similarity = windowed_histogram_similarity(img, selem, coin_hist, coin_hist.shape[0])
-
+    print("image shape is: " + str(img.shape[0]) + "  " + str(img.shape[1]))
     print('sim computation done')
     return similarity
 
