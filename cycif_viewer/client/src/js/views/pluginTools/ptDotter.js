@@ -405,6 +405,14 @@ export class PtDotter {
                             })
                             .on('click', vis.saveToDb.bind(vis));
 
+                        if (!d.fromDb) {
+                            iconContainer.append('a')
+                                .attr('class', 'dotter_block_icon_container_remove')
+                                .text('DELETE')
+                                .on('click', vis.removeDot.bind(vis));
+
+                        }
+
                         // iconContainer.append('img')
                         //     .attr('src', '../static/frontend/assets/cycif-notes.svg')
                         //     .attr('alt', 'Notes')
@@ -563,7 +571,13 @@ export class PtDotter {
         this.renderSnapshots([]);
         this.renderSnapshots();
         this.renderOverlay();
+    }
 
+    removeDot(e, d) {
+        _.pull(this.data, d)
+        this.renderSnapshots([]);
+        this.renderSnapshots();
+        this.renderOverlay();
     }
 
 
