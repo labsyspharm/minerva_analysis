@@ -133,7 +133,7 @@ class ImageViewer {
                 //some checks to be safe..
                 if (context != null && context != undefined && Object.keys(context).length === 0 && that.canvasImg.mask) {
                     context.drawImage(that.canvasImg.mask, that.canvasImg.shift_x, that.canvasImg.shift_y,
-                        that.canvasImg.width,that.canvasImg.height,);
+                        that.canvasImg.width, that.canvasImg.height,);
                 }
             },
             clearBeforeRedraw: true
@@ -438,7 +438,9 @@ class ImageViewer {
         const channelIdx = imageChannels[name];
         self.viewerManagers.forEach(vM => {
             if (vM.viewerChannels[`${channelIdx}`]) {
-                vM.viewerChannels[channelIdx]['range'] = [tfmin / range[1], tfmax / range[1]];
+                let channelRange = [tfmin / range[1], tfmax / range[1]];
+                vM.viewerChannels[channelIdx]['range'] = channelRange;
+                vM.rangeConnector[`${channelIdx}`] = channelRange;
             }
         })
         this.forceRepaint();
