@@ -10,13 +10,13 @@ export class LfMultiModal {
     load = [];
     vars = {
         cellIntensityRange: [0, 65536],
-        config_boxW: 300,
+        config_boxW: 350,
         config_boxH: 40,
         config_colorR: 8,
-        config_channelExtH: 30,
+        config_channelExtH: 20,
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
         config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 30},
-        currentChannel: {
+        currentOption: {
             name: '',
             index: 0
         },
@@ -37,9 +37,17 @@ export class LfMultiModal {
                 displayName: 'H&E',
                 loaded: false,
                 present: false
-            }
+            },
+            {
+                name: 'bip',
+                channels: ['CD45_PE', 'anti_CD3', 'CD20_488', 'CD163_488'],
+                colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
+                displayName: 'Broad immune pop. (CD45 -white, CD3 -red, CD20 -green, CD163 -blue)',
+                loaded: false,
+                present: false
+            },
         ],
-        mmSelected: '',
+        mmSelected: 'hande',
         keydown: e => {
             if (e.key === 'C') {
 
@@ -47,18 +55,10 @@ export class LfMultiModal {
                 const mainManager = this.image_viewer.viewerManagerVMain;
                 const auxiManager = this.image_viewer.viewerManagerVAuxi;
 
-                // Get keys
-                const keys = Object.keys(mainManager.viewerChannels);
-                keys.forEach((k, i) => {
-                    if (+k === this.vars.currentChannel.index) {
-                        if (i < keys.length - 1) {
-                            this.vars.currentChannel.name = mainManager.viewerChannels[keys[i + 1]].short_name;
-                        } else {
-                            this.vars.currentChannel.name = mainManager.viewerChannels[keys[0]].short_name;
-                        }
-                        this.vars.forceUpdate = true;
-                    }
-                });
+                // Get index of currentSelected
+                const idx = this.vars.mmOptions.findIndex(d => d.name === this.vars.mmSelected);
+                let newIdx = idx === this.vars.mmOptions.length - 1 ? 0 : idx + 1;
+                this.vars.mmSelected = this.vars.mmOptions[newIdx].name;
             }
         }
     };
@@ -216,7 +216,6 @@ export class LfMultiModal {
                                     }
                                 });
                                 if (includes) {
-                                    this.vars.mmSelected = o.name;
                                     o.present = true;
                                 }
                             });
@@ -230,11 +229,11 @@ export class LfMultiModal {
 
                             // Check current sels
                             const keys = Object.keys(this.image_viewer.viewerManagerVAuxi.viewerChannels);
-                            if (selMM && (!selMM.loaded || keys.length > 3)) {
+                            if (selMM && (!selMM.loaded)) {
                                 // Empty
-                                const items = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
-                                items.forEach(item => {
-                                    this.image_viewer.viewerManagerVAuxi.channelRemove(+item);
+                                let items = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
+                                keys.forEach(key => {
+                                    this.image_viewer.viewerManagerVAuxi.channelRemove(+key);
                                 })
                                 // Loads
                                 selMM.channels.forEach((c, i) => {
@@ -251,8 +250,6 @@ export class LfMultiModal {
                                 });
                                 // Mark as loaded
                                 selMM.loaded = true;
-                                console.log(this.image_viewer.viewerManagerVMain.viewerChannels)
-                                console.log(this.image_viewer.viewerManagerVAuxi.viewerChannels)
                             }
 
 
@@ -267,7 +264,7 @@ export class LfMultiModal {
                             const channels = this.channel_list.selections;
 
                             // Update vf box size
-                            vf.els.blackboardRect.attr('height', this.vars.config_boxH + this.vars.mmOptions.length
+                            vf.els.blackboardRect.attr('height', this.vars.config_boxH + (this.vars.mmOptions.length + 1)
                                 * this.vars.config_channelExtH);
                             vf.configs.boxH = this.vars.config_boxH + this.vars.mmOptions.length *
                                 this.vars.config_channelExtH;
@@ -281,9 +278,15 @@ export class LfMultiModal {
                                 .attr('y', (d, i) => i * vis.vars.config_channelExtH + vis.vars.config_boxH)
                                 .attr('fill', 'rgba(255, 255, 255, 0.95)')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', 9)
+                                .attr('font-size', this.vars.config_fontSm)
                                 .attr('text-anchor', 'start')
                                 .attr('dominant-baseline', 'middle')
+                                .attr('opacity', d => {
+                                    if (d.name === vis.vars.mmSelected) {
+                                        return 1;
+                                    }
+                                    return 0.75;
+                                })
                                 .text(d => d.displayName);
 
 
