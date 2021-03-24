@@ -223,7 +223,13 @@ export class PtDotter {
             .join('canvas')
             .attr('class', 'dotDrop')
             .style('position', 'absolute')
-            .style('border', '1px solid white')
+            .style('border', d => {
+                if (d.selected) {
+                    return '1px solid orange'
+                } else {
+                    return '1px solid white'
+                }
+            })
             .style('border-radius', d => d.lensShape === 'circle' ? '50%' : '0')
             .style('padding', `1px`)
             .style('pointer-events', 'none')
@@ -275,7 +281,13 @@ export class PtDotter {
             .data(this.configs.isOpen ? data || this.data : [])
             .join('img')
             .attr('class', 'dotMarker')
-            .attr('src', '../client/assets/cycif-marker-mobile.svg')
+            .attr('src', d => {
+                if (d.selected) {
+                    return '../client/assets/cycif-marker-mobile-selected.svg'
+                } else {
+                    return '../client/assets/cycif-marker-mobile.svg'
+                }
+            })
             .attr('alt', 'Dot marker')
             .style('position', 'absolute')
             .style('height', `${this.configs.markerDims}px`)
@@ -431,6 +443,14 @@ export class PtDotter {
                         //     .style('width', `${vis.configs.iconW}px`)
                         //     .style('height', `${vis.configs.iconH}px`);
 
+                    })
+                    .on('mouseenter', function (e, d) {
+                        d.selected = true;
+                        vis.renderOverlay();
+                    })
+                    .on('mouseleave', function (e, d) {
+                        d.selected = false;
+                        vis.renderOverlay();
                     }),
                 update => update,
                 //     .each(function (dat, i) {
