@@ -109,6 +109,7 @@ export class PluginToolsExt {
      * @returns void
      */
     trayEventClick(e) {
+        console.log(e)
 
         // Update
         this.opened = !this.opened;

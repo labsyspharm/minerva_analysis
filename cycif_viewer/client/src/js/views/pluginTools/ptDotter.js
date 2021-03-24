@@ -549,11 +549,20 @@ export class PtDotter {
         }
 
         //set new selected on if not new element
-        let selection = d3.select("#" + this.dotter_block + d.id);;
-        if (oldSelection == null || oldSelection.attr('id') != selection.attr('id')) {
+        let selection = d3.select("#" + this.dotter_block + d.id);
+        if (oldSelection == null || oldSelection.attr('id') !== selection.attr('id')) {
             selection.classed('highlight', true);
             this.selected = selection;
         }
+
+        // Hide dotter
+        this.parent.trayEventClick({
+            target: {
+                parentElement: {
+                    id: 'plugin_dotter'
+                }
+            }
+        })
 
         // Clear old TODO - this is pretty inefficient (don't remove/load already matched channels
         const itemsMainOld = Object.keys(this.imageViewer.viewerManagerVMain.viewerChannels);
