@@ -325,6 +325,7 @@ export class LfNearestCellsSel {
                             const vf = this.imageViewer.viewer.lensing.viewfinder;
 
                             // Update vf box size
+                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH
                                 + this.vars.channelSelections.length * this.vars.config_channelExtH);
                             vf.configs.boxH = this.vars.config_boxH + this.vars.channelSelections.length *
