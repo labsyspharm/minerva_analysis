@@ -363,6 +363,7 @@ export class LfNearestCellsAll {
 
                             // Define this
                             const vis = this;
+                            const vf = this.imageViewer.viewer.lensing.viewfinder;
 
                             // Blackboard
                             vf.els.blackboardRect.attr('width', this.vars.config_boxW);
