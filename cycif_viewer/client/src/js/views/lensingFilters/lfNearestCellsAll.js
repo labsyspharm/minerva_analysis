@@ -364,6 +364,10 @@ export class LfNearestCellsAll {
                             // Define this
                             const vis = this;
 
+                            // Blackboard
+                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
+                            vf.els.blackboardRect.attr('height', this.vars.config_boxH);
+
                             // Define cell, channels
                             let cell = {};
                             if (this.data && this.data[0] && this.data[0].data) {
