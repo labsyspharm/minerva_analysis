@@ -42,7 +42,15 @@ export class LfMultiModal {
                 name: 'bip',
                 channels: ['CD45_PE', 'anti_CD3', 'CD20_488', 'CD163_488'],
                 colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
-                displayName: 'Broad immune pop. (CD45 -white, CD3 -red, CD20 -green, CD163 -blue)',
+                displayName: 'Broad immune pop. (CD45-white, CD3-red, CD20-green, CD163-blue)',
+                loaded: false,
+                present: false
+            },
+            {
+                name: 'bcl',
+                channels: ['Keratin_570', 'aSMA_660', 'CD31_647', 'CD45_PE'],
+                colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
+                displayName: 'Broad cell lin. (CD45-white, SMA-red, CD31-green, CD45-blue)',
                 loaded: false,
                 present: false
             },
