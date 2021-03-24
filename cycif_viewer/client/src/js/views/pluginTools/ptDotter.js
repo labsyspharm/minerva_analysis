@@ -25,12 +25,14 @@ export class PtDotter {
         openseadragon: null,
         viewerOverlay: null,
     };
+    selected = null;
     imageViewer = null;
     snapshotsSubscription = null;
     tools = {
         overlayX: d3.scaleLinear(),
         overlayY: d3.scaleLinear(),
     };
+    dotter_block = "dotter_block_";
 
     /**
      * @constructor
@@ -222,6 +224,7 @@ export class PtDotter {
             .data(this.configs.isOpen ? data || this.data : [])
             .join('canvas')
             .attr('class', 'dotDrop')
+            .attr('id', function(d,i){return 'dotDrop' + d.id})
             .style('position', 'absolute')
             .style('border', '1px solid white')
             .style('border-radius', d => d.lensShape === 'circle' ? '50%' : '0')
@@ -318,6 +321,7 @@ export class PtDotter {
             .join(
                 enter => enter.append('div')
                     .attr('class', 'dotter_block')
+                    .attr('id', function(d){ return vis.dotter_block + d.id})
                     .each(function (d, i) {
                         console.log("Dat", d, i);
                         const div = d3.select(this);
@@ -464,17 +468,36 @@ export class PtDotter {
      */
     eventCanvasOnClick(e, d) {
 
-        // Zoom main viewer
-        const newPt = new OpenSeadragon.Point({x: 0, y: 0})
-        newPt.x = d.pointerOsdRefPointX
-        newPt.y = d.pointerOsdRefPointY
-        const viewportPt = this.imageViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(
-            new OpenSeadragon.Point({x: d.pointerPositionOnFullImage[0], y: d.pointerPositionOnFullImage[1]}))
-        this.imageViewer.viewerManagerVMain.viewer.viewport.panTo(newPt);
-        this.imageViewer.viewerManagerVMain.viewer.viewport.zoomTo(d.zoomViewerMainDisplay);
 
-        // Zoom aux viewer
-        this.imageViewer.viewerManagerVAuxi.viewer.viewport.zoomTo(d.zoomViewerAuxiDisplay);
+        //HIGHLIGHTING
+        //get current selected
+        let oldSelection = this.selected;
+
+        //deselect old selection
+        if (oldSelection != null) {
+            oldSelection.classed('highlight', false);
+            this.selected = null;
+        }
+
+        //set new selection on if not old element
+        let selection = d3.select("#" + this.dotter_block + d.id);;
+        if (oldSelection == null || oldSelection.attr('id') != selection.attr('id')){
+            selection.classed('highlight', true);
+            this.selected = selection;
+
+            // Zoom main viewer (only when selection is active)
+            const newPt = new OpenSeadragon.Point({x: 0, y: 0})
+            newPt.x = d.pointerOsdRefPointX
+            newPt.y = d.pointerOsdRefPointY
+            const viewportPt = this.imageViewer.viewer.world.getItemAt(0).imageToViewportCoordinates(
+                new OpenSeadragon.Point({x: d.pointerPositionOnFullImage[0], y: d.pointerPositionOnFullImage[1]}))
+            this.imageViewer.viewerManagerVMain.viewer.viewport.panTo(newPt);
+            this.imageViewer.viewerManagerVMain.viewer.viewport.zoomTo(d.zoomViewerMainDisplay);
+
+            // Zoom aux viewer
+            this.imageViewer.viewerManagerVAuxi.viewer.viewport.zoomTo(d.zoomViewerAuxiDisplay);
+        }
+
 
     }
 
@@ -496,6 +519,21 @@ export class PtDotter {
      * onMarkerClick
      */
     onMarkerClick(e, d) {
+
+        let oldSelection = this.selected;
+
+        //deselect old selection
+        if (oldSelection != null) {
+            oldSelection.classed('highlight', false);
+            this.selected = null;
+        }
+
+        //set new selected on if not new element
+        let selection = d3.select("#" + this.dotter_block + d.id);;
+        if (oldSelection == null || oldSelection.attr('id') != selection.attr('id')) {
+            selection.classed('highlight', true);
+            this.selected = selection;
+        }
 
         // Clear old TODO - this is pretty inefficient (don't remove/load already matched channels
         const itemsMainOld = Object.keys(this.imageViewer.viewerManagerVMain.viewerChannels);

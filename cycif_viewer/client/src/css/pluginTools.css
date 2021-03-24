@@ -145,13 +145,17 @@
     margin: 0 !important;
 }
 
+.highlight{
+   border: 1px solid orange;
+}
+
+
 #dotter_search {
     margin: 5px;
     color: #5b5b5b !important;
     background-color: #1b1b1b !important;
     font-size: 0.5rem;
     width: 80%;
-
 }
 
 
