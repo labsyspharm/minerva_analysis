@@ -7,6 +7,7 @@ export class ViewerManager {
 
     // Class vars
     colorConnector = {};
+    rangeConnector = {};
     show_sel = true;
     sel_outlines = true;
     viewerChannels = {};
@@ -101,7 +102,7 @@ export class ViewerManager {
                     'name': name,
                     'short_name': name_short,
                     "color": this.colorConnector[srcIdx] ? this.colorConnector[srcIdx].color : d3.color("white"),
-                    "range": dataLayer.getImageBitRange(true)
+                    "range": this.rangeConnector[srcIdx] || dataLayer.getImageBitRange(true)
                 };
             }
         });
@@ -131,7 +132,8 @@ export class ViewerManager {
 
                     // delete this.imageViewer.currentChannels[srcIdx];
                     delete this.viewerChannels[srcIdx];
-                    delete this.colorConnector[srcIdx];
+                    // No Longer deleting this so that when you re-toggle a channel, the color persists
+                    // delete this.colorConnector[srcIdx];
                     break;
                 }
             }

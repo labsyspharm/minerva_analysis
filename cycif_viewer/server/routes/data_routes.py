@@ -228,6 +228,31 @@ def histogram_comparison():
     resp = comparison.histogramComparison(x, y, datasource, max_distance, channels, viewport, zoomlevel, sensitivity)
     return serialize_and_submit_json(resp)
 
+@app.route('/histogram_comparison_simmap', methods=['GET'])
+def histogram_comparison_simmap():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    viewport = request.args.getlist('viewport')[0]
+    zoomlevel = int(float(request.args.get('zoomlevel')))
+    sensitivity = float(request.args.get('sensitivity'))
+
+    # for which channels to compute? (currently only the first)
+    channels = []
+    if request.args.get('channels') != '':
+        channels = request.args.get('channels').split()[0].split(',')
+
+    # call functionality
+    resp = comparison.histogramComparisonSimMap(x, y, datasource, max_distance, channels, viewport, zoomlevel, sensitivity)
+    # file_object = io.BytesIO()
+    # # write PNG in file-object
+    # Image.fromarray(png).save(file_object, 'PNG', compress_level=0)
+    # # move to beginning of file so `send_file()` it will read from start
+    # file_object.seek(0)
+    return serialize_and_submit_json(resp)
+
+
 
 @app.route('/save_dot', methods=['POST'])
 def save_dot():

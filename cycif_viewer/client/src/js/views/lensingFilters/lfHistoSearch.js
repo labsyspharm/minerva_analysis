@@ -7,8 +7,8 @@ export class LfHistoSearch {
     data = [];
     load = [];
     vars = {
-        config_boxW: 200,
-        config_boxH: 100,
+        config_boxW: 140,
+        config_boxH: 120,
         config_boxMargin: {top: 8, right: 6, bottom: 7, left: 6},
         config_fontSm: 9,
         config_fontMd: 11,
@@ -16,6 +16,7 @@ export class LfHistoSearch {
         el_radialExtG: null,
         el_textReportG: null,
         el_toggleNoteG: null,
+        el_helptext: null,
         channelCombo: new Map(),
         keydown: e => {
             const lensing = this.image_viewer.viewer.lensing;
@@ -29,6 +30,92 @@ export class LfHistoSearch {
             if (e.key === 'k'){
                 lensing.configs.sensitivity =  Math.max(lensing.configs.sensitivity-0.0025, 0);
                 console.log('decreased sensitivity to: ' + lensing.configs.sensitivity);
+            }
+
+            if (e.key === 'x') {
+                //remove overlay contents..
+                this.image_viewer.canvasImg = {};
+                d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
+            }
+
+            if (e.key === 'G') {
+                // Access auxi viewer manager (lensing instance) //lenses was not updated correctly
+                const mainManager = this.image_viewer.viewerManagerVMain;
+                const channels = [];
+                for (let k in mainManager.viewerChannels) {
+                    channels.push(mainManager.viewerChannels[k].name);
+                }
+
+
+
+                // Measure relative
+                const screenPt1 = new OpenSeadragon.Point(0, 0);
+                const screenPt2 =
+                    new OpenSeadragon.Point(lensing.configs.rad / lensing.configs.pxRatio, 0);
+                const contextPt1 =
+                    this.image_viewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
+                const contextPt2 =
+                    this.image_viewer.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
+                let newRad = Math.round(contextPt2.x - contextPt1.x)
+                if (newRad > 500) newRad = 500;
+
+                // Get position of cell and add to data
+                const pos = lensing.positionData.posFull;
+
+                // Load
+                this.load.config.filterCode.settings.loading = true;
+
+                //create a server query to retrieve contours of areas in the image similar to the current lens area
+
+                const bounds = this.image_viewer.viewer.viewport.getBounds(true);
+                const imageItem = this.image_viewer.viewer.viewport.viewer.world.getItemAt(0);
+                const topLeft = imageItem.viewportToImageCoordinates(bounds.getTopLeft());
+                const bottomRight = imageItem.viewportToImageCoordinates(bounds.getBottomRight());
+                const viewportBounds = [topLeft, bottomRight];
+                //convert from osd to zarr (but when we are zoomed in further than 0 (negative value), we jump back to 0
+                const zoomlevel = Math.max(0,this.image_viewer.config.maxLevel - this.image_viewer.viewer.viewport.getZoom());
+
+                this.data_layer.getHistogramComparisonSimMap(datasource, channels, pos[0], pos[1], newRad,
+                    viewportBounds, zoomlevel, lensing.configs.sensitivity).then(d => {
+
+                      //d is a 2 d array with values between 0 and 1. All under the sim threshold was set to 0
+                      //you can either treat is as 0 or something (mask) or render intensity values.
+
+                   var m_canvas = document.createElement('canvas');
+                    m_canvas.height = d.mask.length;
+                    m_canvas.width = d.mask[0].length;
+
+                    let scale = {};
+                    scale.width = bottomRight.x - topLeft.x;
+                    scale.height = bottomRight.y - topLeft.y;
+
+                    var m_context = m_canvas.getContext('2d');
+
+                    console.log("sim map has dimensions: " + m_canvas.width + " " + m_canvas.height)
+                    console.log("sim map will be shifted by : " + d.shift_x + " " + d.shift_y)
+
+                    let img = d.mask;
+                    //if we set a canvas image, we draw it
+                    if (d.mask && d.mask.length > 0){
+                        //draw the canvas image by iterating through rows and cols
+                        for (var i = 0; i < d.mask.length; i++) {
+                            for (var j = 0; j < d.mask[0].length; j++) {
+                                if (d.mask[i][j] > 0){
+                                    m_context.fillStyle = 'rgba(' + 255
+                                    + ',' + 165
+                                    + ',' + 0
+                                    + ',' + Math.pow(d.mask[i][j],0.55) + ')';
+                                    m_context.fillRect(  j,   i, 1, 1);
+                                }
+                            }
+                        }
+                    }
+
+                    this.image_viewer.canvasImg = {mask: m_canvas, shift_x: d.shift_x, shift_y: d.shift_y,
+                        width: scale.width, height: scale.height};
+                    this.image_viewer.viewer.forceRedraw();
+                    console.log("pressed G to get a 2D similarity array for values larger than the set theshold.");
+                });
             }
             if (e.key === 'H') {
 
@@ -93,9 +180,9 @@ export class LfHistoSearch {
                                 return d.map(function(d) { return [d[1],d[0]].join(","); }).join(" ");})
                             .attr("stroke","orange")
                             .attr("stroke-width",0.0001)
-                            .attr("stroke-opacity", 0.5)
+                            .attr("stroke-opacity", 1.0)
                             .attr("fill", "orange")
-                            .attr("fill-opacity", 0.2);
+                            .attr("fill-opacity", 0.0);
                 });
             }
             // Trigger update
@@ -216,6 +303,7 @@ export class LfHistoSearch {
                                 .attr('class', 'viewfinder_toggle_note_g')
                                 .style('transform', `translate(${this.vars.config_boxW
                                 - this.vars.config_boxMargin.right}px, ${this.vars.config_boxMargin.top * 3}px)`);
+
                             this.vars.el_toggleNoteG.append('text')
                                 .attr('class', 'viewfinder_toggle_note_g_char')
                                 .attr('x', -10)
@@ -227,18 +315,29 @@ export class LfHistoSearch {
                                 .attr('font-size', 14)
                                 .attr('font-weight', 'lighter')
                                 .html('&#9740;');
-                            this.vars.el_toggleNoteG.append('text')
-                                .attr('class', 'viewfinder_toggle_note_g_char')
-                                .attr('x', -40)
-                                .attr('y', 2)
-                                .attr('text-anchor', 'end')
-                                .attr('dominant-baseline', 'hanging')
-                                .attr('fill', 'rgba(255, 255, 255, 0.9)')
-                                .attr('font-family', 'sans-serif')
-                                .attr('font-size', 8)
-                                .attr('font-style', 'italic')
-                                .attr('font-weight', 'lighter')
-                                .html('Contours: shift h - Increase/Decrease: k/j');
+
+                            this.vars.el_helptext = this.vars.el_boxExtG.append('g')
+                                .attr('class', 'viewfinder_helptext_g')
+                                .style('transform', `translate(${this.vars.config_boxMargin.left}px, ${this.vars.config_boxMargin.top * 3}px)`);
+
+
+                            this.vars.el_helptext.append('text')
+                                    .attr('class', 'tooltipText')
+                                    .attr('x', 10)
+                                    .attr('y', 10)
+                                    .text('Contours: shift h');
+
+                            this.vars.el_helptext.append("text")
+                                  .attr('class', 'tooltipText')
+                                    .attr('x', 10)
+                                    .attr('y', 22)
+                                  .text("Heatmap: shift g '");
+
+                            this.vars.el_helptext.append("text")
+                                 .attr('class', 'tooltipText')
+                                    .attr('x', 10)
+                                    .attr('y', 32)
+                                  .text("Increase/Decrease: k / j'");
 
                             // Add listener
                             this.vars.keydown = this.vars.keydown.bind(this)
@@ -360,34 +459,22 @@ export class LfHistoSearch {
 
                             dynamic.selectAll(".combo_channels")
                                 .data(this.vars.channelCombo, function(d){return  d}).enter()
-                                        .append("text")
-                                        .attr('class', 'combo_channels')
-                                        .attr("x", function(d,i){ return 100} )
-                                        .attr("y", function(d,i){ return 50 + 10*i} )
-                                        .text(function(d,i){ return d[0] + ":     " + d[1]})
-                                        .attr('text-anchor', 'end')
-                                        .attr('fill', 'rgba(255, 255, 255, 0.9)')
-                                        .attr('font-family', 'sans-serif')
-                                        .attr('font-size', 8)
-                                        .attr('font-style', 'italic')
-                                        .attr('font-weight', 'lighter');
+                                    .append("text")
+                                    .attr('class', 'combo_channels')
+                                    .attr("x", 68)
+                                    .attr("y", function(d,i){ return 75 + 10*i} )
+                                    .text(function(d,i){ return d[0] + ":     " + d[1]})
+                                    .attr('text-anchor', 'end')
+                                    .attr('fill', 'rgba(255, 255, 255, 0.9)')
+                                    .attr('font-family', 'sans-serif')
+                                    .attr('font-size', 8)
+                                    .attr('font-style', 'italic')
+                                    .attr('font-weight', 'lighter');
 
-                            // const sens = 1-vis.image_viewer.viewer.lensing.configs.sensitivity*4;
-                            // dynamic
-                            //     .append("text")
-                            //     .attr("x", 150)
-                            //     .attr("y", 80)
-                            //     .text(100-(f(sens*100)))
-                            //     .attr('font-family', 'sans-serif')
-                            //     .attr('font-size', 22)
-                            //     .attr('font-style', 'italic')
-                            //     .attr('font-weight', 'lighter')
-                            //     .attr('fill', 'rgba(255, 255, 255, 0.9)');
-
-
-                            
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
+                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
+                            vf.configs.boxW = this.vars.config_boxW;
                             vf.configs.boxH = this.vars.config_boxH;
 
                         },
@@ -395,6 +482,9 @@ export class LfHistoSearch {
 
                             // Remove handler
                             document.removeEventListener('keydown', this.vars.keydown);
+
+                            // remove heatmap
+                            this.image_viewer.canvasImg = {};
 
                             // remove lens shapes and clear svg overlay with polygons
                             d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();

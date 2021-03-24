@@ -107,8 +107,17 @@
     width: 100%;
 }
 
+.toolboxContainer .dotter_block .dotter_block_icon_container_remove {
+    background-color: rgb(247, 108, 94);
+    color: rgba(0, 0, 0, 1);
+    font-size: 10px;
+    padding: 1px 5px;
+    margin: 0 0 0 2px;
+    text-decoration: none;
+}
+
 .toolboxContainer .dotter_block .dotter_block_icon_container_save {
-    background-color: rgba(255, 0, 0, 1);
+    background-color: rgb(185, 210, 177);
     color: rgba(0, 0, 0, 1);
     font-size: 10px;
     padding: 1px 5px;
@@ -117,7 +126,7 @@
 }
 
 .dotter_block_icon_container_from_db {
-    background-color: rgb(255, 134, 37);
+    background-color: rgb(255, 165, 0);
     color: rgba(0, 0, 0, 1);
     font-size: 10px;
     padding: 1px 5px;

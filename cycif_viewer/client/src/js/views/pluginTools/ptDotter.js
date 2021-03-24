@@ -194,7 +194,7 @@ export class PtDotter {
     /**
      * renderOverlay
      */
-    renderOverlay() {
+    renderOverlay(data = null) {
 
         // Get image bounds
         const viewportBounds = this.imageViewer.viewer.viewport.getBounds(true);
@@ -219,7 +219,7 @@ export class PtDotter {
 
         // Dots
         this.els.viewerOverlay.selectAll('.dotDrop')
-            .data(this.configs.isOpen ? this.data : [])
+            .data(this.configs.isOpen ? data || this.data : [])
             .join('canvas')
             .attr('class', 'dotDrop')
             .style('position', 'absolute')
@@ -272,7 +272,7 @@ export class PtDotter {
 
         // Markers
         this.els.viewerOverlay.selectAll('.dotMarker')
-            .data(this.configs.isOpen ? this.data : [])
+            .data(this.configs.isOpen ? data || this.data : [])
             .join('img')
             .attr('class', 'dotMarker')
             .attr('src', '../client/assets/cycif-marker-mobile.svg')
@@ -404,6 +404,14 @@ export class PtDotter {
                                 }
                             })
                             .on('click', vis.saveToDb.bind(vis));
+
+                        if (!d.fromDb) {
+                            iconContainer.append('a')
+                                .attr('class', 'dotter_block_icon_container_remove')
+                                .text('DELETE')
+                                .on('click', vis.removeDot.bind(vis));
+
+                        }
 
                         // iconContainer.append('img')
                         //     .attr('src', '../static/frontend/assets/cycif-notes.svg')
@@ -539,6 +547,7 @@ export class PtDotter {
             filterdData = this.data;
         }
         this.renderSnapshots(filterdData);
+        this.renderOverlay(filterdData);
     }
 
     /**
@@ -561,7 +570,14 @@ export class PtDotter {
         // This essentially forces a redraw
         this.renderSnapshots([]);
         this.renderSnapshots();
+        this.renderOverlay();
+    }
 
+    removeDot(e, d) {
+        _.pull(this.data, d)
+        this.renderSnapshots([]);
+        this.renderSnapshots();
+        this.renderOverlay();
     }
 
 
