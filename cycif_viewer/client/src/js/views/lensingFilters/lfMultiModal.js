@@ -173,7 +173,7 @@ export class LfMultiModal {
                                 .attr('font-style', 'italic')
                                 .attr('font-weight', 'lighter')
                                 .style('letter-spacing', 1)
-                                .text('Multimodal options');
+                                .text('Multimodal / channel combo options');
 
                             this.vars.el_toggleNoteG = this.vars.el_boxExtG.append('g')
                                 .attr('class', 'viewfinder_toggle_note_g')
@@ -237,7 +237,7 @@ export class LfMultiModal {
 
                             // Check current sels
                             const keys = Object.keys(this.image_viewer.viewerManagerVAuxi.viewerChannels);
-                            if (selMM && (!selMM.loaded)) {
+                            if (selMM && (!selMM.loaded || keys.length > selMM.channels.length)) {
                                 // Empty
                                 let items = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
                                 keys.forEach(key => {
@@ -272,6 +272,7 @@ export class LfMultiModal {
                             const channels = this.channel_list.selections;
 
                             // Update vf box size
+                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH + (this.vars.mmOptions.length + 1)
                                 * this.vars.config_channelExtH);
                             vf.configs.boxH = this.vars.config_boxH + this.vars.mmOptions.length *
