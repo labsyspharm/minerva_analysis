@@ -99,7 +99,7 @@ class DataLayer {
                 datasource: datasource,
             }))
             let response_data = await response.json();
-            return response_data;
+            return new Map(response_data);
         } catch (e) {
             console.log("Error Getting Sample Row", e);
         }
@@ -108,8 +108,8 @@ class DataLayer {
     //helper function
     getNameForPhenotypeId(id) {
         if (this.phenotypeDescription != '' && this.phenotypeDescription != undefined) {
-            if (this.phenotypeDescription[id]) {
-                return this.phenotypeDescription[id][1];
+            if (this.phenotypeDescription.has(id)) {
+                return this.phenotypeDescription.get(id);
             }
         }
         return id;

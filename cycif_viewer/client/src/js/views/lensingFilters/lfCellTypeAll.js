@@ -294,7 +294,7 @@ export class LfCellTypeAll {
                                     //If description is there we use these names for naming
                                     if (cellTypeDescription != '' && cellTypeDescription != undefined){
                                         cellTypeDescription.forEach(function(d,i){
-                                            _this.vars.cellTypeMap.set(d[1], 0);
+                                            _this.vars.cellTypeMap.set(d, 0);
                                         });
                                     }
                                     //if not we build a map from the direct entries in the single cell data
@@ -394,8 +394,8 @@ export class LfCellTypeAll {
                                                     return val.slice(0, -1)[0];
                                                 }).indexOf(d[0]);
 
-                                            if (vis.vars.colorMap[index]){
-                                                return '' + vis.vars.colorMap[index].hex;
+                                            if (Array.from(dataLayer.phenotypeDescription.keys())[index] != undefined){
+                                                return '' + vis.vars.colorMap[Array.from(dataLayer.phenotypeDescription.keys())[index]].hex;
                                             }else{
                                                 return "#FFFFFF";
                                             }
