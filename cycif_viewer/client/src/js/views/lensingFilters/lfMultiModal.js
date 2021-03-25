@@ -10,12 +10,12 @@ export class LfMultiModal {
     load = [];
     vars = {
         cellIntensityRange: [0, 65536],
-        config_boxW: 350,
-        config_boxH: 40,
+        config_boxW: 360,
+        config_boxH: 60,
         config_colorR: 8,
-        config_channelExtH: 20,
+        config_channelExtH: 40,
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
-        config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 30},
+        config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 15},
         currentOption: {
             name: '',
             index: 0
@@ -34,34 +34,78 @@ export class LfMultiModal {
                 name: 'hande',
                 channels: ['HE_r', 'HE_g', 'HE_b'],
                 colors: ['255,0,0,1', '0,255,0,1', '0,0,255,1'],
+                ranges: [[0, 65536], [0, 65536], [0, 65536]],
                 displayName: 'H&E',
+                displayDescript: '',
+                loaded: false,
+                present: false
+            },
+            // Lung
+            {
+                name: 'bct',
+                channels: ['TTF1', 'CD45', 'Vimentin', 'ASMA', 'DAPI1'],
+                colors: ['0,255,0,1', '255,128,0,1', '255,0,0,1', '0,0,255,1', '255,255,255,1'],
+                ranges: [[0, 20000], [0, 4000], [0, 32000], [0, 64000], [0, 20000]],
+                displayName: 'Basic cell typing',
+                displayDescript: 'TTF1-green / CD45-orange / Vimentin-red / ASMA-blue / DAPI1-white',
                 loaded: false,
                 present: false
             },
             {
-                name: 'bip',
-                channels: ['CD45_PE', 'anti_CD3', 'CD20_488', 'CD163_488'],
-                colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
-                displayName: 'Broad immune pop. (CD45-white, CD3-red, CD20-green, CD163-blue)',
+                name: 'ict',
+                channels: ['CD20', 'CD3D', 'CD14', 'TTF1'],
+                colors: ['255,128,0,1', '0,0,255,1', '255,0,0,1', '0,255,0,1',],
+                ranges: [[500, 5000], [0, 64000], [3000, 20000], [0, 20000]],
+                displayName: 'Immune cell typing',
+                displayDescript: 'CD20-orange / CD3D-blue / CD-14-red / TTF1-green',
                 loaded: false,
                 present: false
             },
             {
-                name: 'bcl',
-                channels: ['Keratin_570', 'aSMA_660', 'CD31_647', 'CD45_PE'],
-                colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
-                displayName: 'Broad cell lin. (CD45-white, SMA-red, CD31-green, CD45-blue)',
+                name: 'tls',
+                channels: ['CD20', 'CD4', 'CD8a', 'FOXP3', 'Ki67', 'TTF1'],
+                colors: ['255,128,0,1', '0,255,255,1', '255,0,255,1', '255,0,0,1', '0,0,255,1', '0,255,0,1',],
+                ranges: [[500, 5000], [500, 8000], [0, 18000], [300, 5000], [0, 10000], [0, 20000]],
+                displayName: 'Lymphocytes and tertiary lymphoid structures',
+                displayDescript: 'CD20-orange / CD4-cyan / CD8a-magenta / FOXP3-red / Ki67-blue / TTF1-green',
                 loaded: false,
                 present: false
             },
+            {
+                name: 'lp',
+                channels: ['PD1', 'Ki67', 'GranzymeB', 'TCF1'],
+                colors: ['255,0,0,1', '0,0,255,1', '0,255,0,1', '255,255,0,1'],
+                ranges: [[300, 3000], [0, 10000], [0, 6000], [500, 4000]],
+                displayName: 'Lymphocyte phenotyping',
+                displayDescript: 'PD1-red / Ki67-blue / GranzymeB-green / TCF1-yellow',
+                loaded: false,
+                present: false
+            },
+            // Hiding temporarily - for Sardana
+            // {
+            //     name: 'bip',
+            //     channels: ['CD45_PE', 'anti_CD3', 'CD20_488', 'CD163_488'],
+            //     colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
+            //     displayName: 'Broad immune pop. (CD45-white, CD3-red, CD20-green, CD163-blue)',
+            //     loaded: false,
+            //     present: false
+            // },
+            // {
+            //     name: 'bcl',
+            //     channels: ['Keratin_570', 'aSMA_660', 'CD31_647', 'CD45_PE'],
+            //     colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
+            //     displayName: 'Broad cell lin. (Keratin-white, SMA-red, CD31-green, CD45-blue)',
+            //     loaded: false,
+            //     present: false
+            // },
         ],
-        mmSelected: 'hande',
+        mmSelected: '',
         keydown: e => {
             if (e.key === 'C') {
 
                 // Access auxi viewer manager (lensing instance)
-                const mainManager = this.image_viewer.viewerManagerVMain;
-                const auxiManager = this.image_viewer.viewerManagerVAuxi;
+                const mainManager = this.imageViewer.viewerManagerVMain;
+                const auxiManager = this.imageViewer.viewerManagerVAuxi;
 
                 // Get index of currentSelected
                 const idx = this.vars.mmOptions.findIndex(d => d.name === this.vars.mmSelected);
@@ -75,7 +119,7 @@ export class LfMultiModal {
      * @constructor
      */
     constructor(_imageViewer) {
-        this.image_viewer = _imageViewer;
+        this.imageViewer = _imageViewer;
 
         // From global vars
         this.data_layer = dataLayer;
@@ -119,7 +163,7 @@ export class LfMultiModal {
                     set_pixel: () => {
 
                         // Lensing ref
-                        const lensing = this.image_viewer.viewer.lensing;
+                        const lensing = this.imageViewer.viewer.lensing;
 
                         // Trigger update
                         lensing.viewfinder.setup.wrangle()
@@ -129,7 +173,7 @@ export class LfMultiModal {
                     update: (i, index) => {
 
                         // Magnify (simply pass through after filter)
-                        this.image_viewer.viewer.lensing.lenses.selections.magnifier.update(i, index);
+                        this.imageViewer.viewer.lensing.lenses.selections.magnifier.update(i, index);
                     },
                     fill: 'rgba(255, 255, 255, 0)',
                     stroke: 'rgba(0, 0, 0, 1)'
@@ -140,7 +184,7 @@ export class LfMultiModal {
                         init: () => {
 
                             // Define this
-                            const vf = this.image_viewer.viewer.lensing.viewfinder;
+                            const vf = this.imageViewer.viewer.lensing.viewfinder;
 
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
@@ -216,6 +260,7 @@ export class LfMultiModal {
                             document.addEventListener('keydown', this.vars.keydown);
 
                             // Check channels to look for sets
+                            let foundOne = false;
                             this.vars.mmOptions.forEach(o => {
                                 let includes = true;
                                 o.channels.forEach(c => {
@@ -225,6 +270,10 @@ export class LfMultiModal {
                                 });
                                 if (includes) {
                                     o.present = true;
+                                    if (!foundOne) {
+                                        this.vars.mmSelected = o.name;
+                                        foundOne = true;
+                                    }
                                 }
                             });
 
@@ -236,25 +285,34 @@ export class LfMultiModal {
                             const selMM = this.vars.mmOptions.find(o => o.name === this.vars.mmSelected);
 
                             // Check current sels
-                            const keys = Object.keys(this.image_viewer.viewerManagerVAuxi.viewerChannels);
+                            const keys = Object.keys(this.imageViewer.viewerManagerVAuxi.viewerChannels);
                             if (selMM && (!selMM.loaded || keys.length > selMM.channels.length)) {
                                 // Empty
-                                let items = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
+                                let items = Object.keys(this.imageViewer.viewerManagerVMain.viewerChannels);
                                 keys.forEach(key => {
-                                    this.image_viewer.viewerManagerVAuxi.channelRemove(+key);
+                                    this.imageViewer.viewerManagerVAuxi.channelRemove(+key);
                                 })
                                 // Loads
                                 selMM.channels.forEach((c, i) => {
 
                                     // Push new colors
-                                    // const channelTF = this.image_viewer.channelTF.find(tf => tf.name === c);
+                                    // const channelTF = this.imageViewer.channelTF.find(tf => tf.name === c);
                                     const rgba = selMM.colors[i].split(',');
                                     const d3rgba = d3.rgb(+rgba[0], +rgba[1], +rgba[2], +rgba[3]);
-                                    this.image_viewer.viewerManagerVAuxi.updateChannelColor(c, d3rgba);
+                                    this.imageViewer.viewerManagerVAuxi.updateChannelColor(c, d3rgba);
+
+                                    // Channel index
+                                    const index = Utils.getChannelIndex(c, this.imageViewer);
+
+                                    // Update ranges
+                                    this.imageViewer.viewerManagerVAuxi.rangeConnector[`${index}`] =
+                                        [
+                                            selMM.ranges[i][0] / this.vars.cellIntensityRange[1],
+                                            selMM.ranges[i][1] / this.vars.cellIntensityRange[1]
+                                        ];
 
                                     // Add channels
-                                    const index = Utils.getChannelIndex(c, this.image_viewer);
-                                    this.image_viewer.viewerManagerVAuxi.channelAdd(index);
+                                    this.imageViewer.viewerManagerVAuxi.channelAdd(index);
                                 });
                                 // Mark as loaded
                                 selMM.loaded = true;
@@ -266,28 +324,29 @@ export class LfMultiModal {
 
                             // Define this
                             const vis = this;
-                            const vf = this.image_viewer.viewer.lensing.viewfinder;
+                            const vf = this.imageViewer.viewer.lensing.viewfinder;
 
                             // Get channels
                             const channels = this.channel_list.selections;
 
+                            const filteredOptions = this.vars.mmOptions.filter(o => o.present);
+
                             // Update vf box size
                             vf.els.blackboardRect.attr('width', this.vars.config_boxW);
-                            vf.els.blackboardRect.attr('height', this.vars.config_boxH + (this.vars.mmOptions.length + 1)
+                            vf.els.blackboardRect.attr('height', this.vars.config_boxH + (filteredOptions.length + 1)
                                 * this.vars.config_channelExtH);
-                            vf.configs.boxH = this.vars.config_boxH + this.vars.mmOptions.length *
+                            vf.configs.boxH = this.vars.config_boxH + filteredOptions.length *
                                 this.vars.config_channelExtH;
 
-
-                            this.vars.el_chartsG.selectAll('.viewfinder_charts_g_chart_g')
-                                .data(this.vars.mmOptions)
+                            this.vars.el_chartsG.selectAll('.viewfinder_charts_g_chart_text_name')
+                                .data(filteredOptions)
                                 .join('text')
-                                .attr('class', 'viewfinder_charts_g_chart_g')
+                                .attr('class', 'viewfinder_charts_g_chart_text_name')
                                 .attr('x', 0)
                                 .attr('y', (d, i) => i * vis.vars.config_channelExtH + vis.vars.config_boxH)
                                 .attr('fill', 'rgba(255, 255, 255, 0.95)')
                                 .attr('font-family', 'sans-serif')
-                                .attr('font-size', this.vars.config_fontSm)
+                                .attr('font-size', this.vars.config_fontMd)
                                 .attr('text-anchor', 'start')
                                 .attr('dominant-baseline', 'middle')
                                 .attr('opacity', d => {
@@ -298,6 +357,26 @@ export class LfMultiModal {
                                 })
                                 .text(d => d.displayName);
 
+                            this.vars.el_chartsG.selectAll('.viewfinder_charts_g_chart_text_descript')
+                                .data(filteredOptions)
+                                .join('text')
+                                .attr('class', 'viewfinder_charts_g_chart_text_descript')
+                                .attr('x', 5)
+                                .attr('y', (d, i) => i * vis.vars.config_channelExtH + vis.vars.config_boxH + 20)
+                                .attr('fill', 'rgba(255, 255, 255, 0.95)')
+                                .attr('font-family', 'sans-serif')
+                                .attr('font-size', this.vars.config_fontSm)
+                                .attr('font-style', 'italic')
+                                .attr('text-anchor', 'start')
+                                .attr('dominant-baseline', 'middle')
+                                .attr('opacity', d => {
+                                    if (d.name === vis.vars.mmSelected) {
+                                        return 1;
+                                    }
+                                    return 0.75;
+                                })
+                                .text(d => d.displayDescript);
+
 
                         },
                         destroy: () => {
@@ -306,22 +385,33 @@ export class LfMultiModal {
                             document.removeEventListener('keydown', this.vars.keydown);
 
                             // Clear prev channels and reload from main
-                            const itemsAuxi = Object.keys(this.image_viewer.viewerManagerVAuxi.viewerChannels);
+                            const itemsAuxi = Object.keys(this.imageViewer.viewerManagerVAuxi.viewerChannels);
                             itemsAuxi.forEach(item => {
-                                this.image_viewer.viewerManagerVAuxi.channelRemove(+item);
+                                this.imageViewer.viewerManagerVAuxi.channelRemove(+item);
                             });
-                            const itemsMain = Object.keys(this.image_viewer.viewerManagerVMain.viewerChannels);
+
+                            // Recolor, re-range
+                            const itemsMain = Object.keys(this.imageViewer.viewerManagerVMain.viewerChannels);
+                            this.imageViewer.viewerManagerVAuxi.colorConnector = {}
+                            this.imageViewer.viewerManagerVAuxi.rangeConnector = {}
                             itemsMain.forEach(item => {
 
                                 // Color from main
-                                if (this.image_viewer.viewerManagerVMain.colorConnector[`${item}`]) {
-                                    this.image_viewer.viewerManagerVAuxi.colorConnector[`${item}`] = {
-                                        color: this.image_viewer.viewerManagerVMain.colorConnector[`${item}`].color
+                                if (this.imageViewer.viewerManagerVMain.colorConnector[`${item}`]) {
+                                    this.imageViewer.viewerManagerVAuxi.colorConnector[`${item}`] = {
+                                        color: this.imageViewer.viewerManagerVMain.colorConnector[`${item}`].color
+                                    }
+                                }
+
+                                // Range from main
+                                if (this.imageViewer.viewerManagerVMain.rangeConnector[`${item}`]) {
+                                    this.imageViewer.viewerManagerVAuxi.rangeConnector[`${item}`] = {
+                                        color: this.imageViewer.viewerManagerVMain.rangeConnector[`${item}`].color
                                     }
                                 }
 
                                 // Add channel
-                                this.image_viewer.viewerManagerVAuxi.channelAdd(+item);
+                                this.imageViewer.viewerManagerVAuxi.channelAdd(+item);
 
                             });
 

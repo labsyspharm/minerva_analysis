@@ -167,8 +167,6 @@ export class ViewerManager {
                 return e.sub_url === sub_url;
             })
             if (channel) {
-                // console.log(channel)
-                // console.log(channel.color)
                 const color = _.get(channel, 'color', channel.color);
                 const floatColor = [color.r / 255., color.g / 255., color.b / 255.];
                 const range = _.get(channel, 'range', that.imageViewer.dataLayer.getImageBitRange(true));

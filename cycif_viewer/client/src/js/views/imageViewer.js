@@ -150,8 +150,8 @@ class ImageViewer {
             //
             const unitConversion = {
                 inputUnit: d.physical_size_x_unit,
-                outputUnit: 'nm',
-                inputOutputRatio: [1, 1000]
+                outputUnit: 'µm',
+                inputOutputRatio: [1, 1]
             }
 
             // Update lensing
