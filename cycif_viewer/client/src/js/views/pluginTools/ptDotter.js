@@ -72,8 +72,10 @@ export class PtDotter {
         if (dbDots && _.size(dbDots) > 0) {
             this.imageViewer.viewer.lensing.snapshots.album = this.imageViewer.viewer.lensing.snapshots.album.concat(dbDots);
             _.each(dbDots, dot => {
-                this.data.push(dot);
-                this.dataIdsMap.push(dot.id);
+                if(!_.includes(this.dataIdsMap, dot.id)) {
+                    this.dataIdsMap.push(dot.id);
+                    this.data.push(dot);
+                }
             })
         }
 
@@ -220,11 +222,15 @@ export class PtDotter {
         const vis = this;
 
         // Dots
+
+        this.els.viewerOverlay.selectAll('.dotDrop').remove()
         this.els.viewerOverlay.selectAll('.dotDrop')
             .data(this.configs.isOpen ? data || this.data : [])
             .join('canvas')
             .attr('class', 'dotDrop')
-            .attr('id', function(d,i){return 'dotDrop' + d.id})
+            .attr('id', function (d, i) {
+                return 'dotDrop' + d.id
+            })
             .style('position', 'absolute')
             .style('border', d => {
                 if (d.selected) {
@@ -280,6 +286,7 @@ export class PtDotter {
             });
 
         // Markers
+        this.els.viewerOverlay.selectAll('.dotMarker').remove()
         this.els.viewerOverlay.selectAll('.dotMarker')
             .data(this.configs.isOpen ? data || this.data : [])
             .join('img')
@@ -327,13 +334,15 @@ export class PtDotter {
         if (_.size(data) > 0) {
             this.parent.els.searchbox.hidden = false;
         }
-
+        this.els.album.selectAll('.dotter_block').remove()
         this.els.album.selectAll('.dotter_block')
             .data(data)
             .join(
                 enter => enter.append('div')
                     .attr('class', 'dotter_block')
-                    .attr('id', function(d){ return vis.dotter_block + d.id})
+                    .attr('id', function (d) {
+                        return vis.dotter_block + d.id
+                    })
                     .each(function (d, i) {
                         console.log("Dat", d, i);
                         const div = d3.select(this);
@@ -450,11 +459,11 @@ export class PtDotter {
                     })
                     .on('mouseenter', function (e, d) {
                         d.selected = true;
-                        vis.renderOverlay();
+                        vis.renderOverlay(vis.filteredData);
                     })
                     .on('mouseleave', function (e, d) {
                         d.selected = false;
-                        vis.renderOverlay();
+                        vis.renderOverlay(vis.filteredData);
                     }),
                 update => update,
                 //     .each(function (dat, i) {
@@ -501,7 +510,7 @@ export class PtDotter {
 
         //set new selection on if not old element
         let selection = d3.select("#" + this.dotter_block + d.id);;
-        if (oldSelection == null || oldSelection.attr('id') != selection.attr('id')){
+        if (oldSelection == null || oldSelection.attr('id') != selection.attr('id')) {
             selection.classed('highlight', true);
             this.selected = selection;
 
@@ -604,17 +613,18 @@ export class PtDotter {
      */
     searchDots() {
         let text = this.parent.els.searchbox.value || '';
-        let filterdData;
+        let filteredData;
         text = _.trim(_.lowerCase(text))
         if (text && text != '') {
-            filterdData = _.filter(this.data, elem => {
+            filteredData = _.filter(this.data, elem => {
                 return _.includes(_.lowerCase(elem.name), text) || _.includes(_.lowerCase(elem.description), text)
             })
         } else {
-            filterdData = this.data;
+            filteredData = this.data;
         }
-        this.renderSnapshots(filterdData);
-        this.renderOverlay(filterdData);
+        this.filteredData = filteredData;
+        this.renderSnapshots(this.filteredData);
+        this.renderOverlay(this.filteredData);
     }
 
     /**
@@ -635,14 +645,12 @@ export class PtDotter {
             })
         }
         // This essentially forces a redraw
-        this.renderSnapshots([]);
         this.renderSnapshots();
         this.renderOverlay();
     }
 
     removeDot(e, d) {
         _.pull(this.data, d)
-        this.renderSnapshots([]);
         this.renderSnapshots();
         this.renderOverlay();
     }
