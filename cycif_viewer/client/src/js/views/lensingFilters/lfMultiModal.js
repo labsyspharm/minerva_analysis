@@ -10,12 +10,12 @@ export class LfMultiModal {
     load = [];
     vars = {
         cellIntensityRange: [0, 65536],
-        config_boxW: 360,
-        config_boxH: 60,
+        config_boxW: 300,
+        config_boxH: 50,
         config_colorR: 8,
-        config_channelExtH: 40,
+        config_channelExtH: 50,
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
-        config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 15},
+        config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 30},
         currentOption: {
             name: '',
             index: 0
@@ -47,7 +47,6 @@ export class LfMultiModal {
                 colors: ['0,255,0,1', '255,128,0,1', '255,0,0,1', '0,0,255,1', '255,255,255,1'],
                 ranges: [[0, 20000], [0, 4000], [0, 32000], [0, 64000], [0, 20000]],
                 displayName: 'Basic cell typing',
-                displayDescript: 'TTF1-green / CD45-orange / Vimentin-red / ASMA-blue / DAPI1-white',
                 loaded: false,
                 present: false
             },
@@ -57,7 +56,6 @@ export class LfMultiModal {
                 colors: ['255,128,0,1', '0,0,255,1', '255,0,0,1', '0,255,0,1',],
                 ranges: [[500, 5000], [0, 64000], [3000, 20000], [0, 20000]],
                 displayName: 'Immune cell typing',
-                displayDescript: 'CD20-orange / CD3D-blue / CD-14-red / TTF1-green',
                 loaded: false,
                 present: false
             },
@@ -67,7 +65,6 @@ export class LfMultiModal {
                 colors: ['255,128,0,1', '0,255,255,1', '255,0,255,1', '255,0,0,1', '0,0,255,1', '0,255,0,1',],
                 ranges: [[500, 5000], [500, 8000], [0, 18000], [300, 5000], [0, 10000], [0, 20000]],
                 displayName: 'Lymphocytes and tertiary lymphoid structures',
-                displayDescript: 'CD20-orange / CD4-cyan / CD8a-magenta / FOXP3-red / Ki67-blue / TTF1-green',
                 loaded: false,
                 present: false
             },
@@ -77,27 +74,28 @@ export class LfMultiModal {
                 colors: ['255,0,0,1', '0,0,255,1', '0,255,0,1', '255,255,0,1'],
                 ranges: [[300, 3000], [0, 10000], [0, 6000], [500, 4000]],
                 displayName: 'Lymphocyte phenotyping',
-                displayDescript: 'PD1-red / Ki67-blue / GranzymeB-green / TCF1-yellow',
                 loaded: false,
                 present: false
             },
-            // Hiding temporarily - for Sardana
-            // {
-            //     name: 'bip',
-            //     channels: ['CD45_PE', 'anti_CD3', 'CD20_488', 'CD163_488'],
-            //     colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
-            //     displayName: 'Broad immune pop. (CD45-white, CD3-red, CD20-green, CD163-blue)',
-            //     loaded: false,
-            //     present: false
-            // },
-            // {
-            //     name: 'bcl',
-            //     channels: ['Keratin_570', 'aSMA_660', 'CD31_647', 'CD45_PE'],
-            //     colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
-            //     displayName: 'Broad cell lin. (Keratin-white, SMA-red, CD31-green, CD45-blue)',
-            //     loaded: false,
-            //     present: false
-            // },
+            // Sardana
+            {
+                name: 'bcl',
+                channels: ['Keratin_570', 'aSMA_660', 'CD31_647', 'CD45_PE'],
+                colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
+                ranges: [[0, 64000], [0, 30000], [0, 18000], [1500, 9000]],
+                displayName: 'Broad cell lineages',
+                loaded: false,
+                present: false
+            },
+            {
+                name: 'bip',
+                channels: ['CD45_PE', 'anti_CD3', 'CD20_488', 'CD163_488'],
+                colors: ['0,0,255,1', '255,255,0,1', '0,255,255,1', '255,0,255,1'],
+                ranges: [[1500, 9000], [1500, 20000], [0, 50000], [1500, 9000]],
+                displayName: 'Broad immune populations',
+                loaded: false,
+                present: false
+            },
         ],
         mmSelected: '',
         keydown: e => {
@@ -312,6 +310,7 @@ export class LfMultiModal {
                                         ];
 
                                     // Add channels
+                                    console.log('channelAdd', index)
                                     this.imageViewer.viewerManagerVAuxi.channelAdd(index);
                                 });
                                 // Mark as loaded
@@ -366,16 +365,21 @@ export class LfMultiModal {
                                 .attr('fill', 'rgba(255, 255, 255, 0.95)')
                                 .attr('font-family', 'sans-serif')
                                 .attr('font-size', this.vars.config_fontSm)
-                                .attr('font-style', 'italic')
                                 .attr('text-anchor', 'start')
                                 .attr('dominant-baseline', 'middle')
                                 .attr('opacity', d => {
                                     if (d.name === vis.vars.mmSelected) {
                                         return 1;
                                     }
-                                    return 0.75;
+                                    return 0.5;
                                 })
-                                .text(d => d.displayDescript);
+                                .html(d => {
+                                    let string = ''
+                                    d.channels.forEach((c, i) => {
+                                        string += `<tspan fill="rgba(${d.colors[i]})">&#11044;</tspan> ${c}  `
+                                    });
+                                    return string;
+                                })
 
 
                         },
