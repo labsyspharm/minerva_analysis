@@ -193,6 +193,14 @@ def get_datasource_description():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_neighborhood_by_phenotype', methods=['GET'])
+def get_neighborhood_by_phenotype():
+    datasource = request.args.get('datasource')
+    phenotype = request.args.get('phenotype')
+    resp = data_model.get_neighborhood_by_phenotype(datasource, phenotype)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/upload_gates', methods=['POST'])
 def upload_gates():
     file = request.files['file']

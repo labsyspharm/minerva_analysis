@@ -1,21 +1,24 @@
 class Legend {
-    constructor(phenotypes, colorScheme) {
+    constructor(dataLayer, colorScheme, eventHandler) {
         this.parentSelector = "legend";
         this.svg = d3.select(`#${this.parentSelector}`)
             .append("svg")
             .attr("width", '120px')
             .attr("height", '160px')
             .attr("id", "legend-svg");
-        this.phenotypes = phenotypes;
+        this.dataLayer = dataLayer;
         this.colorScheme = colorScheme;
+        this.eventHandler = eventHandler;
+
 
     }
 
     draw() {
+        const self = this;
         const size = 10;
-        let docHeight = 30 + _.size(this.phenotypes) * (size + 3);
+        let docHeight = 30 + _.size(this.dataLayer.phenotypes) * (size + 3);
         let colorMap = this.colorScheme.colorMap;
-        let data = _.map(this.phenotypes, phenotype => {
+        let data = _.map(this.dataLayer.phenotypes, phenotype => {
             return {'phenotype': phenotype, 'color': `${colorMap[phenotype].hex}`};
         })
         // document.getElementById(this.parentSelector).setAttribute("height", `${docHeight}px`);
@@ -47,6 +50,9 @@ class Legend {
             .style("fill", d => {
                 return d.color;
             })
+            .on("click", (e, d) => {
+                self.selectPhenotype(d);
+            })
         rects.exit().remove();
 
         let labels = this.svg.selectAll(".mylabels")
@@ -71,10 +77,21 @@ class Legend {
             })
             .attr("text-anchor", "left")
             .style("alignment-baseline", "middle")
+            .on("click", (e, d) => {
+                self.selectPhenotype(d);
+            })
         labels.exit().remove();
 
         // if (this.selectedCell) {
         //     this.fillCellIcon(this.selectedCell.phenotype);
         // }
     }
+
+    selectPhenotype(d) {
+        this.eventHandler.trigger(Legend.events.selectPhenotype, d.phenotype);
+    }
 }
+
+Legend.events = {
+    selectPhenotype: 'selectPhenotype'
+};

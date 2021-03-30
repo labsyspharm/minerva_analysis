@@ -8,6 +8,7 @@ body {
     position: relative;
     width: 20px;
     height: 20px;
+    z-index: 10;
 }
 
 .lds-ellipsis div {
@@ -16,7 +17,7 @@ body {
     width: 13px;
     height: 13px;
     border-radius: 50%;
-    background: #000000;
+    background: #b8b8b8;
     animation-timing-function: cubic-bezier(0, 1, 1, 0);
 }
 
@@ -517,6 +518,13 @@ polygon:hover {
 #toolbar-row {
     width: 100%;
     margin: 0;
+}
+
+#openseadragon-loader-container {
+    top: 0;
+    left: 0;
+    position: absolute;
+    z-index: 10;
 }
 
 #openseadragon-toolbar {

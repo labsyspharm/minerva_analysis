@@ -75,15 +75,25 @@
         </div>
 
         <div class="col viewer_col" id="openseadragon_wrapper">
-            <span class="box-heading">Viewer</span>
+            <span class="box-heading">Image Space</span>
             <div id="openseadragon">
+                <div id="openseadragon-loader-container">
+                    <div class="lds-ellipsis" id="openseadragon_loader">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
                 <div id="openseadragon-toolbar">
                     <div id="toolbar-row" class="row justify-content-end">
                         <span class="material-icons" id="zoom-in">add</span>
                         <span class="material-icons" id="zoom-out">remove</span>
                         <span class="material-icons" id="home">home</span>
                     </div>
+
                 </div>
+
                 <div id="selection-options">
                     <div class="col">
                         <div class="row align-items-center">
@@ -127,12 +137,7 @@
                 </div>
                 <div class="row">
                     <div class="col-auto">
-                        <div class="lds-ellipsis" id="openseadragon_loader">
-                            <div></div>
-                            <div></div>
-                            <div></div>
-                            <div></div>
-                        </div>
+
                     </div>
                 </div>
                 <div id="legend"></div>

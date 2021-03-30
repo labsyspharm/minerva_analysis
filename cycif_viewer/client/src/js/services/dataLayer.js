@@ -132,7 +132,6 @@ class DataLayer {
         }
     }
 
-
     async editNeighborhood(id, editField, editValue) {
         try {
             let response = await fetch('/edit_neighborhood', {
@@ -326,7 +325,6 @@ class DataLayer {
         }
     }
 
-
     async getScatterplotData() {
         try {
             let response = await fetch('/get_scatterplot_data?' + new URLSearchParams({
@@ -353,7 +351,6 @@ class DataLayer {
         }
     }
 
-
     async getNeighborhoodForCell(maxDistance, selectedCell) {
         return this.getIndividualNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);
     }
@@ -365,7 +362,6 @@ class DataLayer {
     getCurrentRawSelection() {
         return this.currentRawSelection;
     }
-
 
     clearCurrentSelection() {
         this.currentSelection.clear();
@@ -381,7 +377,6 @@ class DataLayer {
             return [0.0, 1.0];
         }
     }
-
 
     addToCurrentSelection(item, allowDelete, clearPriors) {
 
@@ -412,7 +407,6 @@ class DataLayer {
             // console.log('id: ', this.currentSelection.values().next().value.id);
         }
     }
-
 
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
@@ -465,6 +459,20 @@ class DataLayer {
             }
         });
         return fullname;
+    }
+
+
+    async getNeighborhoodByPhenotype(phenotype) {
+        try {
+            let response = await fetch('/get_neighborhood_by_phenotype?' + new URLSearchParams({
+                datasource: datasource,
+                phenotype: phenotype
+            }))
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Cells By Phenotype", e);
+        }
     }
 
     async getMetadata() {

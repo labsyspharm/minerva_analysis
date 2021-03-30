@@ -84,7 +84,7 @@ class ImageViewer {
         const that = this;
 
         // Hide Loader
-        document.getElementById('openseadragon_loader').style.display = "none";
+        that.hideLoader();
 
         // Config viewer
         const viewer_config = {
@@ -261,9 +261,11 @@ class ImageViewer {
                     if (that.isSelectionToolActive) {
                         that.lasso_end(event);
                         if (_.size(that.polygonSelection) > 2) {
+                            that.showLoader();
                             return dataLayer.getCellsInPolygon(that.polygonSelection, false)
                                 .then(cells => {
-                                    d3.select('#selectionPolygon').remove();
+                                    that.hideLoader();
+                                    // d3.select('#selectionPolygon').remove();
                                     that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
                                 })
                         }
@@ -379,9 +381,11 @@ class ImageViewer {
             that.neighborhoodButton.style.stroke = "orange";
             let sim = document.getElementById('similarity_val').innerHTML || '0.8';
             let simVal = parseFloat(sim);
+            seaDragonViewer.showLoader();
             if (dataLayer.getCurrentSelection().size > 0) {
                 return dataLayer.getSimilarNeighborhoodToSelection(simVal)
                     .then(cells => {
+                        seaDragonViewer.hideLoader();
                         that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
                     })
 
@@ -658,6 +662,15 @@ class ImageViewer {
     updateData(data) {
         this.data = data;
         this.forceRepaint();
+    }
+
+    showLoader() {
+        document.getElementById('openseadragon_loader').style.display = "block";
+
+    }
+
+    hideLoader() {
+        document.getElementById('openseadragon_loader').style.display = "none";
     }
 
     /**

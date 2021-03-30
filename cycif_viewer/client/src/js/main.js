@@ -50,7 +50,7 @@ async function init(conf) {
 
     channelList = new ChannelList(config, dataLayer, eventHandler);
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
-    legend = new Legend(dataLayer.phenotypes, colorScheme);
+    legend = new Legend(dataLayer, colorScheme, eventHandler);
     starplot = new Starplot('starplot_display', dataLayer, eventHandler);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer, neighborhoodTable);
     console.log('Ending Reg Init', new Date());
@@ -191,7 +191,12 @@ const actionFeatureGatingChange = (d) => {
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
     // console.log("gating event executed");
 }
-eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
+
+const selectPhenotype = async (phenotype) => {
+    let cells = await dataLayer.getNeighborhoodByPhenotype(phenotype);
+    await displayNeighborhoodSelection(cells);
+}
+eventHandler.bind(Legend.events.selectPhenotype, selectPhenotype);
 
 
 function displayNeighborhood(selectedCell, neighborhood) {

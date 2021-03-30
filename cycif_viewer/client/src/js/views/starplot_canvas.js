@@ -259,8 +259,14 @@ class Starplot {
 
         if (self.full_neighborhoods && !self.editMode) {
             self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
+            let opacity;
+            if (_.size(self.full_neighborhoods)){
+                opacity = -0.0000180036 * _.size(self.full_neighborhoods) + 0.100018
+            } else {
+                opacity = 0.01;
+            }
             _.forEach(_.sampleSize(self.full_neighborhoods, 5000), row => {
-                const color = "hsla(0,0%,50%,0.01)";
+                const color = `hsla(0,0%,50%,${opacity})`;
                 self.canvas.getContext('2d').strokeStyle = color;
                 self.canvas.getContext('2d').beginPath();
                 row.map(function (p, i) {
@@ -328,9 +334,11 @@ class Starplot {
             el.value = el.value / total;
         })
         self.draw();
+        seaDragonViewer.showLoader();
         return dataLayer.findSimilarNeighborhoods(_.keyBy(self.visData, 'key'))
             .then(cells => {
                 self.switchEditMode();
+                seaDragonViewer.hideLoader();
                 self.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
             })
     }

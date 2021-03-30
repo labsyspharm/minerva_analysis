@@ -192,6 +192,20 @@ def delete_neighborhood(elem, datasource_name):
             new_neighborhoods]
 
 
+def get_neighborhood_by_phenotype(datasource_name, phenotype):
+    global datasource
+    # Load if not loaded
+    if datasource_name != source:
+        load_datasource(datasource_name)
+
+    fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
+              config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
+    cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
+    # neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
+    obj = get_neighborhood_stats(datasource_name, cell_ids, fields=fields)
+    return obj
+
+
 def create_custom_clusters(datasource_name, num_clusters):
     global config
     database_model.delete(database_model.Neighborhood, custom=True)
@@ -535,7 +549,7 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition):
         if 'disabled' in neighborhood_composition[phenos[i]] and neighborhood_composition[phenos[i]]['disabled']:
             disabled.append(i)
 
-    similar_ids = find_similarity(neighborhood_vector, 0.9, datasource_name, disabled)
+    similar_ids = find_similarity(neighborhood_vector, 0.85, datasource_name, disabled)
     obj = get_neighborhood_stats(datasource_name, similar_ids, fields=fields)
     obj['raw_summary'] = neighborhood_vector
     return obj
