@@ -38,8 +38,8 @@ export class LfCellTypeAll {
         el_radialExtG: null,
         el_textReportG: null,
         imageChannels: [],
-        colorMap : seaDragonViewer.colorScheme.colorMap,
-        c10 : d3.scaleOrdinal(d3.schemeCategory10),
+        colorMap: seaDragonViewer.colorScheme.colorMap,
+        c10: d3.scaleOrdinal(d3.schemeCategory10),
         tool_angleScale: d3.scaleLinear()
             .range([0, 2 * Math.PI]),
         tool_areaMaker: d3.areaRadial()
@@ -56,7 +56,7 @@ export class LfCellTypeAll {
         xyPosKeys: [],
         keydown: e => {
             //whether to sort celltype order by count in current range query
-            if (e.key === 'j'){
+            if (e.key === 'j') {
                 this.vars.cellTypeSort = !this.vars.cellTypeSort;
                 this.image_viewer.viewer.lensing.viewfinder.setup.wrangle();
                 this.image_viewer.viewer.lensing.viewfinder.setup.render();
@@ -184,7 +184,7 @@ export class LfCellTypeAll {
                                 this.vars.cellCount = darr.length;
                                 this.vars.cellTypeMap.forEach((value, key, map) => map.set(key, 0));
                                 let cellTypeCounts = this.vars.cellTypeMap;
-                                darr.forEach(function(d,i) {
+                                darr.forEach(function (d, i) {
                                     if (d[_this.vars.cellTypeColumnName] != null) {
                                         let fieldName = dataLayer.getNameForPhenotypeId(d[_this.vars.cellTypeColumnName]);
                                         if (!cellTypeCounts.has(fieldName)) {
@@ -248,7 +248,7 @@ export class LfCellTypeAll {
                                 .style('transform', `translate(${this.vars.config_chartsMargin.left}px, 
                                     ${this.vars.config_chartsMargin.top}px)`);
 
-                                // Append textReportG
+                            // Append textReportG
                             this.vars.el_textReportG = this.vars.el_boxExtG.append('g')
                                 .attr('class', 'viewfinder_text_report_g');
                             this.vars.el_textReportG.append('text')
@@ -292,8 +292,8 @@ export class LfCellTypeAll {
                                     let cellTypeDescription = dataLayer.phenotypeDescription;
 
                                     //If description is there we use these names for naming
-                                    if (cellTypeDescription != '' && cellTypeDescription != undefined){
-                                        cellTypeDescription.forEach(function(d,i){
+                                    if (cellTypeDescription != '' && cellTypeDescription != undefined) {
+                                        cellTypeDescription.forEach(function (d, i) {
                                             _this.vars.cellTypeMap.set(d, 0);
                                         });
                                     }
@@ -312,7 +312,7 @@ export class LfCellTypeAll {
                                     }
 
                                     //depending on how many cell types we have, we set the height of the box
-                                    this.vars.config_boxH = this.vars.cellTypeMap.size*24 + 25;
+                                    this.vars.config_boxH = this.vars.cellTypeMap.size * 24 + 25;
 
                                     //Set types to vars
                                     this.vars.cellTypes = cellTypes;
@@ -321,14 +321,14 @@ export class LfCellTypeAll {
                                     this.image_viewer.updateSelection(dataLayer.getCurrentSelection(), true);
                                 }
 
-                            vf.els.blackboardRect.attr('height', this.vars.config_boxH);
-                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
-                            vf.configs.boxH = this.vars.config_boxH;
-                            vf.configs.boxW = this.vars.config_boxW;
+                                vf.els.blackboardRect.attr('height', this.vars.config_boxH);
+                                vf.els.blackboardRect.attr('width', this.vars.config_boxW);
+                                vf.configs.boxH = this.vars.config_boxH;
+                                vf.configs.boxW = this.vars.config_boxW;
 
-                            // Add listener
-                            this.vars.keydown = this.vars.keydown.bind(this)
-                            document.addEventListener('keydown', this.vars.keydown);
+                                // Add listener
+                                this.vars.keydown = this.vars.keydown.bind(this)
+                                document.addEventListener('keydown', this.vars.keydown);
 
 
                             }).catch(err => console.log(err))
@@ -342,19 +342,19 @@ export class LfCellTypeAll {
 
                             //overall cell count:
                             vis.vars.barScale = d3.scaleLinear()
-                              .domain([0, vis.vars.cellCount])
-                              .range([0, 80]);
+                                .domain([0, vis.vars.cellCount])
+                                .range([0, 80]);
 
 
                             //sort cell types by count in current range query?
-                            if (vis.vars.cellTypeSort){
+                            if (vis.vars.cellTypeSort) {
                                 let sorting = vis.vars.cellTypes;
-                                sorting.sort(function(a,b){
+                                sorting.sort(function (a, b) {
                                     return b[1] - a[1];
                                 });
                                 vis.vars.cellTypes = sorting;
-                               };
-                             d3.select('.viewfinder_charts_g').selectAll(".viewfinder_charts_g_celltypes").remove();
+                            }
+                            d3.select('.viewfinder_charts_g').selectAll(".viewfinder_charts_g_celltypes").remove();
 
 
                         },
@@ -367,17 +367,21 @@ export class LfCellTypeAll {
                             const zoom = vis.image_viewer.viewer.viewport.getZoom();
                             const cellR = vis.vars.tool_rCellScale(zoom);
 
-                            const kF = function(d, i) { return d.item };
+                            const kF = function (d, i) {
+                                return d.item
+                            };
 
 
                             // Draw something
-                            d3.select('.viewfinder_charts_g').selectAll(".viewfinder_charts_g_celltypes").data(vis.vars.cellTypes, function(d) { return  d[0] + "-" +  d[1] })
-                                .join(function(group) {
+                            d3.select('.viewfinder_charts_g').selectAll(".viewfinder_charts_g_celltypes").data(vis.vars.cellTypes, function (d) {
+                                return d[0] + "-" + d[1]
+                            })
+                                .join(function (group) {
                                     let enter = group.append("g")
-                                    .attr('class', 'viewfinder_charts_g_celltypes');
+                                        .attr('class', 'viewfinder_charts_g_celltypes');
 
-                                        //draw color legend (colored circles by cell type)
-                                        enter.append('circle')
+                                    //draw color legend (colored circles by cell type)
+                                    enter.append('circle')
                                         .attr('cx', function (d, i) {
                                             return 10
                                         })
@@ -390,43 +394,43 @@ export class LfCellTypeAll {
 
                                             //we get the index if the original map (so that colors stay consistent if filtered)
                                             let index = Array.from(vis.vars.cellTypeMap)
-                                                .map(function(val) {
+                                                .map(function (val) {
                                                     return val.slice(0, -1)[0];
                                                 }).indexOf(d[0]);
 
-                                            if (Array.from(dataLayer.phenotypeDescription.keys())[index] != undefined){
+                                            if (Array.from(dataLayer.phenotypeDescription.keys())[index]) {
                                                 return '' + vis.vars.colorMap[Array.from(dataLayer.phenotypeDescription.keys())[index]].hex;
-                                            }else{
+                                            } else {
                                                 return "#FFFFFF";
                                             }
                                         })
 
-                                        //draw bars (currently linear scaling)
-                                        enter.append("rect")
-                                            .attr("x", function(d,i){
-                                                return 135;
-                                            })
-                                            .attr("y", function(d,i){
-                                                return (i * 20) -5
-                                            })
-                                            .attr("width", function(d,i){
-                                                return vis.vars.barScale(d[1]);
-                                            })
-                                            .attr("height", function(d,i){
-                                                return 10;
-                                            })
-                                            .attr("fill", "#ffffff");
+                                    //draw bars (currently linear scaling)
+                                    enter.append("rect")
+                                        .attr("x", function (d, i) {
+                                            return 135;
+                                        })
+                                        .attr("y", function (d, i) {
+                                            return (i * 20) - 5
+                                        })
+                                        .attr("width", function (d, i) {
+                                            return vis.vars.barScale(d[1]);
+                                        })
+                                        .attr("height", function (d, i) {
+                                            return 10;
+                                        })
+                                        .attr("fill", "#ffffff");
 
-                                        //draw phenotype names and counts
-                                        enter.append("text")
-                                        .attr("x", function (d,i) {
+                                    //draw phenotype names and counts
+                                    enter.append("text")
+                                        .attr("x", function (d, i) {
                                             return 30;
                                         })
-                                        .attr("y", function (d,i) {
+                                        .attr("y", function (d, i) {
                                             return (i * 20) + 2.5;
                                         })
-                                        .text(function(d,i){
-                                            return d[0] + "  (" +   d[1] + ")";
+                                        .text(function (d, i) {
+                                            return d[0] + "  (" + d[1] + ")";
                                         })
                                         .attr('fill', 'white')
                                         .attr('font-family', 'sans-serif')
@@ -434,7 +438,7 @@ export class LfCellTypeAll {
                                         .attr('font-style', 'italic')
                                         .attr('font-weight', 'lighter');
 
-                                        return enter;
+                                    return enter;
                                 });
 
                         },
