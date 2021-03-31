@@ -57,11 +57,11 @@ export class LensingFiltersExt {
             lfSegmentationOutlines.load,
             lfHistoSearch.load,
             lfSplit.load,
+            lfMultiModal.load,
             lfChannelView.load,
             lFCellType.load,
             lfNearestCellsSel.load,
             lfNearestCellsAll.load,
-            lfMultiModal.load,
             // lfSpatialCorrelation.load,
             // lfChannelRelationships.load
         ];
