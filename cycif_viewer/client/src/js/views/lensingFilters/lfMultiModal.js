@@ -29,6 +29,7 @@ export class LfMultiModal {
         el_textReportG: null,
         el_toggleNoteG: null,
         forceUpdate: false,
+        mmAvailable: [],
         mmOptions: [
             {
                 name: 'hande',
@@ -96,6 +97,15 @@ export class LfMultiModal {
                 loaded: false,
                 present: false
             },
+            {
+                name: 'tc',
+                channels: ['anti_CD3', 'CD4_488', 'CD8a_660', 'FOXP3_570'],
+                colors: ['255,255,255,1', '255,0,0,1', '0,255,0,1', '0,0,255,1'],
+                ranges: [[1000, 30000], [1000, 17000], [0, 30000], [500, 13000]],
+                displayName: 'T cells',
+                loaded: false,
+                present: false
+            },
         ],
         mmSelected: '',
         keydown: e => {
@@ -106,9 +116,9 @@ export class LfMultiModal {
                 const auxiManager = this.imageViewer.viewerManagerVAuxi;
 
                 // Get index of currentSelected
-                const idx = this.vars.mmOptions.findIndex(d => d.name === this.vars.mmSelected);
-                let newIdx = idx === this.vars.mmOptions.length - 1 ? 0 : idx + 1;
-                this.vars.mmSelected = this.vars.mmOptions[newIdx].name;
+                const idx = this.vars.mmAvailable.findIndex(d => d.name === this.vars.mmSelected);
+                let newIdx = idx === this.vars.mmAvailable.length - 1 ? 0 : idx + 1;
+                this.vars.mmSelected = this.vars.mmAvailable[newIdx].name;
             }
         }
     };
@@ -259,6 +269,7 @@ export class LfMultiModal {
 
                             // Check channels to look for sets
                             let foundOne = false;
+                            this.vars.mmAvailable = [];
                             this.vars.mmOptions.forEach(o => {
                                 let includes = true;
                                 o.channels.forEach(c => {
@@ -267,6 +278,7 @@ export class LfMultiModal {
                                     }
                                 });
                                 if (includes) {
+                                    this.vars.mmAvailable.push(o);
                                     o.present = true;
                                     if (!foundOne) {
                                         this.vars.mmSelected = o.name;
@@ -280,7 +292,7 @@ export class LfMultiModal {
                         wrangle: () => {
 
                             // Get selected mmOption
-                            const selMM = this.vars.mmOptions.find(o => o.name === this.vars.mmSelected);
+                            const selMM = this.vars.mmAvailable.find(o => o.name === this.vars.mmSelected);
 
                             // Check current sels
                             const keys = Object.keys(this.imageViewer.viewerManagerVAuxi.viewerChannels);
@@ -310,7 +322,6 @@ export class LfMultiModal {
                                         ];
 
                                     // Add channels
-                                    console.log('channelAdd', index)
                                     this.imageViewer.viewerManagerVAuxi.channelAdd(index);
                                 });
                                 // Mark as loaded
@@ -328,7 +339,7 @@ export class LfMultiModal {
                             // Get channels
                             const channels = this.channel_list.selections;
 
-                            const filteredOptions = this.vars.mmOptions.filter(o => o.present);
+                            const filteredOptions = this.vars.mmAvailable;
 
                             // Update vf box size
                             vf.els.blackboardRect.attr('width', this.vars.config_boxW);
