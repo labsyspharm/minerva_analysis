@@ -1,4 +1,4 @@
-class Starplot {
+class ParallelCoordinates {
     constructor(id, dataLayer, eventHandler, small = false) {
         this.id = id;
         this.small = small;
@@ -26,20 +26,22 @@ class Starplot {
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
 
         this.svg = this.parent.append("svg")
-            .attr("id", "parallel_coords")
+            .attr("class", "parallel_coords")
+            .attr("id", self.id + "_svg")
             .attr("width", this.width + this.margin.left + this.margin.right)
             .attr("height", this.height + this.margin.top + this.margin.bottom)
         this.svgGroup = this.svg.append("g")
             .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
 
         this.parent.append("canvas")
-            .attr("id", 'parallel-canvas')
+            .attr("class", 'parallel-canvas')
+            .attr("id", self.id + "_canvas")
             .attr("width", this.width + this.margin.left + this.margin.right)
             .attr("height", this.height + this.margin.top + this.margin.bottom)
-        this.canvas = document.getElementById('parallel-canvas')
+        this.canvas = document.getElementById(self.id + '_canvas')
 
 
-        this.svgSelector = document.getElementById(`${this.id}_parallel_coords_svg`);
+        this.svgSelector = document.getElementById(self.id + "_svg");
         // Parse the Data
         this.x = d3.scalePoint()
             .range([0, self.width])
@@ -260,7 +262,7 @@ class Starplot {
         if (self.full_neighborhoods && !self.editMode) {
             self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
             let opacity;
-            if (_.size(self.full_neighborhoods)){
+            if (_.size(self.full_neighborhoods)) {
                 opacity = -0.0000180036 * _.size(self.full_neighborhoods) + 0.100018
             } else {
                 opacity = 0.01;

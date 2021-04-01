@@ -8,7 +8,7 @@ const datasource = flaskVariables.datasource;
 
 
 //VIEWS
-let seaDragonViewer, channelList, starplot, scatterplot, legend, neighborhoodTable;
+let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable;
 
 //SERVICES
 let dataLayer, colorScheme;
@@ -51,7 +51,7 @@ async function init(conf) {
     channelList = new ChannelList(config, dataLayer, eventHandler);
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     legend = new Legend(dataLayer, colorScheme, eventHandler);
-    starplot = new Starplot('starplot_display', dataLayer, eventHandler);
+    parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer, neighborhoodTable);
     console.log('Ending Reg Init', new Date());
     //image viewer
@@ -60,7 +60,7 @@ async function init(conf) {
     // init synchronus methods
     seaDragonViewer.init();
     legend.draw();
-    starplot.init();
+    parallelCoordinates.init();
     scatterplot.init();
     console.log('Sync Init', new Date());
     //Async stuff
@@ -122,7 +122,7 @@ eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMul
 
 const displaySelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
-    starplot.wrangle(selection);
+    parallelCoordinates.wrangle(selection);
     scatterplot.recolor();
     updateSeaDragonSelection(false, false);
 }
@@ -132,7 +132,7 @@ const displayNeighborhoodSelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
     // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution');
     if (selection) {
-        starplot.wrangle(selection);
+        parallelCoordinates.wrangle(selection);
         scatterplot.recolor();
     }
     updateSeaDragonSelection(false, false);
@@ -143,7 +143,7 @@ const selectNeighborhood = async (d) => {
     let selection = await dataLayer.getNeighborhood(d[0]);
     dataLayer.addAllToCurrentSelection(selection);
     // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
-    starplot.wrangle(selection);
+    parallelCoordinates.wrangle(selection);
     scatterplot.recolor();
     updateSeaDragonSelection(false, false);
 }

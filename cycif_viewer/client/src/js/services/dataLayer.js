@@ -107,6 +107,17 @@ class DataLayer {
         }
     }
 
+    async getHeatmapData() {
+        try {
+            let response = await fetch('/get_heatmap_data?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let heatmapData = await response.json();
+            return heatmapData;
+        } catch (e) {
+            console.log("Error Getting Heatmap Data", e);
+        }
+    }
 
     async getNeighborhoods() {
         try {

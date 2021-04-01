@@ -16,6 +16,7 @@ from cycif_viewer.server.utils import pyramid_assemble
 import matplotlib.path as mpltPath
 from cycif_viewer.server.utils import smallestenclosingcircle
 from cycif_viewer.server.models import database_model
+from scipy.stats import pearsonr
 
 import time
 import pickle
@@ -201,7 +202,6 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype):
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
-    # neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
     obj = get_neighborhood_stats(datasource_name, cell_ids, fields=fields)
     return obj
 
@@ -699,6 +699,24 @@ def generate_zarr_png(datasource_name, channel, level, tile):
     # tile = np.ascontiguousarray(tile, dtype='uint32')
     # png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
     return tile
+
+
+def get_pearsons_correlation(datasource_name):
+    global datasource
+    global ball_tree
+    global source
+    global config
+    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    # Load if not loaded
+    if datasource_name != source:
+        load_datasource(datasource_name)
+    heatmap = np.zeros((neighborhoods.shape[1], neighborhoods.shape[1]))
+    for i in range(0, neighborhoods.shape[1]):
+        for j in range(0, i):
+            p_cor = pearsonr(neighborhoods[:, i], neighborhoods[:, j])
+            heatmap[i, j] = p_cor[0]
+            heatmap[j, i] = p_cor[0]
+    return heatmap
 
 
 def get_ome_metadata(datasource_name):

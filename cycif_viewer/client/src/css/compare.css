@@ -6,7 +6,7 @@
     height: 28vh;
 }
 
-#comparison_div .compare_col {
+#comparison_div .compare_col, #summary_div .compare_col {
     padding: 0;
     height: 100%;
 }
@@ -21,7 +21,7 @@
     width: 100%;
 }
 
-#comparison_div h5 {
+#comparison_div h5, #summary_div h5 {
     font-size: 0.8rem;
 }
 
@@ -34,10 +34,24 @@
     font-size: 1rem;
 }
 
-#small-multiple-toggle * {
+#small-multiple-toggle .label, #summary-toggle .label {
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+#small-multiple-toggle .btn, #summary-toggle .btn {
+    padding: 3px 6px;
+    margin: 0;
+}
+
+#small-multiple-toggle *, #summary-toggle * {
     font-size: 0.6rem;
 }
 
 #comparison_div .viewfinder_chart_area_path {
     fill: rgba(255, 165, 0, 0.9)
+}
+
+.tooltip, .tooltip * {
+    font-size: 0.6rem;
 }

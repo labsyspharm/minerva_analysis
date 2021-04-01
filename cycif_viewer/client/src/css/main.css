@@ -95,7 +95,7 @@ body {
     width: 100%;
 }
 
-#starplot_display {
+#parallel_coordinates_display {
     height: 39vh;
     margin-left: 15px;
     width: 100%;
@@ -743,7 +743,7 @@ polygon:hover {
     vertical-align: middle;
 }
 
-#parallel_coords {
+.parallel_coords {
     position: absolute;
     left: 0;
     top: 0;

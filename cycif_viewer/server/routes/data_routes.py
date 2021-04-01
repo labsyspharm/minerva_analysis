@@ -193,6 +193,13 @@ def get_datasource_description():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_heatmap_data', methods=['GET'])
+def get_heatmap_data():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_pearsons_correlation(datasource)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_neighborhood_by_phenotype', methods=['GET'])
 def get_neighborhood_by_phenotype():
     datasource = request.args.get('datasource')

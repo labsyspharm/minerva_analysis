@@ -25,8 +25,8 @@ async function init(conf) {
     phenotypeList = document.getElementById('phenotype_list');
     createGrid();
     initPhenotypeList();
-    initSmallMultipleToggles();
-    initSmallMultipleStarplots();
+    initToggles();
+    initSmallMultipleParallelCoordinates();
 }
 
 function initPhenotypeList() {
@@ -58,28 +58,28 @@ function initPhenotypeList() {
         ghostClass: 'blue-background-class',
         // Called by any change to the list (add / update / remove)
         onSort: (e) => {
-            redrawStarplots();
+            redrawParallelCoordinates();
         }
     });
 }
 
-function initSmallMultipleToggles() {
-    let parent = document.getElementById("small-multiple-toggle");
-    _.each(parent.querySelectorAll(".btn-check"), (elem) => {
+function initToggles() {
+    let smallMultipleToggles = document.getElementById("comparison_title");
+    _.each(smallMultipleToggles.querySelectorAll(".btn-check"), (elem) => {
         elem.onclick = () => {
-            switchSmallMultipleType(elem, parent);
+            switchSmallMultipleType(elem, smallMultipleToggles);
         }
-    })
+    });
+
 }
 
 function switchSmallMultipleType(elem, parent) {
-    if (elem.id == "starplot-button") {
+    if (elem.id == "parallel-coordinates-button") {
         if (selectAndUnselect(elem, parent)) {
             //Remove Bars
-            currentState = 'starplot';
-            //Add starplots
+            currentState = 'parallelCoordinates';
             removeAllPlots();
-            initSmallMultipleStarplots();
+            initSmallMultipleParallelCoordinates();
         }
     } else if (elem.id == "barchart-button") {
         if (selectAndUnselect(elem, parent)) {
@@ -93,6 +93,16 @@ function switchSmallMultipleType(elem, parent) {
             currentState = 'scatterplot';
             removeAllPlots();
             initSmallMultipleScatterplots();
+
+        }
+
+    } else if (elem.id == "heatmap-button") {
+        if (selectAndUnselect(elem, parent)) {
+            currentState = 'heatmap';
+            removeAllPlots();
+            document.getElementById("summary_div").style.display = "block";
+            document.getElementById("comparison_div").style.display = "none";
+            initHeatmap();
 
         }
 
@@ -116,12 +126,13 @@ function switchSmallMultipleType(elem, parent) {
 
 function removeAllPlots() {
 
-    d3.selectAll('.starplot, .barchart, .scatter_canvas').remove();
+    d3.selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas').remove();
+    document.getElementById("summary_div").style.display = "none";
     plots = [];
 }
 
 
-function redrawStarplots() {
+function redrawParallelCoordinates() {
     // Gets data in order
     let data = d3.select(phenotypeList).selectAll('.list-group-item-secondary').data();
     wrangleSmallMultiples(data);
@@ -150,7 +161,7 @@ function removePhenotype(e, d) {
         row.classList.add("list-group-item-secondary");
         row.classList.remove("list-group-item-light");
     }
-    redrawStarplots();
+    redrawParallelCoordinates();
 }
 
 function createGrid() {
@@ -172,7 +183,7 @@ function createGrid() {
             compare_plot_title.appendChild(title);
             col.appendChild(compare_plot_title);
             let compare_plot_body = document.createElement("div");
-            compare_plot_body.id = `compare_starplot_${i}`
+            compare_plot_body.id = `compare_parallel_coordinates_${i}`
             compare_plot_body.className = "row compare_plot_body";
             col.appendChild(compare_plot_body);
             i++;
@@ -181,13 +192,13 @@ function createGrid() {
     })
 }
 
-function initSmallMultipleStarplots() {
+function initSmallMultipleParallelCoordinates() {
     plots = _.map(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`);
         let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
-        let starplot = new Starplot(`compare_starplot_${i}`, dataLayer, eventHandler, small = true);
-        starplot.init();
-        return starplot;
+        let pc = new ParallelCoordinates(`compare_parallel_coordinates_${i}`, dataLayer, eventHandler, small = true);
+        pc.init();
+        return pc;
     });
 
     wrangleSmallMultiples();
@@ -209,7 +220,7 @@ function initSmallMultipleBarcharts() {
     plots = _.map(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`);
         let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
-        let barchart = new Barchart(`compare_starplot_${i}`, dataLayer.phenotypes);
+        let barchart = new Barchart(`compare_parallel_coordinates_${i}`, dataLayer.phenotypes);
         barchart.init();
         return barchart;
     });
@@ -220,16 +231,21 @@ function initSmallMultipleScatterplots() {
     plots = _.map(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`)
         let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
-        let canvas_div = document.getElementById(`compare_starplot_${i}`);
+        let canvas_div = document.getElementById(`compare_parallel_coordinates_${i}`);
         let canvas = document.createElement("canvas");
         canvas.className = 'scatterplot scatter_canvas';
         canvas.id = `compare_col_canvas_${i}`;
         canvas.width = canvas_div.offsetWidth;
         canvas.height = canvas_div.offsetHeight;
         canvas_div.appendChild(canvas);
-        scatterplot = new Scatterplot(`compare_starplot_${i}`, `compare_col_canvas_${i}`, eventHandler, dataLayer);
+        scatterplot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, eventHandler, dataLayer);
         scatterplot.init();
         return scatterplot;
     });
     wrangleSmallMultiples();
+}
+
+function initHeatmap() {
+    let heatmap = new Heatmap(`summary_div`, dataLayer);
+    heatmap.init();
 }
