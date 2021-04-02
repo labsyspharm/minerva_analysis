@@ -101,7 +101,7 @@ function switchSmallMultipleType(elem, parent) {
             currentState = 'heatmap';
             removeAllPlots();
             document.getElementById("summary_div").style.display = "block";
-            document.getElementById("comparison_div").style.display = "none";
+            document.getElementById("comparison_div_parent").style.display = "none";
             initHeatmap();
 
         }
@@ -125,9 +125,9 @@ function switchSmallMultipleType(elem, parent) {
 }
 
 function removeAllPlots() {
-
     d3.selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas').remove();
     document.getElementById("summary_div").style.display = "none";
+    document.getElementById("comparison_div_parent").style.display = "block";
     plots = [];
 }
 

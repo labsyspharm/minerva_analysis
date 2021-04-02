@@ -42,16 +42,22 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-10">
-            <div id="comparison_div"></div>
-            <div id="summary_div"></div>
+        <div class="col">
+            <div class="row justify-content-center">
+                <div id="comparison_div_parent" class="row">
+                    <div id="comparison_div" class="col-10 align-self-center">
+                    </div>
+                    <div class="col-2">
+                        <h5>Phenotypes</h5>
+                        <ul class="list-group" id="phenotype_list">
+                        </ul>
+                    </div>
+                </div>
 
+                <div id="summary_div" class="col-auto align-self-center"></div>
+            </div>
         </div>
-        <div class="col-2">
-            <h5>Phenotypes</h5>
-            <ul class="list-group" id="phenotype_list">
-            </ul>
-        </div>
+
     </div>
 </div>
 <script src="../client/src/js/views/neighborhoodComparison.js"></script>

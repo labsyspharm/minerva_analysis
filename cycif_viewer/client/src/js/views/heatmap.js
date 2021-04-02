@@ -27,7 +27,7 @@ class Heatmap {
     draw() {
         const self = this;
         // set the dimensions and margins of the graph
-        const margin = {top: 40, right: 40, bottom: 160, left: 160},
+        const margin = {top: 100, right: 100, bottom: 160, left: 160},
             width = 600 - margin.left - margin.right,
             height = 600 - margin.top - margin.bottom;
 
@@ -48,6 +48,7 @@ class Heatmap {
             .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
+            .attr("id", "heatmap-svg")
             .append("g")
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
@@ -65,8 +66,7 @@ class Heatmap {
             .attr("dx", "-.8em")
             .attr("dy", ".15em")
             .attr("font-size", "0.6rem")
-            .attr("transform", "rotate(-90)")
-            .select(".domain").remove()
+            .attr("transform", "rotate(-90)");
 
         // Build Y scales and axis:
         let y = d3.scaleBand()
@@ -76,7 +76,9 @@ class Heatmap {
         svg.append("g")
             .style("font-size", "0.6rem")
             .call(d3.axisLeft(y).tickSize(0))
-            .select(".domain").remove()
+        //Remove Axis Lines
+
+
 
         // Build color scale
         let myColor = d3.scaleSequential()
@@ -130,8 +132,8 @@ class Heatmap {
                     .html(`<span>${d.row} - ${d.col}</span>
                         <br>
                         <span>Pearson's Correlation coefficient: <b>${_.round(d.val, 2)}</b></span>`)
-                    .style("left", (d3.pointer(e)[0] + 70) + "px")
-                    .style("top", (d3.pointer(e)[1] - 20) + "px")
+                    .style("left", (d3.pointer(e)[0] + 20) + "px")
+                    .style("top", (d3.pointer(e)[1]) + "px")
             })
             .on("mouseleave", (e, d) => {
                 tooltip
@@ -157,7 +159,7 @@ class Heatmap {
             .style("font-size", "14px")
             .style("fill", "grey")
             .style("max-width", 400)
-            .text("Pearson correlation coefficient of each pair of cells in overall dataset.");
+            .text("Pearson correlation coefficient of each pair of cell-types");
 
 
     }

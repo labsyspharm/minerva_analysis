@@ -55,3 +55,15 @@
 .tooltip, .tooltip * {
     font-size: 0.6rem;
 }
+
+#comparison_div, #summary_div {
+    text-align: center;
+}
+
+#comparison_div_parent {
+    width: 100%;
+}
+
+.domain {
+    stroke-width: 0;
+}
