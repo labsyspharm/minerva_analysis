@@ -71,7 +71,7 @@ class StackedBarchart {
             .attr("transform", `translate(${self.width / 2},${self.height + 22})`)
             .style("text-anchor", "middle")
             .attr("font-size", "0.6em")
-            .text("Avg. Weight in Neighborhood")
+            .text("Neighborhood Name")
 
         return self.wrangle()
     }
