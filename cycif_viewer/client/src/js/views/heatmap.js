@@ -86,16 +86,6 @@ class Heatmap {
             .domain([1, -1])
 
 
-        // Three function that change the tooltip when user hover / move / leave a cell
-        let mouseover = function (e, d) {
-            tooltip
-                .style("opacity", 1)
-            d3.select(e)
-                .style("stroke", "black")
-                .style("opacity", 1)
-        }
-
-
         // add the squares
         svg.selectAll()
             .data(self.visData)

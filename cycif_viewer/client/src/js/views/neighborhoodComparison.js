@@ -2,7 +2,7 @@ const datasource = flaskVariables.datasource;
 let imageChannels = {};
 let plots = [];
 let dataSrcIndex = 0;
-let config, dataLayer, neighborhoods, neighborhoodStats, container, phenotypeList, sortable;
+let config, dataLayer, colorScheme, neighborhoods, neighborhoodStats, container, phenotypeList, sortable;
 let currentState = ''
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 
@@ -20,6 +20,8 @@ async function init(conf) {
     //INIT DATA LAYER
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
+    colorScheme = new ColorScheme(dataLayer);
+    await colorScheme.init();
     container = document.getElementById('comparison_div');
     neighborhoods = await dataLayer.getAllNeighborhoodStats();
     phenotypeList = document.getElementById('phenotype_list');
@@ -103,9 +105,15 @@ function switchSmallMultipleType(elem, parent) {
             document.getElementById("summary_div").style.display = "block";
             document.getElementById("comparison_div_parent").style.display = "none";
             initHeatmap();
-
         }
-
+    } else if (elem.id == "stacked-button") {
+        if (selectAndUnselect(elem, parent)) {
+            currentState = 'stacked';
+            removeAllPlots();
+            document.getElementById("summary_div").style.display = "block";
+            document.getElementById("comparison_div_parent").style.display = "none";
+            initStackedBarchart();
+        }
     }
 
     function selectAndUnselect(elem, parent) {
@@ -248,4 +256,9 @@ function initSmallMultipleScatterplots() {
 function initHeatmap() {
     let heatmap = new Heatmap(`summary_div`, dataLayer);
     heatmap.init();
+}
+
+function initStackedBarchart() {
+    let stacked = new StackedBarchart(`summary_div`, dataLayer, colorScheme, neighborhoods);
+    stacked.init();
 }

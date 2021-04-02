@@ -1,104 +1,119 @@
-class Stacked {
-    constructor(id, phenotypes) {
+class StackedBarchart {
+    constructor(id, dataLayer, colorScheme, neighborhoods) {
         this.id = id;
-        this.parent = d3.select(`#${id}`);
-        this.phenotypes = phenotypes;
+        this.dataLayer = dataLayer;
+        this.colorScheme = colorScheme;
+        this.neighborhoods = neighborhoods;
     }
 
     init() {
         const self = this;
-        this.margin = {top: 10, right: 10, bottom: 30, left: 100},
-            this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
-            this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
+        // set the dimensions and margins of the graph
+        self.margin = {top: 40, right: 40, bottom: 40, left: 40};
+        self.width = 600 - self.margin.left - self.margin.right;
+        self.height = 600 - self.margin.top - self.margin.bottom;
 
-        this.svg = this.parent.append("svg")
+        // create a tooltip
+        self.tooltip = d3.select(`#${self.id}`)
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "white")
+            .style("border", "solid")
+            .style("z-index", 1)
+            .style("border-width", "1px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
+
+        // append the svg object to the body of the page
+        self.svg = d3.select(`#${self.id}`)
+            .append("svg")
+            .attr("width", self.width + self.margin.left + self.margin.right)
+            .attr("height", self.height + self.margin.top + self.margin.bottom)
             .attr("id", `${this.id}_barchart_svg`)
-            .attr("class", "barchart")
-            .attr("width", this.width + this.margin.left + this.margin.right)
-            .attr("height", this.height + this.margin.top + this.margin.bottom)
             .append("g")
-            .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
-        this.svgSelector = document.getElementById(`${this.id}_barchart_svg`);
-        this.svgSelector.style.display = "none";
-        this.y = d3.scaleBand()
+            .attr("transform",
+                "translate(" + self.margin.left + "," + self.margin.top + ")");
+
+
+        self.svgSelector = document.getElementById(`${this.id}_barchart_svg`);
+        self.x = d3.scaleBand()
             .rangeRound([0, this.height], .1)
             .paddingInner(0.1);
 
         // this.y = d3.scaleSymlog()
-        this.x = d3.scaleLinear()
+        self.y = d3.scaleLinear()
             .range([0, this.width])
-            .domain([0, 20])
-
-        this.x.clamp(true);
-
-        this.xAxis = d3.axisBottom()
-            .scale(this.x);
-        this.xAxis.tickSizeOuter(0);
+            .domain([0, 1])
 
 
-        this.yAxis = d3.axisLeft()
+        self.xAxis = d3.axisBottom()
+            .scale(self.x);
+        self.xAxis.tickSizeOuter(0);
+
+
+        self.yAxis = d3.axisLeft()
             .scale(this.y);
-        this.yAxis.tickSizeOuter(0);
+        self.yAxis.tickSizeOuter(0);
 
 
-        this.svg.append("g")
+        self.svg.append("g")
             .attr("class", "xaxis")
-            .attr("transform", "translate(0," + this.height + ")")
-            .call(this.xAxis)
+            .attr("transform", "translate(0," + self.height + ")")
+            .call(self.xAxis)
 
-        this.svg.append("g")
+        self.svg.append("g")
             .attr("class", "yaxis")
-            .call(this.yAxis)
+            .call(self.yAxis)
 
-        this.svg.append("text")
+        self.svg.append("text")
             .attr("class", "x_axis_label")
-            .attr("transform", `translate(${this.width / 2},${this.height + 22})`)
+            .attr("transform", `translate(${self.width / 2},${self.height + 22})`)
             .style("text-anchor", "middle")
             .attr("font-size", "0.6em")
-
             .text("Avg. Weight in Neighborhood")
 
-
-        // this.svg.append("g")
-        //     .attr("class", "yaxis")
-        //     .call(this.yAxis)
-        //     .append("text")
-        //     .attr("transform", "rotate(-90)")
-        //     .attr("y", 6)
-        //     .attr("dy", ".71em")
-        //     .style("text-anchor", "end")
-        //     .text("Weighted Neighborhood Contribution");
+        return self.wrangle()
     }
 
-    wrangle(chartData, order = null) {
+    wrangle() {
         const self = this;
-
-        if (!order) {
-            order = self.phenotypes;
-        }
-
-        this.visData = _.map(chartData, (v, k) => {
-            return {
-                key: k,
-                short: k,
-                value: v,
-                index: _.indexOf(order, k)
-            }
-        })
-        this.visData = _.filter(this.visData, elem => {
-            return elem.index !== -1; // Remove elements not in my order list
+        self.visData = _.map(neighborhoods, (elem, index) => {
+            let neighborhoodName = _.get(elem, 'neighborhood_name', '');
+            let arr = elem.cluster_summary.weighted_contribution || [];
+            let sum = _.sumBy(arr, d => {
+                return d[1];
+            });
+            let normalizedArray = _.map(arr, e => {
+                let val = _.clone(e);
+                val[1] = val[1] / sum;
+                return val;
+            });
+            let visArray = []
+            _.each(_.range(_.size(normalizedArray)), i => {
+                let obj = {}
+                obj.index = index;
+                obj.neighborhoodName = neighborhoodName;
+                obj.phenotype = normalizedArray[i][0];
+                obj.val = normalizedArray[i][1];
+                if (i == 0) {
+                    obj.y = 0;
+                } else {
+                    obj.y = visArray[i - 1].y + visArray[i - 1].val;
+                }
+                visArray.push(obj)
+            });
+            return visArray;
         });
-        this.visData = _.sortBy(this.visData, ['index']);
+        self.neighborhoodNames = _.map(neighborhoods, elem => {
+            return _.get(elem, 'neighborhood_name', '');
+        });
+        self.x.domain(self.neighborhoodNames);
+        return self.draw();
+    }
 
-        self.svgSelector.style.display = "block";
-        self.y.domain(this.visData.map(function (d) {
-            return d.key;
-        }));
-        // self.y.domain([0, d3.max(this.visData, function (d) {
-        //     return d.value;
-        // })]);
-
-
+    draw() {
+        const self = this;
         self.svg.select(".xaxis")
             .transition()
             .duration(100)
@@ -122,28 +137,53 @@ class Stacked {
             .style("text-anchor", "end")
 
 
-        let bars = self.svg.selectAll(".bar")
-            .data(this.visData);
-        bars.enter()
+        let barGroup = self.svg.selectAll(".barGroup")
+            .data(this.visData)
+            .enter()
+            .append("g")
+            .classed("barGroup", true)
+            .attr("transform", function (d, i) {
+                return "translate(" + self.x(self.neighborhoodNames[i]) + ",0)";
+            });
+        let bars = barGroup.selectAll('.bar')
+            .data(d => d)
+            .enter()
             .append("rect")
-            .merge(bars)
             .attr("class", "bar")
-            .transition()
-            .duration(500)
-            .attr("y", d => self.y(d.key))
-            .attr("height", self.y.bandwidth())
-            .attr("x", 2)
-            .attr("width", function (d) {
-                return self.x(d.value);
+            .attr("y", (d, i) => {
+                return self.y(d.y)
             })
-            .attr("fill", '#FFA500');
+            .attr("height", d => {
+                return self.y(d.val)
+            })
+            .attr("x", 2)
+            .attr("width", self.x.bandwidth())
+            .attr("fill", d => {
+                return self.colorScheme.colorMap[d.phenotype].hex;
+            })
+            .on("mouseover", (e, d) => {
+                d3.select(e.currentTarget)
+                    .style("stroke", "1px")
+                    .style("opacity", 1)
+            })
+            .on("mousemove", (e, d, i) => {
+                console.log("Mouse Move");
+                self.tooltip
+                    .html(`<h5>${d.neighborhoodName}</h5>
+                            <span>${d.phenotype}: <b>${_.round(d.val * 100, 2)} %</b></span>`)
+                    .style("left", (d3.pointer(e)[0] + self.x(d.neighborhoodName)) + "px")
+                    .style("top", (d3.pointer(e)[1] - 20) + "px")
+            })
+            .on("mouseleave", (e, d) => {
+                self.tooltip
+                    .style("opacity", 1)
+                d3.select(e.currentTarget)
+                    .style("stroke", "none")
+                    .style("opacity", 0.8)
+            })
 
         bars.exit().remove();
     }
 
-    hide() {
-        const self = this;
-        self.svgSelector.style.display = "none";
-    }
 
 }
