@@ -167,12 +167,11 @@ class StackedBarchart {
                     .style("opacity", 1)
             })
             .on("mousemove", (e, d, i) => {
-                console.log("Mouse Move");
                 self.tooltip
                     .html(`<h5>${d.neighborhoodName}</h5>
                             <span>${d.phenotype}: <b>${_.round(d.val * 100, 2)} %</b></span>`)
                     .style("left", (d3.pointer(e)[0] + self.x(d.neighborhoodName)) + "px")
-                    .style("top", (d3.pointer(e)[1] - 20) + "px")
+                    .style("top", (d3.pointer(e)[1] - 40) + "px")
             })
             .on("mouseleave", (e, d) => {
                 self.tooltip

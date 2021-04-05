@@ -34,7 +34,7 @@
     font-size: 1rem;
 }
 
-#small-multiple-toggle .label, #summary-toggle .label {
+#comparison_title .label {
     font-weight: bold;
     font-size: 0.8rem;
 }
@@ -66,4 +66,8 @@
 
 .domain {
     stroke-width: 0;
+}
+
+#comparison_container #legend {
+    margin-bottom: 40px;
 }

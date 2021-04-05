@@ -117,11 +117,10 @@ class Heatmap {
                     .style("opacity", 1)
             })
             .on("mousemove", (e, d) => {
-                console.log("Mouse Move");
                 tooltip
                     .html(`<span>${d.row} - ${d.col}</span>
                         <br>
-                        <span>Pearson's Correlation coefficient: <b>${_.round(d.val, 2)}</b></span>`)
+                        <span>Spearman Correlation coefficient: <b>${_.round(d.val, 2)}</b></span>`)
                     .style("left", (d3.pointer(e)[0] + 20) + "px")
                     .style("top", (d3.pointer(e)[1]) + "px")
             })
@@ -149,7 +148,7 @@ class Heatmap {
             .style("font-size", "14px")
             .style("fill", "grey")
             .style("max-width", 400)
-            .text("Pearson correlation coefficient of each pair of cell-types");
+            .text("Spearman rank correlation coefficient of each pair of cell-types");
 
 
     }
