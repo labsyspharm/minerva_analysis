@@ -196,7 +196,7 @@ def get_datasource_description():
 @app.route('/get_heatmap_data', methods=['GET'])
 def get_heatmap_data():
     datasource = request.args.get('datasource')
-    resp = data_model.get_pearsons_correlation(datasource)
+    resp = data_model.get_spearmans_correlation(datasource)
     return serialize_and_submit_json(resp)
 
 

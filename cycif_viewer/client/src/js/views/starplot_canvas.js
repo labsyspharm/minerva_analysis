@@ -96,13 +96,15 @@ class ParallelCoordinates {
         if (!order) {
             order = self.phenotypes;
         }
-
+        const sum = _.sumBy(chartData, e => {
+            return e[1];
+        })
         this.visData = _.map(chartData, e => {
             let [k, v] = e;
             return {
                 key: k,
                 short: k,
-                value: v,
+                value: v / sum,
                 index: _.indexOf(order, k)
             }
         })
@@ -261,21 +263,22 @@ class ParallelCoordinates {
 
         if (self.full_neighborhoods && !self.editMode) {
             self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
-            let opacity;
-            if (_.size(self.full_neighborhoods)) {
-                opacity = -0.0000180036 * _.size(self.full_neighborhoods) + 0.100018
-            } else {
-                opacity = 0.01;
-            }
+            let opacity = 0.01;
+            // if (_.size(self.full_neighborhoods)) {
+            //     opacity = -0.0000180036 * _.size(self.full_neighborhoods) + 0.100018
+            // } else {
+            //     opacity = 0.01;
+            // }
             _.forEach(_.sampleSize(self.full_neighborhoods, 5000), row => {
+                const sum = _.sum(row);
                 const color = `hsla(0,0%,50%,${opacity})`;
                 self.canvas.getContext('2d').strokeStyle = color;
                 self.canvas.getContext('2d').beginPath();
                 row.map(function (p, i) {
                     if (i == 0) {
-                        self.canvas.getContext('2d').moveTo(self.lineX(i), self.lineY(p));
+                        self.canvas.getContext('2d').moveTo(self.lineX(i), self.lineY(p / sum));
                     } else {
-                        self.canvas.getContext('2d').lineTo(self.lineX(i), self.lineY(p));
+                        self.canvas.getContext('2d').lineTo(self.lineX(i), self.lineY(p / sum));
                     }
                 });
                 self.canvas.getContext('2d').stroke();

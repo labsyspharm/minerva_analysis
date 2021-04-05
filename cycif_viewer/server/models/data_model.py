@@ -16,7 +16,7 @@ from cycif_viewer.server.utils import pyramid_assemble
 import matplotlib.path as mpltPath
 from cycif_viewer.server.utils import smallestenclosingcircle
 from cycif_viewer.server.models import database_model
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
 
 import time
 import pickle
@@ -714,6 +714,24 @@ def get_pearsons_correlation(datasource_name):
     for i in range(0, neighborhoods.shape[1]):
         for j in range(0, i):
             p_cor = pearsonr(neighborhoods[:, i], neighborhoods[:, j])
+            heatmap[i, j] = p_cor[0]
+            heatmap[j, i] = p_cor[0]
+    return heatmap
+
+
+def get_spearmans_correlation(datasource_name):
+    global datasource
+    global ball_tree
+    global source
+    global config
+    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    # Load if not loaded
+    if datasource_name != source:
+        load_datasource(datasource_name)
+    heatmap = np.zeros((neighborhoods.shape[1], neighborhoods.shape[1]))
+    for i in range(0, neighborhoods.shape[1]):
+        for j in range(0, i):
+            p_cor = spearmanr(neighborhoods[:, i], neighborhoods[:, j])
             heatmap[i, j] = p_cor[0]
             heatmap[j, i] = p_cor[0]
     return heatmap
