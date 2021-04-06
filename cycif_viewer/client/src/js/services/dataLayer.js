@@ -8,8 +8,10 @@ class DataLayer {
         this.config = config;
         //all image channels
         this.imageChannels = imageChannels;
+
+        this.imageBitRange = [0, 65536];
         //selections
-        this.currentSelection = new Set();
+        this.currentSelection = new Map();
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
@@ -42,57 +44,6 @@ class DataLayer {
         }
     }
 
-    async getChannelCellIds(sels) {
-        try {
-            let response = await fetch('/get_channel_cell_ids?' + new URLSearchParams({
-                filter: JSON.stringify(sels),
-                datasource: datasource
-            }))
-            let cellIds = await response.json();
-            return cellIds;
-        } catch (e) {
-            console.log("Error Getting Channel Cell Ids", e);
-        }
-    }
-
-    async getChannelNames(shortNames = true) {
-        try {
-            let response = await fetch('/get_channel_names?' + new URLSearchParams({
-                datasource: datasource,
-                shortNames: shortNames
-            }))
-            let response_data = await response.json();
-            return response_data;
-        } catch (e) {
-            console.log("Error Getting Sample Row", e);
-        }
-    }
-
-    async getColorScheme(refresh = false) {
-        try {
-            let response = await fetch('/get_color_scheme?' + new URLSearchParams({
-                datasource: datasource,
-                refresh: refresh
-            }))
-            let response_data = await response.json();
-            return response_data;
-        } catch (e) {
-            console.log("Error Getting Sample Row", e);
-        }
-    }
-
-    async getPhenotypes() {
-        try {
-            let response = await fetch('/get_phenotypes?' + new URLSearchParams({
-                datasource: datasource
-            }))
-            let response_data = await response.json();
-            return response_data;
-        } catch (e) {
-            console.log("Error Getting Phenotypes", e);
-        }
-    }
-
     async getUploadedGatingCsvValues() {
         try {
             let response = await fetch('/get_uploaded_gating_csv_values?' + new URLSearchParams({
@@ -114,7 +65,7 @@ class DataLayer {
         let filename = '';
         if (!fullCsv) {
             filename = document.getElementById('download_input1').value;
-        }else{
+        } else {
             filename = document.getElementById('download_input2').value;
         }
         let fileNameElemment = document.createElement("input");
@@ -159,20 +110,6 @@ class DataLayer {
             }))
             let distributions = await response.json();
             return distributions;
-        } catch (e) {
-            console.log("Error Getting Nearest Cell", e);
-        }
-    }
-
-    async getNearestCell(point_x, point_y) {
-        try {
-            let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
-                point_x: point_x,
-                point_y: point_y,
-                datasource: datasource
-            }))
-            let cell = await response.json();
-            return cell;
         } catch (e) {
             console.log("Error Getting Nearest Cell", e);
         }
@@ -236,6 +173,71 @@ class DataLayer {
         }
     }
 
+    async getChannelCellIds(sels) {
+        try {
+            let response = await fetch('/get_channel_cell_ids?' + new URLSearchParams({
+                filter: JSON.stringify(sels),
+                datasource: datasource
+            }))
+            let cellIds = await response.json();
+            return cellIds;
+        } catch (e) {
+            console.log("Error Getting Channel Cell Ids", e);
+        }
+    }
+
+    async getChannelNames(shortNames = true) {
+        try {
+            let response = await fetch('/get_channel_names?' + new URLSearchParams({
+                datasource: datasource,
+                shortNames: shortNames
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Sample Row", e);
+        }
+    }
+
+    async getColorScheme(refresh = false) {
+        try {
+            let response = await fetch('/get_color_scheme?' + new URLSearchParams({
+                datasource: datasource,
+                refresh: refresh
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Sample Row", e);
+        }
+    }
+
+    async getPhenotypes() {
+        try {
+            let response = await fetch('/get_phenotypes?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Phenotypes", e);
+        }
+    }
+
+    async getNearestCell(point_x, point_y) {
+        try {
+            let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
+                point_x: point_x,
+                point_y: point_y,
+                datasource: datasource
+            }))
+            let cell = await response.json();
+            return cell;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
+
     async getNeighborhood(maxDistance, x, y) {
         try {
             let response = await fetch('/get_neighborhood?' + new URLSearchParams({
@@ -255,6 +257,7 @@ class DataLayer {
         return this.getNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);
     }
 
+
     getCurrentSelection() {
         return this.currentSelection;
     }
@@ -263,6 +266,14 @@ class DataLayer {
         this.currentSelection.clear();
     }
 
+    getImageBitRange(float = false) {
+        const self = this;
+        if (!float) {
+            return self.imageBitRange;
+        } else {
+            return [0.0, 1.0];
+        }
+    }
 
     addToCurrentSelection(item, allowDelete, clearPriors) {
 
@@ -286,7 +297,7 @@ class DataLayer {
         }
 
         // add new item
-        this.currentSelection.add(item);
+        this.currentSelection.set(item.id, item);
 
         // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {
@@ -298,7 +309,7 @@ class DataLayer {
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Set(items);
+        that.currentSelection = new Map(items.map(i => [(i.id), i]));
         // console.log("update current selection done")
     }
 

@@ -9,13 +9,11 @@ const datasource = flaskVariables.datasource;
 //VIEWS
 let seaDragonViewer;
 let channelList;
-let csv_gatingList;
+let csvGatingList;
 
 let dataLayer;
-
 let config;
 
-let cellInformation;
 let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
@@ -64,12 +62,9 @@ const actionColorTransferChange = (d) => {
 
     //map to full name
     d.name = dataLayer.getFullChannelName(d.name);
-
-    d3.select('body').style('cursor', 'progress');
+    // d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
-    d3.select('body').style('cursor', 'default');
-
-    // Update gating overlay view
+    // d3.select('body').style('cursor', 'default');
     seaDragonViewer.csvGatingOverlay.draw();
 }
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
@@ -112,55 +107,6 @@ const actionImageClickedMultiSel = (d) => {
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
 
-const computeCellNeighborhood = async ({distance, selectedCell}) => {
-    let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
-    displayNeighborhood(selectedCell, neighborhood);
-}
-eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
-
-const drawNeighborhoodRadius = async ({distance, selectedCell, dragging}) => {
-    seaDragonViewer.drawCellRadius(distance, selectedCell, dragging);
-}
-eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
-
-const refreshColors = async () => {
-    await colorScheme.getColorScheme(true);
-    cellInformation.draw();
-
-}
-eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
-
-const gatingBrushEnd = async (packet) => {
-
-    // Init gated cells
-    let gatedCells = [];
-
-    // Get custom cell ids (made-to-order properties)
-    const start_keys = [
-        'id',
-        // this.config[datasource].featureData[0].idField,
-        this.config[datasource].featureData[0].xCoordinate,
-        this.config[datasource].featureData[0].yCoordinate
-    ];
-
-    // Toggle these methods with centroids on/off ui
-    if (csv_gatingList.eval_mode === 'and') {
-        // AND
-        gatedCells = await dataLayer.getGatedCellIds(packet, start_keys);
-
-    } else {
-        // OR
-        gatedCells = await dataLayer.getGatedCellIdsCustom(packet, start_keys);
-    }
-
-    // Update selection
-    dataLayer.addAllToCurrentSelection(gatedCells);
-
-    // Update view
-    updateSeaDragonSelection();
-}
-eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
-
 
 // For channel select click event
 const channelSelect = async (sels) => {
@@ -176,29 +122,39 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection(repaint = true) {
-    let selection = dataLayer.getCurrentSelection();
-    var arr = Array.from(selection);
-    var selectionHashMap = new Map(arr.map(i => ['' + (i.id), i]));
     seaDragonViewer.csvGatingOverlay.evaluate();
-    // Gating overlay (and query decrementor)
-    // seaDragonViewer.csvGatingOverlay.run_balancer--;
-    seaDragonViewer.updateSelection(selectionHashMap, repaint);
+    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
 }
+
+const gatingBrushEnd = async (packet) => {
+    // Init gated cells
+    let gatedCells = [];
+    // Get custom cell ids (made-to-order properties)
+    const start_keys = [
+        'id',
+        // this.config[datasource].featureData[0].idField,
+        this.config[datasource].featureData[0].xCoordinate,
+        this.config[datasource].featureData[0].yCoordinate
+    ];
+    // Toggle these methods with centroids on/off ui
+    if (csv_gatingList.eval_mode === 'and') {
+        // AND
+        gatedCells = await dataLayer.getGatedCellIds(packet, start_keys);
+    } else {
+        // OR
+        gatedCells = await dataLayer.getGatedCellIdsCustom(packet, start_keys);
+    }
+    // Update selection
+    dataLayer.addAllToCurrentSelection(gatedCells);
+    // Update view
+    updateSeaDragonSelection();
+}
+eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 
 //feature range selection changed in ridge plot
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
-    // console.log("gating event executed");
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
-
-
-function displayNeighborhood(selectedCell, neighborhood) {
-    dataLayer.addToCurrentSelection(selectedCell, true, true);
-    _.each(neighborhood, neighbor => {
-        dataLayer.addToCurrentSelection(neighbor, true, false);
-    });
-    updateSeaDragonSelection();
-}
 

@@ -25,16 +25,15 @@
     "lodash": "^4.17.19",
     "mark.js": "^8.11.1",
     "node-fetch": "^2.6.1",
-    "openseadragon": "^2.4.2",
     "pngjs": "^5.0.0",
     "popper.js": "^1.16.1",
     "regenerator-runtime": "^0.13.7",
     "sortablejs": "^1.10.2",
-    "style-loader": "^1.2.1"
+    "style-loader": "^1.2.1",
+    "viawebgl": "git://github.com/thejohnhoffer/viaWebGL.git#webgl2"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
-    "@babel/plugin-proposal-class-properties": "^7.10.4",
     "@babel/plugin-transform-runtime": "^7.12.1",
     "@babel/preset-env": "^7.11.5",
     "babel-loader": "^8.1.0",

@@ -311,7 +311,7 @@ def get_rect_cells(datasource_name, rect, channels):
         return {}
 
 
-def get_gated_cells(datasource_name, gates, start_keys):
+def get_gated_cells(datasource_name, gates):
     global datasource
     global source
     global ball_tree
@@ -321,48 +321,14 @@ def get_gated_cells(datasource_name, gates, start_keys):
         load_ball_tree(datasource_name)
 
     query_string = ''
-    query_keys = start_keys
     for key, value in gates.items():
         if query_string != '':
             query_string += ' and '
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
-        query_keys.append(key)
-    if query_string is None or query_string == "":
+    if query_string == None or query_string == "":
         return []
-    # query_keys[0] is the ID]
-    query = datasource.query(query_string)[[query_keys[0]]].to_dict(orient='records')
+    query = datasource.query(query_string)[['id']].to_dict(orient='records')
     return query
-
-
-
-def get_gated_cells_custom(datasource_name, gates, start_keys):
-    global datasource
-    global source
-    global ball_tree
-
-    # Load if not loaded
-    if datasource_name != source:
-        load_ball_tree(datasource_name)
-
-    # Query
-    query_string = ''
-    query_keys = start_keys
-    for key, value in gates.items():
-        if query_string != '':
-            query_string += ' or '
-        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
-        query_keys.append(key)
-    if query_string is None or query_string == "":
-        return []
-    query = datasource.query(query_string)[query_keys].to_dict(orient='records')
-
-    # TODO - likely lighter / less costly
-    # query = database.query(query_string)[query_keys].to_dict('split')
-    # del query['index']
-
-    return query
-
-
 
 
 def download_gating_csv(datasource_name, gates, channels):
@@ -465,15 +431,19 @@ def generate_zarr_png(datasource_name, channel, level, tile):
         segmentation = True
     if segmentation:
         tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
+
+        tile = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
+        tile = np.append(tile, np.zeros((tile.shape[0], tile.shape[1], 1), dtype='uint8'), axis=2)
     else:
         if isinstance(channels, zarr.Array):
             tile = channels[channel_num, iy:iy + tile_height, ix:ix + tile_width]
         else:
             tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
+            tile = tile.astype('uint16')
 
-    tile = np.ascontiguousarray(tile, dtype='uint32')
-    png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
-    return png
+    # tile = np.ascontiguousarray(tile, dtype='uint32')
+    # png = tile.view('uint8').reshape(tile.shape + (-1,))[..., [2, 1, 0]]
+    return tile
 
 
 def get_ome_metadata(datasource_name):
