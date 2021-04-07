@@ -223,7 +223,8 @@ export class CsvGatingOverlay {
                         // Retrieve color (FIXME - need to integrate into viewer manager)
                         // const rgb = evaluateTF(values[channel], this.image_viewer.channelTF[gatingChannelIndices[i]]);
                         // ctx.fillStyle = `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
-                        ctx.fillStyle = this.image_viewer.channelTF[gatingChannelIndices[i].index].end_color;
+                        // ctx.fillStyle = this.image_viewer.channelTF[gatingChannelIndices[i].index].end_color;
+                        ctx.fillStyle = this.image_viewer.currentChannels[gatingChannelIndices[i].index]['color'];
 
                         ctx.beginPath();
                         ctx.moveTo(x, y);

@@ -490,6 +490,7 @@ class ImageViewer {
         const channelIdx = imageChannels[name];
         if (self.currentChannels[channelIdx]) {
             self.currentChannels[channelIdx]['color'] = color;
+            // self.channelTF[channelIdx].end_color = color;
         }
         this.forceRepaint();
     }
