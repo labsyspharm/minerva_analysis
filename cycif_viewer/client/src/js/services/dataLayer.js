@@ -65,7 +65,7 @@ class DataLayer {
         let filename = '';
         if (!fullCsv) {
             filename = document.getElementById('download_input1').value;
-        } else {
+        }else{
             filename = document.getElementById('download_input2').value;
         }
         let fileNameElemment = document.createElement("input");
