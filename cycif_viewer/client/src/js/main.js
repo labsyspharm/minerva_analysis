@@ -72,13 +72,9 @@ async function init(conf) {
 
 //feature color map changed in ridge plot
 const actionColorTransferChange = (d) => {
-
     //map to full name
     d.name = dataLayer.getFullChannelName(d.name);
-
-    d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
-    d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
@@ -189,8 +185,8 @@ function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
-    // console.log("gating event executed");
 }
+eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
 const selectPhenotype = async (phenotype) => {
     let cells = await dataLayer.getNeighborhoodByPhenotype(phenotype);
