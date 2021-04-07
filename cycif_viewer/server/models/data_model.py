@@ -145,6 +145,33 @@ def get_row(row, datasource_name):
     return obj
 
 
+def get_gated_cells_custom(datasource_name, gates, start_keys):
+    global datasource
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+
+    # Query
+    query_string = ''
+    query_keys = start_keys
+    for key, value in gates.items():
+        if query_string != '':
+            query_string += ' or '
+        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+        query_keys.append(key)
+    if query_string is None or query_string == "":
+        return []
+    query = datasource.query(query_string)[query_keys].to_dict(orient='records')
+
+    # TODO - likely lighter / less costly
+    # query = database.query(query_string)[query_keys].to_dict('split')
+    # del query['index']
+
+    return query
+
 def get_channel_names(datasource_name, shortnames=True):
     global datasource
     global source

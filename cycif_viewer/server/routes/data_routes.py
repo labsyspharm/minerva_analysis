@@ -93,6 +93,14 @@ def get_gated_cell_ids():
     resp = data_model.get_gated_cells(datasource, filter)
     return serialize_and_submit_json(resp)
 
+@app.route('/get_gated_cell_ids_custom', methods=['GET'])
+def get_gated_cell_ids_custom():
+    datasource = request.args.get('datasource')
+    filter = json.loads(request.args.get('filter'))
+    start_keys = list(request.args.get('start_keys').split(','))
+    resp = data_model.get_gated_cells_custom(datasource, filter, start_keys)
+    return serialize_and_submit_json(resp)
+
 
 @app.route('/get_channel_cell_ids', methods=['GET'])
 def get_channel_cell_ids():
@@ -171,6 +179,15 @@ def get_gating_csv_values():
     csv = pd.read_csv(file_path)
     obj = csv.to_dict(orient='records')
     return serialize_and_submit_json(obj)
+
+
+# app.route('/get_gated_cell_ids_custom', methods=['GET'])
+# def get_gated_cell_ids_custom():
+#     datasource = request.args.get('datasource')
+#     filter = json.loads(request.args.get('filter'))
+#     start_keys = list(request.args.get('start_keys').split(','))
+#     resp = data_model.get_gated_cells_custom(datasource, filter, start_keys)
+#     return serialize_and_submit_json(resp)
 
 
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
