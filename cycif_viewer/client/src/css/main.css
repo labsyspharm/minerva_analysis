@@ -773,3 +773,7 @@ polygon:hover {
 .par_cor_label {
     font-size: 0.5rem;
 }
+
+#custom_cluster {
+    visibility: hidden;
+}

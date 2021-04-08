@@ -16,6 +16,9 @@ class Scatterplot {
         let {width, height} = canvas.getBoundingClientRect();
         let ratio = window.devicePixelRatio;
         self.lassoActive = false;
+        self.editMode = false;
+        self.customClusterDiv = document.getElementById('custom_cluster');
+
         width = width / ratio;
         height = height / ratio;
 
@@ -35,6 +38,8 @@ class Scatterplot {
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
         self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
 
+        let editButton = document.getElementById('edit_clustering')
+        editButton.addEventListener('click', self.switchEditMode.bind(self));
 
         // Custom Cluster Submit
         let button = document.getElementById("custom_cluster_submit");
@@ -78,6 +83,16 @@ class Scatterplot {
     lassoEnd() {
         const self = this;
         self.lassoActive = false;
+    }
+
+    switchEditMode() {
+        const self = this;
+        self.editMode = !self.editMode;
+        if (self.editMode) {
+            self.customClusterDiv.style.visibility = "visible";
+        } else {
+            self.customClusterDiv.style.visibility = "hidden";
+        }
     }
 
     async customCluster() {
