@@ -134,7 +134,7 @@ class Heatmap {
         // Add title to graph
         svg.append("text")
             .attr("x", 0)
-            .attr("y", -70)
+            .attr("y", -50)
             .attr("text-anchor", "left")
             .style("font-size", "22px")
             .text("Cell-Cell Colocalization");
@@ -142,21 +142,14 @@ class Heatmap {
         // Add subtitle to graph
         svg.append("text")
             .attr("x", 0)
-            .attr("y", -50)
+            .attr("y", -30)
             .attr("text-anchor", "left")
             .style("font-size", "14px")
             .style("fill", "grey")
             .style("max-width", 400)
             .text("Spearman rank correlation coefficient of each pair of cell-types");
 
-        // Add subtitle to graph
-        svg.append("text")
-            .attr("x", 0)
-            .attr("y", -30)
-            .attr("text-anchor", "left")
-            .style("font-size", "8px")
-            .style("fill", "grey")
-            .text("Correlation");
+
 
         // let color_scale = d3.axisTop(myColor);
         self.color_scale = d3.scaleLinear()
@@ -185,16 +178,16 @@ class Heatmap {
         colorLegend.append('text')
             .attr('x', 0)
             .attr('y', 60)
-            .attr('font-size', "0.7rem")
+            .attr('font-size', "0.8rem")
             .attr('dominant-baseline', 'middle')
-            .text('Interaction')
+            .text('Avoidance')
 
         colorLegend.append('text')
             .attr('x', 0)
             .attr('y', -60)
-            .attr('font-size', "0.7rem")
+            .attr('font-size', "0.8rem")
             .attr('dominant-baseline', 'middle')
-            .text('Avoidance')
+            .text('Interaction')
 
 
     }
