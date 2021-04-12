@@ -720,7 +720,7 @@ polygon:hover {
 }
 
 .selected {
-    color: orange;
+    color: #ffa500;
 }
 
 .outline {

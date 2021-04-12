@@ -81,7 +81,10 @@ class ParallelCoordinates {
                     self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height)
                 }
             })
-        return this.wrangle(emptyData);
+        this.wrangle(emptyData);
+        self.svgGroup.selectAll(".average_path")
+            .attr("stroke-width", 0)
+
     }
 
     wrangle(rawData, order = null) {
@@ -101,10 +104,14 @@ class ParallelCoordinates {
         })
         this.visData = _.map(chartData, e => {
             let [k, v] = e;
+            let val = v / sum;
+            if (!_.isFinite(val)) {
+                val = 0; // handle divide by 0
+            }
             return {
                 key: k,
                 short: k,
-                value: v / sum,
+                value: val,
                 index: _.indexOf(order, k)
             }
         })
@@ -293,6 +300,7 @@ class ParallelCoordinates {
         self.editMode = !self.editMode;
         if (self.editMode) {
             self.searchCol.style.visibility = "visible";
+            self.draw();
         } else {
             self.searchCol.style.visibility = "hidden";
         }

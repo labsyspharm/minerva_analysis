@@ -79,7 +79,6 @@ class Heatmap {
         //Remove Axis Lines
 
 
-
         // Build color scale
         let myColor = d3.scaleSequential()
             .interpolator(d3.interpolateRdBu)
@@ -135,20 +134,67 @@ class Heatmap {
         // Add title to graph
         svg.append("text")
             .attr("x", 0)
-            .attr("y", -50)
+            .attr("y", -70)
             .attr("text-anchor", "left")
             .style("font-size", "22px")
-            .text("Cell-Cell Interactions");
+            .text("Cell-Cell Colocalization");
 
         // Add subtitle to graph
         svg.append("text")
             .attr("x", 0)
-            .attr("y", -20)
+            .attr("y", -50)
             .attr("text-anchor", "left")
             .style("font-size", "14px")
             .style("fill", "grey")
             .style("max-width", 400)
             .text("Spearman rank correlation coefficient of each pair of cell-types");
+
+        // Add subtitle to graph
+        svg.append("text")
+            .attr("x", 0)
+            .attr("y", -30)
+            .attr("text-anchor", "left")
+            .style("font-size", "8px")
+            .style("fill", "grey")
+            .text("Correlation");
+
+        // let color_scale = d3.axisTop(myColor);
+        self.color_scale = d3.scaleLinear()
+            .domain([-1, 1]) // unit: km
+            .range([50, -50])
+        let color_axis = d3.axisRight(self.color_scale)
+            .tickValues([-1, 0, 1])
+        svg.append("g")
+            .attr("transform", `translate(${width + 15},${height / 2})`)
+            .call(color_axis)
+        let colorLegend = svg.append("g")
+            .attr("transform", `translate(${width + 5},${height / 2})`)
+        colorLegend.selectAll('rect')
+            .data(_.range(-50, 51))
+            .enter()
+            .append('rect')
+            .attr('x', 0)
+            .attr('y', d => d)
+            .attr('width', 10)
+            .attr('height', 1)
+            .attr('fill', d => {
+                let p = self.color_scale.invert(d)
+                return myColor(p);
+            })
+
+        colorLegend.append('text')
+            .attr('x', 0)
+            .attr('y', 60)
+            .attr('font-size', "0.7rem")
+            .attr('dominant-baseline', 'middle')
+            .text('Interaction')
+
+        colorLegend.append('text')
+            .attr('x', 0)
+            .attr('y', -60)
+            .attr('font-size', "0.7rem")
+            .attr('dominant-baseline', 'middle')
+            .text('Avoidance')
 
 
     }
