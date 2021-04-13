@@ -61,7 +61,7 @@ class Dot(db.Model):
     name = db.Column(db.String(40))
     description = db.Column(db.String(140))
     shape_type = db.Column(db.String(20))
-    # Contains information about lense, e.g. screen_x, screen_y, radius
+    # Contains information about lens, e.g. screen_x, screen_y, radius
     shape_info = db.Column(db.PickleType())
     image_data = db.Column(db.PickleType())
     # Contains IDs in lense

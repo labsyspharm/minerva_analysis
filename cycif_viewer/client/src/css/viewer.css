@@ -13,7 +13,9 @@ body {
 #topBar {
     background-color: rgba(0, 0, 0, 1) !important;
     height: 5vh;
+    max-height: 5vh;
     left: 0;
+    overflow: hidden;
     padding: 0 16px;
     position: relative;
     margin: 0;
@@ -36,9 +38,11 @@ body {
 }
 
 #container {
-    position: relative;
     height: 95vh;
-    margin: 0 0 0 0;
+    max-height: 95vh;
+    margin: 0;
+    overflow: hidden;
+    position: relative;
     width: 100vw;
     max-width: 100vw;
     z-index: 100;
@@ -50,10 +54,12 @@ body {
     padding: 0 0 0 2.5vw;
     position: relative;
     width: 100%;
+    z-index: 100;
 }
 
 #openseadragon {
     position: relative;
+    z-index: 100;
 }
 
 #channel_list_wrapper {
@@ -62,6 +68,7 @@ body {
     position: absolute;
     top: 2.5vh;
     width: 17.5%;
+    z-index: 101;
 }
 
 #lowRow1{

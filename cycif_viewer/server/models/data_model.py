@@ -621,6 +621,7 @@ def save_dot(datasource_name, dot):
 
 def load_dots(datasource_name):
     dots = database_model.get_all(database_model.Dot, datasource=datasource_name)
+    print(dots)
     return dots
 
 

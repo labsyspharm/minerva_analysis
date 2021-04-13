@@ -18,7 +18,7 @@ export class LfCellTypeAll {
         cellTypeMap: new Map(),
         cellIntensityRange: [0, 65536],
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
-        config_chartsMargin: {top: 50, right: 30, bottom: 10, left: 30},
+        config_chartsMargin: {top: 50, right: 30, bottom: 5, left: 30},
         config_boxW: 250,
         config_boxH: 200,
         config_channelR: 3,

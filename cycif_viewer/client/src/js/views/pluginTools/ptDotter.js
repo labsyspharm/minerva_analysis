@@ -58,7 +58,7 @@ export class PtDotter {
         // Show
         this.configs.isOpen = true;
 
-        //
+        // One time construction
         this.buildBasicStructure();
 
         // Set as just opened
@@ -79,12 +79,10 @@ export class PtDotter {
             })
         }
 
-
         // Snapshots
         this.snapshotsSubscription = this.imageViewer.viewer.lensing.snapshots.subject.subscribe(datum => {
             this.wrangleSnapshots([datum]);
         });
-        console.log("Other Datum", this.imageViewer.viewer.lensing.snapshots.album);
         this.wrangleSnapshots(this.imageViewer.viewer.lensing.snapshots.album);
 
         // OSD changes
@@ -117,15 +115,17 @@ export class PtDotter {
         this.els.container = this.parent.els.toolboxEl.append('div')
             .attr('class', 'toolboxContainer')
         let row = this.els.container.append('div')
-            .classed('row', true)
+            .attr('class', 'toolboxTop')
+        // .classed('row', true)
         row.append('div')
-            .classed('col-auto-sm nopadding', true)
+            // .classed('col-auto-sm nopadding', true)
             .append('h1')
             .text('Dotter');
-        row.append('div')
-            .classed('col nopadding', true)
+        row
+            // .append('div')
+            // .classed('col nopadding', true)
             .append('input')
-            .classed('form-control', true)
+            // .classed('form-control', true)
             .attr('id', 'dotter_search')
             .attr('type', 'search')
             .attr('placeholder', 'Search')
@@ -226,7 +226,7 @@ export class PtDotter {
         this.els.viewerOverlay.selectAll('.dotDrop').remove()
         this.els.viewerOverlay.selectAll('.dotDrop')
             .data(this.configs.isOpen ? data || this.data : [])
-            .join('canvas')
+            .join('div')
             .attr('class', 'dotDrop')
             .attr('id', function (d, i) {
                 return 'dotDrop' + d.id
@@ -240,12 +240,18 @@ export class PtDotter {
                 }
             })
             .style('border-radius', d => d.lensShape === 'circle' ? '50%' : '0')
-            .style('padding', `1px`)
             .style('pointer-events', 'none')
+            .style('overflow', 'hidden')
             .each(function (d) {
 
                 // Canvas el
-                const canvas = d3.select(this);
+                const div = d3.select(this);
+
+                // Canvas el
+                let canvas = div.select('canvas');
+                if (canvas.size() === 0) {
+                    canvas = div.append('canvas');
+                }
 
                 // Get main viewer zoom
                 const currentZoom = vis.imageViewer.viewer.viewport.getZoom();
@@ -259,16 +265,19 @@ export class PtDotter {
                     .attr('height', h * window.devicePixelRatio)
                     .style('width', `${w}px`)
                     .style('height', `${h}px`)
+                div.style('width', `${w}px`)
+                    .style('height', `${h}px`)
 
                 // Translate to overlay
-                canvas.style('left',
+                div.style('left',
                     `${vis.tools.overlayX(d.pointerPositionOnFullImage[0]) - (w / 2)}px`);
-                canvas.style('top',
+                div.style('top',
                     `${vis.tools.overlayY(d.pointerPositionOnFullImage[1]) - (h / 2)}px`)
 
                 // Change opacity if magnifying
                 if (multiplier > 1) {
-                    canvas.style('opacity', `${1 / multiplier}`);
+                    // canvas.style('opacity', `${1 / multiplier}`);
+                    canvas.style('opacity', `0`);
                 } else {
                     canvas.style('opacity', `1`);
                 }
@@ -344,7 +353,6 @@ export class PtDotter {
                         return vis.dotter_block + d.id
                     })
                     .each(function (d, i) {
-                        console.log("Dat", d, i);
                         const div = d3.select(this);
 
                         const canvasContainer = div.append('div')
@@ -509,7 +517,8 @@ export class PtDotter {
         }
 
         //set new selection on if not old element
-        let selection = d3.select("#" + this.dotter_block + d.id);;
+        let selection = d3.select("#" + this.dotter_block + d.id);
+        ;
         if (oldSelection == null || oldSelection.attr('id') != selection.attr('id')) {
             selection.classed('highlight', true);
             this.selected = selection;

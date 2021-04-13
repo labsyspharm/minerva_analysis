@@ -1,11 +1,13 @@
 
 #tray {
+    background-color: rgba(0, 0, 0, 1);
     align-items: center;
     display: flex;
     flex-flow: column nowrap;
     height: 100%;
     position: relative;
     width: 2.5vw;
+    z-index: 101;
 }
 
 #tray .plugin {
@@ -14,11 +16,12 @@
 }
 
 #toolbox {
-    overflow-x: hidden;
-    overflow-y: scroll;
+    background-color: rgba(0, 0, 0, 1);
+    position: relative;
     transform: translate3d(0, 0, 0);
     width: 0;
     will-change: width;
+    z-index: 101;
 }
 
 .toolboxContainer {
@@ -28,7 +31,25 @@
     width: 100%;
 }
 
-.toolboxContainer h1 {
+.toolboxTop {
+    align-items: center;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.toolboxTop input {
+    background-color: #1b1b1b !important;
+    border-radius: 5px;
+    color: #5b5b5b !important;
+    font-size: 10px;
+    padding: 3px 5px;
+    margin: 0 12px 0 0;
+    width: 55%;
+}
+
+.toolboxTop h1 {
     align-items: center;
     border-left: 5px solid rgba(255, 255, 255, 1);
     color: rgba(198, 124, 33, 0.8);
@@ -37,10 +58,13 @@
     font-size: 18px;
     letter-spacing: 2px;
     padding: 0 0 0 6px;
-    margin: 6px 12px;
+    margin: 6px 6px;
 }
 
 .toolboxContainer .dotter_album {
+    max-height: 90%;
+    overflow-x: hidden;
+    overflow-y: scroll;
     padding: 5px 0 5px 5px;
     width: 100%;
 }
@@ -147,15 +171,6 @@
 
 .highlight{
    border: 1px solid orange;
-}
-
-
-#dotter_search {
-    margin: 5px;
-    color: #5b5b5b !important;
-    background-color: #1b1b1b !important;
-    font-size: 0.5rem;
-    width: 80%;
 }
 
 
