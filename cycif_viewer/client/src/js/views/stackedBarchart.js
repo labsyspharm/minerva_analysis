@@ -123,7 +123,7 @@ class StackedBarchart {
             .attr("x", 0)
             .attr("dy", ".35em")
             .attr("font-size", "0.8em")
-            .style("text-anchor", "start")
+            .style("text-anchor", "middle")
 
         self.svg.select(".yaxis")
             .transition()

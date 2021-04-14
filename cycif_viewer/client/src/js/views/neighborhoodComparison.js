@@ -83,14 +83,16 @@ function switchSmallMultipleType(elem, parent) {
             removeAllPlots();
             initSmallMultipleParallelCoordinates();
         }
-    } else if (elem.id == "barchart-button") {
-        if (selectAndUnselect(elem, parent)) {
-            currentState = 'barchart';
-            removeAllPlots();
-            initSmallMultipleBarcharts();
-        }
-
-    } else if (elem.id == "scatterplot-button") {
+    }
+    //else if (elem.id == "barchart-button") {
+        //         if (selectAndUnselect(elem, parent)) {
+        //             currentState = 'barchart';
+        //             removeAllPlots();
+        //             initSmallMultipleBarcharts();
+        //         }
+        //
+    //     }
+    else if (elem.id == "scatterplot-button") {
         if (selectAndUnselect(elem, parent)) {
             currentState = 'scatterplot';
             removeAllPlots();
@@ -135,7 +137,7 @@ function switchSmallMultipleType(elem, parent) {
 function removeAllPlots() {
     d3.selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas, #heatmap-svg, #summary_div_barchart_svg, .tooltip, #legend-svg').remove();
     document.getElementById("summary_div").style.display = "none";
-    document.getElementById("comparison_div_parent").style.display = "block";
+    document.getElementById("comparison_div_parent").style.display = "flex";
     plots = [];
 }
 
@@ -186,7 +188,7 @@ function createGrid() {
             col.id = `compare_col_${i}`;
             row.appendChild(col);
             let compare_plot_title = document.createElement("div");
-            compare_plot_title.className = "row compare_plot_title";
+            compare_plot_title.className = "row compare_plot_title justify-content-center";
             let title = document.createElement("h5");
             compare_plot_title.appendChild(title);
             col.appendChild(compare_plot_title);

@@ -394,19 +394,11 @@ def get_number_of_cells_in_circle(x, y, datasource_name, r):
         return 0
 
 
-def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
-    color_scheme_path = str(
-        Path(os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name / str(
-            label_field + "_color_scheme.pickle"))
-    if refresh == False:
-        if os.path.isfile(color_scheme_path):
-            print("Color Scheme Exists, Loading")
-            color_scheme = pickle.load(open(color_scheme_path, "rb"))
-            return color_scheme
-    if label_field == 'phenotype':
-        labels = get_phenotypes(datasource_name)
-    labels.append('SelectedCluster')
+def get_color_scheme(datasource_name):
+
+    labels = get_phenotypes(datasource_name)
     color_scheme = {}
+    # http://godsnotwheregodsnot.blogspot.com/2013/11/kmeans-color-quantization-seeding.html
     colors = ["#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059", "#FFDBE5", "#7A4900",
               "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87", "#5A0007", "#809693", "#FEFFE6",
               "#1B4400", "#4FC601", "#3B5DFF", "#4A3B53", "#FF2F80", "#61615A", "#BA0900", "#6B7900", "#00C2A0",
@@ -441,8 +433,6 @@ def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
         color_scheme[str(labels[i])] = {}
         color_scheme[str(labels[i])]['rgb'] = list(ImageColor.getcolor(colors[i], "RGB"))
         color_scheme[str(labels[i])]['hex'] = colors[i]
-
-    pickle.dump(color_scheme, open(color_scheme_path, 'wb'))
     return color_scheme
 
 

@@ -59,9 +59,7 @@ def get_phenotypes():
 @app.route('/get_color_scheme', methods=['GET'])
 def get_color_scheme():
     datasource = request.args.get('datasource')
-    refresh = request.args.get('refresh') == 'true'
-    field = request.args.get('field')
-    resp = data_model.get_color_scheme(datasource, refresh, field)
+    resp = data_model.get_color_scheme(datasource)
     return serialize_and_submit_json(resp)
 
 

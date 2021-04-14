@@ -38,8 +38,10 @@ class Scatterplot {
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
         self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
 
-        let editButton = document.getElementById('edit_clustering')
-        editButton.addEventListener('click', self.switchEditMode.bind(self));
+        let editButton = document.getElementById('edit_clustering');
+        if (editButton) {
+            editButton.addEventListener('click', self.switchEditMode.bind(self));
+        }
 
         // Custom Cluster Submit
         let button = document.getElementById("custom_cluster_submit");
