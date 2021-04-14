@@ -21,6 +21,7 @@ dependencies:
       - ome-types==0.2.0
       - opencv-python
       - dask
-      - dask[dataframe] --upgrade
+      - dask[dataframe]
+
 
 

@@ -4,10 +4,10 @@ block_cipher = None
 
 
 a = Analysis(['run.py'],
-             pathex=['$env:CONDA_PREFIX', 'C:\\Users\\Robert\\PycharmProjects\\viewer_lensing\\cycif_viewer'],
+             pathex=['$env:CONDA_PREFIX', 'C:\\Users\\Simon\\Documents\\cycif_viewer'],
              binaries=[],
-             datas=[('cycif_viewer/client', 'cycif_viewer/client'), ('cycif_viewer/server', 'cycif_viewer/server'), ('C:\\Users\\Robert\\.conda\\envs\\noconda/Lib/site-packages/xmlschema/schemas', 'xmlschema/schemas')],
-             hiddenimports=['scipy.spatial.transform._rotation_groups', 'cmath'],
+             datas=[('cycif_viewer/client', 'cycif_viewer/client'), ('cycif_viewer/server', 'cycif_viewer/server'), ('C:\\ProgramData\\Anaconda3\\envs\\build/Lib/site-packages/xmlschema/schemas', 'xmlschema/schemas')],
+             hiddenimports=['scipy.spatial.transform._rotation_groups', 'cmath', 'sqlalchemy.sql.default_comparator'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
@@ -30,4 +30,4 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=True )
+          console=True , icon='icon.ico')

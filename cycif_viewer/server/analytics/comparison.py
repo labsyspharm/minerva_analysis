@@ -1,8 +1,6 @@
 from cycif_viewer.server.models import data_model
 import numpy as np
 import scipy.misc as sp
-import matplotlib
-import matplotlib.pyplot as plt
 import time
 import tifffile as tf
 import re
@@ -16,9 +14,6 @@ from skimage.filters import rank
 from skimage.io import imread
 from skimage.color import rgb2gray
 from skimage.transform import rescale, resize, downscale_local_mean
-
-import matplotlib.pyplot as plt
-from matplotlib import image
 from skimage import measure
 import cv2
 
