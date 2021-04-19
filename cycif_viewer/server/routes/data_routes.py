@@ -161,8 +161,9 @@ def get_cells_in_polygon():
 def find_custom_neighborhood():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
+    similarity = post_data['similarity']
     neighborhood_composition = post_data['neighborhoodComposition']
-    resp = data_model.find_custom_neighborhood(datasource, neighborhood_composition)
+    resp = data_model.find_custom_neighborhood(datasource, neighborhood_composition, similarity)
     return serialize_and_submit_json(resp)
 
 

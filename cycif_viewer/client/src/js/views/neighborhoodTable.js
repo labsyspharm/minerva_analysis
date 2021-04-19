@@ -22,10 +22,13 @@ class NeighborhoodTable {
     displayTable() {
         const self = this;
         let channelListDiv = document.getElementById('channel_list_div');
+        let label = document.getElementById('neighborhood_table_div_label')
         if ($(self.table).is(':hidden')) {
             channelListDiv.style.height = '60%';
+            label.textContent = "Hide Neighborhood List";
         } else {
             channelListDiv.style.height = '92%';
+            label.textContent = "View Neighborhood List";
         }
     }
 

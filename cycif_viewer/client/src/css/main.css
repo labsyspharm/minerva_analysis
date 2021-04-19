@@ -576,24 +576,38 @@ polygon:hover {
 }
 
 #neighborhood_similarity_label {
-    font-size: 6pt;
-    color: #c1c1c1;
+    font-size: 8pt;
+    color: #000000;
+    text-align: center;
+    vertical-align: middle;
+    display: table-cell;
     margin-bottom: 0;
+    padding-top: 4px;
 }
 
 #similarity_val {
-    font-size: 6pt;
-    color: #c1c1c1;
+    font-size: 9pt;
+    color: #000000;
     font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
+    display: table-cell;
+    margin-bottom: 0;
+    padding-top: 3px;
+    padding-left: 3px;
+    padding-right: 3px;
 }
 
+
+
 #similarity_group {
-    display: none;
+    height: 100%;
+    padding-right: 15px;
 }
 
 #neighborhood_similarity {
     width: 80px;
-    height: 4px;
+    height: 100%;
 }
 
 #neighborhood_table_heading, #neighborhood_table_footing {

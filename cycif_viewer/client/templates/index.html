@@ -75,7 +75,22 @@
         </div>
 
         <div class="col viewer_col" id="openseadragon_wrapper">
-            <span class="box-heading">Image Space</span>
+            <div class="row justify-content-between">
+                <div class="col-auto">
+                    <span class="box-heading">Image Space</span>
+                </div>
+                <div class="col-auto">
+                    <div class="row" id="similarity_group">
+                        <label class="control-label" id="neighborhood_similarity_label"
+                               for="neighborhood_similarity">
+                            Similarity Threshold: </label> <span id="similarity_val">0.8</span>
+
+                        <input type="range" class="form-control-range" min="0" max="100" value="80"
+                               id="neighborhood_similarity">
+
+                    </div>
+                </div>
+            </div>
             <div id="openseadragon">
                 <div id="openseadragon-loader-container">
                     <div class="lds-ellipsis" id="openseadragon_loader">
@@ -113,15 +128,6 @@
                                   data-placement="right"
                                   title="Search for Similar Neighborhoods">search</span>
                             <span class="toolbar_title">Find Similar Neighborhoods</span>
-
-                            <div id="similarity_group">
-                                <form>
-                                    <input type="range" class="form-control-range" min="0" max="100" value="80"
-                                           id="neighborhood_similarity">
-                                    <label id="neighborhood_similarity_label" for="neighborhood_similarity">
-                                        Similarity Threshold: </label> <span id="similarity_val">0.8</span>
-                                </form>
-                            </div>
                         </div>
                         <div class="row align-items-center">
                             <span id="cell_view" data-toggle="tooltip" data-placement="right"

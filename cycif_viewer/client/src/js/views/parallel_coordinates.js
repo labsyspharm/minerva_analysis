@@ -67,7 +67,13 @@ class ParallelCoordinates {
         self.svgGroup.append("path")
             .attr("fill", "none")
             .classed("average_path", true)
-            .attr("stroke", "black")
+            .attr("stroke", d => {
+                if (self.small) {
+                    return "black";
+                } else {
+                    return "orange";
+                }
+            })
 
         this.editMode = false;
         this.drag = d3.drag(self)
@@ -167,7 +173,8 @@ class ParallelCoordinates {
                     d3.select(this).call(d3.axisLeft()
                         .scale(self.y)
                         .tickSize(0)
-                        .tickValues(_.range(0, 1.2, 0.2)));
+                        .tickValues(_.range(0, 1.2, 0.2))
+                        .tickFormat(d3.format(".0%")));
                 } else {
                     d3.select(this).call(d3.axisLeft()
                         .scale(self.y)
@@ -186,7 +193,13 @@ class ParallelCoordinates {
             .attr('x2', self.width - 20)
             .attr('y2', -15)
             .attr("stroke-width", 3)
-            .attr('stroke', 'black')
+            .attr('stroke', d => {
+                if (self.small) {
+                    return "black";
+                } else {
+                    return "orange";
+                }
+            })
 
         let avgLineLabel = self.svgGroup.selectAll('.average_line_label')
             .data([0])
@@ -203,7 +216,13 @@ class ParallelCoordinates {
             .datum(self.visData)
             .classed("average_path", true)
             .attr("fill", "none")
-            .attr("stroke", "black")
+            .attr("stroke", d => {
+                if (self.small) {
+                    return "black";
+                } else {
+                    return "orange";
+                }
+            })
             .attr("stroke-width", 2)
             .attr("d", d3.line()
                 .x(function (d) {
@@ -348,7 +367,9 @@ class ParallelCoordinates {
         })
         self.draw();
         seaDragonViewer.showLoader();
-        return dataLayer.findSimilarNeighborhoods(_.keyBy(self.visData, 'key'))
+        let sim = document.getElementById('similarity_val').innerHTML || '0.8';
+        let simVal = parseFloat(sim);
+        return dataLayer.findSimilarNeighborhoods(_.keyBy(self.visData, 'key'), simVal)
             .then(cells => {
                 self.switchEditMode();
                 seaDragonViewer.hideLoader();

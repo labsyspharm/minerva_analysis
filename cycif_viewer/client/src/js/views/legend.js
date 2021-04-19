@@ -1,11 +1,6 @@
 class Legend {
     constructor(dataLayer, colorScheme, eventHandler) {
         this.parentSelector = "legend";
-        this.svg = d3.select(`#${this.parentSelector}`)
-            .append("svg")
-            .attr("width", '120px')
-            .attr("height", '160px')
-            .attr("id", "legend-svg");
         this.dataLayer = dataLayer;
         this.colorScheme = colorScheme;
         this.eventHandler = eventHandler;
@@ -15,8 +10,17 @@ class Legend {
 
     draw() {
         const self = this;
+        let docHeight = 16 + _.size(this.dataLayer.phenotypes) * (11.125);
+        docHeight = _.toString(_.toInteger(docHeight));
+
+        self.svg = d3.select(`#${this.parentSelector}`)
+            .append("svg")
+            .attr("width", '120px')
+            .attr("height", docHeight + 'px')
+            .attr("id", "legend-svg");
+
+        document.getElementById(this.parentSelector).style.height = docHeight + 'px';
         const size = 10;
-        let docHeight = 30 + _.size(this.dataLayer.phenotypes) * (size + 3);
         let colorMap = this.colorScheme.colorMap;
         let data = _.map(this.dataLayer.phenotypes, phenotype => {
             return {'phenotype': phenotype, 'color': `${colorMap[phenotype].hex}`};

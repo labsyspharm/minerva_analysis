@@ -265,7 +265,7 @@ class ImageViewer {
                             return dataLayer.getCellsInPolygon(that.polygonSelection, false)
                                 .then(cells => {
                                     that.hideLoader();
-                                    // d3.select('#selectionPolygon').remove();
+                                    d3.select('#selectionPolygon').remove();
                                     that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
                                 })
                         }
@@ -368,14 +368,7 @@ class ImageViewer {
             // that.lassoButton.classList.remove('selected');
             // that.isSelectionToolActive = false;
         })
-        that.neighborhoodButton.addEventListener("contextmenu", event => {
-            let display = that.similaritySlider.style.display;
-            if (display == "none") {
-                that.similaritySlider.style.display = "block";
-            } else {
-                that.similaritySlider.style.display = "none";
-            }
-        })
+
         that.neighborhoodButton.addEventListener("click", event => {
             d3.select('#selectionPolygon').remove();
             that.neighborhoodButton.style.stroke = "orange";

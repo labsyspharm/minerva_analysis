@@ -31,7 +31,7 @@ class Scatterplot {
             lassoColor: hexToRGBA('#ffa500', 1),
             pointOutlineWidth: 0,
             pointSizeSelected: 0,
-            pointColorActive: hexToRGBA('#ffa500', 0.15)
+            pointColorActive: hexToRGBA('#ffa500', 0.5)
         });
 
         self.plot.subscribe('select', self.select.bind(self));

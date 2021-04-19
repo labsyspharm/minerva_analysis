@@ -313,7 +313,7 @@ class DataLayer {
         }
     }
 
-    async findSimilarNeighborhoods(data) {
+    async findSimilarNeighborhoods(data, similarity) {
         try {
             let response = await fetch('/find_custom_neighborhood', {
                 method: 'POST',
@@ -324,7 +324,8 @@ class DataLayer {
                 body: JSON.stringify(
                     {
                         datasource: datasource,
-                        neighborhoodComposition: data
+                        neighborhoodComposition: data,
+                        similarity: similarity
                     })
             });
             let cells = await response.json();
@@ -420,7 +421,7 @@ class DataLayer {
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.id, i]));
+        that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
         that.currentRawSelection = items;
         // console.log("update current selection done")
     }
