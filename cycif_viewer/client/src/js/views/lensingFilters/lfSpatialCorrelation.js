@@ -167,6 +167,9 @@ export class LfSpatialCorrelation {
 }
 
 /*
+
+    // Sardana paper: https://www.biorxiv.org/content/biorxiv/early/2021/04/02/2021.03.31.437984.full.pdf
+
     def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid',y_coordinate='Y_centroid', 
                   marker=None, k=500, label='spatial_corr'):
     """
