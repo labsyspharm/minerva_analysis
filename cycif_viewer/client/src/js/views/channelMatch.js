@@ -11,15 +11,23 @@ function channelMatch(data) {
 
     let idField = _.get(data, 'idField', true);
     let channelFiles = _.get(data, 'channelFileNames', [])
+    let celltypeUploaded = _.get(data, 'celltypeUploaded');
     _.each(channelFiles, (channel, i) => {
         if (i === 0 && idField && channel == 'ID') {
             leftList.innerHTML += `<div class="list-group-item tinted destination optional">${channel} (Optional)<span class="fa fa-times remove" aria-hidden="true"></span></div>`
-        } else {
+        }
+        else {
             leftList.innerHTML += `<div class="list-group-item tinted destination">${channel}</div>`
         }
     });
 
     $(".destination").on('click', '.remove', function () {
+        $(this).parent().remove();
+        // Remove an arrow as well
+        $('#middle-list .list-group-item:eq(0)').remove();
+    });
+
+    $(".destination").on('click', '.remove-celltype', function () {
         $(this).parent().remove();
         // Remove an arrow as well
         $('#middle-list .list-group-item:eq(0)').remove();
@@ -32,6 +40,19 @@ function channelMatch(data) {
     let headers = _.get(data, 'csvHeader', []);
     if (_.get(data, 'new', false)) {
         let val;
+
+        // Celltype Position
+        if (celltypeUploaded) {
+            let celltypeIndex = _.findIndex(headers, e => {
+                let str = _.get(e, 'fullName') || e;
+                return str == 'cellType' || str == 'phenotype'
+            });
+            if (celltypeIndex != -1) {
+                val = headers[celltypeIndex]
+                _.pullAt(headers, [celltypeIndex])
+                headers = _.concat(val, headers)
+            }
+        }
 
         // Y Position
         let yIndex = _.findIndex(headers, e => {
@@ -56,7 +77,6 @@ function channelMatch(data) {
         }
 
         // Area Position
-        // X Position
         let areaIndex = _.findIndex(headers, e => {
             let str = _.get(e, 'fullName') || e;
             return str == 'NucleusArea' || str == 'Area'
@@ -294,7 +314,7 @@ function swapNodes(n1, n2) {
     i2 = index(n2);
 
     if (p1.isEqualNode(p2) && i1 < i2) {
-        i2++;
+        i2++;celltypeUploaded
     }
     p1.insertBefore(n2, p1.children[i1]);
     p2.insertBefore(n1, p2.children[i2]);
