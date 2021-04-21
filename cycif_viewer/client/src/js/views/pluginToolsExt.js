@@ -1,4 +1,5 @@
 import {PtDotter} from "./pluginTools/ptDotter";
+import {KeyControl} from "./pluginTools/keyControl";
 
 /**
  * @class PluginToolsExt
@@ -24,6 +25,9 @@ export class PluginToolsExt {
     plugins = {
         'plugin_dotter': {
             instance: new PtDotter(this)
+        },
+        'plugin_keys': {
+            instance: new KeyControl(this)
         }
     }
     selections = {

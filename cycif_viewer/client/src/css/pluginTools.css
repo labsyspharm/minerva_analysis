@@ -11,7 +11,7 @@
 }
 
 #tray .plugin {
-    margin: 4px 2px 10px 0;
+    margin: 4px 2px 5px 0;
     width: 25px;
 }
 
@@ -171,6 +171,47 @@
 
 .highlight{
    border: 1px solid orange;
+}
+
+/********************************************************************************************************* KeyControl */
+
+.lensingControl {
+    display: flex;
+    flex-flow: column nowrap;
+    padding: 0 0 0 18px;
+}
+
+.lensingControl h2 {
+    color: rgba(255, 255, 255, 1);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin: 6px 0 12px 0;
+}
+
+.lensingControl h3 {
+    color: rgba(255, 255, 255, 1);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin: 8px 0 5px 0;
+}
+
+.lensingControl p {
+    color: rgba(255, 255, 255, 1);
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 1px;
+    margin: 3px 0 3px 2px;
+}
+
+.lensingControl span {
+    background-color: rgba(255, 255, 255, 1);
+    color: rgba(0, 0, 0, 1);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 1px 4px 2px 4px;
 }
 
 
