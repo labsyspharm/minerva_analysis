@@ -13,8 +13,8 @@ class Heatmap {
                 _.each(data, (els, i) => {
                     _.each(els, (el, j) => {
                         self.visData.push({
-                            row: self.dataLayer.phenotypes[i],
-                            col: self.dataLayer.phenotypes[j],
+                            col: self.dataLayer.phenotypes[i],
+                            row: self.dataLayer.phenotypes[j],
                             val: el
                         });
                     })

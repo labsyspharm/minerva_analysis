@@ -720,13 +720,15 @@ def get_spearmans_correlation(datasource_name):
     # Load if not loaded
     if datasource_name != source:
         load_datasource(datasource_name)
-    heatmap = np.zeros((neighborhoods.shape[1], neighborhoods.shape[1]))
+    heatmap = []
     for i in range(0, neighborhoods.shape[1]):
+        heatmap.append([])
         for j in range(0, i):
             p_cor = spearmanr(neighborhoods[:, i], neighborhoods[:, j])
-            heatmap[i, j] = p_cor[0]
-            heatmap[j, i] = p_cor[0]
+            heatmap[i].append(p_cor[0])
     return heatmap
+
+
 
 
 def get_ome_metadata(datasource_name):

@@ -303,6 +303,7 @@ class DataLayer {
                     {
                         datasource: datasource,
                         similarity: similarity,
+                        // selectionIds: _.map(this.getCurrentRawSelection().cells, e=>e.id)
                         selectionIds: [...this.getCurrentSelection().keys()]
                     })
             });
