@@ -1,4 +1,4 @@
-# CyCIF Viewer
+# CyCIF Viewer 
 
 ## About
 This is  an [openseadragon](https://openseadragon.github.io/) based **Cellular Image Viewing and Analysis Tool**. 
