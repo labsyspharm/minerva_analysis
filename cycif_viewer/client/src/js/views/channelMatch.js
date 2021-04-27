@@ -10,8 +10,8 @@ function channelMatch(data) {
     document.getElementById('save').onclick = submitForm;
 
     let idField = _.get(data, 'idField', true);
-    let channelFiles = _.get(data, 'channelFileNames', [])
-    let celltypeUploaded = _.get(data, 'celltypeUploaded');
+    let channelFiles = _.get(data, 'channelFileNames', []);
+    let celltypeUploaded = _.has(data, 'celltypeData');
     _.each(channelFiles, (channel, i) => {
         if (i === 0 && idField && channel == 'ID') {
             leftList.innerHTML += `<div class="list-group-item tinted destination optional">${channel} (Optional)<span class="fa fa-times remove" aria-hidden="true"></span></div>`
@@ -22,12 +22,6 @@ function channelMatch(data) {
     });
 
     $(".destination").on('click', '.remove', function () {
-        $(this).parent().remove();
-        // Remove an arrow as well
-        $('#middle-list .list-group-item:eq(0)').remove();
-    });
-
-    $(".destination").on('click', '.remove-celltype', function () {
         $(this).parent().remove();
         // Remove an arrow as well
         $('#middle-list .list-group-item:eq(0)').remove();
