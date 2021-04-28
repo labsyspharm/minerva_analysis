@@ -54,6 +54,8 @@ def edit_config_with_config_name(config_name):
         data['datasetName'] = config_name
         # test_data['channelFileNames'] = ['channel_01', 'channel_02']
         data['csvName'] = config_data['featureData'][0]['src'].split("/")[-1]
+        if 'celltypeData' in config_data['featureData'][0]:
+            data['celltypeData'] = config_data['featureData'][0]['celltypeData']
 
         if 'shapes' in config_data:
             data['shapes'] = config_data['shapes']
@@ -111,8 +113,18 @@ def edit_config_with_config_name(config_name):
         elem['fullName'] = config_data['featureData'][0]['yCoordinate']
         elem['displayName'] = config_data['featureData'][0]['yCoordinate']
         csvHeaders.append(elem)
+        # add cell type
+        if 'celltypeData' in config_data['featureData'][0]:
+            elem = {}
+            elem['fullName'] = config_data['featureData'][0]['celltype']
+            elem['displayName'] = config_data['featureData'][0]['celltype']
+            csvHeaders.append(elem)
+
         # Start with the required channels
-        channelFileNames.extend(['Area', 'X Position', 'Y Position'])
+        if 'celltypeData' in config_data['featureData'][0]:
+            channelFileNames.extend(['Area', 'X Position', 'Y Position', 'Cell Type'])
+        else:
+            channelFileNames.extend(['Area', 'X Position', 'Y Position'])
 
         for i in range(len(config_data['imageData'])):
             elem = config_data['imageData'][i]
@@ -149,6 +161,7 @@ def upload_file_page():
     current_task = "Uploading"
     datasetName = None
     csvName = ''
+    celltypeName = ''
     channelFileNames = ['ID', 'Area', 'X Position', 'Y Position']
     labelName = ''
     csvHeader = None
@@ -168,6 +181,12 @@ def upload_file_page():
                         raise Exception("Please only Upload Only 1 CSV")
                     elif len(csvFile) == 0:
                         raise Exception("Please Upload a CSV")
+
+                    celltypeFile = request.files.getlist("celltype_file")
+                    if len(celltypeFile) > 1:
+                        raise Exception("Please only Upload Only 1 Cell Type File")
+                    elif len(celltypeFile) == 1:
+                        channelFileNames.extend(['Cell Type'])
 
                     # labelFile = request.files.getlist("label_file")
                     labelFile = request.form.get('label_file')
@@ -195,6 +214,14 @@ def upload_file_page():
                         with open(csvPath, 'r') as infile:
                             reader = csv.DictReader(infile)
                             csvHeader = reader.fieldnames
+
+                    # # Process Cell Type File
+                    if len(celltypeFile) == 1:
+                        for file in celltypeFile:
+                            # Upload Cell Type File
+                            celltypeName = file.filename
+                            celltypePath = str(Path(file_path) / celltypeName)
+                            file.save(celltypePath)
 
                     # Process Channel File
 
@@ -235,6 +262,8 @@ def upload_file_page():
                     config_data['datasetName'] = datasetName
                     config_data['channelFileNames'] = channelFileNames
                     config_data['csvName'] = csvName
+                    if len(celltypeFile) == 1:
+                        config_data['celltypeData'] = celltypeName
                     config_data['channelFile'] = str(channelFile)
                     config_data['new'] = True
                     config_data['labelName'] = labelName
@@ -309,6 +338,8 @@ def save_config():
         originalData = request.json['originalData']
         datasetName = originalData['datasetName']
         csvName = originalData['csvName']
+        if 'celltypeData' in originalData:
+            celltypeName = originalData['celltypeData']
         headerList = request.json['headerList']
         normalizeCsv = request.json['normalizeCsv']
         if normalizeCsv:
@@ -342,6 +373,9 @@ def save_config():
             configData[datasetName]['activeChannel'] = ''
             configData[datasetName]['featureData'] = [{}]
             configData[datasetName]['featureData'][0]['normalization'] = 'none'
+            if 'celltypeData' in originalData:
+                configData[datasetName]['featureData'][0]['celltypeData'] = str(data_path / datasetName / celltypeName)
+                configData[datasetName]['featureData'][0]['celltype'] = headerList[3][1]['value']
             configData[datasetName]['featureData'][0]['xCoordinate'] = headerList[1][1]['value']
             configData[datasetName]['featureData'][0]['yCoordinate'] = headerList[2][1]['value']
 
@@ -394,14 +428,22 @@ def save_config():
                     'labelName'] + "/"
             else:
                 configData[datasetName]['imageData'][0]['src'] = ''
-            channelList = channelList[3:]
 
+            if 'celltypeData' in originalData:
+                channelList = channelList[4:]
+            else:
+                channelList = channelList[3:]
+
+            if 'celltypeData' in originalData:
+                channelStart = 4
+            else:
+                channelStart = 3
             for i in range(len(channelList)):
                 channel = channelList[i]
                 channelData = {}
                 channelData['src'] = "/generated/data/" + datasetName + "/" + channel + "/"
-                channelData['name'] = headerList[i + 3][0]['value']
-                channelData['fullname'] = headerList[i + 3][1]['value']
+                channelData['name'] = headerList[i + channelStart][0]['value']
+                channelData['fullname'] = headerList[i + channelStart][1]['value']
                 configData[datasetName]['imageData'].append(channelData)
             configJson.seek(0)  # <--- should reset file position to the beginning.
             json.dump(configData, configJson, indent=4)
