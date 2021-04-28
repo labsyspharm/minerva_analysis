@@ -277,6 +277,31 @@ def get_neighborhood(x, y, datasource_name, r=100, fields=None):
         return {}
 
 
+def get_neighborhood_for_spat_corr(x, y, datasource_name, r=100, fields=None):
+    global database
+    global datasource
+    global source
+    global ball_tree
+    if datasource_name != source:
+        load_datasource(datasource_name)
+    index = ball_tree.query_radius([[x, y]], r=r)
+    neighbors = index[0]
+    try:
+        if fields and len(fields) > 0:
+            fields.append('id') if 'id' not in fields else fields
+            if len(fields) > 1:
+                neighborhood = datasource.iloc[neighbors][fields].to_dict(orient='records')
+            else:
+                neighborhood = datasource.iloc[neighbors][fields].to_dict()
+        else:
+            neighborhood = datasource.iloc[neighbors].to_dict(orient='records')
+
+        print(datasource)
+        return neighborhood
+    except:
+        return {}
+
+
 def get_number_of_cells_in_circle(x, y, datasource_name, r):
     global source
     global ball_tree
@@ -442,9 +467,13 @@ def get_datasource_description(datasource_name):
     return description
 
 
-
 def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid',y_coordinate='Y_centroid',
-                  marker=None, k=500, label='spatial_corr'):
+                  marker=None, k=500, label='spatial_corr', index='id', channels=[]):
+    global datasource
+    global source
+    global ball_tree
+    global config
+
     """
     Parameters
     ----------
@@ -474,15 +503,22 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
     -------
     adata = spatial_corr (adata, threshold=0.5, x_coordinate='X_position',y_coordinate='Y_position',marker=None)
     """
-    # Start
+    # Reset some vars (hardcoded for now)
+    # adata = pd.DataFrame(datasource)
+    # x_coordinate = config[source]['featureData'][0]['xCoordinate']
+    # y_coordinate = config[source]['featureData'][0]['yCoordinate']
+    # index = config[source]['featureData'][0]['idField']
+    # channels = [d['fullname'] for d in config[source]['imageData']][1:]
+
+    #Start
     bdata = adata.copy()
-    # Create a DataFrame with the necessary inforamtion
-    data = pd.DataFrame({'x': bdata.obs[x_coordinate], 'y': bdata.obs[y_coordinate]})
+    bdata_features = channels.copy()
+    print('Input shape', bdata[bdata_features].shape)
+    bdata_features.append(index)
+    # Create a DataFrame with the necessary information
+    data = pd.DataFrame({'x': bdata[x_coordinate], 'y': bdata[y_coordinate]})
     # user defined expression matrix
-    if raw is True:
-        exp =  pd.DataFrame(bdata.raw.X, index= bdata.obs.index, columns=bdata.var.index)
-    else:
-        exp =  pd.DataFrame(bdata.X, index= bdata.obs.index, columns=bdata.var.index)
+    exp = pd.DataFrame(bdata[bdata_features], index=bdata[index], columns=channels)
     # log the data if needed
     if log is True:
         exp = np.log1p(exp)
@@ -496,9 +532,9 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
             marker = [marker]
         exp = exp[marker]
     # find the nearest neighbours
-    tree = BallTree(data, leaf_size= 2)
-    dist, ind = tree.query(data, k=k, return_distance= True)
-    neighbours = pd.DataFrame(ind, index = bdata.obs.index)
+    tree = BallTree(data, leaf_size=2)
+    dist, ind = tree.query(data, k=k, return_distance=True)
+    neighbours = pd.DataFrame(ind, index=bdata[index])
     # find the mean dist
     rad_approx = np.mean(dist, axis=0)
     # Calculate the correlation
@@ -519,16 +555,18 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
         # return
         return corrfunc
     # apply function to all markers    # Create lamda function
-    r_corrfunc = lambda x: corrfunc(marker=x,A=A, neighbours=neighbours, ind=ind)
+    r_corrfunc = lambda x: corrfunc(marker=x, A=A, neighbours=neighbours, ind=ind)
     all_data = list(map(r_corrfunc, exp.columns)) # Apply function
     # Merge all the results into a single dataframe
     df = pd.concat(all_data, axis=1)
+    print(all_data)
     df.columns = exp.columns
     df['distance'] = rad_approx
     # add it to anndata object
-    adata.uns[label] = df
+    # adata.uns[label] = df
+    print('Output shape', df.shape)
     # return
-    return adata
+    return df
 
 
 def generate_zarr_png(datasource_name, channel, level, tile):

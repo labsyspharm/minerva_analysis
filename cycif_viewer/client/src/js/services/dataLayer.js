@@ -31,6 +31,7 @@ class DataLayer {
             this.phenotypeColumnName = await this.getPhenotypeColumnName();
             this.phenotypeDescription = await this.getPhenotypeDescription();
             document.body.style.cursor = 'default';
+
         } catch (e) {
             console.log("Error Initializing Dataset", e);
         }
@@ -182,6 +183,21 @@ class DataLayer {
     async getNeighborhood(maxDistance, x, y) {
         try {
             let response = await fetch('/get_neighborhood?' + new URLSearchParams({
+                point_x: x,
+                point_y: y,
+                max_distance: maxDistance,
+                datasource: datasource
+            }))
+            let neighborhood = await response.json();
+            return neighborhood;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
+
+    async getNeighborhoodForSpatialCorrelation(maxDistance, x, y) {
+        try {
+            let response = await fetch('/get_neighborhood_for_spat_corr?' + new URLSearchParams({
                 point_x: x,
                 point_y: y,
                 max_distance: maxDistance,

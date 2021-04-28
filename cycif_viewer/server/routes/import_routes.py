@@ -11,6 +11,7 @@ import shutil
 import csv
 import json
 import os
+import pandas as pd
 
 total_tasks = 100
 completed_task = 0
@@ -321,9 +322,9 @@ def save_config():
             name, ext = os.path.splitext(csvName)
             normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
             file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-            csvPath = str(Path(file_path) / csvName)
+            csv_path = str(Path(file_path) / csvName)
             normPath = str(Path(file_path) / normCsvName)
-            pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
+            pre_normalization.preNormalize(csv_path, normPath, skip_columns=skip_columns)
             print("Finished Normalizing CSV")
         elif 'normalizeCsvName' in request.json:
             normCsvName = request.json['normalizeCsvName']
@@ -386,7 +387,6 @@ def save_config():
                 'src'] = str(data_path / datasetName / csvName)
             # Adding the Label Channel as the First Label
             configData[datasetName]['imageData'] = [{}]
-            #
             configData[datasetName]['imageData'][0]['name'] = headerList[0][1]['value']
             configData[datasetName]['imageData'][0]['fullname'] = 'Area'
             if 'labelName' in originalData and originalData['labelName'] != '':
@@ -408,6 +408,24 @@ def save_config():
             configJson.truncate()
             data_model.load_datasource(datasetName, reload=True)
             resp = jsonify(success=True)
+
+            # Save spatial correlation
+            # print('Adding results from spatial correlation')
+            # file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
+            # csv_path = str(Path(file_path) / csvName)
+            # data = pd.read_csv(csv_path)
+            # x_coordinate = configData[datasetName]['featureData'][0]['xCoordinate']
+            # y_coordinate = configData[datasetName]['featureData'][0]['yCoordinate']
+            # index = configData[datasetName]['featureData'][0]['idField']
+            # channels = [d['fullname'] for d in configData[datasetName]['imageData']][1:]
+            # new_data = data_model.spatial_corr(adata=data, x_coordinate=x_coordinate, y_coordinate=y_coordinate,
+            #                         index=index, channels=channels)
+            # for name, values in new_data.iteritems():
+            #     new_column = name + '_spat_corr'
+            #     data[new_column] = values
+            # data.to_csv(csv_path)
+            # print('Saved new spat_corr column results to csv')
+
             return resp
 
     except Exception as e:

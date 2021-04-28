@@ -108,6 +108,16 @@ def get_neighborhood():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_neighborhood_for_spat_corr', methods=['GET'])
+def get_neighborhood_for_spat_corr():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    resp = data_model.get_neighborhood_for_spat_corr(x, y, datasource, r=max_distance)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_num_cells_in_circle', methods=['GET'])
 def get_num_cells_in_circle():
     datasource = request.args.get('datasource')
@@ -295,6 +305,10 @@ def generate_png(datasource, channel, level, tile):
     file_object.seek(0)
     return send_file(file_object, mimetype='image/PNG')
 
+@app.route('/start_spatial_correlation')
+def start_spatial_correlation():
+    data_model.spatial_corr([])
+    return 'hi'
 
 def serialize_and_submit_json(data):
     response = app.response_class(
