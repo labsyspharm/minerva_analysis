@@ -9,11 +9,14 @@ from ome_types import from_xml
 from cycif_viewer import config_json_path, data_path
 from cycif_viewer.server.utils import pyramid_assemble
 from cycif_viewer.server.models import database_model
+import dateutil.parser
 import time
 import pickle
 import tifffile as tf
 import re
 import zarr
+from dask import dataframe as dd
+import cv2
 
 ball_tree = None
 database = None
@@ -41,22 +44,26 @@ def load_datasource(datasource_name, reload=False):
     if reload:
         load_ball_tree(datasource_name, reload=reload)
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
+    print("Loading csv data.. (this can take some time)")
     datasource = pd.read_csv(csvPath)
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
     source = datasource_name
+    print("Loading segmentation.")
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
     else:
         seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+    print("Loading image descriptions.")
     try:
         xml = channel_io.pages[0].tags['ImageDescription'].value
         metadata = from_xml(xml).images[0].pixels
     except:
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
+    print("Data loading done.")
 
 
 def load_config(datasource_name):
@@ -102,8 +109,9 @@ def load_ball_tree(datasource_name_name, reload=False):
     if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
+        print("Pickled KD Tree Loaded.")
     else:
-        print("Creating KD Tree")
+        print("Creating KD Tree.")
         xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
         yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
         csvPath = Path(config[datasource_name_name]['featureData'][0]['src'])
@@ -111,6 +119,7 @@ def load_ball_tree(datasource_name_name, reload=False):
         points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
         ball_tree = BallTree(points, metric='euclidean')
         pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
+        print('Creating KD Tree done.')
 
 
 def query_for_closest_cell(x, y, datasource_name):
@@ -127,8 +136,8 @@ def query_for_closest_cell(x, y, datasource_name):
         try:
             row = datasource.iloc[index[0]]
             obj = row.to_dict(orient='records')[0]
-            if 'phenotype' not in obj:
-                obj['phenotype'] = ''
+            if 'celltype' not in obj:
+                obj['celltype'] = ''
             return obj
         except:
             return {}
@@ -178,16 +187,62 @@ def get_channel_cells(datasource_name, channels):
     return query
 
 
+def get_phenotype_description(datasource):
+    try:
+        data = ''
+        csvPath = config[datasource]['featureData'][0]['celltypeData']
+        if os.path.isfile(csvPath):
+            data = pd.read_csv(csvPath)
+            data = data.to_numpy().tolist()
+            # data = data.to_json(orient='records', lines=True)
+        return data;
+    except KeyError:
+        return ''
+    except TypeError:
+        return ''
+
+
+def get_phenotype_column_name(datasource):
+    try:
+        return config[datasource]['featureData'][0]['celltype']
+    except KeyError:
+        return ''
+    except TypeError:
+        return ''
+
+
+def get_cells_phenotype(datasource_name):
+    global datasource
+    global source
+    global ball_tree
+
+    range = [0, 65536]
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+
+    try:
+        phenotype_field = config[datasource_name]['featureData'][0]['celltype']
+    except KeyError:
+        phenotype_field = 'celltype'
+    except TypeError:
+        phenotype_field = 'celltype'
+
+    query = datasource[['id', phenotype_field]].to_dict(orient='records')
+    return query
+
+
 def get_phenotypes(datasource_name):
     global datasource
     global source
     global config
     try:
-        phenotype_field = config[datasource_name]['featureData'][0]['phenotype']
+        phenotype_field = config[datasource_name]['featureData'][0]['celltype']
     except KeyError:
-        phenotype_field = 'phenotype'
+        phenotype_field = 'celltype'
     except TypeError:
-        phenotype_field = 'phenotype'
+        phenotype_field = 'celltype'
 
     if datasource_name != source:
         load_ball_tree(datasource_name)
@@ -232,7 +287,7 @@ def get_number_of_cells_in_circle(x, y, datasource_name, r):
         return 0
 
 
-def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
+def get_color_scheme(datasource_name, refresh, label_field='celltype'):
     color_scheme_path = str(
         Path(os.path.join(os.getcwd())) / data_path / datasource_name / str(
             label_field + "_color_scheme.pickle"))
@@ -241,11 +296,12 @@ def get_color_scheme(datasource_name, refresh, label_field='phenotype'):
             print("Color Scheme Exists, Loading")
             color_scheme = pickle.load(open(color_scheme_path, "rb"))
             return color_scheme
-    if label_field == 'phenotype':
+    if label_field == 'celltype':
         labels = get_phenotypes(datasource_name)
+        print(labels)
     labels.append('SelectedCluster')
     color_scheme = {}
-    colors = ["#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059", "#FFDBE5", "#7A4900",
+    colors = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628", "#f781bf", "#808080", "#7A4900",
               "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87", "#5A0007", "#809693", "#FEFFE6",
               "#1B4400", "#4FC601", "#3B5DFF", "#4A3B53", "#FF2F80", "#61615A", "#BA0900", "#6B7900", "#00C2A0",
               "#FFAA92", "#FF90C9", "#B903AA", "#D16100", "#DDEFFF", "#000035", "#7B4F4B", "#A1C299", "#300018",
@@ -302,8 +358,8 @@ def get_rect_cells(datasource_name, rect, channels):
         for neighbor in neighbors:
             row = datasource.iloc[[neighbor]]
             obj = row.to_dict(orient='records')[0]
-            if 'phenotype' not in obj:
-                obj['phenotype'] = ''
+            if 'celltype' not in obj:
+                obj['celltype'] = ''
             neighborhood.append(obj)
         return neighborhood
     except:
