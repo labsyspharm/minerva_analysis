@@ -448,8 +448,8 @@ def download_gating_csv(datasource_name, gates, channels):
     csv[idField] = datasource['id']
     for channel in channels:
         if channel in gates:
-            csv.loc[csv[idField].isin(ids), key] = 1
-            csv.loc[~csv[idField].isin(ids), key] = 0
+            csv.loc[csv[idField].isin(ids), channel] = 1
+            csv.loc[~csv[idField].isin(ids), channel] = 0
         else:
             csv[channel] = 0
 
