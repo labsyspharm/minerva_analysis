@@ -290,12 +290,12 @@ class ParallelCoordinates {
         if (self.full_neighborhoods && !self.editMode) {
             self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
             let opacity = 0.01;
-            if (_.size(self.full_neighborhoods) < 5000) {
+            if (_.size(self.full_neighborhoods) < 10000) {
                 opacity = -0.0000180036 * _.size(self.full_neighborhoods) + 0.100018
             } else {
                 opacity = 0.01;
             }
-            _.forEach(_.sampleSize(self.full_neighborhoods, 5000), row => {
+            _.forEach(_.sampleSize(self.full_neighborhoods, 10000), row => {
                 const sum = _.sum(row);
                 const color = `hsla(0,0%,50%,${opacity})`;
                 self.canvas.getContext('2d').strokeStyle = color;
