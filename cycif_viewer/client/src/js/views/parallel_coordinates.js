@@ -21,8 +21,13 @@ class ParallelCoordinates {
         const self = this;
         this.totalWidth = this.parent.node().getBoundingClientRect().width;
         this.totalHeight = this.parent.node().getBoundingClientRect().height;
-        this.margin = {top: 20, right: 10, bottom: 100, left: 10},
-            this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
+        if (this.small) {
+            this.margin = {top: 20, right: 10, bottom: 100, left: 25};
+
+        } else {
+            this.margin = {top: 20, right: 10, bottom: 100, left: 10};
+        }
+        this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
 
         this.svg = this.parent.append("svg")
@@ -291,7 +296,7 @@ class ParallelCoordinates {
             self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
             let opacity = 0.01;
             if (_.size(self.full_neighborhoods) < 10000) {
-                opacity = -0.0000180036 * _.size(self.full_neighborhoods) + 0.100018
+                opacity = -0.00001800 * _.size(self.full_neighborhoods) + 0.100018
             } else {
                 opacity = 0.01;
             }
