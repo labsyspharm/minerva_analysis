@@ -31,6 +31,8 @@ class DataLayer {
             this.phenotypeColumnName = await this.getPhenotypeColumnName();
             this.phenotypeDescription = await this.getPhenotypeDescription();
             document.body.style.cursor = 'default';
+            // fetch('/start_spatial_correlation').then(() => {
+            // }).catch(err => console.log(err))
 
         } catch (e) {
             console.log("Error Initializing Dataset", e);

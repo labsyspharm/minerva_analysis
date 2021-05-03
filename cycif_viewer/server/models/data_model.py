@@ -536,7 +536,7 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
     dist, ind = tree.query(data, k=k, return_distance=True)
     neighbours = pd.DataFrame(ind, index=bdata[index])
     # find the mean dist
-    rad_approx = np.mean(dist, axis=0)
+    rad_approx = np.mean(dist.T, axis=0)
     # Calculate the correlation
     mean = np.mean(exp).values
     std = np.std(exp).values
@@ -551,7 +551,8 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
             neigh[i] = neigh[i].dropna().map(ind_values, na_action='ignore')
         # multiply the matrices
         Y = neigh.T * A[marker]
-        corrfunc = np.mean(Y, axis=1)
+        # corrfunc = np.mean(Y, axis=1)
+        corrfunc = np.mean(Y.T, axis=1)
         # return
         return corrfunc
     # apply function to all markers    # Create lamda function
@@ -559,7 +560,6 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
     all_data = list(map(r_corrfunc, exp.columns)) # Apply function
     # Merge all the results into a single dataframe
     df = pd.concat(all_data, axis=1)
-    print(all_data)
     df.columns = exp.columns
     df['distance'] = rad_approx
     # add it to anndata object

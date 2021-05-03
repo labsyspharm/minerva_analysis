@@ -45,8 +45,8 @@ export class LfNearestCellsSel {
         this.imageViewer = _imageViewer;
 
         // From global vars
-        this.data_layer = dataLayer;
-        this.channel_list = channelList;
+        this.dataLayer = dataLayer;
+        this.channelList = channelList;
 
         // Init
         this.init()
@@ -106,7 +106,7 @@ export class LfNearestCellsSel {
 
                             // Load
                             this.load.config.filterCode.settings.loading = true;
-                            this.data_layer.getNeighborhood(newRad, pos[0], pos[1]).then(darr => {
+                            this.dataLayer.getNeighborhood(newRad, pos[0], pos[1]).then(darr => {
 
                                 // Loaded
                                 this.load.config.filterCode.settings.loading = false;
@@ -237,7 +237,7 @@ export class LfNearestCellsSel {
                         wrangle: () => {
 
                             // Set image channels (whitelist)
-                            this.vars.channelSelections = this.channel_list.selections;
+                            this.vars.channelSelections = this.channelList.selections;
 
                             // Set area term
                             if (this.vars.areaTerm === '') {
@@ -252,7 +252,7 @@ export class LfNearestCellsSel {
                             if (this.data.length > 0) {
                                 for (let k in this.data[0].data) {
 
-                                    const short = this.data_layer.getShortChannelName(k);
+                                    const short = this.dataLayer.getShortChannelName(k);
 
                                     // Add channels
                                     if (this.data[0].data.hasOwnProperty(k) &&
@@ -395,7 +395,7 @@ export class LfNearestCellsSel {
                                 labelG.select('circle')
                                     .attr('fill', Utils.getChannelColor(bins.short,
                                         vis.vars.cellIntensityRange[1],
-                                        vis.imageViewer, vis.channel_list))
+                                        vis.imageViewer, vis.channelList))
                                     .attr('stroke', () => {
                                         if (vis.vars.channelSelections.includes(bins.short)) {
                                             return 'rgba(255, 255, 255, 1)';

@@ -10,18 +10,30 @@ export class LfSpatialCorrelation {
     load = [];
     vars = {
         cellIntensityRange: [0, 65536],
+        channelSelection: [],
+        config_axisPad: 5,
         config_boxW: 300,
-        config_boxH: 100,
+        config_boxH: 300,
+        config_bubbleR: 3,
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
-        config_chartsMargin: {top: 10, right: 30, bottom: 10, left: 30},
+        config_chartsMargin: {top: 50, right: 50, bottom: 50, left: 50},
         config_fontSm: 9,
         config_fontMd: 11,
+        el_axisX: null,
+        el_axisY: null,
         el_boxExtG: null,
         el_cellsG: null,
         el_chartsG: null,
         el_radialExtG: null,
         el_textReportG: null,
         forceUpdate: false,
+        tool_axisX: d3.axisBottom(),
+        tool_axisY: d3.axisLeft(),
+        tool_rCellScale: d3.scalePow()
+            .exponent(0.5)
+            .range([0.5, 10]),
+        tool_scX: d3.scaleLinear(),
+        tool_scY: d3.scaleLinear()
     };
 
     /**
@@ -31,7 +43,8 @@ export class LfSpatialCorrelation {
         this.imageViewer = _imageViewer;
 
         // From global vars
-        this.data_layer = dataLayer;
+        this.dataLayer = dataLayer;
+        this.channelList = channelList;
 
         // Init
         this.init()
@@ -91,7 +104,7 @@ export class LfSpatialCorrelation {
 
                             // Load
                             this.load.config.filterCode.settings.loading = true;
-                            this.data_layer.getNeighborhoodForSpatialCorrelation(newRad, pos[0], pos[1]).then(darr => {
+                            this.dataLayer.getNeighborhoodForSpatialCorrelation(newRad, pos[0], pos[1]).then(darr => {
 
                                 // Loaded
                                 this.load.config.filterCode.settings.loading = false;
@@ -131,7 +144,8 @@ export class LfSpatialCorrelation {
                                     if (distance <= lensing.configs.rad / lensing.configs.pxRatio) {
                                         this.data.push({
                                             data: d,
-                                            offset: offset
+                                            offset: offset,
+                                            distance: distance
                                         });
                                     }
                                 });
@@ -199,6 +213,12 @@ export class LfSpatialCorrelation {
                                 .attr('class', 'viewfinder_charts_g')
                                 .style('transform', `translate(${this.vars.config_chartsMargin.left}px, 
                                     ${this.vars.config_chartsMargin.top}px)`);
+                            this.vars.el_axisX = this.vars.el_chartsG.append('g');
+                            this.vars.el_axisY = this.vars.el_chartsG.append('g');
+
+                            // Scales
+                            this.vars.tool_rCellScale.domain([this.imageViewer.viewer.viewport.getMinZoom(),
+                                this.imageViewer.viewer.viewport.getMaxZoom()]);
 
 
                         },
@@ -206,7 +226,25 @@ export class LfSpatialCorrelation {
 
                             // Define this
                             const vis = this;
-                            console.log(this.data)
+
+                            // Set image channels (whitelist)
+                            this.vars.channelSelection =
+                                this.dataLayer.getFullChannelName(this.channelList.selections[0]) + '_spat_corr';
+
+
+                            // Get x and y vals
+                            const dist = this.data.map(d => d.distance);
+                            const vals = this.data.map(d => d.data[this.vars.channelSelection])
+
+                            // Update scales
+                            this.vars.tool_scX.domain([0, d3.max(dist, d => d)])
+                                .range([0, this.vars.config_boxW - (this.vars.config_chartsMargin.right
+                                    + this.vars.config_chartsMargin.left)]);
+                            this.vars.tool_scY.domain([1, -1])
+                                .range([0, this.vars.config_boxH - (this.vars.config_chartsMargin.top
+                                    + this.vars.config_chartsMargin.bottom)]);
+                            this.vars.tool_axisX.scale(this.vars.tool_scX).ticks(3);
+                            this.vars.tool_axisY.scale(this.vars.tool_scY).tickValues([-1, 0, 1]);
 
 
                         },
@@ -215,9 +253,82 @@ export class LfSpatialCorrelation {
                             // Define this
                             const vis = this;
                             const vf = this.imageViewer.viewer.lensing.viewfinder;
+
                             // Update vf box size
                             vf.els.blackboardRect.attr('height', this.vars.config_boxH);
                             vf.configs.boxH = this.vars.config_boxH;
+
+                            // Get zoom
+                            const zoom = vis.imageViewer.viewer.viewport.getZoom();
+                            const cellR = vis.vars.tool_rCellScale(zoom);
+
+                            // Append cell center circles
+                            this.vars.el_cellsG.selectAll('.cell')
+                                .data(this.data)
+                                .join(
+                                    enter => enter.append('g')
+                                        .attr('class', 'cell')
+                                        .each(function (d) {
+                                            const g = d3.select(this)
+                                                .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                                            g.append('circle')
+                                                .attr('r', cellR)
+                                                .attr('fill', 'none')
+                                                .attr('stroke', 'rgba(0, 0, 0, 0.5)')
+                                                .attr('stroke-width', 2);
+                                            g.append('circle')
+                                                .attr('r', cellR)
+                                                .attr('fill', 'none')
+                                                .attr('stroke', 'white')
+                                                .attr('stroke-width', 1);
+                                        }),
+                                    update => update
+                                        .each(function (d) {
+                                            const g = d3.select(this)
+                                                .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                                            g.selectAll('circle')
+                                                .attr('r', cellR)
+                                        }),
+                                    exit => exit.remove()
+                                );
+
+                            // Add dots
+                            vis.vars.el_chartsG.selectAll('.bubble')
+                                .data(vis.data)
+                                .join(
+                                    enter => enter
+                                        .append('circle')
+                                        .attr('class', 'bubble')
+                                        .attr('r', vis.vars.config_bubbleR)
+                                        .attr('fill', 'white')
+                                        .attr('r', vis.vars.config_bubbleR)
+                                        .attr('cx', d => vis.vars.tool_scX(d.distance))
+                                        .attr('cy', d => vis.vars.tool_scY(d.data[this.vars.channelSelection])),
+                                    update => update
+                                        .attr('cx', d => vis.vars.tool_scX(d.distance))
+                                        .attr('cy', d => vis.vars.tool_scY(d.data[this.vars.channelSelection])),
+                                    exit => exit.remove()
+                                );
+
+                            // Axes
+                            vis.vars.el_axisX.style('transform',
+                                `translateY(${this.vars.config_boxH - (this.vars.config_chartsMargin.top
+                                    + this.vars.config_chartsMargin.bottom) + this.vars.config_axisPad}px)`);
+                            vis.vars.el_axisY.style('transform',`translateX(${-this.vars.config_axisPad}px)`);
+                            vis.vars.el_axisX.transition(250).call(vis.vars.tool_axisX);
+                            vis.vars.el_axisY.transition(250).call(vis.vars.tool_axisY);
+                            vis.vars.el_axisX.selectAll('text')
+                                .attr('fill', 'white');
+                            vis.vars.el_axisX.selectAll('line')
+                                .attr('stroke', 'white');
+                            vis.vars.el_axisX.selectAll('path')
+                                .attr('stroke', 'white');
+                            vis.vars.el_axisY.selectAll('text')
+                                .attr('fill', 'white');
+                            vis.vars.el_axisY.selectAll('line')
+                                .attr('stroke', 'white');
+                            vis.vars.el_axisY.selectAll('path')
+                                .attr('stroke', 'white');
 
                         },
                         destroy: () => {

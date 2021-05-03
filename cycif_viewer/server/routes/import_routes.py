@@ -452,21 +452,21 @@ def save_config():
             resp = jsonify(success=True)
 
             # Save spatial correlation
-            # print('Adding results from spatial correlation')
-            # file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-            # csv_path = str(Path(file_path) / csvName)
-            # data = pd.read_csv(csv_path)
-            # x_coordinate = configData[datasetName]['featureData'][0]['xCoordinate']
-            # y_coordinate = configData[datasetName]['featureData'][0]['yCoordinate']
-            # index = configData[datasetName]['featureData'][0]['idField']
-            # channels = [d['fullname'] for d in configData[datasetName]['imageData']][1:]
-            # new_data = data_model.spatial_corr(adata=data, x_coordinate=x_coordinate, y_coordinate=y_coordinate,
-            #                         index=index, channels=channels)
-            # for name, values in new_data.iteritems():
-            #     new_column = name + '_spat_corr'
-            #     data[new_column] = values
-            # data.to_csv(csv_path)
-            # print('Saved new spat_corr column results to csv')
+            print('Adding results from spatial correlation')
+            file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
+            csv_path = str(Path(file_path) / csvName)
+            data = pd.read_csv(csv_path)
+            x_coordinate = configData[datasetName]['featureData'][0]['xCoordinate']
+            y_coordinate = configData[datasetName]['featureData'][0]['yCoordinate']
+            index = configData[datasetName]['featureData'][0]['idField']
+            channels = [d['fullname'] for d in configData[datasetName]['imageData']][1:]
+            new_data = data_model.spatial_corr(adata=data, x_coordinate=x_coordinate, y_coordinate=y_coordinate,
+                                    index=index, channels=channels)
+            for name, values in new_data.iteritems():
+                new_column = name + '_spat_corr'
+                data[new_column] = values
+            data.to_csv(csv_path)
+            print('Saved new spat_corr column results to csv')
 
             return resp
 
