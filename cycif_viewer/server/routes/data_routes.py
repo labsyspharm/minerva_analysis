@@ -162,8 +162,9 @@ def download_gating_csv():
     filter = json.loads(request.form['filter'])
     channels = json.loads(request.form['channels'])
     fullCsv = json.loads(request.form['fullCsv'])
+    encoding = request.form['encoding']
     if fullCsv:
-        csv = data_model.download_gating_csv(datasource, filter, channels)
+        csv = data_model.download_gating_csv(datasource, filter, channels, encoding)
         return Response(
             csv.to_csv(index=False),
             mimetype="text/csv",

@@ -80,6 +80,13 @@ class DataLayer {
         fullCsvElemment.name = "fullCsv";
         form.appendChild(fullCsvElemment);
 
+        let encoding = document.getElementById('encoding').value;
+        let encodingElement = document.createElement("input");
+        encodingElement.type = "hidden";
+        encodingElement.value = _.toString(encoding);
+        encodingElement.name = "encoding";
+        form.appendChild(encodingElement);
+
         let selectionsElement = document.createElement("input");
         selectionsElement.type = "hidden";
         selectionsElement.value = JSON.stringify(selections);

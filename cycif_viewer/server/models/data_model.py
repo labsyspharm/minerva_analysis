@@ -420,7 +420,7 @@ def get_gated_cells_custom(datasource_name, gates, start_keys):
 
 
 
-def download_gating_csv(datasource_name, gates, channels):
+def download_gating_csv(datasource_name, gates, channels, encoding):
     global datasource
     global source
     global ball_tree
@@ -448,7 +448,8 @@ def download_gating_csv(datasource_name, gates, channels):
     csv[idField] = datasource['id']
     for channel in channels:
         if channel in gates:
-            csv.loc[csv[idField].isin(ids), channel] = 1
+            if encoding == 'binary':
+                csv.loc[csv[idField].isin(ids), channel] = 1
             csv.loc[~csv[idField].isin(ids), channel] = 0
         else:
             csv[channel] = 0
