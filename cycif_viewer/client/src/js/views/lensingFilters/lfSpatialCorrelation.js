@@ -231,7 +231,6 @@ export class LfSpatialCorrelation {
                             this.vars.channelSelection =
                                 this.dataLayer.getFullChannelName(this.channelList.selections[0]) + '_spat_corr';
 
-
                             // Get x and y vals
                             const dist = this.data.map(d => d.distance);
                             const vals = this.data.map(d => d.data[this.vars.channelSelection])
