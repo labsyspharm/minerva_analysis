@@ -36,6 +36,8 @@ class ImageViewer {
 
         // Currently loaded image / label channels
         this.currentChannels = {};
+        this.colorConnector = {};
+        this.rangeConnector = {};
         this.labelChannel = {};
         this.noLabel = false;
         this.sel_outlines = true;
@@ -471,7 +473,9 @@ class ImageViewer {
         let range = self.dataLayer.getImageBitRange();
         const channelIdx = imageChannels[name];
         if (self.currentChannels[channelIdx]) {
-            self.currentChannels[channelIdx]['range'] = [tfmin / range[1], tfmax / range[1]];
+            let channelRange = [tfmin / range[1], tfmax / range[1]];
+            self.currentChannels[channelIdx]['range'] = channelRange;
+            self.rangeConnector[channelIdx] = channelRange;
         }
         this.forceRepaint();
     }
@@ -489,6 +493,7 @@ class ImageViewer {
         const self = this;
         const channelIdx = imageChannels[name];
         if (self.currentChannels[channelIdx]) {
+            self.colorConnector[channelIdx] = {color: color};
             self.currentChannels[channelIdx]['color'] = color;
             // self.channelTF[channelIdx].end_color = color;
         }

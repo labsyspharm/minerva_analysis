@@ -4,6 +4,8 @@ import "regenerator-runtime/runtime.js";
  * @class ViewerManager
  */
 export class ViewerManager {
+    colorConnector = {};
+    rangeConnector = {};
 
     show_sel = true;
     sel_outlines = true;
@@ -91,8 +93,8 @@ export class ViewerManager {
                 this.imageViewer.currentChannels[srcIdx] = {
                     "url": url,
                     "sub_url": sub_url,
-                    "color": d3.color("white"),
-                    "range": dataLayer.getImageBitRange(true)
+                    "color": this.imageViewer.colorConnector[srcIdx] ? this.imageViewer.colorConnector[srcIdx].color : d3.color("white"),
+                    "range": this.imageViewer.rangeConnector[srcIdx] || dataLayer.getImageBitRange(true)
                 };
                 this.viewer_channels[srcIdx] = {"url": url, "sub_url": sub_url, 'name': name, 'short_name': name_short};
             }
