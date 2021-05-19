@@ -296,9 +296,9 @@ class ParallelCoordinates {
             self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
             let opacity = 0.01;
             if (_.size(self.full_neighborhoods) < 10000) {
-                opacity = -0.00001800 * _.size(self.full_neighborhoods) + 0.100018
+                opacity = 0.05;
             } else {
-                opacity = 0.01;
+                opacity = 0.003;
             }
             _.forEach(_.sampleSize(self.full_neighborhoods, 10000), row => {
                 const sum = _.sum(row);

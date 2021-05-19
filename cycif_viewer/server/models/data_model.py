@@ -159,7 +159,11 @@ def get_all_neighborhood_stats(datasource_name):
         x_field = config[datasource_name]['featureData'][0]['xCoordinate']
         y_field = config[datasource_name]['featureData'][0]['yCoordinate']
         stats['cells'] = np.array([[elem[x_field], elem[y_field], elem['id']] for elem in stats['cells']])
-        stats['cells'][:, 0:2] = scaler.transform(stats['cells'][:, 0:2])
+
+        stats['cells'][:, 0:1] = MinMaxScaler(feature_range=(-1, 1)).fit(
+            [[0], [config[datasource_name]['width']]]).transform(stats['cells'][:, 0:1])
+        stats['cells'][:, 1:2] = MinMaxScaler(feature_range=(-1, 1)).fit(
+            [[0], [config[datasource_name]['height']]]).transform(stats['cells'][:, 1:2])
         return stats
 
     neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)

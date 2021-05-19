@@ -84,7 +84,7 @@ function switchSmallMultipleType(elem, parent) {
             initSmallMultipleParallelCoordinates();
         }
     }
-    //else if (elem.id == "barchart-button") {
+        //else if (elem.id == "barchart-button") {
         //         if (selectAndUnselect(elem, parent)) {
         //             currentState = 'barchart';
         //             removeAllPlots();
@@ -203,6 +203,7 @@ function createGrid() {
 }
 
 function initSmallMultipleParallelCoordinates() {
+    document.getElementById('phenotype_list_div').style.display = "block";
     plots = _.map(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`);
         let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
@@ -238,6 +239,7 @@ function initSmallMultipleBarcharts() {
 }
 
 function initSmallMultipleScatterplots() {
+    document.getElementById('phenotype_list_div').style.display = "none";
     plots = _.map(neighborhoods, (d, i) => {
         let div = document.getElementById(`compare_col_${i}`)
         let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];

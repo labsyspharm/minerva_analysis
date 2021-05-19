@@ -431,6 +431,7 @@ class ImageViewer {
                         let labelValue = val - 1;
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype');
                         let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        // let color = [255, 255, 255]
                         let index = i * 4;
                         const grid = [
                             index - 4,
