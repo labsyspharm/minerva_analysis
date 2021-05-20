@@ -9,9 +9,12 @@ jobs:
         with:
           python-version: 3.7
           environment-file: requirements.yml
-
-      - name: Run a multi-line script
+      - name: Init Bash
+        run: |
+          conda init bash
+      - name: Activate Environment
         run: |
           conda activate test
-          conda init bash
-          sh package_mac.sh
+      - name: Package Mac
+        run: |
+           package_mac.sh
