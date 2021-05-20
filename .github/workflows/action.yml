@@ -12,5 +12,5 @@ jobs:
 
       - name: Run a multi-line script
         run: |
-          echo $CONDA_PREFIX
+          conda activate test
           sh package_mac.sh
