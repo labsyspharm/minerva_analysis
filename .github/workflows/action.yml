@@ -1,5 +1,5 @@
 name: Install Mac
-on: workflow_dispatch
+on: push
 jobs:
   build:
     runs-on: macos-latest
@@ -20,6 +20,7 @@ jobs:
            zip dist.zip dist/cycif_viewer
       - name: Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: dist.zip
         env:
