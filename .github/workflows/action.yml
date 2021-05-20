@@ -12,4 +12,5 @@ jobs:
 
       - name: Run a multi-line script
         run: |
-          sh ./scripts/moveFile.sh
+          echo $CONDA_PREFIX
+          sh package_mac.sh
