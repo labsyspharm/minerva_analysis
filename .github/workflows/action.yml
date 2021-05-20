@@ -13,4 +13,4 @@ jobs:
       - name: Package Mac
         shell: bash -l {0}
         run: |
-           package_mac.sh
+           ./package_mac.sh
