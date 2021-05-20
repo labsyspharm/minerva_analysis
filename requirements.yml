@@ -1,4 +1,4 @@
-name: cycif_viewer
+name: viewer
 channels:
   - conda-forge
 dependencies:

@@ -9,12 +9,8 @@ jobs:
         with:
           python-version: 3.7
           environment-file: requirements.yml
-      - name: Init Bash
-        run: |
-          conda init bash
-      - name: Activate Environment
-        run: |
-          conda activate test
+          activate-environment: viewer
       - name: Package Mac
+        shell: bash -l {0}
         run: |
            package_mac.sh
