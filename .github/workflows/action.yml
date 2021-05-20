@@ -13,4 +13,5 @@ jobs:
       - name: Run a multi-line script
         run: |
           conda activate test
+          conda init bash
           sh package_mac.sh
