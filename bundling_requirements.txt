@@ -5,8 +5,8 @@ orjson
 pandas
 pillow==8.0.0
 requests
-scikit-learn==0.20.2
-scikit-image==0.14.2
+scikit-learn
+scikit-image
 scipy
 tifffile==2020.10.1
 waitress
