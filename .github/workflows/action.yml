@@ -9,12 +9,7 @@ jobs:
         with:
           python-version: 3.7
           environment-file: requirements.yml
-      - name: Moving build to artifacts directory
+
+      - name: Run a multi-line script
         run: |
-        sh ./scripts/moveFile.sh
-# steps:
-# - uses: actions/checkout@v2
-# - uses: actions/setup-python@v2
-#   with:
-#     python-version: '3.7' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-# - run: python my_script.py
+          sh ./scripts/moveFile.sh
