@@ -14,3 +14,13 @@ jobs:
         shell: bash -l {0}
         run: |
            ./package_mac.sh
+      - name: Zip
+        shell: bash -l {0}
+        run: |
+           zip dist.zip dist/cycif_viewer
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
