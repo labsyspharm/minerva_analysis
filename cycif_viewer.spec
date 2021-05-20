@@ -4,9 +4,9 @@ block_cipher = None
 
 
 a = Analysis(['run.py'],
-             pathex=['/opt/miniconda3/envs/cycif_viewer', '/Users/Simon/Research/Useful Repos/cycif_viewer'],
+             pathex=['/opt/miniconda3/envs/viewer', '/Users/Simon/Research/cycif_viewer'],
              binaries=[],
-             datas=[('cycif_viewer/client', 'cycif_viewer/client'), ('cycif_viewer/__init__.py', 'cycif_viewer/'), ('cycif_viewer/server', 'cycif_viewer/server'), ('/opt/miniconda3/envs/cycif_viewer/lib/python3.7/site-packages/xmlschema/schemas', 'xmlschema/schemas')],
+             datas=[('cycif_viewer/client', 'cycif_viewer/client'), ('cycif_viewer/__init__.py', 'cycif_viewer/'), ('cycif_viewer/server', 'cycif_viewer/server'), ('/opt/miniconda3/envs/viewer/lib/python3.7/site-packages/xmlschema/schemas', 'xmlschema/schemas')],
              hiddenimports=['scipy.spatial.transform._rotation_groups', 'cmath'],
              hookspath=[],
              runtime_hooks=[],
