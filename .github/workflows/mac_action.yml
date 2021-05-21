@@ -1,8 +1,5 @@
 name: Install Mac
-on:
-  push:
-    tags:
-      - '*'
+on: workflow_dispatch
 jobs:
   build:
     runs-on: macos-11
