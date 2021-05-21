@@ -24,8 +24,3 @@ jobs:
           files: dist/cycif_viewer.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-
-
-
