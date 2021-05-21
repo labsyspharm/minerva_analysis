@@ -11,6 +11,6 @@ jobs:
           environment-file: requirements.yml
           activate-environment: viewer
       - name: Package Windows
-        shell: cmd
+        shell: cmd /C CALL {0}
         run: |
           package_win.bat
