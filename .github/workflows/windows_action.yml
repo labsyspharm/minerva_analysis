@@ -10,3 +10,7 @@ jobs:
           python-version: 3.7
           environment-file: requirements.yml
           activate-environment: viewer
+      - name: Package Windows
+        shell: powershell
+        run: |
+          package_win.bat
