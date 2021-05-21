@@ -1,5 +1,8 @@
 name: Install Mac
-on: push
+on:
+  push:
+    tags:
+      - '*'
 jobs:
   build:
     runs-on: macos-latest
