@@ -1,0 +1,12 @@
+name: Install Windows
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.7
+          environment-file: requirements.yml
+          activate-environment: viewer
