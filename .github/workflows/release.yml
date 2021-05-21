@@ -21,7 +21,7 @@ jobs:
           cd cycif_viewer
           cd client
           npm install
-          npm run starts
+          npm run start
           cd ..
           cd ..
       - uses: conda-incubator/setup-miniconda@v2
