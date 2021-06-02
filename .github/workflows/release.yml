@@ -20,7 +20,7 @@ jobs:
         run: |
           cd cycif_viewer
           cd client
-          npm install
+          npm ci
           npm run start
           cd ..
           cd ..
