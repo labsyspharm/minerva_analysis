@@ -1,4 +1,4 @@
-name: cycif_viewer
+name: viewer
 channels:
   - conda-forge
 dependencies:
@@ -8,12 +8,12 @@ dependencies:
   - numpy
   - orjson
   - pandas
-  - pillow=8.0.0
+  - pillow=8.1.1
   - requests
-  - scikit-learn=0.20.2
-  - scikit-image=0.14.2
+  - scikit-learn
+  - scikit-image
   - scipy
-  - tifffile=2020.10.1
+  - tifffile=2021.4.8
   - waitress
   - zarr
   - pyinstaller
