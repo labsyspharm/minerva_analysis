@@ -4,6 +4,7 @@ channels:
 dependencies:
   - Flask=1.1.2
   - flask-sqlalchemy
+  - nomkl
   - numpy
   - orjson
   - pandas
