@@ -339,22 +339,26 @@ def save_config():
         csvName = originalData['csvName']
         if 'celltypeData' in originalData:
             celltypeName = originalData['celltypeData']
+        idList = request.json['idField']
         headerList = request.json['headerList']
         normalizeCsv = request.json['normalizeCsv']
         if normalizeCsv:
             print("Normalizing CSV")
             skip_columns = []
+            if idList[2]['value'] != 'on':
+                skip_columns.append(idList[0]['value'])
             for i in range(int(len(headerList) / 3)):
                 column_name = headerList[i * 3]['value']
                 normalize_column = headerList[i * 3 + 2]['value']
                 if normalize_column != 'on':
                     skip_columns.append(column_name)
             name, ext = os.path.splitext(csvName)
-            normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
+            logCsvName = "{name}_log1p{ext}".format(name=name, ext=ext)
             file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
             csvPath = str(Path(file_path) / csvName)
-            normPath = str(Path(file_path) / normCsvName)
-            pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
+            logPath = str(Path(file_path) / logCsvName)
+            # pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
+            data_model.logTransform(csvPath, logPath, skip_columns=skip_columns)
             print("Finished Normalizing CSV")
         elif 'normalizeCsvName' in request.json:
             normCsvName = request.json['normalizeCsvName']

@@ -579,3 +579,25 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         pyramid_assemble.main(py_args=args)
 
         return {'segmentation': str(directory)}
+
+def logTransform(input_csvPath, output_csvPath, skip_columns=[]):
+    RAW_DATA = np.genfromtxt(input_csvPath, names=True, dtype=float, delimiter=',')
+    marker_list = RAW_DATA.dtype.names
+    log_data = RAW_DATA.view((np.float, len(marker_list)))
+
+    for marker_id in range(log_data.shape[1]):
+        if marker_list[marker_id] not in skip_columns:
+            log_data[:, marker_id] = np.log1p(log_data[:, marker_id])
+
+    with open(output_csvPath, 'w') as f:
+        for marker_id, marker_name in enumerate(marker_list):
+            f.write(marker_name)
+            if marker_id != (len(marker_list) - 1):
+                f.write(',')
+        f.write('\n')
+        for log_row in log_data:
+            for elem_id, norm_elem in enumerate(log_row):
+                f.write(str(norm_elem))
+                if elem_id != (log_row.shape[0] - 1):
+                    f.write(',')
+            f.write('\n')
