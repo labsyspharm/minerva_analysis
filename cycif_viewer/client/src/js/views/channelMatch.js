@@ -104,7 +104,7 @@ function channelMatch(data) {
                     <input type="text" readonly class="form-control-plaintext col-4" id="fullName${i}"  name="fullName${i}"value="${fullName}">
                     <label for="name${i}"   class="col-auto col-form-label">Display Name&nbsp;</label>
                     <span class="form-control shortname col-3" id="name${i}">${displayName}</span>
-                    <label for="normalize${i}"   class="col-form-label col-sm-auto normalize-label">Normalize&nbsp;</label>
+                    <label for="normalize${i}"   class="col-form-label col-sm-auto normalize-label">Log1p Transform&nbsp;</label>
                     <input type="checkbox" class="normalize-checkbox col-sm-auto" id="normalize${i}" name="normalize${i}">
                 </div>   
             </div>`
@@ -112,7 +112,8 @@ function channelMatch(data) {
     });
     $('.shortname').attr('contentEditable', true);
 // Taken from pre_normalization csv
-    let markers_notToNorm = ['Field_Row', 'Field_Col', 'CellID', 'X_position', 'Y_position', 'Percent_Touching', 'Number_Neighbors', 'Neighbor_1', 'Neighbor_2', 'Neighbor_3', 'Neighbor_4', 'Neighbor_5', 'Eccentricity', 'Solidity', 'Extent', 'EulerNumber', 'Perimeter', 'MajorAxisLength', 'MinorAxisLength', 'Orientation', 'X_position', 'Y_position']
+    //let markers_notToNorm = ['Field_Row', 'Field_Col', 'CellID', 'Area', 'X_centroid', 'Y_centroid', 'X_position', 'Y_position', 'Percent_Touching', 'Number_Neighbors', 'Neighbor_1', 'Neighbor_2', 'Neighbor_3', 'Neighbor_4', 'Neighbor_5', 'Eccentricity', 'Solidity', 'Extent', 'EulerNumber', 'Perimeter', 'column_centroid', 'row_centroid', 'MajorAxisLength', 'MinorAxisLength', 'Orientation', 'X_position', 'Y_position', 'phenotype']
+    let markers_notToNorm = headers.map(marker => marker['fullName']).filter(marker => !marker.includes(data['substring']));
     _.each(headers, (header, i) => {
         let fullName = _.get(header, 'fullName') || header;
         if (!_.includes(markers_notToNorm, fullName)) {
