@@ -580,8 +580,8 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
 
         return {'segmentation': str(directory)}
 
-def logTransform(input_csvPath, output_csvPath, skip_columns=[]):
-    RAW_DATA = np.genfromtxt(input_csvPath, names=True, dtype=float, delimiter=',')
+def logTransform(csvPath, skip_columns=[]):
+    RAW_DATA = np.genfromtxt(csvPath, names=True, dtype=float, delimiter=',')
     marker_list = RAW_DATA.dtype.names
     log_data = RAW_DATA.view((np.float, len(marker_list)))
 
@@ -589,7 +589,7 @@ def logTransform(input_csvPath, output_csvPath, skip_columns=[]):
         if marker_list[marker_id] not in skip_columns:
             log_data[:, marker_id] = np.log1p(log_data[:, marker_id])
 
-    with open(output_csvPath, 'w') as f:
+    with open(csvPath, 'w') as f:
         for marker_id, marker_name in enumerate(marker_list):
             f.write(marker_name)
             if marker_id != (len(marker_list) - 1):

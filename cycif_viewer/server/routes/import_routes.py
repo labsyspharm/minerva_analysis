@@ -353,12 +353,12 @@ def save_config():
                 if normalize_column != 'on':
                     skip_columns.append(column_name)
             name, ext = os.path.splitext(csvName)
-            logCsvName = "{name}_log1p{ext}".format(name=name, ext=ext)
+            normCsvName = "{name}_log1p{ext}".format(name=name, ext=ext)
             file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
             csvPath = str(Path(file_path) / csvName)
-            logPath = str(Path(file_path) / logCsvName)
+            normPath = str(Path(file_path) / normCsvName)
             # pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
-            data_model.logTransform(csvPath, logPath, skip_columns=skip_columns)
+            data_model.logTransform(csvPath, skip_columns=skip_columns)
             print("Finished Normalizing CSV")
         elif 'normalizeCsvName' in request.json:
             normCsvName = request.json['normalizeCsvName']
