@@ -65,6 +65,9 @@ def edit_config_with_config_name(config_name):
         if 'normalization' in config_data['featureData'][0]:
             data['normalization'] = config_data['featureData'][0]['normalization']
 
+        if 'transformData' in config_data['featureData'][0]:
+            data['transformData'] = config_data['featureData'][0]['transformData']
+
         if 'clusterData' in config_data:
             data['normCsvName'] = config_data['clusterData']
 
@@ -341,26 +344,30 @@ def save_config():
             celltypeName = originalData['celltypeData']
         idList = request.json['idField']
         headerList = request.json['headerList']
-        normalizeCsv = request.json['normalizeCsv']
-        if normalizeCsv:
-            print("Normalizing CSV")
-            skip_columns = []
-            if idList[2]['value'] != 'on':
-                skip_columns.append(idList[0]['value'])
-            for i in range(int(len(headerList) / 3)):
-                column_name = headerList[i * 3]['value']
-                normalize_column = headerList[i * 3 + 2]['value']
-                if normalize_column != 'on':
-                    skip_columns.append(column_name)
-            name, ext = os.path.splitext(csvName)
-            normCsvName = "{name}_log1p{ext}".format(name=name, ext=ext)
-            file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-            csvPath = str(Path(file_path) / csvName)
-            normPath = str(Path(file_path) / normCsvName)
-            # pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
-            data_model.logTransform(csvPath, skip_columns=skip_columns)
-            print("Finished Normalizing CSV")
-        elif 'normalizeCsvName' in request.json:
+        if 'transformData' in originalData:
+            transformData = originalData['transformData']
+        else:
+            transformData = request.json['transformData']
+            if transformData:
+                print("Transforming Data")
+                skip_columns = []
+                if idList[2]['value'] != 'on':
+                    skip_columns.append(idList[0]['value'])
+                for i in range(int(len(headerList) / 3)):
+                    column_name = headerList[i * 3]['value']
+                    normalize_column = headerList[i * 3 + 2]['value']
+                    if normalize_column != 'on':
+                        skip_columns.append(column_name)
+                file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
+                csvPath = str(Path(file_path) / csvName)
+                # pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
+                data_model.logTransform(csvPath, skip_columns=skip_columns)
+                print("Finished Transforming Data")
+        # elif 'normalizeCsvName' in request.json:
+        #     normCsvName = request.json['normalizeCsvName']
+        # else:
+        #     normCsvName = None
+        if 'normalizeCsvName' in request.json:
             normCsvName = request.json['normalizeCsvName']
         else:
             normCsvName = None
@@ -419,6 +426,9 @@ def save_config():
 
             if 'normalization' in originalData:
                 configData[datasetName]['featureData'][0]['normalization'] = originalData['normalization']
+
+            if transformData:
+                configData[datasetName]['featureData'][0]['transformData'] = transformData
 
             configData[datasetName]['featureData'][0][
                 'src'] = str(data_path / datasetName / csvName)

@@ -295,16 +295,16 @@ nav {
     border-bottom-left-radius: .25rem;
 }
 
-#normalize-row {
+#normalize-row, #transform-row {
     font-size: 14pt;
 }
 
-#normalize-csv {
+#normalize-csv, #transform-data {
     padding-left: 10rem;
     margin: 0.35rem 0.4rem;
 }
 
-.normalize-form {
+.normalize-form, .transform-form {
     padding-left: 0;
 }
 
@@ -312,13 +312,13 @@ label {
     display: inline-block;
 }
 
-.normalize-checkbox {
+.normalize-checkbox, .transform-checkout {
     height: 10px;
     width: 10px;
     margin: 0.15rem 0.4rem;
 }
 
-.normalize-label {
+.normalize-label, .transform-label {
     margin-left: 10px;
 }
 
