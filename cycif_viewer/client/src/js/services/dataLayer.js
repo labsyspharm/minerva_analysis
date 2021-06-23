@@ -224,4 +224,39 @@ class DataLayer {
         }
     }
 
+    async getScatterplotData() {
+        try {
+            let response = await fetch('/get_scatterplot_data?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let scatterplotData = await response.json();
+            return scatterplotData;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
+
+    async getCells(ids) {
+        try {
+            let response = await fetch('/get_cells', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        elem: {
+                            'ids': ids.points
+                        }
+                    })
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Cells", e);
+        }
+    }
+
 }

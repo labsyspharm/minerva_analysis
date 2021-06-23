@@ -186,6 +186,23 @@ def generate_png(datasource, channel, level, tile):
     return send_file(file_object, mimetype='image/PNG')
 
 
+@app.route('/get_scatterplot_data', methods=['GET'])
+def get_scatterplot_data():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_scatterplot_data(datasource)
+    return serialize_and_submit_json(resp)
+
+
+# Gets a row based on the index
+@app.route('/get_cells', methods=['POST'])
+def get_datasource_row():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    elem = post_data['elem']
+    resp = data_model.get_cells(elem, datasource)
+    return serialize_and_submit_json(resp)
+
+
 def serialize_and_submit_json(data):
     response = app.response_class(
         response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),
