@@ -496,8 +496,8 @@ def get_datasource_description(datasource_name):
     return description
 
 
-def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid',y_coordinate='Y_centroid',
-                  marker=None, k=500, label='spatial_corr', index='id', channels=[]):
+def spatial_corr(adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid', y_coordinate='Y_centroid',
+                 marker=None, k=500, label='spatial_corr', index='id', channels=[]):
     global datasource
     global source
     global ball_tree
@@ -539,7 +539,7 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
     # index = config[source]['featureData'][0]['idField']
     # channels = [d['fullname'] for d in config[source]['imageData']][1:]
 
-    #Start
+    # Start
     bdata = adata.copy()
     bdata_features = channels.copy()
     print('Input shape', bdata[bdata_features].shape)
@@ -570,10 +570,11 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
     mean = np.mean(exp).values
     std = np.std(exp).values
     A = (exp - mean) / std
-    def corrfunc (marker, A, neighbours, ind):
+
+    def corrfunc(marker, A, neighbours, ind):
         print('Processing ' + str(marker))
         # Map phenotype
-        ind_values = dict(zip(list(range(len(ind))), A[marker])) # Used for mapping
+        ind_values = dict(zip(list(range(len(ind))), A[marker]))  # Used for mapping
         # Loop through (all functionized methods were very slow)
         neigh = neighbours.copy()
         for i in neigh.columns:
@@ -584,9 +585,10 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
         corrfunc = np.mean(Y.T, axis=1)
         # return
         return corrfunc
+
     # apply function to all markers    # Create lamda function
     r_corrfunc = lambda x: corrfunc(marker=x, A=A, neighbours=neighbours, ind=ind)
-    all_data = list(map(r_corrfunc, exp.columns)) # Apply function
+    all_data = list(map(r_corrfunc, exp.columns))  # Apply function
     # Merge all the results into a single dataframe
     df = pd.concat(all_data, axis=1)
     df.columns = exp.columns
@@ -667,15 +669,19 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return channel_info
     else:
         channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
-        channels = zarr.open(channel_io.series[0].aszarr())
-        directory = Path(dataDirectory + "/" + filePath.name)
-        args = {}
-        args['in_paths'] = [Path(filePath)]
-        args['out_path'] = directory
-        args['is_mask'] = True
-        pyramid_assemble.main(py_args=args)
-
-        return {'segmentation': str(directory)}
+        seg_io = tf.TiffFile(str(filePath), is_ome=False)
+        seg_zar = zarr.open(seg_io.series[0].aszarr())
+        if isinstance(seg_zar, zarr.core.Array):
+            channels = zarr.open(channel_io.series[0].aszarr())
+            directory = Path(dataDirectory + "/" + filePath.name)
+            args = {}
+            args['in_paths'] = [Path(filePath)]
+            args['out_path'] = directory
+            args['is_mask'] = True
+            pyramid_assemble.main(py_args=args)
+            return {'segmentation': str(directory)}
+        else:
+            return {'segmentation': str(filePath)}
 
 
 def save_dot(datasource_name, dot):
