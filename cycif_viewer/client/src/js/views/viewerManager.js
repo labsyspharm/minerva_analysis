@@ -43,6 +43,7 @@ export class ViewerManager {
         // configure webgl
         this.configWebgl();
 
+
     }
 
     /**
@@ -222,23 +223,36 @@ export class ViewerManager {
         });
 
         seaGL.addHandler('tile-loaded', (callback, e) => {
+            try {
+                const group = e.tile.url.split("/");
+                let isLabel = group[group.length - 3] === that.imageViewer.labelChannel.sub_url;
 
-            const group = e.tile.url.split("/");
-            let isLabel = group[group.length - 3] === that.imageViewer.labelChannel.sub_url;
+                // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
+                if (isLabel) {
+                    e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
 
-            // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
-            if (isLabel) {
-                e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
+                    that.drawLabelTile(e.tile, e.image.width, e.image.height);
 
-                that.drawLabelTile(e.tile, e.image.width, e.image.height);
+                    // We're hence skipping that OpenseadragonGL callback since we only care about the vales
+                    return e.getCompletionCallback()();
+                } else {
 
-                // We're hence skipping that OpenseadragonGL callback since we only care about the vales
-                return e.getCompletionCallback()();
-            } else {
-
-                // This goes to OpenseadragonGL which does the necessary bit stuff.
+                    // This goes to OpenseadragonGL which does the necessary bit stuff.
+                    return callback(e);
+                }
+            } catch (error) {
+                console.log('Tile Caching Error: ', e)
+                that.viewer.tileCache.clearTile(e.tile);
+                that.forceRepaint();
                 return callback(e);
             }
+        });
+
+        seaGL.addHandler('tile-load-failed', (e) => {
+            console.log('Tile Caching Error: ', e)
+            that.viewer.tileCache.clearTile(e.tile);
+            that.forceRepaint();
+
         });
 
         // Initialize

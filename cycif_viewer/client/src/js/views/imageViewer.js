@@ -82,16 +82,37 @@ class ImageViewer {
             maxZoomPixelRatio: 15,
             loadTilesWithAjax: true,
             immediateRender: false,
-            maxImageCacheCount: 100,
+            maxImageCacheCount: 50,
             timeout: 90000,
             compositeOperation: 'lighter',
             preload: false,
             homeFillsViewer: true,
             visibilityRatio: 1.0
         };
+        viaWebGL.OpenSeadragon.TileCache.prototype.clearTile = function (tile) {
+            OpenSeadragon.console.assert(tile, '[TileCache.clearTilesFor] tile is required');
+            var tileRecord;
+            for (var i = 0; i < this._tilesLoaded.length; ++i) {
+                tileRecord = this._tilesLoaded[i];
+                if (tileRecord.tile === tile) {
+                    this._unloadTile(tileRecord);
+                    this._tilesLoaded.splice(i, 1);
+                    return;
+                }
+            }
+
+        };
 
         // Instantiate viewer with the ViaWebGL Version of OSD
         this.viewer = viaWebGL.OpenSeadragon(viewer_config);
+        // TODO: Giorgio wants this, but idk if it's worth adding now
+        // this.viewer.gestureSettingsMouse.clickToZoom = false;
+        this.viewer.addHandler('tile-load-failed', (e) => {
+            console.log('Tile Caching Error: ', e)
+            this.viewer.tileCache.clearTile(e.tile);
+            that.forceRepaint();
+        });
+
 
         /****************************************************************************************** OSD style changes */
 
