@@ -122,8 +122,8 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection(repaint = true) {
-    seaDragonViewer.csvGatingOverlay.evaluate();
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
+    seaDragonViewer.csvGatingOverlay.evaluate();
 }
 
 const gatingBrushEnd = async (packet) => {
