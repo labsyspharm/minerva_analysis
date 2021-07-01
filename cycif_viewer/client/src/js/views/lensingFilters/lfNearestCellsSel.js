@@ -328,7 +328,7 @@ export class LfNearestCellsSel {
 
                                             if (!(d.data[sd.fullname] >= sd.domain[0] && d.data[sd.fullname] <= sd.domain[1])) {
                                                 d.filterOut = true;
-                                                console.log(i, d.data[sd.fullname], sd.domain[0], sd.domain[1], d.filterOut)
+                                                // console.log(i, d.data[sd.fullname], sd.domain[0], sd.domain[1], d.filterOut)
                                             }
                                         });
 
@@ -478,30 +478,59 @@ export class LfNearestCellsSel {
                                     .join('rect');
                                 rects
                                     .on('mouseover', (e, d) => {
+
+                                        vis.imageViewer.viewer.gestureSettingsMouse.clickToZoom = false;
+
                                         let alreadySel = vis.vars.selectionDomains.find(sel => sel.name === ref)
                                         if (!alreadySel) {
                                             vis.vars.selectionDomains.push({
                                                 clicked: false,
                                                 name: ref,
                                                 fullname: vis.dataLayer.getFullChannelName(ref),
-                                                domain: [d.x0, d.x1]
+                                                domain: [d.x0, d.x1],
+                                                anchordomain: [d.x0, d.x1]
                                             });
                                         } else {
-                                            alreadySel.domain = d3.extent(alreadySel.domain.push(d.x0, d.x1));
+                                            alreadySel.domain = d3.extent(alreadySel.domain.concat([d.x0, d.x1]));
                                         }
                                         lensing.viewfinder.setup.wrangle()
                                         lensing.viewfinder.setup.render();
                                     })
                                     .on('mouseout', (e, d) => {
-                                        vis.vars.selectionDomains = vis.vars.selectionDomains.filter(
-                                            sd => sd.name !== ref && !sd.clicked);
+
+                                        vis.imageViewer.viewer.gestureSettingsMouse.clickToZoom = true;
+
+                                        let alreadySel = vis.vars.selectionDomains.find(sel => sel.name === ref)
+                                        if (alreadySel) {
+
+                                            if (!alreadySel.clicked) {
+                                                vis.vars.selectionDomains = vis.vars.selectionDomains.filter(
+                                                    sd => sd.name !== ref && !sd.clicked);
+                                            } else {
+                                                alreadySel.domain = alreadySel.anchordomain;
+                                            }
+                                        }
+
                                         lensing.viewfinder.setup.wrangle()
                                         lensing.viewfinder.setup.render();
                                     })
                                     .on('click', (e, d) => {
+
                                         let alreadySel = vis.vars.selectionDomains.find(sel => sel.name === ref)
-                                        if (!alreadySel) {
-                                            alreadySel.clicked = !alreadySel.clicked;
+                                        if (alreadySel) {
+
+                                            const d = alreadySel.domain;
+                                            const ad = alreadySel.anchordomain;
+
+                                            if (d[0] === ad[0] && d[1] === ad[1]) {
+
+                                                alreadySel.clicked = !alreadySel.clicked;
+                                            } else {
+
+                                                alreadySel.anchordomain = alreadySel.domain;
+
+                                            }
+
                                         }
                                     });
                                 rects
