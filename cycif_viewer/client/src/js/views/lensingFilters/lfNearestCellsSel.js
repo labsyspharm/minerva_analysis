@@ -28,6 +28,7 @@ export class LfNearestCellsSel {
         el_textReportG: null,
         histRange: [],
         tickCt: 25,
+        selectionDomains: [],
         tool_rCellScale: d3.scalePow()
             .exponent(0.5)
             .range([0.5, 10]),
@@ -193,7 +194,8 @@ export class LfNearestCellsSel {
                             this.vars.el_radialExtG = vf.els.radialG.append('g')
                                 .attr('class', 'viewfinder_radial_ext_g');
                             this.vars.el_boxExtG = vf.els.boxG.append('g')
-                                .attr('class', 'viewfinder_box_ext_g');
+                                .attr('class', 'viewfinder_box_ext_g')
+                                .style('pointer-events', 'all');
 
                             // Append cellsG
                             this.vars.el_cellsG = this.vars.el_radialExtG.append('g')
@@ -316,13 +318,34 @@ export class LfNearestCellsSel {
                                     d.scaleY.domain([0, max]);
                                 });
 
+                                // Check if filtered
+                                if (this.vars.selectionDomains.length > 0) {
+                                    this.data.forEach((d, i) => {
+
+                                        // Iterate selection Domains
+                                        d.filterOut = false;
+                                        this.vars.selectionDomains.forEach(sd => {
+
+                                            if (!(d.data[sd.fullname] >= sd.domain[0] && d.data[sd.fullname] <= sd.domain[1])) {
+                                                d.filterOut = true;
+                                                console.log(i, d.data[sd.fullname], sd.domain[0], sd.domain[1], d.filterOut)
+                                            }
+                                        });
+
+                                    });
+                                }
+
                             }
                         },
                         render: () => {
 
                             // Define this
                             const vis = this;
+                            const lensing = this.imageViewer.viewer.lensing;
                             const vf = this.imageViewer.viewer.lensing.viewfinder;
+
+                            // Raise
+                            d3.select('.overlay_container_lens').raise();
 
                             // Update vf box size
                             vf.els.blackboardRect.attr('width', this.vars.config_boxW);
@@ -330,6 +353,7 @@ export class LfNearestCellsSel {
                                 + this.vars.channelSelections.length * this.vars.config_channelExtH);
                             vf.configs.boxH = this.vars.config_boxH + this.vars.channelSelections.length *
                                 this.vars.config_channelExtH;
+                            vf.els.blackboardRect.style('pointer-events', 'all');
 
                             // Get zoom
                             const zoom = vis.imageViewer.viewer.viewport.getZoom();
@@ -345,22 +369,37 @@ export class LfNearestCellsSel {
                                             const g = d3.select(this)
                                                 .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
                                             g.append('circle')
+                                                .attr('class', 'outlineCirc')
                                                 .attr('r', cellR)
                                                 .attr('fill', 'none')
                                                 .attr('stroke', 'rgba(0, 0, 0, 0.5)')
                                                 .attr('stroke-width', 2);
                                             g.append('circle')
                                                 .attr('r', cellR)
+                                                .attr('class', 'innerCirc')
                                                 .attr('fill', 'none')
-                                                .attr('stroke', 'white')
+                                                .attr('stroke', () => {
+                                                    if (d.hasOwnProperty('filterOut') && d.filterOut) {
+                                                        return 'rgba(255, 255, 255, 0)';
+                                                    }
+                                                    return 'rgba(255, 255, 255, 1)';
+                                                })
                                                 .attr('stroke-width', 1);
                                         }),
                                     update => update
                                         .each(function (d) {
                                             const g = d3.select(this)
                                                 .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
-                                            g.selectAll('circle')
+                                            g.selectAll('.outerCirc')
+                                                .attr('r', cellR);
+                                            g.selectAll('.innerCirc')
                                                 .attr('r', cellR)
+                                                .attr('stroke', () => {
+                                                    if (d.hasOwnProperty('filterOut') && d.filterOut) {
+                                                        return 'rgba(255, 255, 255, 0)';
+                                                    }
+                                                    return 'rgba(255, 255, 255, 1)';
+                                                });
                                         }),
                                     exit => exit.remove()
                                 );
@@ -410,7 +449,7 @@ export class LfNearestCellsSel {
                             /*
                             outer func :: nestedJoin
                              */
-                            function nestedJoin(chart, bins) {
+                            function nestedJoin(chart, bins, ref) {
 
                                 // Config
                                 let w = bins.scaleX.range()[1] / vis.vars.tickCt;
@@ -434,10 +473,38 @@ export class LfNearestCellsSel {
                                     });
 
                                 // Build bars
-                                chart.selectAll('.viewfinder_charts_g_chart_g_bin_g')
+                                const rects = chart.selectAll('.viewfinder_charts_g_chart_g_bin_g')
                                     .data(bins.bins)
-                                    .join('rect')
-                                    .transition()
+                                    .join('rect');
+                                rects
+                                    .on('mouseover', (e, d) => {
+                                        let alreadySel = vis.vars.selectionDomains.find(sel => sel.name === ref)
+                                        if (!alreadySel) {
+                                            vis.vars.selectionDomains.push({
+                                                clicked: false,
+                                                name: ref,
+                                                fullname: vis.dataLayer.getFullChannelName(ref),
+                                                domain: [d.x0, d.x1]
+                                            });
+                                        } else {
+                                            alreadySel.domain = d3.extent(alreadySel.domain.push(d.x0, d.x1));
+                                        }
+                                        lensing.viewfinder.setup.wrangle()
+                                        lensing.viewfinder.setup.render();
+                                    })
+                                    .on('mouseout', (e, d) => {
+                                        vis.vars.selectionDomains = vis.vars.selectionDomains.filter(
+                                            sd => sd.name !== ref && !sd.clicked);
+                                        lensing.viewfinder.setup.wrangle()
+                                        lensing.viewfinder.setup.render();
+                                    })
+                                    .on('click', (e, d) => {
+                                        let alreadySel = vis.vars.selectionDomains.find(sel => sel.name === ref)
+                                        if (!alreadySel) {
+                                            alreadySel.clicked = !alreadySel.clicked;
+                                        }
+                                    });
+                                rects
                                     .attr('class', 'viewfinder_charts_g_chart_g_bin_g')
                                     .attr('x', (d, i) => w * i + pad)
                                     .attr('y', d => {
@@ -446,7 +513,21 @@ export class LfNearestCellsSel {
                                     .attr('width', w - pad * 2)
                                     .attr('height', d => bins.scaleY(d.length))
                                     .attr('fill', d => {
-                                        if (d.length > 0) return 'rgba(255, 255, 255, 1)';
+
+                                        // Check if domain
+                                        const sel = vis.vars.selectionDomains.find(sel => sel.name === ref);
+                                        if (sel) {
+                                            const mid = (d.x0 + d.x1) / 2;
+                                            if (mid >= sel.domain[0] && mid <= sel.domain[1]) {
+                                                return 'rgba(255, 255, 255, 1)';
+                                            }
+                                            return 'rgba(255, 255, 255, 0.5)';
+                                        }
+
+                                        // Normal behavior
+                                        if (d.length > 0) {
+                                            return 'rgba(255, 255, 255, 1)'
+                                        }
                                         return 'rgba(255, 255, 255, 0.5)';
                                     });
                             }
@@ -471,7 +552,7 @@ export class LfNearestCellsSel {
                                                 joinLabel(g, bins)
 
                                                 // Join bins
-                                                nestedJoin(g, bins);
+                                                nestedJoin(g, bins, d);
                                             }
 
                                         }),
@@ -489,7 +570,7 @@ export class LfNearestCellsSel {
                                                 joinLabel(g, bins)
 
                                                 // Join bins
-                                                nestedJoin(g, bins);
+                                                nestedJoin(g, bins, d);
                                             }
 
                                         }),

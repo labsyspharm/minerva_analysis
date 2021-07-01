@@ -296,7 +296,7 @@ def get_neighborhood_for_spat_corr(x, y, datasource_name, r=100, fields=None):
         else:
             neighborhood = datasource.iloc[neighbors].to_dict(orient='records')
 
-        print(datasource)
+        # print(datasource)
         return neighborhood
     except:
         return {}
