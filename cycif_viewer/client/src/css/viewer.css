@@ -61,14 +61,14 @@
 }
 
 #boxHeading1, #boxHeading2 , #boxHeading3 {
-    font-size: 13px;
+    font-size: 16px;
     position: relative;
 }
 
 #selected-channels-header-div {
     position: absolute;
     right: 0;
-    top: -4px;
+    top: 0px;
 }
 
 #download-gating-header-div {

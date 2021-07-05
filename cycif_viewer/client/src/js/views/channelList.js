@@ -239,7 +239,7 @@ class ChannelList {
         var sliderSimple = d3.sliderBottom()
             .min(d3.min(data))
             .max(d3.max(data))
-            .width(swidth - 60)//.tickFormat(d3.format("s"))
+            .width(swidth - 75)//.tickFormat(d3.format("s"))
             .fill('orange')
             .ticks(5)
             .default(activeRange)
@@ -262,7 +262,7 @@ class ChannelList {
             .attr('width', swidth)
             .attr('height', 30)
             .append('g')
-            .attr('transform', 'translate(20,10)');
+            .attr('transform', 'translate(20,13)');
         gSimple.call(sliderSimple);
 
         //slider value to be displayed closer to the slider than default

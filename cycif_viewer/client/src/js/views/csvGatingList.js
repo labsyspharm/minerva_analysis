@@ -68,6 +68,7 @@ class CSVGatingList {
             self.rainbow.show(d3.event.clientX, d3.event.clientY);
         };
         // Draws rows in the gating list
+        self.columns.unshift('Area'); // Add 'Area' to Gating List
         _.each(self.columns, column => {
             // div for each row in gating list
             let listItemParentDiv = document.createElement("div");
@@ -491,7 +492,7 @@ class CSVGatingList {
         var sliderSimple = d3.sliderBottom()
             .min(parseFloat(d3.min(data)))
             .max(parseFloat(d3.max(data)))
-            .width(swidth - 60)
+            .width(swidth - 75)
             .tickFormat(d3.format(",.2f"))
             .fill('orange')
             .ticks(5)
@@ -518,7 +519,7 @@ class CSVGatingList {
             .attr('class', 'svgslider')
             .attr('id', '#csv_gating-slider_svg_' + name)
             .attr('width', swidth)
-            .attr('height', 30)
+            .attr('height', 35)
             .append('g')
             .attr('transform', 'translate(20,13)');
         let xScale = d3.scaleLinear()
