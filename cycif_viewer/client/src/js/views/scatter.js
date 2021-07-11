@@ -7,6 +7,7 @@ class Scatterplot {
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.neighborhoodTable = neighborhoodTable;
+        this.lastLasso = null;
     }
 
     init() {
@@ -18,6 +19,7 @@ class Scatterplot {
         self.lassoActive = false;
         self.editMode = false;
         self.customClusterDiv = document.getElementById('custom_cluster');
+        self.saveLassoButton = document.getElementById('save_lasso');
 
         width = width / ratio;
         height = height / ratio;
@@ -48,7 +50,23 @@ class Scatterplot {
         if (button) {
             button.addEventListener('click', self.customCluster.bind(self));
         }
+
+        if (self.saveLassoButton) {
+            self.saveLassoButton.addEventListener('click', self.saveLasso.bind(self));
+        }
     }
+
+    saveLasso() {
+        const self = this;
+        if (self.lastLasso) {
+            return dataLayer.saveLasso(self.lastLasso)
+                .then((rows) => {
+                    neighborhoodTable.drawRows(rows);
+                })
+        }
+
+    }
+
 
     async wrangle(data) {
         const self = this;
@@ -67,10 +85,13 @@ class Scatterplot {
         self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
     }
 
-    select(points) {
+    select(args) {
         const self = this;
+        // TODO: remove any points that aren't in
+        // self.plot.select(_.sampleSize(args.points, 100), {preventEvent: true});
         if (self.lassoActive) {
-            return dataLayer.getCells(points)
+            console.log("Selecting");
+            return dataLayer.getCells(args)
                 .then(cells => {
                     self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, cells)
                 });
@@ -82,9 +103,19 @@ class Scatterplot {
         self.lassoActive = true;
     }
 
-    lassoEnd() {
+    lassoEnd(args) {
         const self = this;
+        console.log(args);
+        self.lastLasso = args;
         self.lassoActive = false;
+    }
+
+    async applyLasso(points) {
+        return dataLayer.getCellsInPolygon(points, false, true)
+            .then((cells) => {
+                return cells;
+            });
+
     }
 
     switchEditMode() {

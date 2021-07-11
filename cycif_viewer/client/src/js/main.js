@@ -137,11 +137,15 @@ eventHandler.bind(ImageViewer.events.displayNeighborhoodSelection, displayNeighb
 
 const selectNeighborhood = async (d) => {
     let selection = await dataLayer.getNeighborhood(d[0]);
+    if (d[3] === "Lasso") {
+        selection = await scatterplot.applyLasso(selection);
+    }
     dataLayer.addAllToCurrentSelection(selection);
     // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
     parallelCoordinates.wrangle(selection);
     scatterplot.recolor();
     updateSeaDragonSelection(false, false);
+
 }
 eventHandler.bind(NeighborhoodTable.events.selectNeighborhood, selectNeighborhood);
 

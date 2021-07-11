@@ -262,7 +262,7 @@ class ImageViewer {
                         that.lasso_end(event);
                         if (_.size(that.polygonSelection) > 2) {
                             that.showLoader();
-                            return dataLayer.getCellsInPolygon(that.polygonSelection, false)
+                            return dataLayer.getCellsInPolygon(that.polygonSelection, false, false)
                                 .then(cells => {
                                     that.hideLoader();
                                     d3.select('#selectionPolygon').remove();

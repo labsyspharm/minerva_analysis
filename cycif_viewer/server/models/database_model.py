@@ -2,7 +2,6 @@ from cycif_viewer import app, db
 from sqlalchemy.orm import relationship
 from sqlalchemy import func
 
-
 import io
 import numpy as np
 
@@ -18,8 +17,10 @@ def create(model, **kwargs):
 def get(model, **kwargs):
     return db.session.query(model).filter_by(**kwargs).one_or_none()
 
+
 def max(model, column):
     return db.session.query(func.max(getattr(model, column))).scalar()
+
 
 def edit(model, id, edit_field, edit_value):
     instance = get(model, id=id)
@@ -29,6 +30,10 @@ def edit(model, id, edit_field, edit_value):
 
 def get_all(model, **kwargs):
     return db.session.query(model).filter_by(is_deleted=False, **kwargs).order_by(model.id).all()
+
+
+def filter_all(model, filter_params):
+    return db.session.query(model).filter(filter_params).filter_by(is_deleted=False).order_by(model.id).all()
 
 
 def get_or_create(model, **kwargs):
@@ -57,7 +62,7 @@ class Neighborhood(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cluster_id = db.Column(db.Integer, unique=False, nullable=False)
     datasource = db.Column(db.String(80), unique=False, nullable=False)
-    is_cluster = db.Column(db.Boolean, default=False, nullable=False)
+    source = db.Column(db.String(80), unique=False, nullable=False)
     custom = db.Column(db.Boolean, default=False)
     is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     name = db.Column(db.String(80), unique=False, nullable=False)
@@ -70,7 +75,7 @@ class NeighborhoodStats(db.Model):
     neighborhood_id = db.Column(db.Integer, db.ForeignKey('neighborhood.id'))
     neighborhood = relationship("Neighborhood", backref=db.backref("neighborhood", uselist=False))
     datasource = db.Column(db.String(80), unique=False, nullable=False)
-    is_cluster = db.Column(db.Boolean, default=False, nullable=False)
+    source = db.Column(db.String(80), unique=False, nullable=False)
     custom = db.Column(db.Boolean, default=False)
 
     is_deleted = db.Column(db.Boolean, default=False, nullable=False)

@@ -44,8 +44,11 @@ class NeighborhoodTable {
         self.saveButton.disabled = true;
     }
 
-    drawRows() {
+    drawRows(newRows = null) {
         const self = this;
+        if (newRows) {
+            self.neighborhoods = newRows;
+        }
         let rows = d3.select(self.table).selectAll(".neighborhood-row")
             .data(self.neighborhoods)
         rows.enter()
@@ -110,13 +113,7 @@ class NeighborhoodTable {
             .append('td')
             .attr('class', 'source-col')
             .append('span')
-            .text(d => {
-                if (d[3]) {
-                    return 'Cluster';
-                } else {
-                    return 'User Generated';
-                }
-            });
+            .text(d => d[3]);
         sourceCol.exit().remove();
 
         let actionsCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.actions-column')

@@ -2,6 +2,7 @@ from sklearn.neighbors import BallTree
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import IncrementalPCA
+from sqlalchemy import or_
 
 import numpy as np
 import pandas as pd
@@ -79,7 +80,7 @@ def init_clusters(datasource_name):
     clusters = np.sort(datasource['Cluster'].unique().tolist())
     for cluster in clusters:
         # Check if the Cluster is in the DB
-        neighborhood = database_model.get(database_model.Neighborhood, datasource=datasource_name, is_cluster=True,
+        neighborhood = database_model.get(database_model.Neighborhood, datasource=datasource_name, source="Cluster",
                                           name="Cluster " + str(cluster))
         cluster_cells = None
         # If it's not in the Neighborhood database then create and add it
@@ -90,7 +91,7 @@ def init_clusters(datasource_name):
             np.save(f, indices)
             neighborhood = database_model.create(database_model.Neighborhood, cluster_id=int(cluster),
                                                  datasource=datasource_name,
-                                                 is_cluster=True,
+                                                 source="Cluster",
                                                  name="Cluster " + str(cluster), cells=f.getvalue())
 
         else:
@@ -105,7 +106,7 @@ def init_clusters(datasource_name):
             f = io.BytesIO()
             pickle.dump(obj, f)
             neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
-                                                       is_cluster=True,
+                                                       source="Cluster",
                                                        name="ClusterStats " + str(cluster), stats=f.getvalue(),
                                                        neighborhood=neighborhood)
 
@@ -125,15 +126,17 @@ def get_cluster_cells(datasource_name):
 
 
 def get_neighborhood_list(datasource_name):
-    neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
-    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
-            neighborhoods]
+    filtered_neighborhoods = database_model.filter_all(database_model.Neighborhood,
+                                                       or_(database_model.Neighborhood.datasource == datasource_name,
+                                                           database_model.Neighborhood.source == "Lasso"))
+    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.source) for neighborhood in
+            filtered_neighborhoods]
 
 
 def edit_neighborhood(elem, datasource_name):
     database_model.edit(database_model.Neighborhood, elem['id'], elem['editField'], elem['editValue'])
     new_neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
-    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
+    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.source) for neighborhood in
             new_neighborhoods]
 
 
@@ -141,7 +144,10 @@ def get_neighborhood(elem, datasource_name):
     neighborhood = database_model.get(database_model.Neighborhood, id=elem['id'], datasource=datasource_name)
     neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood,
                                             datasource=datasource_name)
-    return pickle.load(io.BytesIO(neighborhood_stats.stats))
+    if neighborhood_stats:
+        return pickle.load(io.BytesIO(neighborhood_stats.stats))
+    else:
+        return []
 
 
 def get_all_neighborhood_stats(datasource_name):
@@ -171,19 +177,37 @@ def get_all_neighborhood_stats(datasource_name):
     return obj
 
 
-def save_neighborhood(selection, datasource_name, is_cluster=True):
+def save_lasso(polygon, datasource_name):
+    max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
+    np_polygon = np.array(polygon['coordinates'])
+    f = io.BytesIO()
+    np.save(f, np_polygon)
+    neighborhood = database_model.create(database_model.Neighborhood, cluster_id=max_cluster_id + 1,
+                                         datasource=datasource_name,
+                                         source="Lasso",
+                                         name="Lasso " + str(max_cluster_id + 1), cells=f.getvalue())
+    f = io.BytesIO()
+    pickle.dump(polygon['coordinates'], f)
+    database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
+                          source=source,
+                          name="", stats=f.getvalue(),
+                          neighborhood=neighborhood)
+    return get_neighborhood_list(datasource_name)
+
+
+def save_neighborhood(selection, datasource_name, source="Cluster"):
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
     indices = np.array([e['id'] for e in selection['cells']])
     f = io.BytesIO()
     np.save(f, indices)
     neighborhood = database_model.create(database_model.Neighborhood, cluster_id=max_cluster_id + 1,
                                          datasource=datasource_name,
-                                         is_cluster=is_cluster,
+                                         source=source,
                                          name="", cells=f.getvalue())
     f = io.BytesIO()
     pickle.dump(selection, f)
     database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
-                          is_cluster=is_cluster,
+                          source=source,
                           name="", stats=f.getvalue(),
                           neighborhood=neighborhood)
     return get_neighborhood_list(datasource_name)
@@ -193,7 +217,7 @@ def delete_neighborhood(elem, datasource_name):
     database_model.edit(database_model.Neighborhood, elem['id'], 'is_deleted', True)
     new_neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
     print('Count', len(new_neighborhoods))
-    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.is_cluster) for neighborhood in
+    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.source) for neighborhood in
             new_neighborhoods]
 
 
@@ -231,7 +255,7 @@ def create_custom_clusters(datasource_name, num_clusters):
         f = io.BytesIO()
         np.save(f, indices)
         neighborhood = database_model.create(database_model.Neighborhood,
-                                             datasource=datasource_name, is_cluster=True, custom=True,
+                                             datasource=datasource_name, source="Cluster", custom=True,
                                              cluster_id=max_cluster_id + 1, name="Custom Cluster " + str(cluster),
                                              cells=f.getvalue())
 
@@ -240,7 +264,7 @@ def create_custom_clusters(datasource_name, num_clusters):
         pickle.dump(obj, f)
 
         neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
-                                                   is_cluster=True,
+                                                   source="Cluster",
                                                    custom=True,
                                                    name="ClusterStats " + str(cluster), stats=f.getvalue(),
                                                    neighborhood=neighborhood)
@@ -489,18 +513,31 @@ def get_rect_cells(datasource_name, rect, channels):
         return {}
 
 
-def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False):
+def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, embedding=False):
     global config
-    point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
-    (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
+    global datasource
+
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    circle_neighbors = get_individual_neighborhood(x, y, datasource_name, r=r,
-                                                   fields=fields)
-    neighbor_points = pd.DataFrame(circle_neighbors).values
-    path = mpltPath.Path(point_tuples)
-    inside = path.contains_points(neighbor_points[:, [0, 1]].astype('float'))
-    neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
+    if embedding:
+        start = time.process_time()
+        point_tuples = [tuple(pt) for pt in MinMaxScaler(feature_range=(0, 1)).fit(
+            [[-1], [1]]).transform(np.array(points)).tolist()]
+        path = mpltPath.Path(point_tuples)
+        embedding = np.load(Path("." + config[datasource_name]['embedding']))
+        inside = path.contains_points(embedding[:, [0, 1]].astype('float'))
+        print('Points in Embedding Polygon', time.process_time() - start)
+        neighbor_ids = datasource.loc[np.where(inside == True), 'id'].tolist()
+    else:
+        point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
+        (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
+
+        circle_neighbors = get_individual_neighborhood(x, y, datasource_name, r=r,
+                                                       fields=fields)
+        neighbor_points = pd.DataFrame(circle_neighbors).values
+        path = mpltPath.Path(point_tuples)
+        inside = path.contains_points(neighbor_points[:, [0, 1]].astype('float'))
+        neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
     obj = get_neighborhood_stats(datasource_name, neighbor_ids, fields=fields)
     return obj
 
@@ -733,8 +770,6 @@ def get_spearmans_correlation(datasource_name):
     return heatmap
 
 
-
-
 def get_ome_metadata(datasource_name):
     if config is None:
         load_datasource(datasource_name)
@@ -819,7 +854,7 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
     if 'neighborhood_range' in config[datasource_name]:
         neighborhood_range = config[datasource_name]['neighborhood_range']
     else:
-        neighborhood_range = 30 # default 30um
+        neighborhood_range = 30  # default 30um
     r = neighborhood_range / metadata.physical_size_x
     neighbors = ball_tree.query_radius(points, r=r)
     unique_neighbors = np.unique(np.concatenate(neighbors).ravel())

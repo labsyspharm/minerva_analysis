@@ -225,7 +225,7 @@ class DataLayer {
                     {
                         datasource: datasource,
                         selection: self.getCurrentRawSelection(),
-                        isCluster: false
+                        source: "User Generated"
                     }
                 )
             });
@@ -233,6 +233,30 @@ class DataLayer {
             return response_data;
         } catch (e) {
             console.log("Error Saving Neighborhood", e);
+        }
+    }
+
+
+    async saveLasso(polygon) {
+        const self = this;
+        try {
+            let response = await fetch('/save_lasso', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        polygon: polygon
+                    }
+                )
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Saving Lasso", e);
         }
     }
 
@@ -277,12 +301,13 @@ class DataLayer {
         }
     }
 
-    async getCellsInPolygon(points, similar = false) {
+    async getCellsInPolygon(points, similar = false, embedding = false) {
         try {
             let response = await fetch('/get_cells_in_polygon?' + new URLSearchParams({
                 datasource: datasource,
                 points: JSON.stringify(points),
-                similar_neighborhood: similar
+                similar_neighborhood: similar,
+                embedding: embedding
             }))
             let cells = await response.json();
             return cells;

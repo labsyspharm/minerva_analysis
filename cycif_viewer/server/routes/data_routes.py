@@ -110,8 +110,16 @@ def save_neighborhood():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     selection = post_data['selection']
-    is_cluster = post_data['isCluster']
-    resp = data_model.save_neighborhood(selection, datasource, is_cluster)
+    source = post_data['source']
+    resp = data_model.save_neighborhood(selection, datasource, source)
+    return serialize_and_submit_json(resp)\
+
+@app.route('/save_lasso', methods=['POST'])
+def save_lasso():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    polygon = post_data['polygon']
+    resp = data_model.save_lasso(polygon, datasource)
     return serialize_and_submit_json(resp)
 
 
@@ -153,7 +161,8 @@ def get_cells_in_polygon():
     datasource = request.args.get('datasource')
     points = json.loads(request.args.get('points'))
     similar = request.args.get('similar_neighborhood') == 'true'
-    resp = data_model.get_cells_in_polygon(datasource, points, similar)
+    embedding = request.args.get('embedding') == 'true'
+    resp = data_model.get_cells_in_polygon(datasource, points, similar, embedding)
     return serialize_and_submit_json(resp)
 
 
