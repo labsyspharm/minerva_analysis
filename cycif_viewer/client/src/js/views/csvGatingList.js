@@ -68,7 +68,7 @@ class CSVGatingList {
             self.rainbow.show(d3.event.clientX, d3.event.clientY);
         };
         // Draws rows in the gating list
-        self.columns.unshift('Area'); // Add 'Area' to Gating List
+        self.columns.push('Area'); // Add 'Area' to Gating List
         _.each(self.columns, column => {
             // div for each row in gating list
             let listItemParentDiv = document.createElement("div");

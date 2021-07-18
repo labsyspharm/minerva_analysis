@@ -50,6 +50,10 @@ line.track {
     display: none;
 }
 
+#channels_arrow-upload-form, #channels_arrow-upload-form * {
+    display: none
+}
+
 #arrow-upload-form, #arrow-upload-form * {
     display: none
 }

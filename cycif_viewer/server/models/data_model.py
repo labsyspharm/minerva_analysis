@@ -477,6 +477,32 @@ def download_gates(datasource_name, gates, channels):
         csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
     return csv
 
+def download_channels(datasource_name, map_channels, active_channels, list_colors, list_ranges, default_range):
+    global datasource
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    arr = []
+    for channel in map_channels:
+        arr.append([map_channels[channel], default_range[0], default_range[1], 255, 255, 255, 1, False])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'start', 'end', 'r', 'g', 'b', 'opacity', 'channel_active']
+
+    for channel in list_ranges:
+        csv.loc[csv['channel'] == map_channels[channel], 'start'] = list_ranges[channel][0] * default_range[1]
+        csv.loc[csv['channel'] == map_channels[channel], 'end'] = list_ranges[channel][1] * default_range[1]
+    for channel in list_colors:
+        csv.loc[csv['channel'] == map_channels[channel], 'r'] = list_colors[channel]['color']['r']
+        csv.loc[csv['channel'] == map_channels[channel], 'g'] = list_colors[channel]['color']['g']
+        csv.loc[csv['channel'] == map_channels[channel], 'b'] = list_colors[channel]['color']['b']
+        csv.loc[csv['channel'] == map_channels[channel], 'opacity'] = list_colors[channel]['color']['opacity']
+    for channel in active_channels:
+        csv.loc[csv['channel'] == map_channels[channel], 'channel_active'] = True
+
+    return csv
 
 def get_datasource_description(datasource_name):
     global datasource

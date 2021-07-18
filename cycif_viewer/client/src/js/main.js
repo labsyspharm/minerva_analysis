@@ -18,6 +18,7 @@ let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
 let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
+let imageChannelsIdx = {};
 
 //Disable right clicking on element
 document.getElementById("openseadragon").addEventListener('contextmenu', event => event.preventDefault());
@@ -40,7 +41,11 @@ async function init(conf) {
     config = conf;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
-        imageChannels[config["imageData"][idx].fullname] = idx;
+        let name = config["imageData"][idx].fullname;
+        imageChannels[name] = idx;
+        if (name !== 'Area') {
+            imageChannelsIdx[idx] = name;
+        }
     }
     //INIT DATA FILTER
     dataLayer = new DataLayer(config, imageChannels);
@@ -154,6 +159,7 @@ eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 //feature range selection changed in ridge plot
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
+    debugger //NHAN
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);

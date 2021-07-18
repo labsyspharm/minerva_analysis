@@ -178,6 +178,22 @@ def download_gating_csv():
             headers={"Content-disposition":
                          "attachment; filename=" + filename + ".csv"})
 
+@app.route('/download_channels_csv', methods=['POST'])
+def download_channels_csv():
+    filename = request.form['filename']
+
+    datasource = request.form['datasource']
+    map_channels = json.loads(request.form['map_channels'])
+    active_channels = json.loads(request.form['active_channels'])
+    list_colors = json.loads(request.form['list_colors'])
+    list_ranges = json.loads(request.form['list_ranges'])
+    default_range = json.loads(request.form['default_range'])
+    csv = data_model.download_channels(datasource, map_channels, active_channels, list_colors, list_ranges, default_range)
+    return Response(
+        csv.to_csv(index=False),
+        mimetype="text/csv",
+        headers={"Content-disposition":
+                     "attachment; filename=" + filename + ".csv"})
 
 @app.route('/get_uploaded_gating_csv_values', methods=['GET'])
 def get_gating_csv_values():

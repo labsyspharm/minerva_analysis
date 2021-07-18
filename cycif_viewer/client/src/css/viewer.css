@@ -71,10 +71,21 @@
     top: 0px;
 }
 
+#download-channels-header-div {
+    /*position: absolute;*/
+    /*right: 0;*/
+    /*top: -3px;*/
+}
+
+#download-channels-header-div span {
+    cursor: pointer;
+    font-size: 15px
+}
+
 #download-gating-header-div {
-    position: absolute;
-    right: 0;
-    top: -3px;
+    /*position: absolute;*/
+    /*right: 0;*/
+    /*top: -3px;*/
 }
 
 #download-gating-header-div span {

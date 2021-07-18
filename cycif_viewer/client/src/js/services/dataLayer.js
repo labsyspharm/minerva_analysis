@@ -109,6 +109,59 @@ class DataLayer {
 
     }
 
+    downloadChannelsCSV(map_channels, active_channels, list_colors, list_ranges, default_range) {
+        debugger //NHAN
+        let form = document.createElement("form");
+        form.action = "/download_channels_csv";
+
+        form.method = "post";
+
+        let filename = 'test.csv';
+        let fileNameElemment = document.createElement("input");
+        fileNameElemment.type = "hidden";
+        fileNameElemment.value = _.toString(filename);
+        fileNameElemment.name = "filename";
+        form.appendChild(fileNameElemment);
+
+        let mapElement = document.createElement("input");
+        mapElement.type = "hidden";
+        mapElement.value = JSON.stringify(map_channels);
+        mapElement.name = "map_channels";
+        form.appendChild(mapElement);
+
+        let activeElement = document.createElement("input");
+        activeElement.type = "hidden";
+        activeElement.value = JSON.stringify(active_channels);
+        activeElement.name = "active_channels";
+        form.appendChild(activeElement);
+
+        let colorsElement = document.createElement("input");
+        colorsElement.type = "hidden";
+        colorsElement.value = JSON.stringify(list_colors);
+        colorsElement.name = "list_colors";
+        form.appendChild(colorsElement);
+
+        let rangesElement = document.createElement("input");
+        rangesElement.type = "hidden";
+        rangesElement.value = JSON.stringify(list_ranges);
+        rangesElement.name = "list_ranges";
+        form.appendChild(rangesElement);
+
+        let defaultRangeElement = document.createElement("input");
+        defaultRangeElement.type = "hidden";
+        defaultRangeElement.value = JSON.stringify(default_range);
+        defaultRangeElement.name = "default_range";
+        form.appendChild(defaultRangeElement);
+
+        let datasourceElement = document.createElement("input");
+        datasourceElement.type = "hidden";
+        datasourceElement.value = datasource;
+        datasourceElement.name = "datasource";
+        form.appendChild(datasourceElement);
+        document.body.appendChild(form);
+        form.submit()
+    }
+
     async getColumnDistributions(columns) {
         try {
             let response = await fetch('/get_column_distributions?' + new URLSearchParams({

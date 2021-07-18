@@ -233,6 +233,18 @@ class ImageViewer {
                     })
             }
         });
+
+        const channels_download_icon = document.querySelector('#channels_download_icon');
+        channels_download_icon.addEventListener('click', () => {
+            debugger //NHAN
+            this.dataLayer.downloadChannelsCSV(
+                imageChannelsIdx,
+                this.currentChannels,
+                this.colorConnector,
+                this.rangeConnector,
+                this.dataLayer.imageBitRange
+            );
+        })
     }
 
     drawLabelTile(tile, width, height) {
