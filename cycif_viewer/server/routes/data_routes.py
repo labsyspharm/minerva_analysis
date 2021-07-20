@@ -133,6 +133,20 @@ def upload_gates():
     resp = jsonify(success=True)
     return resp
 
+@app.route('/upload_channels', methods=['POST'])
+def upload_channels():
+    file = request.files['file']
+    if file.filename.endswith('.csv') == False:
+        abort(422)
+    datasource = request.form['datasource']
+    save_path = data_path / datasource
+    if save_path.is_dir() == False:
+        abort(422)
+
+    filename = 'uploaded_channels.csv'
+    file.save(Path(save_path / filename))
+    resp = jsonify(success=True)
+    return resp
 
 @app.route('/get_rect_cells', methods=['GET'])
 def get_rect_cells():
@@ -199,6 +213,16 @@ def download_channels_csv():
 def get_gating_csv_values():
     datasource = request.args.get('datasource')
     file_path = data_path / datasource / 'uploaded_gates.csv'
+    if file_path.is_file() == False:
+        abort(422)
+    csv = pd.read_csv(file_path)
+    obj = csv.to_dict(orient='records')
+    return serialize_and_submit_json(obj)
+
+@app.route('/get_uploaded_channel_csv_values', methods=['GET'])
+def get_channel_csv_values():
+    datasource = request.args.get('datasource')
+    file_path = data_path / datasource / 'uploaded_channels.csv'
     if file_path.is_file() == False:
         abort(422)
     csv = pd.read_csv(file_path)

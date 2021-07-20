@@ -58,7 +58,7 @@ async function init(conf) {
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
     //IMAGE VIEWER
-    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
+    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme, channelList);
     seaDragonViewer.init();
 }
 
@@ -159,7 +159,6 @@ eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 //feature range selection changed in ridge plot
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
-    debugger //NHAN
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);

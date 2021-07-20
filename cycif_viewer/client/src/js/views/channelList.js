@@ -124,6 +124,7 @@ class ChannelList {
             svg.selectAll("circle")
                 .data([{"color": "white", "name": column}])
                 .enter().append("rect")
+                .attr("id", "color_" + column)
                 .attr("class", "color-transfer")
                 .attr("cursor", "pointer")
                 .attr("stroke", "#757575")
