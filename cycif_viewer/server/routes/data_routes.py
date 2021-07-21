@@ -118,6 +118,17 @@ def get_neighborhood_for_spat_corr():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_k_results_for_spat_corr', methods=['GET'])
+def get_k_results_for_spat_corr():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    channels = request.args.get('channels').split()[0].split(',')
+    datasource = request.args.get('datasource')
+    resp = data_model.get_k_results_for_spat_corr(x, y, datasource, r=max_distance, channels=channels)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_num_cells_in_circle', methods=['GET'])
 def get_num_cells_in_circle():
     datasource = request.args.get('datasource')

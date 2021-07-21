@@ -302,6 +302,49 @@ def get_neighborhood_for_spat_corr(x, y, datasource_name, r=100, fields=None):
         return {}
 
 
+def get_k_results_for_spat_corr(x, y, datasource_name, r=100, channels=[], fields=None):
+    global config
+    global database
+    global datasource
+    global source
+    global ball_tree
+    if datasource_name != source:
+        load_datasource(datasource_name)
+
+    index = ball_tree.query_radius([[x, y]], r=r)
+    neighbors = index[0]
+    try:
+
+        # Settings, configs
+        k_range = [1, 10]
+        x_coordinate = config[datasource_name]['featureData'][0]['xCoordinate']
+        y_coordinate = config[datasource_name]['featureData'][0]['yCoordinate']
+        index = config[datasource_name]['featureData'][0]['idField']
+
+        # Filter dataframe
+        neighborhood_df = datasource.iloc[neighbors][channels + ['id', x_coordinate, y_coordinate, index]]
+
+        # Iterate k
+        for k in range(k_range[0], k_range[1]):
+
+            # Spatial analysis
+            new_data = spatial_corr(adata=neighborhood_df, x_coordinate=x_coordinate, y_coordinate=y_coordinate,
+                                    index='id', channels=channels, k=k)
+            # print(new_data)
+
+            # Update dataframe
+            for name, values in new_data.iteritems():
+                new_column = f'{name}_{k}'
+                neighborhood_df[new_column] = values
+
+        # New neighborhood
+        new_neighborhood = neighborhood_df.to_dict(orient='records')
+        return new_neighborhood
+
+    except:
+        return []
+
+
 def get_number_of_cells_in_circle(x, y, datasource_name, r):
     global source
     global ball_tree
@@ -498,10 +541,7 @@ def get_datasource_description(datasource_name):
 
 def spatial_corr(adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid', y_coordinate='Y_centroid',
                  marker=None, k=500, label='spatial_corr', index='id', channels=[]):
-    global datasource
-    global source
     global ball_tree
-    global config
 
     """
     Parameters
@@ -547,7 +587,7 @@ def spatial_corr(adata, raw=False, log=False, threshold=None, x_coordinate='X_ce
     # Create a DataFrame with the necessary information
     data = pd.DataFrame({'x': bdata[x_coordinate], 'y': bdata[y_coordinate]})
     # user defined expression matrix
-    exp = pd.DataFrame(bdata[bdata_features], index=bdata[index], columns=channels)
+    exp = pd.DataFrame(bdata[channels], index=bdata[index])
     # log the data if needed
     if log is True:
         exp = np.log1p(exp)

@@ -104,7 +104,12 @@ export class LfSpatialCorrelation {
 
                             // Load
                             this.load.config.filterCode.settings.loading = true;
-                            this.dataLayer.getNeighborhoodForSpatialCorrelation(newRad, pos[0], pos[1]).then(darr => {
+                            const channels = [];
+                            const channelsShort = channelList.selections;
+                            channelsShort.forEach(c => {
+                                channels.push(this.dataLayer.getFullChannelName(c))
+                            });
+                            this.dataLayer.getKResultsForSpatialCorrelation(newRad, pos[0], pos[1], channels).then(darr => {
 
                                 // Loaded
                                 this.load.config.filterCode.settings.loading = false;
@@ -149,6 +154,7 @@ export class LfSpatialCorrelation {
                                         });
                                     }
                                 });
+                                console.log(this.data)
 
                                 // Trigger update
                                 lensing.viewfinder.setup.wrangle()
@@ -227,23 +233,25 @@ export class LfSpatialCorrelation {
                             // Define this
                             const vis = this;
 
-                            // Set image channels (whitelist)
-                            this.vars.channelSelection =
-                                this.dataLayer.getFullChannelName(this.channelList.selections[0]) + '_spat_corr';
 
-                            // Get x and y vals
-                            const dist = this.data.map(d => d.distance);
-                            const vals = this.data.map(d => d.data[this.vars.channelSelection])
 
-                            // Update scales
-                            this.vars.tool_scX.domain([0, d3.max(dist, d => d)])
-                                .range([0, this.vars.config_boxW - (this.vars.config_chartsMargin.right
-                                    + this.vars.config_chartsMargin.left)]);
-                            this.vars.tool_scY.domain([1, -1])
-                                .range([0, this.vars.config_boxH - (this.vars.config_chartsMargin.top
-                                    + this.vars.config_chartsMargin.bottom)]);
-                            this.vars.tool_axisX.scale(this.vars.tool_scX).ticks(3);
-                            this.vars.tool_axisY.scale(this.vars.tool_scY).tickValues([-1, 0, 1]);
+                            // // Set image channels (whitelist)
+                            // this.vars.channelSelection =
+                            //     this.dataLayer.getFullChannelName(this.channelList.selections[0]) + '_spat_corr';
+                            //
+                            // // Get x and y vals
+                            // const dist = this.data.map(d => d.distance);
+                            // const vals = this.data.map(d => d.data[this.vars.channelSelection])
+                            //
+                            // // Update scales
+                            // this.vars.tool_scX.domain([0, d3.max(dist, d => d)])
+                            //     .range([0, this.vars.config_boxW - (this.vars.config_chartsMargin.right
+                            //         + this.vars.config_chartsMargin.left)]);
+                            // this.vars.tool_scY.domain([1, -1])
+                            //     .range([0, this.vars.config_boxH - (this.vars.config_chartsMargin.top
+                            //         + this.vars.config_chartsMargin.bottom)]);
+                            // this.vars.tool_axisX.scale(this.vars.tool_scX).ticks(3);
+                            // this.vars.tool_axisY.scale(this.vars.tool_scY).tickValues([-1, 0, 1]);
 
 
                         },
@@ -261,73 +269,73 @@ export class LfSpatialCorrelation {
                             const zoom = vis.imageViewer.viewer.viewport.getZoom();
                             const cellR = vis.vars.tool_rCellScale(zoom);
 
-                            // Append cell center circles
-                            this.vars.el_cellsG.selectAll('.cell')
-                                .data(this.data)
-                                .join(
-                                    enter => enter.append('g')
-                                        .attr('class', 'cell')
-                                        .each(function (d) {
-                                            const g = d3.select(this)
-                                                .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
-                                            g.append('circle')
-                                                .attr('r', cellR)
-                                                .attr('fill', 'none')
-                                                .attr('stroke', 'rgba(0, 0, 0, 0.5)')
-                                                .attr('stroke-width', 2);
-                                            g.append('circle')
-                                                .attr('r', cellR)
-                                                .attr('fill', 'none')
-                                                .attr('stroke', 'white')
-                                                .attr('stroke-width', 1);
-                                        }),
-                                    update => update
-                                        .each(function (d) {
-                                            const g = d3.select(this)
-                                                .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
-                                            g.selectAll('circle')
-                                                .attr('r', cellR)
-                                        }),
-                                    exit => exit.remove()
-                                );
-
-                            // Add dots
-                            vis.vars.el_chartsG.selectAll('.bubble')
-                                .data(vis.data)
-                                .join(
-                                    enter => enter
-                                        .append('circle')
-                                        .attr('class', 'bubble')
-                                        .attr('r', vis.vars.config_bubbleR)
-                                        .attr('fill', 'white')
-                                        .attr('r', vis.vars.config_bubbleR)
-                                        .attr('cx', d => vis.vars.tool_scX(d.distance))
-                                        .attr('cy', d => vis.vars.tool_scY(d.data[this.vars.channelSelection])),
-                                    update => update
-                                        .attr('cx', d => vis.vars.tool_scX(d.distance))
-                                        .attr('cy', d => vis.vars.tool_scY(d.data[this.vars.channelSelection])),
-                                    exit => exit.remove()
-                                );
-
-                            // Axes
-                            vis.vars.el_axisX.style('transform',
-                                `translateY(${this.vars.config_boxH - (this.vars.config_chartsMargin.top
-                                    + this.vars.config_chartsMargin.bottom) + this.vars.config_axisPad}px)`);
-                            vis.vars.el_axisY.style('transform',`translateX(${-this.vars.config_axisPad}px)`);
-                            vis.vars.el_axisX.transition(250).call(vis.vars.tool_axisX);
-                            vis.vars.el_axisY.transition(250).call(vis.vars.tool_axisY);
-                            vis.vars.el_axisX.selectAll('text')
-                                .attr('fill', 'white');
-                            vis.vars.el_axisX.selectAll('line')
-                                .attr('stroke', 'white');
-                            vis.vars.el_axisX.selectAll('path')
-                                .attr('stroke', 'white');
-                            vis.vars.el_axisY.selectAll('text')
-                                .attr('fill', 'white');
-                            vis.vars.el_axisY.selectAll('line')
-                                .attr('stroke', 'white');
-                            vis.vars.el_axisY.selectAll('path')
-                                .attr('stroke', 'white');
+                            // // Append cell center circles
+                            // this.vars.el_cellsG.selectAll('.cell')
+                            //     .data(this.data)
+                            //     .join(
+                            //         enter => enter.append('g')
+                            //             .attr('class', 'cell')
+                            //             .each(function (d) {
+                            //                 const g = d3.select(this)
+                            //                     .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                            //                 g.append('circle')
+                            //                     .attr('r', cellR)
+                            //                     .attr('fill', 'none')
+                            //                     .attr('stroke', 'rgba(0, 0, 0, 0.5)')
+                            //                     .attr('stroke-width', 2);
+                            //                 g.append('circle')
+                            //                     .attr('r', cellR)
+                            //                     .attr('fill', 'none')
+                            //                     .attr('stroke', 'white')
+                            //                     .attr('stroke-width', 1);
+                            //             }),
+                            //         update => update
+                            //             .each(function (d) {
+                            //                 const g = d3.select(this)
+                            //                     .style(`transform`, `translate(${d.offset[0]}px, ${d.offset[1]}px)`);
+                            //                 g.selectAll('circle')
+                            //                     .attr('r', cellR)
+                            //             }),
+                            //         exit => exit.remove()
+                            //     );
+                            //
+                            // // Add dots
+                            // vis.vars.el_chartsG.selectAll('.bubble')
+                            //     .data(vis.data)
+                            //     .join(
+                            //         enter => enter
+                            //             .append('circle')
+                            //             .attr('class', 'bubble')
+                            //             .attr('r', vis.vars.config_bubbleR)
+                            //             .attr('fill', 'white')
+                            //             .attr('r', vis.vars.config_bubbleR)
+                            //             .attr('cx', d => vis.vars.tool_scX(d.distance))
+                            //             .attr('cy', d => vis.vars.tool_scY(d.data[this.vars.channelSelection])),
+                            //         update => update
+                            //             .attr('cx', d => vis.vars.tool_scX(d.distance))
+                            //             .attr('cy', d => vis.vars.tool_scY(d.data[this.vars.channelSelection])),
+                            //         exit => exit.remove()
+                            //     );
+                            //
+                            // // Axes
+                            // vis.vars.el_axisX.style('transform',
+                            //     `translateY(${this.vars.config_boxH - (this.vars.config_chartsMargin.top
+                            //         + this.vars.config_chartsMargin.bottom) + this.vars.config_axisPad}px)`);
+                            // vis.vars.el_axisY.style('transform',`translateX(${-this.vars.config_axisPad}px)`);
+                            // vis.vars.el_axisX.transition(250).call(vis.vars.tool_axisX);
+                            // vis.vars.el_axisY.transition(250).call(vis.vars.tool_axisY);
+                            // vis.vars.el_axisX.selectAll('text')
+                            //     .attr('fill', 'white');
+                            // vis.vars.el_axisX.selectAll('line')
+                            //     .attr('stroke', 'white');
+                            // vis.vars.el_axisX.selectAll('path')
+                            //     .attr('stroke', 'white');
+                            // vis.vars.el_axisY.selectAll('text')
+                            //     .attr('fill', 'white');
+                            // vis.vars.el_axisY.selectAll('line')
+                            //     .attr('stroke', 'white');
+                            // vis.vars.el_axisY.selectAll('path')
+                            //     .attr('stroke', 'white');
 
                         },
                         destroy: () => {

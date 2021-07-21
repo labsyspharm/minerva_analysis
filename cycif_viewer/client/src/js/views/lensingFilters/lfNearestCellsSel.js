@@ -541,6 +541,21 @@ export class LfNearestCellsSel {
                                     })
                                     .attr('width', w - pad * 2)
                                     .attr('height', d => bins.scaleY(d.length))
+                                    .attr('stroke', d => {
+
+                                        // Check if domain
+                                        const sel = vis.vars.selectionDomains.find(sel => sel.name === ref);
+                                        if (sel) {
+                                            const mid = (d.x0 + d.x1) / 2;
+                                            if (mid >= sel.domain[0] && mid <= sel.domain[1]) {
+                                                return 'rgba(255, 255, 255, 1)';
+                                            }
+                                            return 'rgba(255, 255, 255, 0.5)';
+                                        }
+
+                                        return 'none';
+
+                                    })
                                     .attr('fill', d => {
 
                                         // Check if domain

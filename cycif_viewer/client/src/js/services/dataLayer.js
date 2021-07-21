@@ -212,6 +212,22 @@ class DataLayer {
         }
     }
 
+    async getKResultsForSpatialCorrelation(maxDistance, x, y, channels) {
+        try {
+            let response = await fetch('/get_k_results_for_spat_corr?' + new URLSearchParams({
+                max_distance: maxDistance,
+                point_x: x,
+                point_y: y,
+                channels,
+                datasource: datasource
+            }))
+            let neighborhood = await response.json();
+            return neighborhood;
+        } catch (e) {
+            console.log("Error Getting Nearest Cell", e);
+        }
+    }
+
     async getNeighborhoodForCell(maxDistance, selectedCell) {
         return this.getNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);
     }
