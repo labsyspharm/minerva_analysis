@@ -2,6 +2,14 @@ body {
     font-family: 'Source Sans Pro', sans-serif;
 }
 
+.input{
+    font-size:8px;
+    width:35px;
+    margin-top:-10px;
+    border: 1px solid gray;
+    box-sizing: border-box;
+}
+
 /*LOADING SPINNER SECTION*/
 .lds-ellipsis {
     display: inline-block;
@@ -132,10 +140,12 @@ body {
     border: 0;
 }
 
+
+
 #channel_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
-    height: 50px;
+    height: 75px;
 }
 
 #channel_list .list-group {
