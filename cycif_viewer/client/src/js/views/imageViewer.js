@@ -14,7 +14,7 @@ class ImageViewer {
     // Vars
     viewerManagers = [];
 
-    constructor(config, dataLayer, eventHandler, colorScheme, channelList) {
+    constructor(config, dataLayer, eventHandler, colorScheme) {
 
         this.config = config;
         this.eventHandler = eventHandler;
@@ -35,10 +35,7 @@ class ImageViewer {
         this.selection = new Map();
         this.data = new Map();
 
-        // Currently loaded image / label channels
-        this.currentChannels = {};
-        this.colorConnector = {};
-        this.rangeConnector = {};
+        // Currently loaded label channels
         this.labelChannel = {};
         this.noLabel = false;
         this.sel_outlines = true;
@@ -119,7 +116,7 @@ class ImageViewer {
             const group = e.tile.url.split("/");
             const sub_url = group[group.length - 3];
 
-            let channel = _.find(that.currentChannels, e => {
+            let channel = _.find(that.channelList.currentChannels, e => {
                 return e.sub_url == sub_url;
             })
             if (channel) {
@@ -235,86 +232,7 @@ class ImageViewer {
             }
         });
 
-        const channels_download_icon = document.querySelector('#channels_download_icon');
-        channels_download_icon.addEventListener('click', () => {
-            this.dataLayer.downloadChannelsCSV(
-                imageChannelsIdx,
-                this.currentChannels,
-                this.colorConnector,
-                this.rangeConnector,
-                this.dataLayer.imageBitRange
-            );
-        })
 
-        let arrow = document.getElementById('channels_upload_arrow')
-        arrow.onclick = function () {
-            let elem = document.getElementById('channels-upload-from-arrow');
-            if (elem && document.createEvent) {
-                let evt = document.createEvent("MouseEvents");
-                evt.initEvent("click", true, false);
-                elem.dispatchEvent(evt);
-            }
-        }
-        document.getElementById("channels-upload-from-arrow").onchange = async function () {
-            if (document.getElementById("channels-upload-from-arrow").files) {
-                let file = document.getElementById("channels-upload-from-arrow").files[0]
-                let formData = new FormData();
-                formData.append("file", file);
-                await that.dataLayer.submitChannelUpload(formData);
-                document.getElementById("channels-upload-from-arrow").value = []
-                await that.apply_channels()
-            }
-        }
-    }
-
-    async apply_channels() {
-        const self = this;
-        let channels = await self.dataLayer.getUploadedChannelCsvValues()
-        debugger //NHAN
-        _.each(channels, col => {
-            let channelIdx = imageChannels[col.channel];
-            if (this.channelList.sliders.get(col.channel)) {
-                if (this.currentChannels[channelIdx]) {
-                        let selector = `#channel-slider_${col.channel}`;
-                        document.querySelector(selector).click();
-                }
-            }
-        })
-
-        _.each(channels, col => {
-            let fullName = self.dataLayer.getFullChannelName(col.channel);
-            let channelIdx = imageChannels[col.channel];
-            let range = this.dataLayer.imageBitRange;
-
-            if (this.channelList.sliders.get(col.channel)) {
-                if (this.currentChannels[channelIdx]) {
-                    let selector = `#channel-slider_${col.channel}`;
-                    document.querySelector(selector).click();
-                }
-
-                this.channelList.sliders.get(col.channel).value([col.start, col.end])
-                let channelRange = [col.start / range[1], col.end / range[1]];
-                self.rangeConnector[channelIdx] = channelRange;
-
-                let rgbColor = `rgb(${col.r}, ${col.g}, ${col.b})`
-                let selectorColor = `#color_${col.channel}`;
-                document.querySelector(selectorColor).setAttribute("fill", rgbColor)
-                let channelColor = {
-                    r: col.r,
-                    g: col.g,
-                    b: col.b,
-                    opacity: col.opacity
-                }
-                self.colorConnector[channelIdx] = {color: channelColor};
-
-                if (col['channel_active']) {
-                    let selector = `#channel-slider_${col.channel}`;
-                    document.querySelector(selector).click();
-                }
-
-                this.forceRepaint();
-            }
-        })
     }
 
     drawLabelTile(tile, width, height) {
@@ -554,10 +472,10 @@ class ImageViewer {
         const self = this;
         let range = self.dataLayer.getImageBitRange();
         const channelIdx = imageChannels[name];
-        if (self.currentChannels[channelIdx]) {
+        if (self.channelList.currentChannels[channelIdx]) {
             let channelRange = [tfmin / range[1], tfmax / range[1]];
-            self.currentChannels[channelIdx]['range'] = channelRange;
-            self.rangeConnector[channelIdx] = channelRange;
+            self.channelList.currentChannels[channelIdx]['range'] = channelRange;
+            self.channelList.rangeConnector[channelIdx] = channelRange;
         }
         this.forceRepaint();
     }
@@ -574,9 +492,9 @@ class ImageViewer {
     updateChannelColors(name, color, type) {
         const self = this;
         const channelIdx = imageChannels[name];
-        if (self.currentChannels[channelIdx]) {
-            self.colorConnector[channelIdx] = {color: color};
-            self.currentChannels[channelIdx]['color'] = color;
+        if (self.channelList.currentChannels[channelIdx]) {
+            self.channelList.colorConnector[channelIdx] = {color: color};
+            self.channelList.currentChannels[channelIdx]['color'] = color;
             // self.channelTF[channelIdx].end_color = color;
         }
         this.forceRepaint();

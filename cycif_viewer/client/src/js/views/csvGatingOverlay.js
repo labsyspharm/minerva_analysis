@@ -224,7 +224,8 @@ export class CsvGatingOverlay {
                         // const rgb = evaluateTF(values[channel], this.image_viewer.channelTF[gatingChannelIndices[i]]);
                         // ctx.fillStyle = `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
                         // ctx.fillStyle = this.image_viewer.channelTF[gatingChannelIndices[i].index].end_color;
-                        ctx.fillStyle = this.image_viewer.currentChannels[gatingChannelIndices[i].index]['color'];
+                        // ctx.fillStyle = this.global_channel_list.currentChannels[gatingChannelIndices[i].index]['color'];
+                        ctx.fillStyle = this.rgbToHex(this.global_channel_list.currentChannels[gatingChannelIndices[i].index]['color']);
 
                         ctx.beginPath();
                         ctx.moveTo(x, y);
@@ -246,6 +247,13 @@ export class CsvGatingOverlay {
         // Mark as not cleared
         this.cleared = false;
 
+    }
+
+    rgbToHex(color) {
+        return  '#' + [color.r, color.g, color.b].map(x => {
+          const hex = Math.round(x).toString(16)
+          return hex.length === 1 ? '0' + hex : hex
+        }).join('')
     }
 
     /** 4.

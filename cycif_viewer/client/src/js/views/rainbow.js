@@ -222,7 +222,7 @@
 				x:satScale.invert(hsl.s?hsl.s:sat),
 				y:lumScale.invert(hsl.l)
 			};
-			updateHueHandle(hueScale.invert(hsl.h?hsl.h:hue));
+			updateHueHandle(hueScale.invert(hsl.h?hsl.h:hue), true);
 			updateSlHandle(sl);
 
 	        // if (hsl.l==0){

@@ -11,6 +11,10 @@ class ChannelList {
         var that = this;
         this.sel = {};
 
+        this.currentChannels = {};
+        this.rangeConnector = {};
+        this.colorConnector = {};
+
         //  create a color picker
         this.rainbow = rainbow();
         this.colorTransferHandle = null;
@@ -42,6 +46,21 @@ class ChannelList {
 
     selectChannel(name) {
         const self = this;
+
+        let fullName = self.dataLayer.getFullChannelName(name);
+        let channelIdx = imageChannels[fullName];
+
+        if (!this.rangeConnector[channelIdx]) {
+            let defaultRange = self.dataLayer.imageBitRange;
+            this.sliders.get(name).value([defaultRange[0], defaultRange[1]]);
+        }
+
+        if (!this.colorConnector[channelIdx]) {
+            let rgbColor = `rgb(255, 255, 255)`;
+            let selectorColor = `#color_${name}`;
+            let selectorDoc = document.querySelector(selectorColor);
+            selectorDoc.style.fill = rgbColor;
+        }
 
         // Update selections
         self.selections.push(name);
@@ -150,6 +169,108 @@ class ChannelList {
             //add and hide channel sliders (will be visible when channel is active)
             this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").getBoundingClientRect().width);
             d3.select('div#channel-slider_' + column).style('display', "none");
+        });
+
+        let arrow = document.getElementById('channels_upload_arrow')
+        arrow.onclick = function () {
+            let elem = document.getElementById('channels-upload-from-arrow');
+            if (elem && document.createEvent) {
+                let evt = document.createEvent("MouseEvents");
+                evt.initEvent("click", true, false);
+                elem.dispatchEvent(evt);
+            }
+        }
+
+        document.getElementById("channels-upload-from-arrow").onchange = async function () {
+            if (document.getElementById("channels-upload-from-arrow").files) {
+                let file = document.getElementById("channels-upload-from-arrow").files[0]
+                let formData = new FormData();
+                formData.append("file", file);
+                await self.dataLayer.submitChannelUpload(formData);
+                document.getElementById("channels-upload-from-arrow").value = []
+                await self.apply_channels();
+            }
+        }
+
+        self.add_events();
+    }
+
+    /**
+     * @function apply_channels
+     *
+     */
+    async apply_channels() {
+        const self = this;
+        let channels = await self.dataLayer.getUploadedChannelCsvValues();
+        let defaultRange = self.dataLayer.imageBitRange;
+
+        this.eventHandler.trigger(ChannelList.events.RESET_LISTS);
+        // _.each(channels, col => {
+        //     let fullName = self.dataLayer.getFullChannelName(col.channel);
+        //     let channelIdx = imageChannels[fullName];
+        //
+        //     if (this.sliders.get(col.channel)) {
+        //         if (this.currentChannels[channelIdx]) {
+        //                 let channel_selector = `#channel-slider_${col.channel}`;
+        //                 document.querySelector(channel_selector).click();
+        //
+        //                 let gating_selector = `#csv_gating-slider_${col.channel}`;
+        //                 document.querySelector(gating_selector).click();
+        //         }
+        //     }
+        // })
+
+        this.currentChannels = {};
+        this.rangeConnector = {};
+        this.colorConnector = {};
+
+        _.each(channels, col => {
+            let fullName = self.dataLayer.getFullChannelName(col.channel);
+            let channelIdx = imageChannels[fullName];
+
+            if (this.sliders.get(col.channel)) {
+                if (col.start !== defaultRange[0] || col.end !== defaultRange[1]){
+                    this.sliders.get(col.channel).value([col.start, col.end]);
+                    this.rangeConnector[channelIdx] = [col.start / defaultRange[1], col.end / defaultRange[1]];
+                }
+
+                if (col.r !== 255 || col.g !== 255 || col.b !== 255) {
+                    let rgbColor = `rgb(${col.r}, ${col.g}, ${col.b})`;
+                    let selectorColor = `#color_${col.channel}`;
+                    // document.querySelector(selectorColor).setAttribute("fill", rgbColor);
+                    let selectorDoc = document.querySelector(selectorColor);
+                    selectorDoc.style.fill = rgbColor;
+                    let channelColor = {
+                        r: col.r,
+                        g: col.g,
+                        b: col.b,
+                        opacity: col.opacity
+                    };
+                    this.colorConnector[channelIdx] = {color: channelColor};
+                }
+
+                if (col['channel_active']) {
+                    let selector = `#channel-slider_${col.channel}`;
+                    document.querySelector(selector).click();
+                }
+            }
+        })
+    }
+
+    /**
+     * @function add_events
+     *
+     */
+    add_events() {
+        const channels_download_icon = document.querySelector('#channels_download_icon');
+        channels_download_icon.addEventListener('click', () => {
+            this.dataLayer.downloadChannelsCSV(
+                imageChannelsIdx,
+                this.currentChannels,
+                this.colorConnector,
+                this.rangeConnector,
+                this.dataLayer.imageBitRange
+            );
         });
     }
 
@@ -272,6 +393,15 @@ class ChannelList {
 
         return sliderSimple;
     };
+
+    reset_channelList() {
+        const self = this;
+        let channelList = _.clone(self.selections);
+        _.each(channelList, col => {
+            let channel_selector = `#channel-slider_${col}`;
+            document.querySelector(channel_selector).click();
+        });
+    }
 }
 
 window.addEventListener("resize", function () {
@@ -292,5 +422,6 @@ ChannelList.events = {
     COLOR_TRANSFER_CHANGE_MOVE: "COLOR_TRANSFER_CHANGE_MOVE",
     COLOR_TRANSFER_CHANGE: "COLOR_TRANSFER_CHANGE",
     CHANNELS_CHANGE: "CHANNELS_CHANGE",
-    CHANNEL_SELECT: "CHANNEL_SELECT"
+    CHANNEL_SELECT: "CHANNEL_SELECT",
+    RESET_LISTS: "RESET_LISTS"
 };
