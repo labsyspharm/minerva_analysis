@@ -8,6 +8,14 @@
 
 }
 
+.input{
+    font-size:8px;
+    width:35px;
+    margin-top:15px;
+    border: 1px solid gray;
+    box-sizing: border-box;
+}
+
 #csv_gating_list .list-group-item {
     padding: .20rem 0.5rem;
     border: 0;
@@ -16,7 +24,7 @@
 #csv_gating_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
-    height: 60px;
+    height: 65px;
 }
 
 #csv_gating_list .list-group {

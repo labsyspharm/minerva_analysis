@@ -147,9 +147,43 @@ class ChannelList {
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
-            this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").getBoundingClientRect().width);
+            let sliderRange = this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").getBoundingClientRect().width);
             d3.select('div#channel-slider_' + column).style('display', "none");
+
         });
+
+        // //adding a html input field instead of a svg text
+        //     d3.selectAll(".parameter-value").each(function(d, i) {
+        //     d3.select(this).append("foreignObject")
+        //                 .attr('id', 'foreignObject' + i)
+        //                 .attr("width", 50)
+        //                 .attr("height", 40)
+        //                 .attr('x', -25)
+        //                 .attr( 'y', -15)
+        //                 .style('padding',"10px")
+        //                 .append("xhtml:body")
+        //                   .attr('xmlns','http://www.w3.org/1999/xhtml')
+        //                     .style('background', 'none')
+        //                   .append('input')
+        //                     .attr( 'y', -15)
+        //                     .attr('id', 'slider-input' + i)
+        //                     .attr('type', 'text')
+        //                     .attr('class', 'input')
+        //                     .attr('value', function(){return channelList.sliders[i].value()[i]});
+        //         //remove the previous text label
+        //         d3.select(this).select('text').remove();
+        //     });
+        //
+        //     //entering a value in the input field of a slider handle will set this value and move the slider to this position
+        //     d3.selectAll('.input').on('keydown', function(event, d){
+        //       if(event.key == "Enter"){
+        //         // if (d.index = d3.select(this).attr('id')){
+        //           let val = parseFloat(this.value.replace("%", ""));
+        //           let handleVals = sliderRange.silentValue();
+        //           handleVals[d.index] = val;
+        //           sliderRange.silentValue(handleVals);
+        //       }
+        //     })
     }
 
 
@@ -234,6 +268,9 @@ class ChannelList {
      */
     addSlider(data, activeRange, name, swidth) {
 
+        //formatter
+        const f = (d3.format('.2%'))
+
         var that = this;
         //add range slider row content
         var sliderSimple = d3.sliderBottom()
@@ -241,6 +278,15 @@ class ChannelList {
             .max(d3.max(data))
             .width(swidth - 75)//.tickFormat(d3.format("s"))
             .fill('orange')
+            .on('onchange', val => {
+              // d3.select('p#value-range').text(val.map(d3.format('.2%')).join('-'));
+              d3.select('#slider-input' + name + 0).attr('value', Math.round(val[0]));
+              d3.select('#slider-input' + name + 0).property('value', Math.round(val[0]));
+              d3.select('#slider-input' + name + 1).attr('value', Math.round(val[1]));
+              d3.select('#slider-input' + name + 1).property('value', Math.round(val[1]));
+              // sliderSimple.silentValue([val[0], val[1]]);
+              that.moveSliderHandles(sliderSimple, val, name);
+            })
             .ticks(5)
             .default(activeRange)
             .handle(
@@ -252,6 +298,7 @@ class ChannelList {
                 let packet = {name: name, dataRange: range};
                 this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
             });
+
         this.sliders.set(name, sliderSimple);
 
         //create the slider svg and call the slider
@@ -260,7 +307,7 @@ class ChannelList {
             .append('svg')
             .attr('class', 'svgslider')
             .attr('width', swidth)
-            .attr('height', 30)
+            .attr('height', 50)
             .append('g')
             .attr('transform', 'translate(20,13)');
         gSimple.call(sliderSimple);
@@ -269,8 +316,55 @@ class ChannelList {
         d3.selectAll('.parameter-value').select('text')
             .attr("y", 10);
 
+
+
+        //both handles
+        d3.select('#channel-slider_' + name).selectAll(".parameter-value").each(function(d, i) {
+        d3.select(this).append("foreignObject")
+                    .attr('id', 'foreignObject_' + name + i)
+                    .attr("width", 50)
+                    .attr("height", 40)
+                    .attr('x', -25)
+                    .attr( 'y', -15)
+                    .style('padding',"10px")
+                    .append("xhtml:body")
+                      .attr('xmlns','http://www.w3.org/1999/xhtml')
+                        .style('background', 'none')
+                      .append('input')
+                        .attr( 'y', -15)
+                        .attr('id', 'slider-input' + name + i)
+                        .attr('type', 'text')
+                        .attr('class', 'input')
+                        .attr('value', function(){return channelList.sliders.get(name).value()[i]});
+            //remove the previous text label
+            d3.select(this).select('text').remove();
+        });
+
+        //entering a value in the input field of a slider handle will set this value and move the slider to this position
+        d3.select('#channel-slider_' + name).selectAll(".parameter-value").selectAll('.input').on('keydown', function(event, d){
+          if(event.key == "Enter"){
+            // if (d.index = d3.select(this).attr('id')){
+              let val = parseFloat(this.value.replace("%", ""));
+              let handleVals = sliderSimple.silentValue();
+              handleVals[d.index] = val;
+              that.moveSliderHandles(sliderSimple, handleVals, name)
+          }
+        })
+
         return sliderSimple;
     };
+
+
+    //move the slider handles and input fields so that input fields don't overlap when handles are close
+    moveSliderHandles(slider, valArray, name){
+        slider.silentValue(valArray);
+        if (valArray[1] - valArray[0] < 10000){
+            console.log('slider handles overlap..do something');
+            d3.select('#foreignObject_'  + name + 1).attr('x', 5);
+        }else{
+            d3.select('#foreignObject_'  + name + 1).attr('x', -25);
+        }
+    }
 }
 
 window.addEventListener("resize", function () {

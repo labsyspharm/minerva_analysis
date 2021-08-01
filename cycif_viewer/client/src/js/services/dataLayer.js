@@ -413,4 +413,16 @@ class DataLayer {
         }
     }
 
+    /**
+     * whether the current data is log transformed or not
+     * @returns {boolean}
+     */
+    isTransformed(){
+      if (this.config["featureData"][0]["transformData"]  !== undefined &&
+          this.config["featureData"][0]["transformData"] == true){
+          return true;
+      }
+      return false;
+    }
+
 }

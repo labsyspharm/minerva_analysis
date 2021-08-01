@@ -54,15 +54,15 @@ export class CsvGatingOverlay {
      *
      * @param _viewer
      */
-    constructor(_viewer, _imageViewer) {
+    constructor(viewer, imageViewer, dataLayer, eventHandler) {
 
         // Init vars
-        this.viewer = _viewer;
-        this.image_viewer = _imageViewer;
-        this.global_channel_list = channelList;
-        this.global_gating_list = csv_gatingList;
-        this.global_data_layer = dataLayer;
-        this.global_event_handler = eventHandler;
+        this.viewer = viewer;
+        this.image_viewer = imageViewer;
+        this.channel_list = channelList;
+        this.gating_list = csv_gatingList;
+        this.dataLayer = dataLayer;
+        this.eventHandler = eventHandler;
 
         this.init();
     }
@@ -162,14 +162,15 @@ export class CsvGatingOverlay {
         const r = this.r_scale(this.viewer.viewport.getZoom()).toFixed(2);
 
         // Get cells in range
+
         for (let k of this.image_viewer.selection.keys()) {
 
             // Get values
             const values = this.image_viewer.selection.get(k)
 
             // Position condition
-            const xAlias = this.global_data_layer.config.featureData[0].xCoordinate;
-            const yAlias = this.global_data_layer.config.featureData[0].yCoordinate;
+            const xAlias = this.dataLayer.config.featureData[0].xCoordinate;
+            const yAlias = this.dataLayer.config.featureData[0].yCoordinate;
             if (values[xAlias] >= this.range[0][0]
                 && values[xAlias] <= this.range[1][0]
                 && values[yAlias] >= this.range[0][1]
@@ -192,14 +193,14 @@ export class CsvGatingOverlay {
 
                     // Match to channel color
                     const gatingChannelIndices = [];
-                    for (let key in this.global_gating_list.selections) {
+                    for (let key in this.gating_list.selections) {
 
-                        this.global_channel_list.columns.forEach((c, i) => {
+                        this.channel_list.columns.forEach((c, i) => {
 
-                            if (this.global_data_layer.getShortChannelName(key) === c) {
+                            if (this.dataLayer.getShortChannelName(key) === c) {
 
                                 // Define current channel
-                                const channel = this.global_gating_list.selections[key];
+                                const channel = this.gating_list.selections[key];
 
                                 if (values[key] >= channel[0] && values[key] <= channel[1]) {
                                     gatingChannelIndices.push({
@@ -217,7 +218,7 @@ export class CsvGatingOverlay {
                     // Update scale
                     this.channel_scale.domain([0, gatingChannelIndices.length]);
 
-                    // this.global_gating_list.forEach(c => {
+                    // this.gating_list.forEach(c => {
                     gatingChannelIndices.forEach((d, i) => {
 
                         // Retrieve color (FIXME - need to integrate into viewer manager)
@@ -280,8 +281,8 @@ export class CsvGatingOverlay {
         this.show_centroids = show;
 
         // Trigger event
-        this.global_event_handler.trigger(CSVGatingList.events.GATING_BRUSH_END,
-            this.global_gating_list.selections);
+        this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END,
+            this.gating_list.selections);
     }
 
 
