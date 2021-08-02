@@ -78,14 +78,11 @@ def get_neighborhood():
 
 @app.route('/get_naive_states', methods=['GET'])
 def get_naive_states():
+    # test of triggering docker module
     dirname = os.path.dirname(__file__)
-    # file_path = data_path / 'unmicst-163.csv'
-    # print(file_path)
     os.system('docker run --rm -v' + dirname + '/data:/data labsyspharm/naivestates:1.7.0 /app/main.R -i /data/unmicst-163.csv')
     os.path.join(os.getcwd() / data_path / "data"  / "umicst-162-models.csv")
-    # with open(data_path, 'w') as f:
-    # print (f)
-    # return f
+
 
 @app.route('/get_num_cells_in_circle', methods=['GET'])
 def get_num_cells_in_circle():
