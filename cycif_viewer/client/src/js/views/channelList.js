@@ -375,6 +375,8 @@ class ChannelList {
               d3.select('#slider-input' + name + 1).property('value', Math.round(val[1]));
               // sliderSimple.silentValue([val[0], val[1]]);
               that.moveSliderHandles(sliderSimple, val, name);
+              let packet = {name: name, dataRange: val};
+              this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
             })
             .ticks(5)
             .default(activeRange)
@@ -383,10 +385,11 @@ class ChannelList {
                     .type(d3.symbolCircle)
                     .size(100)
             )
-            .tickValues([]).on('end', range => {
-                let packet = {name: name, dataRange: range};
-                this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-            });
+            .tickValues([])
+            // .on('end', range => {
+            //     let packet = {name: name, dataRange: range};
+            //     this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
+            // });
 
         this.sliders.set(name, sliderSimple);
 
@@ -435,6 +438,9 @@ class ChannelList {
               let handleVals = sliderSimple.silentValue();
               handleVals[d.index] = val;
               that.moveSliderHandles(sliderSimple, handleVals, name)
+
+              let packet = {name: name, dataRange: handleVals};
+              that.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
           }
         })
 
