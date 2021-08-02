@@ -20,6 +20,7 @@ class ImageViewer {
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.colorScheme = colorScheme;
+        this.channelList = channelList;
 
         // Viewer
         this.viewer = {};
@@ -34,10 +35,7 @@ class ImageViewer {
         this.selection = new Map();
         this.data = new Map();
 
-        // Currently loaded image / label channels
-        this.currentChannels = {};
-        this.colorConnector = {};
-        this.rangeConnector = {};
+        // Currently loaded label channels
         this.labelChannel = {};
         this.noLabel = false;
         this.sel_outlines = true;
@@ -118,7 +116,7 @@ class ImageViewer {
             const group = e.tile.url.split("/");
             const sub_url = group[group.length - 3];
 
-            let channel = _.find(that.currentChannels, e => {
+            let channel = _.find(that.channelList.currentChannels, e => {
                 return e.sub_url == sub_url;
             })
             if (channel) {
@@ -234,17 +232,7 @@ class ImageViewer {
             }
         });
 
-        const channels_download_icon = document.querySelector('#channels_download_icon');
-        channels_download_icon.addEventListener('click', () => {
-            debugger //NHAN
-            this.dataLayer.downloadChannelsCSV(
-                imageChannelsIdx,
-                this.currentChannels,
-                this.colorConnector,
-                this.rangeConnector,
-                this.dataLayer.imageBitRange
-            );
-        })
+
     }
 
     drawLabelTile(tile, width, height) {
@@ -484,10 +472,10 @@ class ImageViewer {
         const self = this;
         let range = self.dataLayer.getImageBitRange();
         const channelIdx = imageChannels[name];
-        if (self.currentChannels[channelIdx]) {
+        if (self.channelList.currentChannels[channelIdx]) {
             let channelRange = [tfmin / range[1], tfmax / range[1]];
-            self.currentChannels[channelIdx]['range'] = channelRange;
-            self.rangeConnector[channelIdx] = channelRange;
+            self.channelList.currentChannels[channelIdx]['range'] = channelRange;
+            self.channelList.rangeConnector[channelIdx] = channelRange;
         }
         this.forceRepaint();
     }
@@ -504,9 +492,9 @@ class ImageViewer {
     updateChannelColors(name, color, type) {
         const self = this;
         const channelIdx = imageChannels[name];
-        if (self.currentChannels[channelIdx]) {
-            self.colorConnector[channelIdx] = {color: color};
-            self.currentChannels[channelIdx]['color'] = color;
+        if (self.channelList.currentChannels[channelIdx]) {
+            self.channelList.colorConnector[channelIdx] = {color: color};
+            self.channelList.currentChannels[channelIdx]['color'] = color;
             // self.channelTF[channelIdx].end_color = color;
         }
         this.forceRepaint();

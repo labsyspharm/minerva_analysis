@@ -9,6 +9,7 @@ from time import time
 import pandas as pd
 import json
 import orjson
+import os
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -75,6 +76,16 @@ def get_neighborhood():
     resp = data_model.get_neighborhood(x, y, datasource, r=max_distance)
     return serialize_and_submit_json(resp)
 
+@app.route('/get_naive_states', methods=['GET'])
+def get_naive_states():
+    dirname = os.path.dirname(__file__)
+    # file_path = data_path / 'unmicst-163.csv'
+    # print(file_path)
+    os.system('docker run --rm -v' + dirname + '/data:/data labsyspharm/naivestates:1.7.0 /app/main.R -i /data/unmicst-163.csv')
+    os.path.join(os.getcwd() / data_path / "data"  / "umicst-162-models.csv")
+    # with open(data_path, 'w') as f:
+    # print (f)
+    # return f
 
 @app.route('/get_num_cells_in_circle', methods=['GET'])
 def get_num_cells_in_circle():
@@ -133,6 +144,20 @@ def upload_gates():
     resp = jsonify(success=True)
     return resp
 
+@app.route('/upload_channels', methods=['POST'])
+def upload_channels():
+    file = request.files['file']
+    if file.filename.endswith('.csv') == False:
+        abort(422)
+    datasource = request.form['datasource']
+    save_path = data_path / datasource
+    if save_path.is_dir() == False:
+        abort(422)
+
+    filename = 'uploaded_channels.csv'
+    file.save(Path(save_path / filename))
+    resp = jsonify(success=True)
+    return resp
 
 @app.route('/get_rect_cells', methods=['GET'])
 def get_rect_cells():
@@ -199,6 +224,16 @@ def download_channels_csv():
 def get_gating_csv_values():
     datasource = request.args.get('datasource')
     file_path = data_path / datasource / 'uploaded_gates.csv'
+    if file_path.is_file() == False:
+        abort(422)
+    csv = pd.read_csv(file_path)
+    obj = csv.to_dict(orient='records')
+    return serialize_and_submit_json(obj)
+
+@app.route('/get_uploaded_channel_csv_values', methods=['GET'])
+def get_channel_csv_values():
+    datasource = request.args.get('datasource')
+    file_path = data_path / datasource / 'uploaded_channels.csv'
     if file_path.is_file() == False:
         abort(422)
     csv = pd.read_csv(file_path)

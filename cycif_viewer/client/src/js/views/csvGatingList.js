@@ -618,6 +618,16 @@ class CSVGatingList {
         return sliderSimple;
     };
 
+    reset_gatingList() {
+        const self = this;
+        let gatingList = Object.keys(self.selections);
+        _.each(gatingList, col => {
+            let shortName = self.dataLayer.getShortChannelName(col);
+            let gating_selector = `#csv_gating-slider_${shortName}`;
+            document.querySelector(gating_selector).click();
+        });
+    };
+
     //move the slider handles and input fields so that input fields don't overlap when handles are close
     moveSliderHandles(slider, valArray, name){
         slider.silentValue(valArray);

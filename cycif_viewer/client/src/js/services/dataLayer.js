@@ -56,6 +56,18 @@ class DataLayer {
         }
     }
 
+    async getUploadedChannelCsvValues() {
+        try {
+            let response = await fetch('/get_uploaded_channel_csv_values?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Uploaded Channels", e);
+        }
+    }
+
     downloadGatingCSV(channels, selections, fullCsv = false) {
         let form = document.createElement("form");
         form.action = "/download_gating_csv";
@@ -110,13 +122,12 @@ class DataLayer {
     }
 
     downloadChannelsCSV(map_channels, active_channels, list_colors, list_ranges, default_range) {
-        debugger //NHAN
         let form = document.createElement("form");
         form.action = "/download_channels_csv";
 
         form.method = "post";
 
-        let filename = 'test.csv';
+        let filename = 'channels';
         let fileNameElemment = document.createElement("input");
         fileNameElemment.type = "hidden";
         fileNameElemment.value = _.toString(filename);
@@ -179,6 +190,20 @@ class DataLayer {
         try {
             formData.append('datasource', datasource);
             let response = await fetch('/upload_gates', {
+                method: "POST",
+                body: formData
+            })
+            let cell = await response.json();
+            return cell;
+        } catch (e) {
+            console.log("Error Getting Submitting Form Upload", e);
+        }
+    }
+
+    async submitChannelUpload(formData) {
+        try {
+            formData.append('datasource', datasource);
+            let response = await fetch('/upload_channels', {
                 method: "POST",
                 body: formData
             })

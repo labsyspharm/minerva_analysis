@@ -9,7 +9,7 @@ const datasource = flaskVariables.datasource;
 //VIEWS
 let seaDragonViewer;
 let channelList;
-let csvGatingList;
+let csv_gatingList;
 
 let dataLayer;
 let config;
@@ -41,8 +41,8 @@ async function init(conf) {
     config = conf;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
-        let name = config["imageData"][idx].fullname;
-        imageChannels[name] = idx;
+        imageChannels[config["imageData"][idx].fullname] = idx;
+        let name = config["imageData"][idx].name
         if (name !== 'Area') {
             imageChannelsIdx[idx] = name;
         }
@@ -159,8 +159,13 @@ eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 //feature range selection changed in ridge plot
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
-    debugger //NHAN
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
+const reset_lists = () => {
+    csv_gatingList.reset_gatingList();
+    channelList.reset_channelList();
+    seaDragonViewer.forceRepaint();
+}
+eventHandler.bind(ChannelList.events.RESET_LISTS, reset_lists);

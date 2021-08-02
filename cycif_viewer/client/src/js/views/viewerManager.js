@@ -21,6 +21,7 @@ export class ViewerManager {
         this.imageViewer = _imageViewer;
         this.viewer_name = _viewerName;
         this.viewer_channels = {};
+        this.channelList = channelList;
 
         this.init();
     }
@@ -49,7 +50,7 @@ export class ViewerManager {
         const self = this;
 
         // If already exists
-        if ((srcIdx in this.imageViewer.currentChannels)) {
+        if ((srcIdx in this.channelList.currentChannels)) {
             return;
         }
 
@@ -90,11 +91,11 @@ export class ViewerManager {
                 const group = url.split("/");
                 const sub_url = group[group.length - 2];
                 // Attach
-                this.imageViewer.currentChannels[srcIdx] = {
+                this.channelList.currentChannels[srcIdx] = {
                     "url": url,
                     "sub_url": sub_url,
-                    "color": this.imageViewer.colorConnector[srcIdx] ? this.imageViewer.colorConnector[srcIdx].color : d3.color("white"),
-                    "range": this.imageViewer.rangeConnector[srcIdx] || dataLayer.getImageBitRange(true)
+                    "color": this.channelList.colorConnector[srcIdx] ? this.channelList.colorConnector[srcIdx].color : d3.color("white"),
+                    "range": this.channelList.rangeConnector[srcIdx] || dataLayer.getImageBitRange(true)
                 };
                 this.viewer_channels[srcIdx] = {"url": url, "sub_url": sub_url, 'name': name, 'short_name': name_short};
             }
@@ -114,14 +115,14 @@ export class ViewerManager {
         const img_count = this.viewer.world.getItemCount();
 
         // remove channel
-        if ((srcIdx in this.imageViewer.currentChannels)) {
+        if ((srcIdx in this.channelList.currentChannels)) {
 
             // remove channel - first find it
             for (let i = 0; i < img_count; i = i + 1) {
                 const url = this.viewer.world.getItemAt(i).source['channelUrl'];
-                if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
+                if (url === this.channelList.currentChannels[srcIdx]["url"]) {
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
-                    delete this.imageViewer.currentChannels[srcIdx];
+                    delete this.channelList.currentChannels[srcIdx];
                     delete this.viewer_channels[srcIdx];
                     break;
                 }
