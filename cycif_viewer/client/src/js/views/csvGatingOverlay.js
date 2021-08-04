@@ -54,7 +54,7 @@ export class CsvGatingOverlay {
      *
      * @param _viewer
      */
-    constructor(viewer, imageViewer, dataLayer, eventHandler) {
+    constructor(viewer, imageViewer) {
 
         // Init vars
         this.viewer = viewer;
@@ -226,7 +226,7 @@ export class CsvGatingOverlay {
                         // ctx.fillStyle = `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
                         // ctx.fillStyle = this.image_viewer.channelTF[gatingChannelIndices[i].index].end_color;
                         // ctx.fillStyle = this.global_channel_list.currentChannels[gatingChannelIndices[i].index]['color'];
-                        ctx.fillStyle = this.rgbToHex(this.global_channel_list.currentChannels[gatingChannelIndices[i].index]['color']);
+                        ctx.fillStyle = this.rgbToHex(this.channel_list.currentChannels[gatingChannelIndices[i].index]['color']);
 
                         ctx.beginPath();
                         ctx.moveTo(x, y);

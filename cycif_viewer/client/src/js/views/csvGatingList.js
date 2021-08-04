@@ -523,7 +523,6 @@ class CSVGatingList {
                   //upper range value
                   d3.select('#gating_slider-input' + name + 1).attr('value', function(){
                       if (that.dataLayer.isTransformed()) { return range[1]}; return Math.round(range[1]);
-                      Math.round(range[1])
                   });
                   d3.select('#gating_slider-input' + name + 1).property('value', function(){
                      if (that.dataLayer.isTransformed()) { return range[1]}; return Math.round(range[1]);
