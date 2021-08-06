@@ -25,7 +25,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 * Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
-* Active environment: `conda activate cycif_viewer`
+* Active environment: `conda activate minerva_analysis`
 
 
 ##### Start the Server
