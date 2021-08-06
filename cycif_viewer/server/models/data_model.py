@@ -316,7 +316,7 @@ def get_k_results_for_spat_corr(x, y, datasource_name, r=100, channels=[], field
     try:
 
         # Settings, configs
-        k_range = [1, 10]
+        k_range = [1, 11]
         x_coordinate = config[datasource_name]['featureData'][0]['xCoordinate']
         y_coordinate = config[datasource_name]['featureData'][0]['yCoordinate']
         index = config[datasource_name]['featureData'][0]['idField']
