@@ -217,6 +217,22 @@ def download_channels_csv():
         headers={"Content-disposition":
                      "attachment; filename=" + filename + ".csv"})
 
+@app.route('/save_channel_list', methods=['POST'])
+def save_channel_list():
+    post_data = json.loads(request.data)
+
+    datasource = post_data['datasource']
+    map_channels = post_data['map_channels']
+    active_channels = post_data['active_channels']
+    list_colors = post_data['list_colors']
+    list_ranges = post_data['list_ranges']
+    default_range = post_data['default_range']
+
+    data_model.save_channel_list(datasource, map_channels, active_channels, list_colors, list_ranges, default_range)
+
+    resp = jsonify(success=True)
+    return resp
+
 @app.route('/get_uploaded_gating_csv_values', methods=['GET'])
 def get_gating_csv_values():
     datasource = request.args.get('datasource')
@@ -237,7 +253,11 @@ def get_channel_csv_values():
     obj = csv.to_dict(orient='records')
     return serialize_and_submit_json(obj)
 
-
+@app.route('/get_saved_channel_list', methods=['GET'])
+def get_saved_channel_list():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_saved_channel_list(datasource)
+    return serialize_and_submit_json(resp)
 
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')

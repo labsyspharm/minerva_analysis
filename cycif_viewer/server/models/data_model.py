@@ -4,6 +4,7 @@ import pandas as pd
 from PIL import ImageColor
 import json
 import os
+import io
 from pathlib import Path
 from ome_types import from_xml
 from cycif_viewer import config_json_path, data_path
@@ -503,6 +504,39 @@ def download_channels(datasource_name, map_channels, active_channels, list_color
         csv.loc[csv['channel'] == map_channels[channel], 'channel_active'] = True
 
     return csv
+
+def save_channel_list(datasource_name, map_channels, active_channels, list_colors, list_ranges, default_range):
+    global datasource
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    arr = []
+    for channel in map_channels:
+        arr.append([map_channels[channel], default_range[0], default_range[1], 255, 255, 255, 1, False])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'start', 'end', 'r', 'g', 'b', 'opacity', 'channel_active']
+
+    for channel in list_ranges:
+        csv.loc[csv['channel'] == map_channels[channel], 'start'] = list_ranges[channel][0] * default_range[1]
+        csv.loc[csv['channel'] == map_channels[channel], 'end'] = list_ranges[channel][1] * default_range[1]
+    for channel in list_colors:
+        csv.loc[csv['channel'] == map_channels[channel], 'r'] = list_colors[channel]['color']['r']
+        csv.loc[csv['channel'] == map_channels[channel], 'g'] = list_colors[channel]['color']['g']
+        csv.loc[csv['channel'] == map_channels[channel], 'b'] = list_colors[channel]['color']['b']
+        csv.loc[csv['channel'] == map_channels[channel], 'opacity'] = list_colors[channel]['color']['opacity']
+    for channel in active_channels:
+        csv.loc[csv['channel'] == map_channels[channel], 'channel_active'] = True
+
+    temp = csv.to_dict(orient='records')
+    f = pickle.dumps(temp, protocol=4)
+    database_model.save_channel_list(database_model.ChannelList, datasource=datasource_name, cells=f)
+
+def get_saved_channel_list(datasource_name):
+    channel_list = database_model.get(database_model.ChannelList, datasource=datasource_name)
+    return pickle.loads(channel_list.cells)
 
 def get_datasource_description(datasource_name):
     global datasource

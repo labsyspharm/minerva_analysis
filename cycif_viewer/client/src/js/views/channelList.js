@@ -172,7 +172,12 @@ class ChannelList {
 
         });
 
-        let arrow = document.getElementById('channels_upload_arrow')
+        let arrow_db = document.getElementById('channels_upload_icon_db')
+        arrow_db.onclick = async function () {
+            await self.apply_channels('db');
+        }
+
+        let arrow = document.getElementById('channels_upload_icon')
         arrow.onclick = function () {
             let elem = document.getElementById('channels-upload-from-arrow');
             if (elem && document.createEvent) {
@@ -181,7 +186,6 @@ class ChannelList {
                 elem.dispatchEvent(evt);
             }
         }
-
         document.getElementById("channels-upload-from-arrow").onchange = async function () {
             if (document.getElementById("channels-upload-from-arrow").files) {
                 let file = document.getElementById("channels-upload-from-arrow").files[0]
@@ -189,7 +193,7 @@ class ChannelList {
                 formData.append("file", file);
                 await self.dataLayer.submitChannelUpload(formData);
                 document.getElementById("channels-upload-from-arrow").value = []
-                await self.apply_channels();
+                await self.apply_channels('file');
             }
         }
 
@@ -200,9 +204,16 @@ class ChannelList {
      * @function apply_channels
      *
      */
-    async apply_channels() {
+    async apply_channels(source) {
         const self = this;
-        let channels = await self.dataLayer.getUploadedChannelCsvValues();
+
+        let channels;
+        if (source === 'file'){
+            channels = await self.dataLayer.getUploadedChannelCsvValues();
+        } else {
+            channels = await self.dataLayer.getSavedChannelList();
+        }
+
         let defaultRange = self.dataLayer.imageBitRange;
 
         this.eventHandler.trigger(ChannelList.events.RESET_LISTS);
@@ -266,6 +277,17 @@ class ChannelList {
         const channels_download_icon = document.querySelector('#channels_download_icon');
         channels_download_icon.addEventListener('click', () => {
             this.dataLayer.downloadChannelsCSV(
+                imageChannelsIdx,
+                this.currentChannels,
+                this.colorConnector,
+                this.rangeConnector,
+                this.dataLayer.imageBitRange
+            );
+        });
+
+        const channels_download_icon_db = document.querySelector('#channels_download_icon_db');
+        channels_download_icon_db.addEventListener('click', () => {
+            this.dataLayer.saveChannelList(
                 imageChannelsIdx,
                 this.currentChannels,
                 this.colorConnector,

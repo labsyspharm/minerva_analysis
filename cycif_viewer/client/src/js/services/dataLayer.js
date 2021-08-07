@@ -68,6 +68,18 @@ class DataLayer {
         }
     }
 
+    async getSavedChannelList() {
+        try {
+            let response = await fetch('/get_saved_channel_list?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Saved Channel List", e);
+        }
+    }
+
     downloadGatingCSV(channels, selections, fullCsv = false) {
         let form = document.createElement("form");
         form.action = "/download_gating_csv";
@@ -127,7 +139,7 @@ class DataLayer {
 
         form.method = "post";
 
-        let filename = 'channels';
+        let filename = datasource + '_channel_list';
         let fileNameElemment = document.createElement("input");
         fileNameElemment.type = "hidden";
         fileNameElemment.value = _.toString(filename);
@@ -171,6 +183,33 @@ class DataLayer {
         form.appendChild(datasourceElement);
         document.body.appendChild(form);
         form.submit()
+    }
+
+    async saveChannelList(map_channels, active_channels, list_colors, list_ranges, default_range) {
+        const self = this;
+        try {
+            let response = await fetch('/save_channel_list', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        map_channels: map_channels,
+                        active_channels: active_channels,
+                        list_colors: list_colors,
+                        list_ranges: list_ranges,
+                        default_range: default_range
+                    }
+                )
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Saving Channel List", e);
+        }
     }
 
     async getColumnDistributions(columns) {

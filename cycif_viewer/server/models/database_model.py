@@ -1,5 +1,6 @@
 from cycif_viewer import app, db
 from sqlalchemy.orm import relationship
+from sqlalchemy import func
 
 import io
 import numpy as np
@@ -40,6 +41,30 @@ def get_or_create(model, **kwargs):
         db.session.commit()
         return instance
 
+
+def save_channel_list(model, **kwargs):
+    if 'cells' in kwargs:
+        cells = kwargs['cells']
+        del kwargs['cells']
+
+    instance = db.session.query(model).filter_by(**kwargs).one_or_none()
+    if instance:
+        instance.__setattr__('cells', cells)
+        db.session.commit()
+        return instance
+    else:
+        instance = model(cells=cells, **kwargs)
+        db.session.add(instance)
+        db.session.commit()
+        return instance
+
+
+class ChannelList(db.Model):
+    __tablename__ = 'channelList'
+    id = db.Column(db.Integer, primary_key=True)
+    datasource = db.Column(db.String(80), unique=False, nullable=False)
+    cells = db.Column(db.LargeBinary, default={}, nullable=False)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
 
 
 db.create_all()
