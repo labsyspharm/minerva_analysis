@@ -42,7 +42,7 @@ def get_or_create(model, **kwargs):
         return instance
 
 
-def save_channel_list(model, **kwargs):
+def save_list(model, **kwargs):
     if 'cells' in kwargs:
         cells = kwargs['cells']
         del kwargs['cells']
@@ -61,6 +61,14 @@ def save_channel_list(model, **kwargs):
 
 class ChannelList(db.Model):
     __tablename__ = 'channelList'
+    id = db.Column(db.Integer, primary_key=True)
+    datasource = db.Column(db.String(80), unique=False, nullable=False)
+    cells = db.Column(db.LargeBinary, default={}, nullable=False)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
+
+
+class GatingList(db.Model):
+    __tablename__ = 'gatinglist'
     id = db.Column(db.Integer, primary_key=True)
     datasource = db.Column(db.String(80), unique=False, nullable=False)
     cells = db.Column(db.LargeBinary, default={}, nullable=False)

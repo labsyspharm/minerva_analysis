@@ -200,6 +200,25 @@ def download_gating_csv():
             headers={"Content-disposition":
                          "attachment; filename=" + filename + ".csv"})
 
+@app.route('/save_gating_list', methods=['POST'])
+def save_gating_list():
+    post_data = json.loads(request.data)
+
+    datasource = post_data['datasource']
+    filter = post_data['filter']
+    channels = post_data['channels']
+
+    data_model.save_gating_list(datasource, filter, channels)
+
+    resp = jsonify(success=True)
+    return resp
+
+@app.route('/get_saved_gating_list', methods=['GET'])
+def get_saved_gating_list():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_saved_gating_list(datasource)
+    return serialize_and_submit_json(resp)
+
 @app.route('/download_channels_csv', methods=['POST'])
 def download_channels_csv():
     filename = request.form['filename']

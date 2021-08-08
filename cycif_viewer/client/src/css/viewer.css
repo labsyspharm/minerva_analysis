@@ -93,12 +93,13 @@
     font-size: 15px
 }
 
-#channels_upload_icon_db, #channels_download_icon_db, #channels_upload_icon, #channels_download_icon {
+#channels_upload_icon_db, #channels_download_icon_db, #channels_upload_icon, #channels_download_icon,
+#gating_upload_icon_db, #gating_download_icon_db, #gating_upload_icon, #gating_download_icon{
      cursor: pointer
 }
 
-#channels_download_icon_db {
-    margin-right: 7px;
+#channels_download_icon_db, #gating_download_icon_db {
+    margin-right: 10px;
 }
 
 #openseadragon, #channel_list, #csv_gating_list {

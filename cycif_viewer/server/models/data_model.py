@@ -478,6 +478,36 @@ def download_gates(datasource_name, gates, channels):
         csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
     return csv
 
+
+def save_gating_list(datasource_name, gates, channels):
+    global datasource
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    arr = []
+    for key, value in channels.items():
+        arr.append([key, value[0], value[1]])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'gate_start', 'gate_end']
+    csv['gate_active'] = False
+    for channel in gates:
+        csv.loc[csv['channel'] == channel, 'gate_active'] = True
+        csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
+        csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
+
+    temp = csv.to_dict(orient='records')
+    f = pickle.dumps(temp, protocol=4)
+    database_model.save_list(database_model.GatingList, datasource=datasource_name, cells=f)
+
+
+def get_saved_gating_list(datasource_name):
+    gating_list = database_model.get(database_model.GatingList, datasource=datasource_name)
+    return pickle.loads(gating_list.cells)
+
+
 def download_channels(datasource_name, map_channels, active_channels, list_colors, list_ranges, default_range):
     global datasource
     global source
@@ -532,7 +562,7 @@ def save_channel_list(datasource_name, map_channels, active_channels, list_color
 
     temp = csv.to_dict(orient='records')
     f = pickle.dumps(temp, protocol=4)
-    database_model.save_channel_list(database_model.ChannelList, datasource=datasource_name, cells=f)
+    database_model.save_list(database_model.ChannelList, datasource=datasource_name, cells=f)
 
 def get_saved_channel_list(datasource_name):
     channel_list = database_model.get(database_model.ChannelList, datasource=datasource_name)

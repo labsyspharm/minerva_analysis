@@ -143,12 +143,7 @@ class CSVGatingList {
         });
 
         // Adding upload when you press on the up arrow
-        let arrow = document.getElementById('gating_upload_arrow')
-
-        function performClick(elemId) {
-
-        }
-
+        let arrow = document.getElementById('gating_upload_icon')
         arrow.onclick = function () {
             let elem = document.getElementById('gating-upload-from-arrow');
             if (elem && document.createEvent) {
@@ -164,8 +159,13 @@ class CSVGatingList {
                 formData.append("file", file);
                 await self.dataLayer.submitGatingUpload(formData);
                 document.getElementById("gating-upload-from-arrow").value = []
-                await self.apply_gates()
+                await self.apply_gates('file')
             }
+        }
+
+        let arrow_db = document.getElementById('gating_upload_icon_db')
+        arrow_db.onclick = async function () {
+            await self.apply_gates('db')
         }
 
 
@@ -193,9 +193,14 @@ class CSVGatingList {
         self.add_events_linked();
     }
 
-    async apply_gates() {
+    async apply_gates(source) {
         const self = this;
-        let gates = await self.dataLayer.getUploadedGatingCsvValues()
+        let gates;
+        if (source === 'file'){
+            gates = await self.dataLayer.getUploadedGatingCsvValues();
+        } else {
+            gates = await self.dataLayer.getSavedGatingList();
+        }
         _.each(gates, col => {
             let shortName = self.dataLayer.getShortChannelName(col.channel);
             if (self.sliders.get(shortName)) {
@@ -346,6 +351,7 @@ class CSVGatingList {
         const self = this;
 
         // Els
+        const gating_download_icon_db = document.querySelector('#gating_download_icon_db');
         const gating_download_icon = document.querySelector('#gating_download_icon');
         const gating_download_panel = document.querySelector('#gating_download_panel');
         const gating_exit = document.querySelector('#gating_exit');
@@ -357,6 +363,10 @@ class CSVGatingList {
         const gating_controls_centroids= document.querySelector('#gating_controls_centroids')
 
         // Events ::
+
+        gating_download_icon_db.addEventListener('click', () => {
+            self.dataLayer.saveGatingList(this.gating_channels, this.selections, false);
+        })
 
         // Open / close download panel
         gating_download_icon.addEventListener('click', () => {

@@ -56,6 +56,18 @@ class DataLayer {
         }
     }
 
+    async getSavedGatingList() {
+        try {
+            let response = await fetch('/get_saved_gating_list?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Saved Gating List", e);
+        }
+    }
+
     async getUploadedChannelCsvValues() {
         try {
             let response = await fetch('/get_uploaded_channel_csv_values?' + new URLSearchParams({
@@ -131,6 +143,30 @@ class DataLayer {
         document.body.appendChild(form);
         form.submit()
 
+    }
+
+    async saveGatingList(channels, selections) {
+        const self = this;
+        try {
+            let response = await fetch('/save_gating_list', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        filter: selections,
+                        channels: channels
+                    }
+                )
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Saving Gating List", e);
+        }
     }
 
     downloadChannelsCSV(map_channels, active_channels, list_colors, list_ranges, default_range) {
