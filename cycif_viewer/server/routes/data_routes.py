@@ -59,10 +59,18 @@ def get_channel_names():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_phenotypes', methods=['GET'])
-def get_phenotypes():
+@app.route('/get_cell_groups', methods=['GET'])
+def get_cell_groups():
     datasource = request.args.get('datasource')
     resp = data_model.get_phenotypes(datasource)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_cells_in_polygon', methods=['GET'])
+def get_cells_in_polygon():
+    datasource = request.args.get('datasource')
+    points = json.loads(request.args.get('points'))
+    resp = data_model.get_cells_in_polygon(datasource, points)
     return serialize_and_submit_json(resp)
 
 

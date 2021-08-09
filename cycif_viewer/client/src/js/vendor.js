@@ -19,6 +19,8 @@ import convert from 'color-convert'
 import 'viawebgl'
 import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
+import createScatterplot from 'regl-scatterplot';
+
 
 window.convert = convert;
 window.$ = $;
@@ -31,4 +33,6 @@ window.Mark = Mark;
 window.OpenSeadragon = viaWebGL.OpenSeadragon;
 window.viaWebGL = viaWebGL;
 window.ViewerManager = ViewerManager;
+window.createScatterplot = createScatterplot;
+
 

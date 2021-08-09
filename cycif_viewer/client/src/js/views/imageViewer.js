@@ -40,27 +40,10 @@ class ImageViewer {
         this.noLabel = false;
 
         // Selection polygon (array of xy positions)
-        this.selectionPolygonToDraw = [];
 
-        // Transfer function constant
-        this.numTFBins = 1024;
+        this.isSelectionToolActive = true;
+        this.showSelection = true;
 
-        // Transfer function per channel (min,max, start color, end color)
-        this.channelTF = [];
-        for (let i = 0; i < this.config["imageData"].length; i = i + 1) {
-
-            const start_color = d3.rgb(0, 0, 0);
-            const end_color = d3.rgb(255, 255, 255);
-
-            const tf_def = this.createTFArray(0, 65535, start_color, end_color, this.numTFBins);
-            tf_def.name = this.config['imageData'][i].name;
-
-            this.channelTF.push(tf_def);
-        }
-
-        // Applying TF to selection, subset, or all
-        this.show_subset = false;
-        this.show_selection = true;
 
     }
 
@@ -189,43 +172,94 @@ class ImageViewer {
 
         seaGL.init();
 
+        /*********/
+        that.svg_overlay = that.viewer.svgOverlay()
+        that.overlay = d3.select(that.svg_overlay.node())
 
-        // Add event mouse handler (cell selection)
-        this.viewer.addHandler('canvas-nonprimary-press', function (event) {
-
-            // Right click (cell selection)
-            if (event.button === 2) {
-                // The canvas-click event gives us a position in web coordinates.
-                const webPoint = event.position;
+//SELECTION POLYGON (LASSO)
+        that.polygonSelection = [];
+        that.renew = false;
+        that.numCalls = 0; //defines how fine-grained the polygon resolution is (0 = no subsampling, 10=high subsampling)
+        that.lassoing = false;
+        that.lasso_draw = function (event) {
+            //add points to polygon and (re)draw
+            let webPoint = event.position;
+            if (that.numCalls % 5 == 0) {
                 // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                let viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
                 // Convert from viewport coordinates to image coordinates.
-                const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-
-                return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
-                    .then(selectedItem => {
-                        if (selectedItem !== null && selectedItem !== undefined) {
-                            // Check if user is doing multi-selection or not
-                            let clearPriors = true;
-                            if (event.originalEvent.ctrlKey) {
-                                clearPriors = false;
-                            }
-                            // Trigger event
-                            that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-                                selectedItem,
-                                clearPriors
-                            });
-                        }
-                    })
+                let imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+                that.polygonSelection.push({'imagePoints': imagePoint, 'viewportPoints': viewportPoint});
             }
+
+            d3.select('#selectionPolygon').remove();
+            var selPoly = that.overlay.selectAll("selectionPolygon").data([that.polygonSelection]);
+            selPoly.enter().append("polygon")
+                .attr('id', 'selectionPolygon')
+                .attr("points", function (d) {
+                    return d.map(function (d) {
+                        return [d.viewportPoints.x, d.viewportPoints.y].join(",");
+                    }).join(" ");
+                })
+            that.numCalls++;
+        }
+
+        that.lasso_end = function (event) {
+            that.renew = true;
+
+        }
+
+        let primaryTracker = new OpenSeadragon.MouseTracker({
+            element: that.viewer.canvas,
+            pressHandler: (event) => {
+                if (event.originalEvent.shiftKey) {
+                    this.viewer.setMouseNavEnabled(false);
+                    if (that.isSelectionToolActive) {
+                        that.lassoing = true;
+                    } else {
+                    }
+                    if (!that.isSelectionToolActive) {
+                        d3.select('#selectionPolygon').remove();
+
+                    }
+                    that.polygonSelection = [];
+                    that.numCalls = 0;
+                }
+            }, releaseHandler: (event) => {
+                this.viewer.setMouseNavEnabled(true);
+                if (that.lassoing) {
+                    that.lassoing = false;
+                    console.log('release');
+                    if (that.isSelectionToolActive) {
+                        that.lasso_end(event);
+                        if (_.size(that.polygonSelection) > 2) {
+                            return dataLayer.getCellsInPolygon(that.polygonSelection, false, false)
+                                .then(cells => {
+                                    d3.select('#selectionPolygon').remove();
+                                    that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
+                                })
+                        }
+                    }
+                }
+            }, moveHandler: function (event) {
+                if (that.isSelectionToolActive && that.lassoing) {
+                    that.lasso_draw(event);
+                }
+            }
+        })
+
+
+//some resizing corrections
+        d3.select(window).on('resize', function () {
         });
+        that.svg_overlay.resize();
     }
 
     drawLabelTile(tile, width, height) {
         const self = this;
         let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
         tile._tileImageData = imageData;
-        if (self.show_selection && self.selection.size > 0) {
+        if (self.showSelection && self.selection.size > 0) {
             const imageData = tile._tileImageData;
             tile._array.forEach((val, i) => {
                 if (val != 0 && self.selection.has(val - 1)) {
@@ -326,6 +360,7 @@ class ImageViewer {
         let circlePoint = this.viewer.world.getItemAt(0).imageToViewportCoordinates(x + _.toNumber(radius), y);
         let viewportRadius = Math.abs(circlePoint.x - imagePoint.x);
         let overlay = seaDragonViewer.viewer.svgOverlay();
+
         let fade = 0;
         // When dragging the bar, don't fade out
         if (dragging) {
@@ -470,7 +505,7 @@ class ImageViewer {
             this.show_subset = !this.show_subset;
         }
         if (mode === 'show-selection') {
-            this.show_selection = !this.show_selection;
+            this.showSelection = !this.showSelection;
         }
 
         this.forceRepaint();
@@ -508,7 +543,8 @@ class ImageViewer {
 ImageViewer
     .events = {
     imageClickedMultiSel: 'image_clicked_multi_selection',
-    renderingMode: 'renderingMode'
+    renderingMode: 'renderingMode',
+    displaySelection: 'displaySelection',
 };
 
 async function

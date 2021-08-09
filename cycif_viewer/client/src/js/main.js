@@ -7,13 +7,8 @@ const datasource = flaskVariables.datasource;
 
 
 //VIEWS
-let seaDragonViewer;
-let channelList;
-let dataLayer;
-let config;
+let seaDragonViewer, channelList, dataLayer, config, colorScheme, legend, scatterplot;
 
-let cellInformation;
-let colorScheme;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
 let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
@@ -47,10 +42,12 @@ async function init(conf) {
     // console.log("Data Loaded");
     channelList = new ChannelList(config, dataLayer, eventHandler);
     await channelList.init();
+    legend = new Legend(dataLayer, colorScheme, eventHandler);
+    scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer);
+
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
-    cellInformation.draw();
+    scatterplot.init();
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
@@ -100,29 +97,10 @@ const actionImageClickedMultiSel = (d) => {
         // console.log(d.selectedItem.length);
         dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
-    cellInformation.selectCell(d.selectedItem);
     updateSeaDragonSelection();
     d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
-
-const computeCellNeighborhood = async ({distance, selectedCell}) => {
-    let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
-    displayNeighborhood(selectedCell, neighborhood);
-}
-eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
-
-const drawNeighborhoodRadius = async ({distance, selectedCell, dragging}) => {
-    seaDragonViewer.drawCellRadius(distance, selectedCell, dragging);
-}
-eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
-
-const refreshColors = async () => {
-    await colorScheme.getColorScheme(true);
-    cellInformation.draw();
-
-}
-eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
 
 // For channel select click event
 const channelSelect = async (sels) => {
@@ -137,8 +115,8 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 
 //current fast solution for seadragon updates
-//current fast solution for seadragon updates
-function updateSeaDragonSelection(repaint = true) {
+function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
+    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
 }
 
@@ -149,12 +127,10 @@ const actionFeatureGatingChange = (d) => {
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
-
-function displayNeighborhood(selectedCell, neighborhood) {
-    dataLayer.addToCurrentSelection(selectedCell, true, true);
-    _.each(neighborhood, neighbor => {
-        dataLayer.addToCurrentSelection(neighbor, true, false);
-    });
-    updateSeaDragonSelection();
+const displaySelection = async (selection) => {
+    dataLayer.addAllToCurrentSelection(selection);
+    scatterplot.recolor();
+    updateSeaDragonSelection(false, false);
 }
+eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 

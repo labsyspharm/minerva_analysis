@@ -8,6 +8,9 @@ from pathlib import Path
 from ome_types import from_xml
 from cycif_viewer import config_json_path, data_path
 from cycif_viewer.server.utils import pyramid_assemble
+from cycif_viewer.server.utils import smallestenclosingcircle
+import matplotlib.path as mpltPath
+
 from cycif_viewer.server.models import database_model
 import dateutil.parser
 import time
@@ -470,9 +473,8 @@ def get_datasource_description(datasource_name):
     return description
 
 
-
-def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid',y_coordinate='Y_centroid',
-                  marker=None, k=500, label='spatial_corr'):
+def spatial_corr(adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid', y_coordinate='Y_centroid',
+                 marker=None, k=500, label='spatial_corr'):
     """
     Parameters
     ----------
@@ -508,9 +510,9 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
     data = pd.DataFrame({'x': bdata.obs[x_coordinate], 'y': bdata.obs[y_coordinate]})
     # user defined expression matrix
     if raw is True:
-        exp =  pd.DataFrame(bdata.raw.X, index= bdata.obs.index, columns=bdata.var.index)
+        exp = pd.DataFrame(bdata.raw.X, index=bdata.obs.index, columns=bdata.var.index)
     else:
-        exp =  pd.DataFrame(bdata.X, index= bdata.obs.index, columns=bdata.var.index)
+        exp = pd.DataFrame(bdata.X, index=bdata.obs.index, columns=bdata.var.index)
     # log the data if needed
     if log is True:
         exp = np.log1p(exp)
@@ -524,19 +526,20 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
             marker = [marker]
         exp = exp[marker]
     # find the nearest neighbours
-    tree = BallTree(data, leaf_size= 2)
-    dist, ind = tree.query(data, k=k, return_distance= True)
-    neighbours = pd.DataFrame(ind, index = bdata.obs.index)
+    tree = BallTree(data, leaf_size=2)
+    dist, ind = tree.query(data, k=k, return_distance=True)
+    neighbours = pd.DataFrame(ind, index=bdata.obs.index)
     # find the mean dist
     rad_approx = np.mean(dist, axis=0)
     # Calculate the correlation
     mean = np.mean(exp).values
     std = np.std(exp).values
     A = (exp - mean) / std
-    def corrfunc (marker, A, neighbours, ind):
+
+    def corrfunc(marker, A, neighbours, ind):
         print('Processing ' + str(marker))
         # Map phenotype
-        ind_values = dict(zip(list(range(len(ind))), A[marker])) # Used for mapping
+        ind_values = dict(zip(list(range(len(ind))), A[marker]))  # Used for mapping
         # Loop through (all functionized methods were very slow)
         neigh = neighbours.copy()
         for i in neigh.columns:
@@ -546,9 +549,10 @@ def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_c
         corrfunc = np.mean(Y, axis=1)
         # return
         return corrfunc
+
     # apply function to all markers    # Create lamda function
-    r_corrfunc = lambda x: corrfunc(marker=x,A=A, neighbours=neighbours, ind=ind)
-    all_data = list(map(r_corrfunc, exp.columns)) # Apply function
+    r_corrfunc = lambda x: corrfunc(marker=x, A=A, neighbours=neighbours, ind=ind)
+    all_data = list(map(r_corrfunc, exp.columns))  # Apply function
     # Merge all the results into a single dataframe
     df = pd.concat(all_data, axis=1)
     df.columns = exp.columns
@@ -637,6 +641,32 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         pyramid_assemble.main(py_args=args)
 
         return {'segmentation': str(directory)}
+
+
+def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False):
+    global config
+    global ball_tree
+    point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
+    (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
+    fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
+              config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
+    index = ball_tree.query_radius([[x, y]], r=r)
+    cells = index[0]
+    circle_cells = datasource.iloc[cells][fields].values
+    path = mpltPath.Path(point_tuples)
+    inside = path.contains_points(circle_cells[:, [0, 1]].astype('float'))
+    neighbor_ids = circle_cells[np.where(inside == True), 3].flatten().tolist()
+    # obj = get_neighborhood_stats(datasource_name, neighbor_ids, fields=fields)
+    # try:
+    if fields and len(fields) > 0:
+        fields.append('id') if 'id' not in fields else fields
+        if len(fields) > 1:
+            poly_cells = datasource.iloc[neighbor_ids][fields].to_dict(orient='records')
+        else:
+            poly_cells = datasource.iloc[neighbor_ids][fields].to_dict()
+    else:
+        poly_cells = datasource.iloc[neighbor_ids].to_dict(orient='records')
+    return poly_cells
 
 
 def save_dot(datasource_name, dot):

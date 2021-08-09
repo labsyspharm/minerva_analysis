@@ -15,7 +15,7 @@ class DataLayer {
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
-        this.phenotypes = [];
+        this.cellGroups = [];
     }
 
     async init() {
@@ -24,7 +24,7 @@ class DataLayer {
                 datasource: datasource
             }))
             let response_data = await response.json();
-            this.phenotypes = await this.getPhenotypes();
+            this.cellGroups = await this.getCellGroups();
 
         } catch (e) {
             console.log("Error Initializing Dataset", e);
@@ -83,15 +83,30 @@ class DataLayer {
         }
     }
 
-    async getPhenotypes() {
+    async getCellsInPolygon(points, similar = false, embedding = false) {
         try {
-            let response = await fetch('/get_phenotypes?' + new URLSearchParams({
+            let response = await fetch('/get_cells_in_polygon?' + new URLSearchParams({
+                datasource: datasource,
+                points: JSON.stringify(points),
+                similar_neighborhood: similar,
+                embedding: embedding
+            }))
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Polygon Cells", e);
+        }
+    }
+
+    async getCellGroups() {
+        try {
+            let response = await fetch('/get_cell_groups?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
             return response_data;
         } catch (e) {
-            console.log("Error Getting Phenotypes", e);
+            console.log("Error Getting Cell Groups", e);
         }
     }
 
