@@ -248,7 +248,7 @@ class ChannelList {
                     .type(d3.symbolCircle)
                     .size(100)
             )
-            .tickValues([]).on('onchange', range => {
+            .tickValues([]).on('end', range => {
                 let packet = {name: name, dataRange: range};
                 this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
             });

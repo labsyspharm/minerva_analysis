@@ -113,19 +113,17 @@ def edit_config_with_config_name(config_name):
         elem['displayName'] = config_data['featureData'][0]['yCoordinate']
         csvHeaders.append(elem)
         # add cell type
-        # if 'celltypeData' in config_data['featureData'][0]:
-        #     elem = {}
-        #     elem['fullName'] = config_data['featureData'][0]['celltype']
-        #     elem['displayName'] = config_data['featureData'][0]['celltype']
-        #     csvHeaders.append(elem)
+        if 'celltypeData' in config_data['featureData'][0]:
+            elem = {}
+            elem['fullName'] = config_data['featureData'][0]['celltype']
+            elem['displayName'] = config_data['featureData'][0]['celltype']
+            csvHeaders.append(elem)
 
         # Start with the required channels
-        # if 'celltypeData' in config_data['featureData'][0]:
-        #     channelFileNames.extend(['Area', 'X Position', 'Y Position', 'Cell Type'])
-        # else:
-        #     channelFileNames.extend(['Area', 'X Position', 'Y Position'])
-        channelFileNames.extend(['Area', 'X Position', 'Y Position'])
-
+        if 'celltypeData' in config_data['featureData'][0]:
+            channelFileNames.extend(['Area', 'X Position', 'Y Position', 'Cell Type'])
+        else:
+            channelFileNames.extend(['Area', 'X Position', 'Y Position'])
 
         for i in range(len(config_data['imageData'])):
             elem = config_data['imageData'][i]
