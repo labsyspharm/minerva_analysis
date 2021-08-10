@@ -1,8 +1,6 @@
-name: Package and Release
+name: Release
 on:
   push:
-    tags:
-      - '*'
 jobs:
   build:
     strategy:
