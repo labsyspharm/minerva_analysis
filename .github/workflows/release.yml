@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: 3.7
           environment-file: requirements.yml
-          activate-environment: cycif_viewer
+          activate-environment: minerva_analysis
       - name: Package Windows
         if: startsWith(matrix.os,'windows')
         shell: cmd /C CALL {0}
