@@ -6,13 +6,13 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 
 ## Executables (for Users)
 Releases can be found here:
-https://github.com/labsyspharm/cycif_viewer/releases
+https://github.com/labsyspharm/minerva_analysis/releases
 These are executables for Windows and MacOS that can be run locally without any installations.
 
 
 ## Clone and Run Codebase (for Developers)
 #### 1. Checkout Project
-`git clone https://github.com/labsyspharm/cycif_viewer.git`
+`git clone https://github.com/labsyspharm/minerva_analysis.git`
 #### 2. Checkout Necessary Branch
 * **For Gating, run** `git checkout gating`
 * Run `git pull` to make sure everything is up to date 
@@ -25,7 +25,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 * Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
-* Active environment: `conda activate cycif_viewer`
+* Active environment: `conda activate minerva_analysis`
 
 
 ##### Start the Server
@@ -38,7 +38,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 
 #### (4. Node.js installation and packages)
   This step is only needed when you plan to edit js code. The codebase already included bundled js files.
-* Install [Node.js](https://nodejs.org/en/), then navigate to `/cycif_viewer/client` and run `npm install` to install all packages listed in package.json.
+* Install [Node.js](https://nodejs.org/en/), then navigate to `/minerva_analysis/client` and run `npm install` to install all packages listed in package.json.
 * Run `npm run start` to package the Javascript, or run `npm run watch` if you plan on editing dependencies
 
 
