@@ -62,7 +62,15 @@ def get_channel_names():
 @app.route('/get_cell_groups', methods=['GET'])
 def get_cell_groups():
     datasource = request.args.get('datasource')
-    resp = data_model.get_phenotypes(datasource)
+    resp = data_model.get_cell_groups(datasource)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_cells_by_cell_group', methods=['GET'])
+def get_cells_by_cell_group():
+    datasource = request.args.get('datasource')
+    cell_group = request.args.get('cellGroup')
+    resp = data_model.get_cells_by_cell_group(datasource, cell_group)
     return serialize_and_submit_json(resp)
 
 
@@ -77,8 +85,7 @@ def get_cells_in_polygon():
 @app.route('/get_color_scheme', methods=['GET'])
 def get_color_scheme():
     datasource = request.args.get('datasource')
-    refresh = request.args.get('refresh') == 'true'
-    resp = data_model.get_color_scheme(datasource, refresh)
+    resp = data_model.get_color_scheme(datasource)
     return serialize_and_submit_json(resp)
 
 

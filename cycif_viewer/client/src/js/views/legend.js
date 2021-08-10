@@ -8,9 +8,9 @@ class Legend {
 
     }
 
-    draw() {
+    init() {
         const self = this;
-        let docHeight = 16 + _.size(this.dataLayer.phenotypes) * (11.125);
+        let docHeight = 16 + _.size(this.dataLayer.cellGroups) * (11.125);
         docHeight = _.toString(_.toInteger(docHeight));
 
         self.svg = d3.select(`#${this.parentSelector}`)
@@ -22,8 +22,8 @@ class Legend {
         document.getElementById(this.parentSelector).style.height = docHeight + 'px';
         const size = 10;
         let colorMap = this.colorScheme.colorMap;
-        let data = _.map(this.dataLayer.phenotypes, phenotype => {
-            return {'phenotype': phenotype, 'color': `${colorMap[phenotype].hex}`};
+        let data = _.map(this.dataLayer.cellGroups, cellGroup => {
+            return {'cellGroup': cellGroup, 'color': `${colorMap[cellGroup].hex}`};
         })
         // document.getElementById(this.parentSelector).setAttribute("height", `${docHeight}px`);
         // document.getElementById('legend-svg').setAttribute("height", `${docHeight}px`);
@@ -32,7 +32,7 @@ class Legend {
             .attr("height", "100%")
             .attr("fill", "white")
         this.svg.append("text")
-            .text("Phenotype")
+            .text("Cell Groups")
             .attr("class", "legend-title")
             .attr("x", 3)
             .attr("y", 10)
@@ -55,7 +55,7 @@ class Legend {
                 return d.color;
             })
             .on("click", (e, d) => {
-                self.selectPhenotype(d);
+                self.selectCellGroup(d);
             })
         rects.exit().remove();
 
@@ -73,16 +73,16 @@ class Legend {
                 return '#000000';
             })
             .text(d => {
-                let phenotype = d.phenotype;
-                if (phenotype == "") {
-                    return "No Phenotype";
+                let cellGroup = d.cellGroup;
+                if (cellGroup == "") {
+                    return "No Cell Group";
                 }
-                return phenotype;
+                return cellGroup;
             })
             .attr("text-anchor", "left")
             .style("alignment-baseline", "middle")
             .on("click", (e, d) => {
-                self.selectPhenotype(d);
+                self.selectCellGroup(d);
             })
         labels.exit().remove();
 
@@ -91,11 +91,12 @@ class Legend {
         // }
     }
 
-    selectPhenotype(d) {
-        this.eventHandler.trigger(Legend.events.selectPhenotype, d.phenotype);
+    selectCellGroup(d) {
+        console.log('selectPheno');
+        this.eventHandler.trigger(Legend.events.selectCellGroup, d.cellGroup);
     }
 }
 
 Legend.events = {
-    selectPhenotype: 'selectPhenotype'
+    selectCellGroup: 'selectCellGroup'
 };

@@ -83,6 +83,19 @@ class DataLayer {
         }
     }
 
+    async getCellsByCellGroup(cellGroup) {
+        try {
+            let response = await fetch('/get_cells_by_cell_group?' + new URLSearchParams({
+                datasource: datasource,
+                cellGroup: cellGroup
+            }))
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Cells By Cell Group", e);
+        }
+    }
+
     async getCellsInPolygon(points, similar = false, embedding = false) {
         try {
             let response = await fetch('/get_cells_in_polygon?' + new URLSearchParams({
@@ -195,7 +208,8 @@ class DataLayer {
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Map(items.map(i => [(i.id), i]));
+        that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
+        that.currentRawSelection = items;
         // console.log("update current selection done")
     }
 

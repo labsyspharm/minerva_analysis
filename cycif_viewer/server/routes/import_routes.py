@@ -161,6 +161,7 @@ def upload_file_page():
     datasetName = None
     csvName = ''
     celltypeName = ''
+    embeddingName = ''
     channelFileNames = ['ID', 'Area', 'X Position', 'Y Position']
     labelName = ''
     csvHeader = None
@@ -186,6 +187,11 @@ def upload_file_page():
                         raise Exception("Please only Upload Only 1 Cell Type File")
                     elif len(celltypeFile) == 1:
                         channelFileNames.extend(['Cell Type'])
+
+                    embeddingFile = request.files.getlist("embedding_file")
+                    if len(embeddingFile) > 1:
+                        raise Exception("Please only Upload Only 1 Embedding File")
+
 
                     # labelFile = request.files.getlist("label_file")
                     labelFile = request.form.get('label_file')
@@ -221,6 +227,13 @@ def upload_file_page():
                             celltypeName = file.filename
                             celltypePath = str(Path(file_path) / celltypeName)
                             file.save(celltypePath)
+
+                    if len(embeddingFile) == 1:
+                        for file in embeddingFile:
+                            # Upload Cell Type File
+                            embeddingName = file.filename
+                            embeddingPath = str(Path(file_path) / embeddingName)
+                            file.save(embeddingPath)
 
                     # Process Channel File
 
@@ -263,6 +276,8 @@ def upload_file_page():
                     config_data['csvName'] = csvName
                     if len(celltypeFile) == 1:
                         config_data['celltypeData'] = celltypeName
+                    if len(embeddingFile) == 1:
+                        config_data['embeddingData'] = embeddingName
                     config_data['channelFile'] = str(channelFile)
                     config_data['new'] = True
                     config_data['labelName'] = labelName
@@ -270,6 +285,7 @@ def upload_file_page():
                     config_data['datasources'].append(datasetName)
                     return render_template('channel_match.html', data=config_data)
         except Exception as e:
+            print('err', e)
             completed_task = -1
             current_task = str(e)
             return render_template('index.html')
@@ -339,9 +355,11 @@ def save_config():
         csvName = originalData['csvName']
         if 'celltypeData' in originalData:
             celltypeName = originalData['celltypeData']
+        if 'embeddingData' in originalData:
+            embeddingName = originalData['embeddingData']
         headerList = request.json['headerList']
-        normalizeCsv = request.json['normalizeCsv']
-        if normalizeCsv:
+        if 'normalizeCsv' in request.json:
+            normalizeCsv = request.json['normalizeCsv']
             print("Normalizing CSV")
             skip_columns = []
             for i in range(int(len(headerList) / 3)):
@@ -372,9 +390,15 @@ def save_config():
             configData[datasetName]['activeChannel'] = ''
             configData[datasetName]['featureData'] = [{}]
             configData[datasetName]['featureData'][0]['normalization'] = 'none'
+
             if 'celltypeData' in originalData:
                 configData[datasetName]['featureData'][0]['celltypeData'] = str(data_path / datasetName / celltypeName)
                 configData[datasetName]['featureData'][0]['celltype'] = headerList[3][1]['value']
+
+            if 'embeddingData' in originalData:
+                configData[datasetName]['featureData'][0]['embeddingData'] = str(
+                    data_path / datasetName / embeddingName)
+
             configData[datasetName]['featureData'][0]['xCoordinate'] = headerList[1][1]['value']
             configData[datasetName]['featureData'][0]['yCoordinate'] = headerList[2][1]['value']
 

@@ -8,7 +8,7 @@ class Scatterplot {
         this.dataLayer = dataLayer;
     }
 
-    init() {
+    async init() {
         const self = this;
         window.devicePixelRatio = 1;
         const canvas = document.querySelector(`#${self.canvasId}`);
@@ -34,6 +34,7 @@ class Scatterplot {
         self.plot.subscribe('select', self.select.bind(self));
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
         self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
+        await self.wrangle();
 
     }
 
@@ -51,7 +52,9 @@ class Scatterplot {
 
     recolor() {
         const self = this;
-        self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
+        let indices = [...this.dataLayer.getCurrentSelection().values()].map(elem => elem.id);
+        console.log("Min", _.min(indices), "Max", _.max(indices))
+        self.plot.select(indices);
     }
 
     select(points) {

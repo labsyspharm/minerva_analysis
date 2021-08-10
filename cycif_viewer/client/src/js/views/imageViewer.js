@@ -43,6 +43,7 @@ class ImageViewer {
 
         this.isSelectionToolActive = true;
         this.showSelection = true;
+        this.sel_outlines = true;
 
 
     }
@@ -260,17 +261,57 @@ class ImageViewer {
         let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
         tile._tileImageData = imageData;
         if (self.showSelection && self.selection.size > 0) {
-            const imageData = tile._tileImageData;
             tile._array.forEach((val, i) => {
-                if (val != 0 && self.selection.has(val - 1)) {
-                    let index = i * 4;
-                    imageData.data[index] = 255;
-                    imageData.data[index + 1] = 255;
-                    imageData.data[index + 2] = 255;
-                    imageData.data[index + 3] = 255;
-                    tile.containsLabel = true;
+                    if (val != 0 && self.selection.has(val - 1)) {
+                        let labelValue = val - 1;
+                        let celltype = _.get(seaDragonViewer.selection.get(labelValue), 'celltype');
+                        let color = seaDragonViewer.colorScheme.colorMap[celltype].rgb;
+                        // let color = [255, 255, 255]
+                        let index = i * 4;
+                        const grid = [
+                            index - 4,
+                            index + 4,
+                            index - width * 4,
+                            index + height * 4
+                        ];
+                        const test = [
+                            index % (width * 4) !== 0,
+                            index % (width * 4) !== (width - 1) * 4,
+                            index >= width * 4,
+                            index < width * 4 * (height - 1)
+                        ];
+
+                        // If outline
+                        if (this.sel_outlines) {
+                            // Iterate grid
+                            for (let j = 0; j < grid.length; j++) {
+                                // if pass test (not on tile border)
+                                if (test[j]) {
+                                    // Neighbor label value
+                                    const altLabelValue = tile._array[grid[j] / 4] - 1;
+                                    // Color
+                                    if (altLabelValue !== labelValue) {
+                                        tile._tileImageData.data[index] = color[0];
+                                        tile._tileImageData.data[index + 1] = color[1];
+                                        tile._tileImageData.data[index + 2] = color[2];
+                                        tile._tileImageData.data[index + 3] = 255;
+                                        tile.containsLabel = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
+                            tile._tileImageData.data[index] = color[0];
+                            tile._tileImageData.data[index + 1] = color[1];
+                            tile._tileImageData.data[index + 2] = color[2];
+                            tile._tileImageData.data[index + 3] = 255;
+                            tile.containsLabel = true;
+                        }
+                        /************************ newend */
+
+                    }
                 }
-            })
+            )
         }
     }
 

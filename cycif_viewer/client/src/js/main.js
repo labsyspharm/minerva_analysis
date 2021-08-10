@@ -39,18 +39,25 @@ async function init(conf) {
     //INIT DATA FILTER
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
+    colorScheme = new ColorScheme(dataLayer);
+    await colorScheme.init();
     // console.log("Data Loaded");
     channelList = new ChannelList(config, dataLayer, eventHandler);
-    await channelList.init();
+
     legend = new Legend(dataLayer, colorScheme, eventHandler);
+    legend.init();
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer);
 
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    scatterplot.init();
+
+    await Promise.all([await channelList.init(), scatterplot.init()]);
+
     //IMAGE VIEWER
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
+
+
 }
 
 //feature color map changed in ridge plot
@@ -133,4 +140,10 @@ const displaySelection = async (selection) => {
     updateSeaDragonSelection(false, false);
 }
 eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
+eventHandler.bind(Scatterplot.events.selectFromEmbedding, displaySelection);
 
+const selectCellGroup = async (cellGroup) => {
+    let cells = await dataLayer.getCellsByCellGroup(cellGroup);
+    await displaySelection(cells);
+}
+eventHandler.bind(Legend.events.selectCellGroup, selectCellGroup);

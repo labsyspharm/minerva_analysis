@@ -1,5 +1,8 @@
 body {
     font-family: 'Source Sans Pro', sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
 }
 
 /*LOADING SPINNER SECTION*/

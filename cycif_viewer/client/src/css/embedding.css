@@ -35,7 +35,7 @@
 
 
 #scatterplot_display {
-    height: 35vh;
+    height: 100%;
     padding-left: 15px;
     width: 100%;
 }
