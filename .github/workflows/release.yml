@@ -18,7 +18,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Node and Webpack
         run: |
-          cd cycif_viewer
+          cd minerva_analysis
           cd client
           npm install
           npm run start
@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: 3.7
           environment-file: requirements.yml
-          activate-environment: cycif_viewer
+          activate-environment: minerva_analysis
       - name: Package Windows
         if: startsWith(matrix.os,'windows')
         shell: cmd /C CALL {0}
@@ -39,13 +39,13 @@ jobs:
         shell: bash -l {0}
         run: |
           ./package_mac.sh
-          zip cycif_viewer_mac.zip dist/cycif_viewer_mac
+          zip minerva_analysis_mac.zip dist/minerva_analysis_mac
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            dist/cycif_viewer_windows.exe
-            cycif_viewer_mac.zip
+            dist/minerva_analysis_windows.exe
+            minerva_analysis_mac.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
