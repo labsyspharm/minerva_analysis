@@ -1,12 +1,14 @@
 name: Release
 on:
   push:
+    tags:
+      - '*'
 jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
-        node-version: [12.x]
+        os: [ macos-latest, windows-latest ]
+        node-version: [ 12.x ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
