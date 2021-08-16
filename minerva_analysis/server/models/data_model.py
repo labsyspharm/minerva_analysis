@@ -584,7 +584,7 @@ def get_scatterplot_data(datasource_name):
     embedding_data_path = Path(config[datasource_name]['featureData'][0]['embeddingData'])
     scatter_df = pd.read_csv(embedding_data_path)
     scatter_np = scatter_df.to_numpy()
-    # scatter_np = datasource[['id', 'X_centroid', 'Y_centroid']].to_numpy()
+    # scatter_np[:, 1:3] = datasource[['X_centroid', 'Y_centroid']].to_numpy()
     scatter_np[:, 1:3] = (scatter_np[:, 1:3] - np.min(scatter_np[:, 1:3])) / (
             np.max(scatter_np[:, 1:3]) - np.min(scatter_np[:, 1:3])) * 2 - 1
 
