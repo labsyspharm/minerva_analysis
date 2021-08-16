@@ -1,5 +1,5 @@
 from waitress import serve
-from cycif_viewer import app
+from minerva_analysis import app
 import multiprocessing
 import sys
 

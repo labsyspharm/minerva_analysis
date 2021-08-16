@@ -1,4 +1,4 @@
-from cycif_viewer import app, db
+from minerva_analysis import app, db
 from sqlalchemy.orm import relationship
 
 import io

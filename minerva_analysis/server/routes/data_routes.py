@@ -1,9 +1,9 @@
-from cycif_viewer import app
+from minerva_analysis import app
 from flask import render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
-from cycif_viewer import data_path, get_config
-from cycif_viewer.server.models import data_model
+from minerva_analysis import data_path, get_config
+from minerva_analysis.server.models import data_model
 from pathlib import Path
 from time import time
 import pandas as pd

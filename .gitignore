@@ -4,12 +4,12 @@
 /node_modules
 */node_modules
 static/frontend/node_modules
-cycif_viewer/client/node_modules/
+minerva_analysis/client/node_modules/
 /.pnp
 .pnp.js
 *.sqlite3
 */.ipynb_checkpoints/
-cycif_viewer/data/
+minerva_analysis/data/
 # testing
 /coverage
 /dist
@@ -30,9 +30,9 @@ yarn-error.log*
 .idea/
 /data
 /data/
-cycif_viewer/data
+minerva_analysis/data
 
-/cycif_viewer//data
+/minerva_analysis//data
 /static/data
 /static/data/
 /__pycache__/
