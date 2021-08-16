@@ -9,6 +9,7 @@ dependencies:
   - orjson
   - pandas
   - pillow=8.1.1
+  - python=3.7
   - requests
   - scikit-learn
   - scikit-image

@@ -11,28 +11,25 @@ import json
 import sys
 import multiprocessing
 
-app = Flask(__name__, template_folder=Path('client/templates'), static_folder='data')
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///server/db.sqlite3'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['CLIENT_PATH'] = app.root_path + '/client/'
-
 # If you're running the pyinstaller version of the code, create a
 # new directory for the data (this will be at ~/ on mac)
 if getattr(sys, 'frozen', False):
-    data_path = Path(os.path.dirname(sys.executable) + '/data')
+    data_path = Path(os.path.dirname(sys.executable)) / 'data'
     multiprocessing.freeze_support()
 else:
     data_path = Path("minerva_analysis/data")
-
+# Make the Data Path
+data_path.mkdir(parents=True, exist_ok=True)
+app = Flask(__name__, template_folder=Path('client/templates'), static_folder='data')
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str((data_path).resolve()) + '/db.sqlite3'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['CLIENT_PATH'] = app.root_path + '/client/'
 config_json_path = data_path / "config.json"
 db = SQLAlchemy(app)
 
 
 def get_config():
-    if not os.path.isdir(data_path):
-        os.makedirs(data_path)
-
     if not os.path.isfile(config_json_path):
         with open(config_json_path, 'w') as f:
             json.dump({}, f)
