@@ -1,0 +1,87 @@
+/* Bootstrap Overrides */
+#topBar {
+    padding: 0 16px;
+}
+
+#title {
+    font-size: 16px;
+}
+
+#navbarDropdown, #navbarUpload {
+    font-size: 16px;
+}
+
+#container, #row, #channel_list_wrapper, #openseadragon_wrapper, #csv_channel_list_wrapper {
+    border: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+#container {
+    width: 100vw;
+    max-width: 100vw;
+}
+
+#row {
+    padding: 0 16px;
+    width: 100%;
+}
+
+
+#csv_channel_list_wrapper {
+    padding: 0 0 0 6px;
+    max-width: 20%;
+    min-width: 20%;
+    width: 20%;
+}
+
+#lowRow1, #lowRow2, #lowRow3 {
+    position: relative;
+}
+
+#boxHeading1, #boxHeading2, #boxHeading3 {
+    font-size: 13px;
+    position: relative;
+}
+
+#selected-channels-header-div {
+    position: absolute;
+    right: 0;
+    top: -4px;
+}
+
+#openseadragon, #channel_list {
+    height: 100%;
+    position: relative;
+    width: 100%;
+}
+
+#boxChannels1A, #boxChannels1B {
+    font-size: 10px;
+}
+
+.scatter_canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.legend {
+    position: absolute;
+    fill: #333333;
+    font-size: 6pt;
+    text-anchor: middle;
+}
+
+.legend text {
+    font: 12px sans-serif;
+}
+
+#legend {
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    width: 120px;
+    height: 160px;
+    z-index: 1;
+}
