@@ -17,7 +17,7 @@ if getattr(sys, 'frozen', False):
     data_path = Path(os.path.dirname(sys.executable)) / 'data'
     multiprocessing.freeze_support()
 else:
-    data_path = Path("minerva_analysis/data")
+    data_path = Path("minerva_analysis/data").resolve()
 # print('Data Path', str(data_path), str((data_path).resolve()))
 # Make the Data Path
 data_path.mkdir(parents=True, exist_ok=True)
