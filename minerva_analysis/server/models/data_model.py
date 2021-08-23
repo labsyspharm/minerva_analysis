@@ -578,7 +578,8 @@ def get_datasource_description(datasource_name):
         load_ball_tree(datasource_name)
     description = datasource.describe().to_dict()
     for column in description:
-        [hist, bin_edges] = np.histogram(datasource[column].to_numpy(), bins=50, density=True)
+        column_data = datasource[column].to_numpy()
+        [hist, bin_edges] = np.histogram(column_data[~np.isnan(column_data)], bins=50, density=True)
         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
         description[column]['histogram'] = {}
         dat = []
