@@ -46,7 +46,7 @@ async function init(conf) {
 
     legend = new Legend(dataLayer, colorScheme, eventHandler);
     legend.init();
-    scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer);
+    scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer, colorScheme);
 
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();

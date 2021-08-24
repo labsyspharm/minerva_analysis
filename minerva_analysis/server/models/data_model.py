@@ -588,10 +588,12 @@ def get_scatterplot_data(datasource_name):
     scatter_np[:, 1:3] = (scatter_np[:, 1:3] - np.min(scatter_np[:, 1:3])) / (
             np.max(scatter_np[:, 1:3]) - np.min(scatter_np[:, 1:3])) * 2 - 1
 
-    list_of_obs = [[elem[1], elem[2], int(elem[0])] for elem in scatter_np]
+    clusters = datasource[get_celltype_column_name(datasource_name)].astype('uint32').values.tolist()
+    scatter_np = np.append(scatter_np, np.expand_dims(clusters, 1), 1)
+    list_of_obs = [[elem[1], elem[2], int(elem[0]), int(elem[3])] for elem in scatter_np]
     visData = {
         'data': list_of_obs,
-        'clusters': datasource[get_celltype_column_name(datasource_name)].astype('uint32').values.tolist()
+        'clusters': clusters
     }
     return visData
 

@@ -1,11 +1,12 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, canvasId, eventHandler, dataLayer) {
+    constructor(id, canvasId, eventHandler, dataLayer, colorScheme) {
         this.id = id;
         this.canvasId = canvasId;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
+        this.colorScheme = colorScheme;
     }
 
     async init() {
@@ -23,15 +24,18 @@ class Scatterplot {
             canvas,
             width,
             height,
-            pointColor: hexToRGBA('#808080', 0.1),
+            colorBy: 'valueB',
             pointSize: 1,
             lassoColor: hexToRGBA('#ffa500', 1),
             pointOutlineWidth: 0,
             pointSizeSelected: 0,
-            pointColorActive: hexToRGBA('#ffa500', 0.3)
         });
-
-        self.plot.subscribe('select', self.select.bind(self));
+        self.plot.set({
+            pointColor: _.range(self.dataLayer.cellGroups.length).map(i => {
+                return hexToRGBA(self.colorScheme.colorMap[i].hex, 0.1)
+            })
+        });
+        // self.plot.subscribe('select', self.select.bind(self));
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
         self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
         await self.wrangle();
@@ -53,7 +57,6 @@ class Scatterplot {
     recolor() {
         const self = this;
         let indices = [...this.dataLayer.getCurrentSelection().values()].map(elem => elem.id);
-        console.log("Min", _.min(indices), "Max", _.max(indices))
         self.plot.select(indices);
     }
 

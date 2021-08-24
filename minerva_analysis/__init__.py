@@ -17,12 +17,12 @@ if getattr(sys, 'frozen', False):
     data_path = Path(os.path.dirname(sys.executable)) / 'data'
     multiprocessing.freeze_support()
 else:
-    data_path = Path("minerva_analysis/data")
+    data_path = Path("minerva_analysis/data").resolve()
 # Make the Data Path
 data_path.mkdir(parents=True, exist_ok=True)
 app = Flask(__name__, template_folder=Path('client/templates'), static_folder='data')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str((data_path).resolve()) + '/db.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(data_path) + '/db.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['CLIENT_PATH'] = app.root_path + '/client/'
 config_json_path = data_path / "config.json"
