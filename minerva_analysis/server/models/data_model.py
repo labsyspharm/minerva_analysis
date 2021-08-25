@@ -154,6 +154,7 @@ def get_row(row, datasource_name):
     obj['id'] = row
     return obj
 
+
 def get_channel_names(datasource_name, shortnames=True):
     global datasource
     global source
@@ -390,7 +391,6 @@ def get_gated_cells(datasource_name, gates, start_keys):
     return query
 
 
-
 def get_gated_cells_custom(datasource_name, gates, start_keys):
     global datasource
     global source
@@ -417,8 +417,6 @@ def get_gated_cells_custom(datasource_name, gates, start_keys):
     # del query['index']
 
     return query
-
-
 
 
 def download_gating_csv(datasource_name, gates, channels, encoding):
@@ -535,6 +533,7 @@ def download_channels(datasource_name, map_channels, active_channels, list_color
 
     return csv
 
+
 def save_channel_list(datasource_name, map_channels, active_channels, list_colors, list_ranges, default_range):
     global datasource
     global source
@@ -564,9 +563,11 @@ def save_channel_list(datasource_name, map_channels, active_channels, list_color
     f = pickle.dumps(temp, protocol=4)
     database_model.save_list(database_model.ChannelList, datasource=datasource_name, cells=f)
 
+
 def get_saved_channel_list(datasource_name):
     channel_list = database_model.get(database_model.ChannelList, datasource=datasource_name)
     return pickle.loads(channel_list.cells)
+
 
 def get_datasource_description(datasource_name):
     global datasource
@@ -662,14 +663,20 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
     else:
         channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
+        write_path = None
         directory = Path(dataDirectory + "/" + filePath.name)
-        args = {}
-        args['in_paths'] = [Path(filePath)]
-        args['out_path'] = directory
-        args['is_mask'] = True
-        pyramid_assemble.main(py_args=args)
+        segmentation_mask = tf.TiffFile(str(filePath), is_ome=False)
+        if segmentation_mask.series[0].aszarr().is_multiscales is False:
+            args = {}
+            args['in_paths'] = [Path(filePath)]
+            args['out_path'] = directory
+            args['is_mask'] = True
+            pyramid_assemble.main(py_args=args)
+            write_path = str(directory)
+        else:
+            write_path = str(filePath)
+        return {'segmentation': write_path}
 
-        return {'segmentation': str(directory)}
 
 def logTransform(csvPath, skip_columns=[]):
     RAW_DATA = np.genfromtxt(csvPath, names=True, dtype=float, delimiter=',')

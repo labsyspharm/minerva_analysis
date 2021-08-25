@@ -218,7 +218,7 @@ def upload_file_page():
                             csvHeader = reader.fieldnames
 
                     # # Process Cell Type File
-                    if len(celltypeFile) == 1:
+                    if len(celltypeFile) == 1 and celltypeFile[0].filename != '':
                         for file in celltypeFile:
                             # Upload Cell Type File
                             celltypeName = file.filename
