@@ -294,6 +294,7 @@ class ChannelList {
                 this.rangeConnector,
                 this.dataLayer.imageBitRange
             );
+            alert("Saved Channels to Database");
         });
     }
 

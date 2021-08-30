@@ -366,6 +366,7 @@ class CSVGatingList {
 
         gating_download_icon_db.addEventListener('click', () => {
             self.dataLayer.saveGatingList(this.gating_channels, this.selections, false);
+            alert("Saved Gating to Database");
         })
 
         // Open / close download panel
