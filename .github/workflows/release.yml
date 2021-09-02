@@ -1,4 +1,4 @@
-name: Package and Release
+name: Release
 on:
   push:
     tags:
@@ -7,20 +7,27 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
-        node-version: [12.x]
+        os: [ macos-latest, windows-latest ]
+        node-version: [ 12.x ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+      - name: Creating Private Key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v4.9
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
       - name: Node and Webpack
         run: |
           cd minerva_analysis
           cd client
-          npm install
+          npm ci
           npm run start
           cd ..
           cd ..
@@ -28,24 +35,37 @@ jobs:
         with:
           python-version: 3.7
           environment-file: requirements.yml
-          activate-environment: viewer
+          activate-environment: minerva_analysis
       - name: Package Windows
         if: startsWith(matrix.os,'windows')
         shell: cmd /C CALL {0}
         run: |
           package_win.bat
+      - name: Rename Windows
+        if: startsWith(matrix.os,'windows')
+        shell: bash -l {0}
+        run: |
+          ls dist/
+          mv dist/minerva_analysis_windows.exe "dist/minerva_analysis_windows_${{ steps.branch-name.outputs.current_branch }}.exe"
+          ls dist/
       - name: Package Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
           ./package_mac.sh
-          zip minerva_analysis_mac.zip dist/minerva_analysis_mac
+      - name: Rename Mac
+        if: startsWith(matrix.os,'mac')
+        shell: bash -l {0}
+        run: |
+          mv dist/minerva_analysis_mac "dist/minerva_analysis_mac_${{ steps.branch-name.outputs.current_branch }}"
+          cd dist
+          zip "minerva_analysis_mac_${{ steps.branch-name.outputs.current_branch }}.zip" "minerva_analysis_mac_${{ steps.branch-name.outputs.current_branch }}"
+          rm "minerva_analysis_mac_${{ steps.branch-name.outputs.current_branch }}"
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            dist/minerva_analysis_windows.exe
-            minerva_analysis_mac.zip
+            dist/*
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}gi
