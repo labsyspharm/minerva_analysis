@@ -28,16 +28,19 @@ class Scatterplot {
             pointSize: 1,
             lassoColor: hexToRGBA('#ffa500', 1),
             pointOutlineWidth: 0,
-            pointSizeSelected: 0,
+            pointSizeSelected: 1,
         });
         self.plot.set({
             pointColor: _.range(self.dataLayer.cellGroups.length).map(i => {
                 return hexToRGBA(self.colorScheme.colorMap[i].hex, 0.1)
-            })
+            }),
+            pointOutlineWidth: 2
         });
-        // self.plot.subscribe('select', self.select.bind(self));
+
+        self.plot.subscribe('select', self.select.bind(self));
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
         self.plot.subscribe('lassoEnd', self.lassoEnd.bind(self));
+
         await self.wrangle();
 
     }
