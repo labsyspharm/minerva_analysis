@@ -27,7 +27,6 @@ class Scatterplot {
             colorBy: 'valueB',
             pointSize: 1,
             lassoColor: hexToRGBA('#ffa500', 1),
-            pointOutlineWidth: 0,
             pointSizeSelected: 1,
         });
         self.plot.set({
