@@ -1,3 +1,6 @@
+/**
+ * This class creates a list of all channels in the image stack, and allows to configure rendering settings
+ */
 class ChannelList {
 
     constructor(config, dataLayer, eventHandler) {
@@ -75,7 +78,7 @@ class ChannelList {
             this.rainbow.set(d3.hsl(color));
 
         };
-        // Draws rows in the channel list
+        // Draws rows in the channel list    //todo: this is not good practise and should be redone with d3.js binding instead.
         _.each(this.columns, column => {
             // div for each row in channel list
             let listItemParentDiv = document.createElement("div");
@@ -239,8 +242,19 @@ class ChannelList {
         var sliderSimple = d3.sliderBottom()
             .min(d3.min(data))
             .max(d3.max(data))
-            .width(swidth - 60)//.tickFormat(d3.format("s"))
+            .width(swidth - 75)//.tickFormat(d3.format("s"))
             .fill('orange')
+            .on('onchange', val => {
+              d3.select('#slider-input' + name + 0).attr('value', Math.round(val[0]));
+              d3.select('#slider-input' + name + 0).property('value', Math.round(val[0]));
+              d3.select('#slider-input' + name + 1).attr('value', Math.round(val[1]));
+              d3.select('#slider-input' + name + 1).property('value', Math.round(val[1]));
+              that.moveSliderHandles(sliderSimple, val, name);
+
+              //send package
+              let packet = {name: name, dataRange: val};
+              this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
+            })
             .ticks(5)
             .default(activeRange)
             .handle(
@@ -248,10 +262,7 @@ class ChannelList {
                     .type(d3.symbolCircle)
                     .size(100)
             )
-            .tickValues([]).on('end', range => {
-                let packet = {name: name, dataRange: range};
-                this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-            });
+
         this.sliders.set(name, sliderSimple);
 
         //create the slider svg and call the slider
@@ -260,19 +271,70 @@ class ChannelList {
             .append('svg')
             .attr('class', 'svgslider')
             .attr('width', swidth)
-            .attr('height', 30)
+            .attr('height', 50)
             .append('g')
-            .attr('transform', 'translate(20,10)');
+            .attr('transform', 'translate(20,13)');
         gSimple.call(sliderSimple);
 
         //slider value to be displayed closer to the slider than default
-        d3.selectAll('.parameter-value').select('text')
-            .attr("y", 10);
+        d3.selectAll('.svgslider').selectAll('text')
+            .attr("y", 10)
+            .style("font-size", '8px');
+
+        //both handles
+        d3.select('#channel-slider_' + name).selectAll(".parameter-value").each(function(d, i) {
+        d3.select(this).append("foreignObject")
+                    .attr('id', 'foreignObject_' + name + i)
+                    .attr("width", 50)
+                    .attr("height", 40)
+                    .attr('x', -25)
+                    .attr( 'y', -6)
+                    .style('padding',"10px")
+                    .append("xhtml:body")
+                      .attr('xmlns','http://www.w3.org/1999/xhtml')
+                        .style('background', 'none')
+                      .append('input')
+                        .attr( 'y', -25)
+                        .attr('id', 'slider-input' + name + i)
+                        .attr('type', 'text')
+                        .attr('class', 'input')
+                        .attr('value', function(){return channelList.sliders.get(name).value()[i]});
+            //remove the previous text label
+            d3.select(this).select('text').remove();
+        });
+
+        //entering a value in the input field of a slider handle will set this value and move the slider to this position
+        d3.select('#channel-slider_' + name).selectAll(".parameter-value").selectAll('.input').on('keydown', function(event, d){
+          if(event.key == "Enter"){
+            // if (d.index = d3.select(this).attr('id')){
+              let val = parseFloat(this.value.replace("%", ""));
+              let handleVals = sliderSimple.silentValue();
+              handleVals[d.index] = val;
+              that.moveSliderHandles(sliderSimple, handleVals, name)
+
+              //send update
+              let packet = {name: name, dataRange: handleVals};
+              that.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
+          }
+        })
 
         return sliderSimple;
     };
+
+
+    //move the slider handles and input fields so that input fields don't overlap when handles are close
+    moveSliderHandles(slider, valArray, name){
+        slider.silentValue(valArray);
+        if (valArray[1] - valArray[0] < 10000){
+            console.log('slider handles overlap..do something');
+            d3.select('#foreignObject_'  + name + 1).attr('x', 5);
+        }else{
+            d3.select('#foreignObject_'  + name + 1).attr('x', -25);
+        }
+    }
 }
 
+//resize on window change //todo: better update the properties then removing and adding again
 window.addEventListener("resize", function () {
     //reinitialize slider on window change..(had some bug updating with via d3 update)
     if (typeof channelList != "undefined" && channelList) {

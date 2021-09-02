@@ -5,6 +5,14 @@ body {
     -moz-user-select: none;
 }
 
+.input{
+    font-size:8px;
+    width:35px;
+    margin-top:-10px;
+    border: 1px solid gray;
+    box-sizing: border-box;
+}
+
 /*LOADING SPINNER SECTION*/
 .lds-ellipsis {
     display: inline-block;
