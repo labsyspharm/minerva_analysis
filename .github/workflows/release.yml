@@ -12,13 +12,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get Branch
+        shell: bash -l {0}
+        run: |
+          raw=$(git branch -r --contains ${{ github.ref }})
+          branch=${raw##*/}
+          echo "BRANCH=$branch" >> $GITHUB_ENV
+      - run: echo ${{ env.BRANCH }}
       - name: Creating Private Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Get branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v4.9
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
@@ -46,7 +52,7 @@ jobs:
         shell: bash -l {0}
         run: |
           ls dist/
-          mv dist/minerva_analysis_windows.exe "dist/minerva_analysis_windows_${{ steps.branch-name.outputs.current_branch }}.exe"
+          mv dist/minerva_analysis_windows.exe "dist/minerva_analysis_windows_${{ env.BRANCH }}.exe"
           ls dist/
       - name: Package Mac
         if: startsWith(matrix.os,'mac')
@@ -57,10 +63,10 @@ jobs:
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
-          mv dist/minerva_analysis_mac "dist/minerva_analysis_mac_${{ steps.branch-name.outputs.current_branch }}"
+          mv dist/minerva_analysis_mac "dist/minerva_analysis_mac_${{ env.BRANCH }}"
           cd dist
-          zip "minerva_analysis_mac_${{ steps.branch-name.outputs.current_branch }}.zip" "minerva_analysis_mac_${{ steps.branch-name.outputs.current_branch }}"
-          rm "minerva_analysis_mac_${{ steps.branch-name.outputs.current_branch }}"
+          zip "minerva_analysis_mac_${{ env.BRANCH }}.zip" "minerva_analysis_mac_${{ env.BRANCH }}"
+          rm "minerva_analysis_mac_${{ env.BRANCH }}"
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
