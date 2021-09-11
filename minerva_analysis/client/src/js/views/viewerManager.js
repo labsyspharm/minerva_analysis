@@ -274,7 +274,7 @@ export class ViewerManager {
 
         const valInc = 0;
         if (self.show_sel && self.imageViewer.selection.size > 0) {
-            tile._array.forEach((val, i) => {\
+            tile._array.forEach((val, i) => {
                     // TODO - changed from prev `val - 1` to `val` - jj
                     if (val !== 0 && self.imageViewer.selection.has(val + valInc)) {
                         // TODO - changed from prev `val - 1` to `val` - jj
@@ -318,11 +318,6 @@ export class ViewerManager {
                                         tile._tileImageData.data[index + 3] = 255;
                                         tile.containsLabel = true;
                                         break;
-                                    } else {
-                                        // tile._tileImageData.data[index] = 255;
-                                        // tile._tileImageData.data[index + 1] = 128;
-                                        // tile._tileImageData.data[index + 2] = 0;
-                                        // tile._tileImageData.data[index + 3] = 255;
                                     }
                                 }
                             }
