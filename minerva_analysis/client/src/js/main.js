@@ -137,7 +137,7 @@ const gatingBrushEnd = async (packet) => {
     // Get custom cell ids (made-to-order properties)
     const start_keys = [
         'id',
-        // this.config[datasource].featureData[0].idField,
+        this.config[datasource].featureData[0].idField,
         this.config[datasource].featureData[0].xCoordinate,
         this.config[datasource].featureData[0].yCoordinate
     ];

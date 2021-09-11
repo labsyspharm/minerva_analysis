@@ -239,18 +239,29 @@ class ImageViewer {
         const self = this;
         let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
         tile._tileImageData = imageData;
+
+        const valInc = 0;
         if (self.show_selection && self.selection.size > 0) {
             tile._array.forEach((val, i) => {
-                    if (val != 0 && self.selection.has(val - 1)) {
-                        let labelValue = val - 1;
+                    if (i === 0) console.log('hi')
+                    // TODO - changed from prev `val - 1` to `val` - jj
+                    if (val !== 0 && self.selection.has(val + valInc)) {
+                        // TODO - changed from prev `val - 1` to `val` - jj
+                        let labelValue = val + valInc;
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype');
+
+                        //set color to white but when phenotype column in passed selection, use that for coloring
                         let color = [255, 255, 255];
+                        if (phenotype !== undefined) {
+                            color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        }
+
                         let index = i * 4;
                         const grid = [
                             index - 4,
                             index + 4,
                             index - width * 4,
-                            index + height * 4
+                            index + width * 4
                         ];
                         const test = [
                             index % (width * 4) !== 0,
@@ -266,7 +277,8 @@ class ImageViewer {
                                 // if pass test (not on tile border)
                                 if (test[j]) {
                                     // Neighbor label value
-                                    const altLabelValue = tile._array[grid[j] / 4] - 1;
+                                    // TODO - changed from prev `val - 1` to `val` - jj
+                                    const altLabelValue = tile._array[grid[j] / 4] + valInc;
                                     // Color
                                     if (altLabelValue !== labelValue) {
                                         tile._tileImageData.data[index] = color[0];

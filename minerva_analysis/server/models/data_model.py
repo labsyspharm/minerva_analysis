@@ -178,6 +178,8 @@ def get_channel_cells(datasource_name, channels):
     if datasource_name != source:
         load_ball_tree(datasource_name)
 
+    origId = config[datasource_name]['featureData'][0]['idField']
+
     query_string = ''
     for c in channels:
         if query_string != '':
@@ -185,7 +187,7 @@ def get_channel_cells(datasource_name, channels):
         query_string += str(range[0]) + ' < ' + c + ' < ' + str(range[1])
     if query_string == None or query_string == "":
         return []
-    query = datasource.query(query_string)[['id']].to_dict(orient='records')
+    query = datasource.query(query_string)[['id', origId]].to_dict(orient='records')
     return query
 
 
@@ -387,7 +389,7 @@ def get_gated_cells(datasource_name, gates, start_keys):
     if query_string is None or query_string == "":
         return []
     # query_keys[0] is the ID]
-    query = datasource.query(query_string)[[query_keys[0]]].to_dict(orient='records')
+    query = datasource.query(query_string)[query_keys].to_dict(orient='records')
     return query
 
 

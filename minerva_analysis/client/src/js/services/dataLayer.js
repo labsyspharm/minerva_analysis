@@ -457,7 +457,7 @@ class DataLayer {
         }
 
         // add new item
-        this.currentSelection.set(item.id, item);
+        this.currentSelection.set(item[config.featureData[0].idField], item);
 
         // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {
@@ -469,7 +469,8 @@ class DataLayer {
     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Map(items.map(i => [(i.id), i]));
+        console.log(items)
+        that.currentSelection = new Map(items.map(i => [(i[config.featureData[0].idField]), i]));
         // console.log("update current selection done")
     }
 
