@@ -225,8 +225,8 @@ export class ViewerManager {
         seaGL.addHandler('tile-loaded', (callback, e) => {
             try {
                 const group = e.tile.url.split("/");
-                let isLabel = group[group.length - 3] === that.imageViewer.labelChannel.sub_url;
-
+                let isLabel = group[group.length - 3] == that.imageViewer.labelChannel.sub_url;
+                e.tile._blobUrl = e.image.src;
                 // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
                 if (isLabel) {
                     e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
@@ -236,17 +236,31 @@ export class ViewerManager {
                     // We're hence skipping that OpenseadragonGL callback since we only care about the vales
                     return e.getCompletionCallback()();
                 } else {
-
                     // This goes to OpenseadragonGL which does the necessary bit stuff.
                     return callback(e);
                 }
-            } catch (error) {
-                console.log('Tile Caching Error: ', e)
-                that.viewer.tileCache.clearTile(e.tile);
+            } catch (e) {
+                console.log('Load Error, Refreshing');
                 that.forceRepaint();
-                return callback(e);
+
+                // return callback(e);
             }
         });
+
+
+
+        this.viewer.addHandler('tile-drawn', (e) => {
+            let count = _.size(e.tiledImage._tileCache._tilesLoaded);
+            e.tiledImage._tileCache._imagesLoadedCount = count;
+
+        })
+
+        this.viewer.addHandler('tile-unloaded', (e) => {
+            (window.URL || window.webkitURL).revokeObjectURL(e.tile._blobUrl);
+            delete e.tile._array;
+            delete e.tile._tileImageData;
+        })
+
 
         seaGL.addHandler('tile-load-failed', (e) => {
             console.log('Tile Caching Error: ', e)
