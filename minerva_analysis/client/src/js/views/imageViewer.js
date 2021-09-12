@@ -593,9 +593,7 @@ ImageViewer
     renderingMode: 'renderingMode'
 };
 
-async function
-
-addTile(path) {
+async function addTile(path) {
     const addJob = new Promise((resolve, reject) => {
         if (seaDragonViewer.tileCache[path]) {
             resolve();
