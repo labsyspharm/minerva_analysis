@@ -621,6 +621,8 @@ class CSVGatingList {
               that.selections[self.dataLayer.getFullChannelName(name)] = handleVals;
               let packet = that.selections;
               that.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, packet);
+              // For records
+              that.gating_channels[self.dataLayer.getFullChannelName(name)] = handleVals;
           }
         })
 
