@@ -226,13 +226,14 @@ def get_cells_phenotype(datasource_name):
         load_ball_tree(datasource_name)
 
     try:
+        id_field = config[datasource_name]['featureData'][0]['idField']
         phenotype_field = config[datasource_name]['featureData'][0]['celltype']
     except KeyError:
         phenotype_field = 'celltype'
     except TypeError:
         phenotype_field = 'celltype'
 
-    query = datasource[['id', phenotype_field]].to_dict(orient='records')
+    query = datasource[['id', id_field, phenotype_field]].to_dict(orient='records')
     return query
 
 
