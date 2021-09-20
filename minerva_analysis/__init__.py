@@ -14,7 +14,7 @@ import multiprocessing
 # If you're running the pyinstaller version of the code, create a
 # new directory for the data (this will be at ~/ on mac)
 if getattr(sys, 'frozen', False):
-    data_path = Path(os.path.dirname(sys.executable)) / 'data'
+    data_path = Path(Path(sys.executable).parent / 'data')
     multiprocessing.freeze_support()
 else:
     data_path = Path("minerva_analysis/data").resolve()
@@ -31,7 +31,10 @@ db = SQLAlchemy(app)
 
 
 def get_config():
-    if not os.path.isfile(config_json_path):
+    if not Path.is_dir(data_path):
+        Path.mkdir(data_path)
+
+    if not Path.is_file(config_json_path):
         with open(config_json_path, 'w') as f:
             json.dump({}, f)
             return []
