@@ -5,6 +5,7 @@ from PIL import ImageColor
 import json
 import os
 from pathlib import Path
+from pathlib import PurePath
 from ome_types import from_xml
 from minerva_analysis import config_json_path, data_path
 from minerva_analysis.server.utils import pyramid_assemble
@@ -103,10 +104,19 @@ def load_ball_tree(datasource_name_name, reload=False):
     global config
     if datasource_name_name != source:
         load_datasource(datasource_name_name)
+
+    # old with os.path
+    # pickled_kd_tree_path = str(
+    #     Path(
+    #         os.path.join(os.getcwd())) / data_path / datasource_name_name / "ball_tree.pickle")
+
+    #using pathlib now:
     pickled_kd_tree_path = str(
-        Path(
-            os.path.join(os.getcwd())) / data_path / datasource_name_name / "ball_tree.pickle")
-    if os.path.isfile(pickled_kd_tree_path) and reload is False:
+        PurePath(Path.cwd(), data_path, datasource_name_name, "ball_tree.pickle"))
+
+    #old os.path way:  if os.path.isfile(pickled_kd_tree_path) and reload is False:
+    if Path(pickled_kd_tree_path).is_file() and reload is False:
+
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
         print("Pickled KD Tree Loaded.")
@@ -192,7 +202,8 @@ def get_phenotype_description(datasource):
     try:
         data = ''
         csvPath = config[datasource]['featureData'][0]['celltypeData']
-        if os.path.isfile(csvPath):
+        if Path(csvPath).is_file():
+        #old os.path usage: if os.path.isfile(csvPath):
             data = pd.read_csv(csvPath)
             data = data.to_numpy().tolist()
             # data = data.to_json(orient='records', lines=True)
@@ -289,11 +300,18 @@ def get_number_of_cells_in_circle(x, y, datasource_name, r):
 
 
 def get_color_scheme(datasource_name, refresh, label_field='celltype'):
-    color_scheme_path = str(
-        Path(os.path.join(os.getcwd())) / data_path / datasource_name / str(
-            label_field + "_color_scheme.pickle"))
+
+    # old os.path way:
+    # color_scheme_path = str(
+    #     Path(os.path.join(os.getcwd())) / data_path / datasource_name / str(
+    #         label_field + "_color_scheme.pickle"))
+
+    color_scheme_path = str(PurePath(Path.cwd(), data_path, datasource_name, str(
+            label_field + "_color_scheme.pickle")) )
+
     if refresh == False:
-        if os.path.isfile(color_scheme_path):
+        #old os.path way:  if os.path.isfile(color_scheme_path):
+        if Path(color_scheme_path).is_file():
             print("Color Scheme Exists, Loading")
             color_scheme = pickle.load(open(color_scheme_path, "rb"))
             return color_scheme
