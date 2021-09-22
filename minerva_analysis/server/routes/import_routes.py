@@ -202,7 +202,9 @@ def upload_file_page():
                     if labelFile.endswith('"'):
                         labelFile = labelFile[:-1]
                     labelFile = Path(labelFile)
+
                     labelName = os.path.splitext(labelFile.name)[0]
+                    #labelName = labelFile.name.split('.')[0]
 
                     channelFile = request.form.get('channel_file')
                     if channelFile.startswith('"'):
@@ -359,7 +361,8 @@ def save_config():
                     skip_columns.append(column_name)
             name, ext = os.path.splitext(csvName)
             normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
-            file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
+            #old: file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
+            file_path = str(Path(Path.cwd(), data_path, datasetName))
             csvPath = str(Path(file_path) / csvName)
             normPath = str(Path(file_path) / normCsvName)
             pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)

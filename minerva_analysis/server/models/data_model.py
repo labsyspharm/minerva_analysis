@@ -622,6 +622,8 @@ def get_ome_metadata(datasource_name):
 def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
     channel_info = {}
     channelNames = []
+
+    # image is a normal channel?
     if isLabelImg == False:
         channel_io = tf.TiffFile(str(filePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
@@ -644,6 +646,8 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
             channelNames.append(channelName)
         channel_info['channel_names'] = channelNames
         return channel_info
+
+    # segmentation mask
     else:
         channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
@@ -653,7 +657,6 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         args['out_path'] = directory
         args['is_mask'] = True
         pyramid_assemble.main(py_args=args)
-
         return {'segmentation': str(directory)}
 
 
