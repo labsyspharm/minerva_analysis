@@ -205,7 +205,9 @@ def upload_file_page():
                     if labelFile.endswith('"'):
                         labelFile = labelFile[:-1]
                     labelFile = Path(labelFile)
+
                     labelName = os.path.splitext(labelFile.name)[0]
+                    #labelName = labelFile.name.split('.')[0]
 
                     channelFile = request.form.get('channel_file')
                     if channelFile.startswith('"'):
