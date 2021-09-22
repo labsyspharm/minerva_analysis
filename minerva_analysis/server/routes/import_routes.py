@@ -6,6 +6,7 @@ from minerva_analysis.server.models import data_model
 
 from flask import render_template, request, Response, jsonify
 from pathlib import Path
+from pathlib import PurePath
 
 import shutil
 import csv
@@ -33,7 +34,7 @@ def delete_with_datasource_name(config_name):
     global config_json_path
 
     path = str(data_path / config_name)
-    if os.path.exists(path):
+    if Path(path).exists():
         shutil.rmtree(path)
     with open(config_json_path, "r+") as configJson:
         config_data = json.load(configJson)
@@ -171,9 +172,16 @@ def upload_file_page():
                     raise Exception("Please Name Dataset")
                 else:
                     datasetName = request.form['name']
-                    file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-                    if not os.path.exists(file_path):
-                        os.makedirs(file_path)
+
+                    # old os.path way:
+                    # file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
+                    # if not os.path.exists(file_path):
+                    #     os.makedirs(file_path)
+
+
+                    file_path = str(PurePath(Path.cwd(), data_path, datasetName))
+                    if not Path(file_path).exists():
+                        Path(file_path).mkdir()
 
                     csvFile = request.files.getlist("csv_file")
                     if len(csvFile) > 1:
