@@ -12,11 +12,11 @@ import os
 import io
 from pathlib import Path
 from ome_types import from_xml
-from cycif_viewer import config_json_path
-from cycif_viewer.server.utils import pyramid_assemble
+from minerva_analysis import config_json_path
+from minerva_analysis.server.utils import pyramid_assemble
 import matplotlib.path as mpltPath
-from cycif_viewer.server.utils import smallestenclosingcircle
-from cycif_viewer.server.models import database_model
+from minerva_analysis.server.utils import smallestenclosingcircle
+from minerva_analysis.server.models import database_model
 from scipy.stats import pearsonr, spearmanr
 
 import time
@@ -285,7 +285,7 @@ def load_ball_tree(datasource_name, reload=False):
     global config
     pickled_kd_tree_path = str(
         Path(
-            os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource_name / "ball_tree.pickle")
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / "ball_tree.pickle")
     if os.path.isfile(pickled_kd_tree_path) and reload is False:
         print("Pickled KD Tree Exists, Loading")
         ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
@@ -550,14 +550,14 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     # This is the standard 50 radius neighborhood data
     neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
 
-    # neighborhoods = np.load(Path("cycif_viewer/data/Ton/complex_small.npy")).squeeze()
+    # neighborhoods = np.load(Path("minerva_analysis/data/Ton/complex_small.npy")).squeeze()
     # Dynamic Neighborhood Array Code
     # if len(selection_ids) < 1000:
     #     neighborhood_array = standard_neighborhoods
     # elif len(selection_ids) < 10000:
-    #     neighborhood_array = np.load(Path("cycif_viewer/data/Ton/complex_medium.npy")).squeeze()
+    #     neighborhood_array = np.load(Path("minerva_analysis/data/Ton/complex_medium.npy")).squeeze()
     # else:
-    #     neighborhood_array = np.load(Path("cycif_viewer/data/Ton/complex_large.npy")).squeeze()
+    #     neighborhood_array = np.load(Path("minerva_analysis/data/Ton/complex_large.npy")).squeeze()
 
     selection_summary = np.mean(neighborhoods[selection_ids, :], axis=0)
     similar_ids = find_similarity(selection_summary, similarity, datasource_name)

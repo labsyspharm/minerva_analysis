@@ -1,9 +1,9 @@
-from cycif_viewer import app
+from minerva_analysis import app
 from flask import render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
 
-from cycif_viewer.server.models import data_model
+from minerva_analysis.server.models import data_model
 import os
 from pathlib import Path
 from time import time
@@ -222,7 +222,7 @@ def upload_gates():
     if file.filename.endswith('.csv') == False:
         abort(422)
     datasource = request.form['datasource']
-    save_path = Path(os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource
+    save_path = Path(os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource
     if save_path.is_dir() == False:
         abort(422)
 
@@ -282,7 +282,7 @@ def download_gating_csv():
 @app.route('/get_uploaded_gating_csv_values', methods=['GET'])
 def get_gating_csv_values():
     datasource = request.args.get('datasource')
-    file_path = Path(os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasource / 'uploaded_gates.csv'
+    file_path = Path(os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource / 'uploaded_gates.csv'
     if file_path.is_file() == False:
         abort(422)
     csv = pd.read_csv(file_path)

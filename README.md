@@ -6,7 +6,7 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 
 ### Install
 #### 1. Checkout Project
-`git clone https://github.com/labsyspharm/cycif_viewer.git`
+`git clone https://github.com/labsyspharm/minerva_analysis.git`
 #### 2. Checkout Necessary Branch
 * **For Gating, run** `git checkout gating`
 * Run `git pull` to make sure everything is up to date 
@@ -37,15 +37,15 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 * Run the Docker Desktop App
 
 ##### Build the Docker Image
-* Open a the Command Prompt and navigate to the `cycif_viewer` directory.
-* e.g. `cd Documents\cycif_viewer`
+* Open a the Command Prompt and navigate to the `minerva_analysis` directory.
+* e.g. `cd Documents\minerva_analysis`
 * run `docker build --tag cv .` to build the docker image. This may take some time.
 
 ##### Run the Docker Container
 * Run `docker run --publish 8000:8000 --name cv_container cv` to a container with the docker image
 
-#####  Access the cycif_viewer
-* Open your web browser and go to [http://localhost:8000/](http://localhost:8000/) to use the cycif_viewer
+#####  Access the minerva_analysis
+* Open your web browser and go to [http://localhost:8000/](http://localhost:8000/) to use the minerva_analysis
 
 #####  Stop the Container
 * Run `CTRL+C` to access the terminal and run `docker container stop cv_container` 

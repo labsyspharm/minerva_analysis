@@ -1,9 +1,9 @@
 # CRUD for Datasources
 
 
-from cycif_viewer import app, get_config_names, config_json_path
-from cycif_viewer.server.utils import mostFrequentLongestSubstring, pre_normalization
-from cycif_viewer.server.models import data_model
+from minerva_analysis import app, get_config_names, config_json_path
+from minerva_analysis.server.utils import mostFrequentLongestSubstring, pre_normalization
+from minerva_analysis.server.models import data_model
 
 from flask import render_template, request, Response, jsonify
 from pathlib import Path
@@ -33,7 +33,7 @@ def edit_config_with_request_name(config_name):
 def delete_with_datasource_name(config_name):
     global config_json_path
 
-    path = str(Path('cycif_viewer//data') / config_name)
+    path = str(Path('minerva_analysis//data') / config_name)
     if os.path.exists(path):
         shutil.rmtree(path)
     with open(config_json_path, "r+") as configJson:
@@ -159,7 +159,7 @@ def upload_file_page():
                     raise Exception("Please Name Dataset")
                 else:
                     datasetName = request.form['name']
-                    file_path = str(Path(os.path.join(os.getcwd())) / "cycif_viewer" / "data" / datasetName)
+                    file_path = str(Path(os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasetName)
                     if not os.path.exists(file_path):
                         os.makedirs(file_path)
 
@@ -321,7 +321,7 @@ def save_config():
                     skip_columns.append(column_name)
             name, ext = os.path.splitext(csvName)
             normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
-            file_path = str(Path(os.path.join(os.getcwd())) / "cycif_viewer" / "static" / "data" / datasetName)
+            file_path = str(Path(os.path.join(os.getcwd())) / "minerva_analysis" / "static" / "data" / datasetName)
             csvPath = str(Path(file_path) / csvName)
             normPath = str(Path(file_path) / normCsvName)
             pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
@@ -384,7 +384,7 @@ def save_config():
                 configData[datasetName]['featureData'][0]['normalization'] = originalData['normalization']
 
             configData[datasetName]['featureData'][0][
-                'src'] = "/cycif_viewer//data/" + datasetName + "/" + csvName
+                'src'] = "/minerva_analysis//data/" + datasetName + "/" + csvName
             # Adding the Label Channel as the First Label
             configData[datasetName]['imageData'] = [{}]
             #

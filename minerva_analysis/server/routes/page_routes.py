@@ -1,4 +1,4 @@
-from cycif_viewer import app, get_config_names
+from minerva_analysis import app, get_config_names
 from flask import render_template, send_from_directory
 from pathlib import Path
 import json

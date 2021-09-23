@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.neighbors import BallTree
 from tqdm.auto import tqdm
 from pathlib import Path
-from cycif_viewer import data_path
+from minerva_analysis import data_path
 
 """CreateGraph.ipynb
 
