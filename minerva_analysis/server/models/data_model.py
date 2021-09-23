@@ -664,25 +664,17 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
         write_path = None
-        # removing '.ome' from the name
-        directory = Path(dataDirectory + "/" + str(filePath.name).replace('.ome', '_pyramided'))
-        args = {}
-        args['in_paths'] = [Path(filePath)]
-        args['out_path'] = directory
-        args['is_mask'] = True
-        pyramid_assemble.main(py_args=args)
-        write_path = str(directory)
-        # TODO: Reintroduce when MCMICRO pipeline produces better masks
-        # segmentation_mask = tf.TiffFile(str(filePath), is_ome=False)
-        # if segmentation_mask.series[0].aszarr().is_multiscales is False:
-        #     args = {}
-        #     args['in_paths'] = [Path(filePath)]
-        #     args['out_path'] = directory
-        #     args['is_mask'] = True
-        #     pyramid_assemble.main(py_args=args)
-        #     write_path = str(directory)
-        # else:
-        #     write_path = str(filePath)
+        directory = Path(dataDirectory + "/" + filePath.name)
+        segmentation_mask = tf.TiffFile(str(filePath), is_ome=False)
+        if segmentation_mask.series[0].aszarr().is_multiscales is False:
+            args = {}
+            args['in_paths'] = [Path(filePath)]
+            args['out_path'] = directory
+            args['is_mask'] = True
+            pyramid_assemble.main(py_args=args)
+            write_path = str(directory)
+        else:
+            write_path = str(filePath)
         return {'segmentation': write_path}
 
 
