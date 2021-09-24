@@ -52,7 +52,7 @@ def load_datasource(datasource_name, reload=False):
     source = datasource_name
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
     datasource = pd.read_csv(csvPath)
-    embedding = np.load(Path("." + config[datasource_name]['embedding']))
+    embedding = np.load(Path(config[datasource_name]['embedding']))
     datasource['id'] = datasource.index
     datasource['Cluster'] = embedding[:, -1].astype('int32').tolist()
     datasource = datasource.replace(-np.Inf, 0)
@@ -241,7 +241,7 @@ def create_custom_clusters(datasource_name, num_clusters):
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
 
     g_mixtures = GaussianMixture(n_components=num_clusters)
-    data = np.load(Path("." + config[datasource_name]['embedding']))
+    data = np.load(Path(config[datasource_name]['embedding']))
     randomly_sampled = np.random.choice(data.shape[0], size=100000, replace=False)
     g_mixtures.fit(data[randomly_sampled, :-1])
     clusters = np.zeros((data.shape[0],))
@@ -468,14 +468,14 @@ def get_color_scheme(datasource_name):
 
 def get_cluster_labels(datasource_name):
     global config
-    data = np.load(Path("." + config[datasource_name]['embedding']))
+    data = np.load(Path(config[datasource_name]['embedding']))
     clusters = np.unique(data[:, -1])
     return clusters.astype('int32').tolist()
 
 
 def get_scatterplot_data(datasource_name):
     global config
-    data = np.load(Path("." + config[datasource_name]['embedding']))
+    data = np.load(Path(config[datasource_name]['embedding']))
 
     normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :-1])
     # data[:, :2] = normalized_data
@@ -524,7 +524,7 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, em
         point_tuples = [tuple(pt) for pt in MinMaxScaler(feature_range=(0, 1)).fit(
             [[-1], [1]]).transform(np.array(points)).tolist()]
         path = mpltPath.Path(point_tuples)
-        embedding = np.load(Path("." + config[datasource_name]['embedding']))
+        embedding = np.load(Path(config[datasource_name]['embedding']))
         inside = path.contains_points(embedding[:, [0, 1]].astype('float'))
         print('Points in Embedding Polygon', time.process_time() - start)
         neighbor_ids = datasource.loc[np.where(inside == True), 'id'].tolist()
@@ -548,7 +548,7 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     obj = {}
     # This is the standard 50 radius neighborhood data
-    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
 
     # neighborhoods = np.load(Path("minerva_analysis/data/Ton/complex_small.npy")).squeeze()
     # Dynamic Neighborhood Array Code
@@ -590,7 +590,7 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
 
 def find_similarity(cluster_summary, similarity, datasource_name, disabled=None):
     global config
-    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     if disabled:
         neighborhoods = np.delete(neighborhoods, disabled, axis=1)
         cluster_summary = np.delete(cluster_summary, disabled, axis=0)
@@ -739,7 +739,7 @@ def get_pearsons_correlation(datasource_name):
     global ball_tree
     global source
     global config
-    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     # Load if not loaded
     if datasource_name != source:
         load_datasource(datasource_name)
@@ -757,7 +757,7 @@ def get_spearmans_correlation(datasource_name):
     global ball_tree
     global source
     global config
-    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     # Load if not loaded
     if datasource_name != source:
         load_datasource(datasource_name)
@@ -834,7 +834,7 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
         cluster_cells = datasource.loc[indices, default_fields]
     else:
         cluster_cells = cluster_cells[default_fields]
-    neighborhoods = np.load(Path("." + config[datasource_name]['neighborhoods']))
+    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     full_neighborhoods = neighborhoods[indices, :]
     cluster_summary = np.mean(full_neighborhoods, axis=0)
     summary_stats = {'weighted_contribution': {}, 'full_neighborhoods': full_neighborhoods}
