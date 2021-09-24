@@ -1,10 +1,16 @@
-# CyCIF Viewer
+# Minerva Analysis
 
 ## About
 This is  an [openseadragon](https://openseadragon.github.io/) based **Cellular Image Viewing and Analysis Tool**. 
 It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.js](https://nodejs.org/en/) javascript frontend.
 
-### Install
+## Executables (for Users)
+Releases can be found here:
+https://github.com/labsyspharm/minerva_analysis/releases
+These are executables for Windows and MacOS that can be run locally without any installations.
+
+
+## Clone and Run Codebase (for Developers)
 #### 1. Checkout Project
 `git clone https://github.com/labsyspharm/minerva_analysis.git`
 #### 2. Checkout Necessary Branch
@@ -13,50 +19,30 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 
 
 
-#### 2. Conda Install Instructions. 
+#### 3. Conda Install Instructions. 
 ##### Install Conda
 * Install [miniconda](https://conda.io/miniconda.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html). 
-* Create env:  `conda env create -n [myenvname] -f requirements.yml`
+* Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
-* Active environment: `conda activate [myenvname]`. 
+* Active environment: `conda activate minerva_analysis`
 
 
 ##### Start the Server
 
-* `python app.py` - Runs the webserver
+* `python run.py` - Runs the webserver
 ##### Start the Server
 
 * Access the tool via `http://localhost:8000/`
 
 
-<!--#### 2a. Docker Instructions
-
-##### Install and Run Docker
-* Download and Install [Docker Desktop](https://www.docker.com/products/docker-desktop)
-* Run the Docker Desktop App
-
-##### Build the Docker Image
-* Open a the Command Prompt and navigate to the `minerva_analysis` directory.
-* e.g. `cd Documents\minerva_analysis`
-* run `docker build --tag cv .` to build the docker image. This may take some time.
-
-##### Run the Docker Container
-* Run `docker run --publish 8000:8000 --name cv_container cv` to a container with the docker image
-
-#####  Access the minerva_analysis
-* Open your web browser and go to [http://localhost:8000/](http://localhost:8000/) to use the minerva_analysis
-
-#####  Stop the Container
-* Run `CTRL+C` to access the terminal and run `docker container stop cv_container` 
-
-##### (Optional) Delete and Rebuild Image
-* Delete the Docker container with `docker container rm cv_container`
-* Delete the image with `docker image rm cv`
-* Update the repository with `git pull`
-* Rebuild the image: `docker build --tag cv .` 
-* Create and a run a new container `docker run --publish 8000:8000 --name cv_container cv`
+#### (4. Node.js installation and packages)
+  This step is only needed when you plan to edit js code. The codebase already included bundled js files.
+* Install [Node.js](https://nodejs.org/en/), then navigate to `/minerva_analysis/client` and run `npm install` to install all packages listed in package.json.
+* Run `npm run start` to package the Javascript, or run `npm run watch` if you plan on editing dependencies
 
 
--->
+## Packaging/Bundling Code as Executable (for Developers)
+Any tagged commit to a branch will trigger a build, where `tag == commit message`. This will appear under releases. Note building may take ~10 min.
 
+Tagging Conventions: All release tags should look like `v{version_number}_{branch_name}`.
