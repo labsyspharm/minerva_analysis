@@ -186,7 +186,7 @@ export class LfCellTypeAll {
                                 let cellTypeCounts = this.vars.cellTypeMap;
                                 darr.forEach(function (d, i) {
                                     if (d[_this.vars.cellTypeColumnName] != null) {
-                                        let fieldName = dataLayer.getNameForPhenotypeId(d[_this.vars.cellTypeColumnName]);
+                                        let fieldName = d[_this.vars.cellTypeColumnName] + '-' + dataLayer.getNameForPhenotypeId(d[_this.vars.cellTypeColumnName]);
                                         if (!cellTypeCounts.has(fieldName)) {
                                             cellTypeCounts.set(fieldName, 0);
                                         }
@@ -194,6 +194,7 @@ export class LfCellTypeAll {
                                     }
                                 });
                                 this.vars.cellTypes = Array.from(cellTypeCounts);
+                                console.log(this.vars.cellTypes)
 
 
                                 // Trigger update
@@ -274,6 +275,7 @@ export class LfCellTypeAll {
                             this.vars.active = true;
                             // Trigger channel list data request
                             dataLayer.getCellIdsPhenotype(channelList.sel).then(cellTypes => {
+                                // console.log(cellTypes)
 
                                 //Set cell type column name
                                 this.vars.cellTypeColumnName = dataLayer.phenotypeColumnName;
@@ -294,7 +296,7 @@ export class LfCellTypeAll {
                                     //If description is there we use these names for naming
                                     if (cellTypeDescription != '' && cellTypeDescription != undefined) {
                                         cellTypeDescription.forEach(function (d, i) {
-                                            _this.vars.cellTypeMap.set(d, 0);
+                                            _this.vars.cellTypeMap.set(i + '-' + d, 0);
                                         });
                                     }
                                     //if not we build a map from the direct entries in the single cell data
@@ -373,9 +375,10 @@ export class LfCellTypeAll {
 
 
                             // Draw something
-                            d3.select('.viewfinder_charts_g').selectAll(".viewfinder_charts_g_celltypes").data(vis.vars.cellTypes, function (d) {
-                                return d[0] + "-" + d[1]
-                            })
+                            d3.select('.viewfinder_charts_g').selectAll(".viewfinder_charts_g_celltypes")
+                                .data(vis.vars.cellTypes, function (d) {
+                                    return d[0] + "-" + d[1]
+                                })
                                 .join(function (group) {
                                     let enter = group.append("g")
                                         .attr('class', 'viewfinder_charts_g_celltypes');

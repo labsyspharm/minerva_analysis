@@ -62,7 +62,7 @@ export class LensingFiltersExt {
             lFCellType.load,
             lfNearestCellsSel.load,
             lfNearestCellsAll.load,
-            lfSpatialCorrelation.load,
+            // lfSpatialCorrelation.load,
             // lfChannelRelationships.load
         ];
 

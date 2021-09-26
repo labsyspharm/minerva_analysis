@@ -67,13 +67,13 @@ export class PluginToolsExt {
     addEvents() {
 
         // Click
-        this.els.trayEl.on('click', this.trayEventClick.bind(this));
+        this.els.pluginEls.on('click', this.trayEventClick.bind(this));
 
         // Keyboard
         document.addEventListener('keydown', e => {
 
             if (e.key === 'D') {
-                if (this.selections.activePlugin !== 'plugin_dotter') {
+                if (this.selections.activePlugin) {
 
                     // Selection
                     this.selections.activePlugin = 'plugin_dotter';
@@ -113,19 +113,18 @@ export class PluginToolsExt {
      * @returns void
      */
     trayEventClick(e) {
-        console.log(e)
-
-        // Update
-        this.opened = !this.opened;
 
         // Check
-        if (this.selections.activePlugin !== 'plugin_dotter') {
+        if (this.selections.activePlugin !== e.currentTarget.id) {
 
             // Selection
-            this.selections.activePlugin = e.target.parentElement.id;
+            this.selections.activePlugin = e.currentTarget.id;
 
             // Load
             this.loadPluginTool(e.target.parentElement.id);
+
+            // Update
+            this.opened = true;
         } else {
 
             // Selection
@@ -133,6 +132,9 @@ export class PluginToolsExt {
 
             // Load
             this.destroyPluginTool(e.target.parentElement.id);
+
+            // Update
+            this.opened = false;
         }
 
         // Widths

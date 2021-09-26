@@ -274,7 +274,6 @@ class DataLayer {
 
         // add new item
         // TODO - this is now using csv's original id rather than our placed id - jj
-        console.log('Single', item)
         this.currentSelection.set(item[config.featureData[0].idField], item);
 
         // console.log('current selection size:', this.currentSelection.size);
@@ -288,9 +287,7 @@ class DataLayer {
         // console.log("update current selection")
         var that = this;
         // TODO - this is now using csv's original id rather than our placed id - jj
-        console.log('Many', items)
         that.currentSelection = new Map(items.map(i => [(i[config.featureData[0].idField]), i]));
-        console.log(that.currentSelection)
         // console.log("update current selection done")
     }
 
