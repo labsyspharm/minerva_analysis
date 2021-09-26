@@ -9,6 +9,7 @@ minerva_analysis/client/node_modules/
 .pnp.js
 *.sqlite3
 */.ipynb_checkpoints/
+.ipynb_checkpoints/
 minerva_analysis/data/
 # testing
 /coverage
