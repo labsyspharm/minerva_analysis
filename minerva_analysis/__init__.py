@@ -13,6 +13,10 @@ import multiprocessing
 
 # If you're running the pyinstaller version of the code, create a
 # new directory for the data (this will be at ~/ on mac)
+
+#centralizing path across app
+cwd_path = Path.cwd()
+
 if getattr(sys, 'frozen', False):
     data_path = Path(Path(sys.executable).parent / 'data')
     multiprocessing.freeze_support()
