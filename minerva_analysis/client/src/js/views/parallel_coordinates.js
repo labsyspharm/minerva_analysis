@@ -72,13 +72,8 @@ class ParallelCoordinates {
         self.svgGroup.append("path")
             .attr("fill", "none")
             .classed("average_path", true)
-            .attr("stroke", d => {
-                if (self.small) {
-                    return "black";
-                } else {
-                    return "orange";
-                }
-            })
+            .attr("stroke", "black")
+
 
         this.editMode = false;
         this.drag = d3.drag(self)
@@ -198,13 +193,8 @@ class ParallelCoordinates {
             .attr('x2', self.width - 20)
             .attr('y2', -15)
             .attr("stroke-width", 3)
-            .attr('stroke', d => {
-                if (self.small) {
-                    return "black";
-                } else {
-                    return "orange";
-                }
-            })
+            .attr('stroke', 'black')
+
 
         let avgLineLabel = self.svgGroup.selectAll('.average_line_label')
             .data([0])
@@ -221,13 +211,7 @@ class ParallelCoordinates {
             .datum(self.visData)
             .classed("average_path", true)
             .attr("fill", "none")
-            .attr("stroke", d => {
-                if (self.small) {
-                    return "black";
-                } else {
-                    return "orange";
-                }
-            })
+            .attr("stroke", "black")
             .attr("stroke-width", 2)
             .attr("d", d3.line()
                 .x(function (d) {
