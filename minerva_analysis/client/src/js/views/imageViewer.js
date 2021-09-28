@@ -148,21 +148,43 @@ class ImageViewer {
 
 
         seaGL.addHandler('tile-loaded', (callback, e) => {
-            const group = e.tile.url.split("/");
-            let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
-            // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
-            if (isLabel) {
-                e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
+            try {
+                const group = e.tile.url.split("/");
+                let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
+                e.tile._blobUrl = e.image.src;
+                // Label Tiles We'll view as 32 bits to get the ID values and save that on the tile object so it's cached
+                if (isLabel) {
+                    e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest.response), {colortype: 0}).data.buffer);
 
-                that.drawLabelTile(e.tile, e.image.width, e.image.height);
+                    that.drawLabelTile(e.tile, e.image.width, e.image.height);
 
-                // We're hence skipping that OpenseadragonGL callback since we only care about the vales
-                return e.getCompletionCallback()();
-            } else {
-                // This goes to OpenseadragonGL which does the necessary bit stuff.
-                return callback(e);
+                    // We're hence skipping that OpenseadragonGL callback since we only care about the vales
+                    return e.getCompletionCallback()();
+                } else {
+                    // This goes to OpenseadragonGL which does the necessary bit stuff.
+                    return callback(e);
+                }
+            } catch (e) {
+                console.log('Load Error, Refreshing');
+                that.forceRepaint();
+
+                // return callback(e);
             }
         });
+
+
+        this.viewer.addHandler('tile-drawn', (e) => {
+            let count = _.size(e.tiledImage._tileCache._tilesLoaded);
+            e.tiledImage._tileCache._imagesLoadedCount = count;
+
+        });
+
+        this.viewer.addHandler('tile-unloaded', (e) => {
+            (window.URL || window.webkitURL).revokeObjectURL(e.tile._blobUrl);
+            delete e.tile._array;
+            delete e.tile._tileImageData;
+        });
+
 
         // Instantiate viewer managers
         that.viewerManagerVMain = new ViewerManager(that, seaGL.openSD, 'main');
@@ -588,9 +610,7 @@ ImageViewer
     displaySelection: 'displaySelection',
 };
 
-async function
-
-addTile(path) {
+async function addTile(path) {
     const addJob = new Promise((resolve, reject) => {
         if (seaDragonViewer.tileCache[path]) {
             resolve();

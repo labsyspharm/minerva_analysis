@@ -1,4 +1,5 @@
-# Minerva Analysis 
+# Minerva Analysis
+
 ## About
 This is  an [openseadragon](https://openseadragon.github.io/) based **Cellular Image Viewing and Analysis Tool**. 
 It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.js](https://nodejs.org/en/) javascript frontend.

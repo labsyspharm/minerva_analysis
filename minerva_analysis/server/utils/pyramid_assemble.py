@@ -275,9 +275,15 @@ def main(py_args=None):
 
         print()
 
+    # old:
+    # xml1 = construct_xml(
+    #     os.path.basename(out_path), shapes, num_channels, ome_dtype, pixel_size
+    # )
+
     xml = construct_xml(
-        os.path.basename(out_path), shapes, num_channels, ome_dtype, pixel_size
+       pathlib.PurePath(out_path).name, shapes, num_channels, ome_dtype, pixel_size
     )
+
     patch_ometiff_xml(out_path, xml)
 
 
