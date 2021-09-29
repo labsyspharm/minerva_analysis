@@ -42,6 +42,7 @@ export class ViewerManager {
 
         // configure webgl
         this.configWebgl();
+        
 
 
     }

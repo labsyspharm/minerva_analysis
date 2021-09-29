@@ -227,6 +227,7 @@ export class LfChannelView {
                                     if (mainManager.viewerChannels[k].short_name === this.vars.currentChannel.name) {
                                         if (!auxiManager.viewerChannels[k]) {
                                             auxiManager.colorConnector[`${k}`] = {
+
                                                 color: mainManager.colorConnector[`${k}`].color
                                             }
                                             auxiManager.channelAdd(k);

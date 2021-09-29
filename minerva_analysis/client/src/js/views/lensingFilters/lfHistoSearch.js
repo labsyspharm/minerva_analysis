@@ -389,8 +389,8 @@ export class LfHistoSearch {
 
                             //arc sizes
                             vis.arc = d3.arc()
-                                .outerRadius(vis.image_viewer.viewer.lensing.configs.rad + 12)
-                                .innerRadius(vis.image_viewer.viewer.lensing.configs.rad + 3)
+                                .outerRadius(vis.image_viewer.viewer.lensing.configs.rad/2 + 12)
+                                .innerRadius(vis.image_viewer.viewer.lensing.configs.rad/2 + 3)
                         },
                         render: () => {
                             //console.log('render');
@@ -416,14 +416,14 @@ export class LfHistoSearch {
                                 .enter().append("line")
                                 .attr("x2", 0)
                                 .attr("y1", function(d,i){
-                                    if (i==0){return vis.image_viewer.viewer.lensing.configs.rad + 20+10;}
-                                    return vis.image_viewer.viewer.lensing.configs.rad + 20+4;
+                                    if (i==0){return vis.image_viewer.viewer.lensing.configs.rad/2 + 20+10;}
+                                    return vis.image_viewer.viewer.lensing.configs.rad/2 + 20+4;
                                 })
                                 .attr("stroke-width", function(d,i){
                                     if (i==0){return 5;}
                                     return 1;
                                 })
-                                .attr("y2", vis.image_viewer.viewer.lensing.configs.rad + 20-2)
+                                .attr("y2", vis.image_viewer.viewer.lensing.configs.rad/2 + 20-2)
                                 .attr("stroke", "white")
                                 .attr("stroke-opacity","0.75")
                                 .attr("transform", function(d) {
@@ -436,8 +436,8 @@ export class LfHistoSearch {
                                 .attr("transform", function(d,i) {
                                     let margin = 30
                                     if (i==0){margin=45}
-                                return "translate(" + ((vis.image_viewer.viewer.lensing.configs.rad+margin)*Math.cos((d-90)*2*Math.PI/365)) +
-                                               "," + ((vis.image_viewer.viewer.lensing.configs.rad+margin)*Math.sin((d-90)*2*Math.PI/365)) + ")" +
+                                return "translate(" + ((vis.image_viewer.viewer.lensing.configs.rad/2+margin)*Math.cos((d-90)*2*Math.PI/365)) +
+                                               "," + ((vis.image_viewer.viewer.lensing.configs.rad/2+margin)*Math.sin((d-90)*2*Math.PI/365)) + ")" +
                                                "rotate(" + ((d-90)*360/365) + ")";
                                     })
 
