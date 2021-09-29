@@ -21,7 +21,7 @@ export class LfHistoSearch {
         keydown: e => {
             const lensing = this.image_viewer.viewer.lensing;
             if (!lensing.configs.sensitivity){
-                lensing.configs.sensitivity = 0.25;
+                lensing.configs.sensitivity = 0.025;
             }
             if (e.key === 'j'){
                 lensing.configs.sensitivity = Math.min(lensing.configs.sensitivity+0.0025,0.25);
@@ -337,7 +337,7 @@ export class LfHistoSearch {
                                  .attr('class', 'tooltipText')
                                     .attr('x', 10)
                                     .attr('y', 32)
-                                  .text("Increase/Decrease: k / j'");
+                                  .text("Increase/Decrease: j / k'");
 
                             // Add listener
                             this.vars.keydown = this.vars.keydown.bind(this)
@@ -369,7 +369,7 @@ export class LfHistoSearch {
                             //set sensitivity to 0.5 if not initialized
                             if (vis.image_viewer.viewer.lensing.configs.sensitivity == undefined ||
                                 vis.image_viewer.viewer.lensing.configs.sensitivity == null) {
-                                vis.image_viewer.viewer.lensing.configs.sensitivity = 0.25;
+                                vis.image_viewer.viewer.lensing.configs.sensitivity = 0.025;
                             }
 
                             //create pie arc
@@ -389,8 +389,8 @@ export class LfHistoSearch {
 
                             //arc sizes
                             vis.arc = d3.arc()
-                                .outerRadius(vis.image_viewer.viewer.lensing.configs.rad/2 + 12)
-                                .innerRadius(vis.image_viewer.viewer.lensing.configs.rad/2 + 3)
+                                .outerRadius(vis.image_viewer.viewer.lensing.configs.rad + 12)
+                                .innerRadius(vis.image_viewer.viewer.lensing.configs.rad + 3)
                         },
                         render: () => {
                             //console.log('render');
@@ -416,14 +416,14 @@ export class LfHistoSearch {
                                 .enter().append("line")
                                 .attr("x2", 0)
                                 .attr("y1", function(d,i){
-                                    if (i==0){return vis.image_viewer.viewer.lensing.configs.rad/2 + 20+10;}
-                                    return vis.image_viewer.viewer.lensing.configs.rad/2 + 20+4;
+                                    if (i==0){return vis.image_viewer.viewer.lensing.configs.rad + 20+10;}
+                                    return vis.image_viewer.viewer.lensing.configs.rad + 20+4;
                                 })
                                 .attr("stroke-width", function(d,i){
                                     if (i==0){return 5;}
                                     return 1;
                                 })
-                                .attr("y2", vis.image_viewer.viewer.lensing.configs.rad/2 + 20-2)
+                                .attr("y2", vis.image_viewer.viewer.lensing.configs.rad + 20-2)
                                 .attr("stroke", "white")
                                 .attr("stroke-opacity","0.75")
                                 .attr("transform", function(d) {
@@ -436,8 +436,8 @@ export class LfHistoSearch {
                                 .attr("transform", function(d,i) {
                                     let margin = 30
                                     if (i==0){margin=45}
-                                return "translate(" + ((vis.image_viewer.viewer.lensing.configs.rad/2+margin)*Math.cos((d-90)*2*Math.PI/365)) +
-                                               "," + ((vis.image_viewer.viewer.lensing.configs.rad/2+margin)*Math.sin((d-90)*2*Math.PI/365)) + ")" +
+                                return "translate(" + ((vis.image_viewer.viewer.lensing.configs.rad+margin)*Math.cos((d-90)*2*Math.PI/365)) +
+                                               "," + ((vis.image_viewer.viewer.lensing.configs.rad+margin)*Math.sin((d-90)*2*Math.PI/365)) + ")" +
                                                "rotate(" + ((d-90)*360/365) + ")";
                                     })
 
