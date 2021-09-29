@@ -194,7 +194,7 @@ export class LfCellTypeAll {
                                     }
                                 });
                                 this.vars.cellTypes = Array.from(cellTypeCounts);
-                                console.log(this.vars.cellTypes)
+                                // console.log(this.vars.cellTypes)
 
 
                                 // Trigger update
