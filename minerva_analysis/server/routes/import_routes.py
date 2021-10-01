@@ -405,7 +405,8 @@ def save_config():
             if 'celltypeData' in originalData:
                 configData[datasetName]['featureData'][0]['celltypeData'] = str(data_path / datasetName / celltypeName)
                 configData[datasetName]['featureData'][0]['celltype'] = headerList[3][1]['value']
-
+            else:
+                configData[datasetName]['featureData'][0]['celltype'] = 'cellType'
             if 'embeddingData' in originalData:
                 configData[datasetName]['featureData'][0]['embeddingData'] = str(
                     data_path / datasetName / embeddingName)
