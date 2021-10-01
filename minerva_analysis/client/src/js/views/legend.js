@@ -32,7 +32,7 @@ class Legend {
             .attr("height", "100%")
             .attr("fill", "white")
         this.svg.append("text")
-            .text("Cell Groups")
+            .text("Clusters")
             .attr("class", "legend-title")
             .attr("x", 3)
             .attr("y", 10)
