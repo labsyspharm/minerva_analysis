@@ -1,6 +1,6 @@
 # CRUD for Datasources
 
-from minerva_analysis import app, get_config_names, config_json_path, data_path
+from minerva_analysis import app, get_config_names, config_json_path, data_path, cwd_path
 from minerva_analysis.server.utils import mostFrequentLongestSubstring, pre_normalization
 from minerva_analysis.server.models import data_model
 
@@ -180,7 +180,7 @@ def upload_file_page():
                     #     os.makedirs(file_path)
 
 
-                    file_path = str(PurePath(Path.cwd(), data_path, datasetName))
+                    file_path = str(PurePath(cwd_path, data_path, datasetName))
                     if not Path(file_path).exists():
                         Path(file_path).mkdir()
 
@@ -380,7 +380,7 @@ def save_config():
             name, ext = os.path.splitext(csvName)
             normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
             #old: file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-            file_path = str(Path(Path.cwd(), data_path, datasetName))
+            file_path = str(Path(cwd_path, data_path, datasetName))
             csvPath = str(Path(file_path) / csvName)
             normPath = str(Path(file_path) / normCsvName)
             pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)

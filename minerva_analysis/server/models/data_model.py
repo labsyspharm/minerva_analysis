@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from pathlib import PurePath
 from ome_types import from_xml
-from minerva_analysis import config_json_path, data_path
+from minerva_analysis import config_json_path, data_path, cwd_path
 from minerva_analysis.server.utils import pyramid_assemble
 from minerva_analysis.server.models import database_model
 import dateutil.parser
@@ -112,7 +112,7 @@ def load_ball_tree(datasource_name_name, reload=False):
 
     #using pathlib now:
     pickled_kd_tree_path = str(
-        PurePath(Path.cwd(), data_path, datasource_name_name, "ball_tree.pickle"))
+        PurePath(cwd_path, data_path, datasource_name_name, "ball_tree.pickle"))
 
     #old os.path way:  if os.path.isfile(pickled_kd_tree_path) and reload is False:
     if Path(pickled_kd_tree_path).is_file() and reload is False:
@@ -306,7 +306,7 @@ def get_color_scheme(datasource_name, refresh, label_field='celltype'):
     #     Path(os.path.join(os.getcwd())) / data_path / datasource_name / str(
     #         label_field + "_color_scheme.pickle"))
 
-    color_scheme_path = str(PurePath(Path.cwd(), data_path, datasource_name, str(
+    color_scheme_path = str(PurePath(cwd_path, data_path, datasource_name, str(
             label_field + "_color_scheme.pickle")) )
 
     if refresh == False:
