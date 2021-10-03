@@ -126,6 +126,25 @@ class CSVGatingList {
             self.gating_channels[fullName] = sliderRange;
             self.addSlider(sliderRange, sliderRange, column, self.sliderWidth);
             d3.select('div#csv_gating-slider_' + column).style('display', "none");
+
+            let autoCol = document.createElement("div");
+            autoCol.classList.add("col-md-4");
+            autoCol.classList.add("ml-auto");
+            autoCol.classList.add("csv_gating-auto")
+            autoCol.setAttribute('id', "csv_gating-auto_" + column)
+            autoCol.classList.add("gating-col");
+            autoCol.classList.add("gating-svg-wrapper");
+            row.appendChild(autoCol);
+
+            let autoBtn = document.createElement("button");
+            autoBtn.classList.add('auto-btn');
+            autoBtn.setAttribute('id', "auto-btn_" + column);
+            autoBtn.textContent = "auto";
+            autoBtn.addEventListener("click", function() { self.auto_gate(fullName) });
+
+            autoCol.appendChild(autoBtn);
+            autoCol.addEventListener("click", e => e.stopPropagation());
+            d3.select(autoCol).style('display', "none");
         });
 
 
@@ -235,6 +254,21 @@ class CSVGatingList {
 
     }
 
+    auto_gate(name) {
+        const self = this;
+
+        let gate = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gate']
+        // For interaction
+        self.selections[name][0] = gate;
+        let shortName = self.dataLayer.getShortChannelName(name);
+        let gate_end = self.selections[name][1]
+        self.sliders.get(shortName).value([gate, gate_end]);
+        // For records
+        this.gating_channels[name] = [gate, gate_end];
+
+        this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, self.selections);
+    }
+
     /**
      * @function init_gating_channels
      *
@@ -291,6 +325,7 @@ class CSVGatingList {
             d3.select(parent).classed("active", true);
             svgCol.style.display = "block";
             d3.select('div#csv_gating-slider_' + name).style('display', "block")
+            d3.select('div#csv_gating-auto_' + name).style('display', "block");
 
             // Add channel
             this.selectChannel(name);
@@ -306,6 +341,7 @@ class CSVGatingList {
             d3.select(parent).classed("active", false);
             svgCol.style.display = "none";
             d3.select('div#csv_gating-slider_' + name).style('display', "none")
+            d3.select('div#csv_gating-auto_' + name).style('display', "none");
 
             // Trigger viewer cleanse
             this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
@@ -497,6 +533,8 @@ class CSVGatingList {
 
         const self = this;
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
+        let gmm1Data = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gmm_1']
+        let gmm2Data = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gmm_2']
 
         // If no data
         if (!data) return
@@ -555,7 +593,7 @@ class CSVGatingList {
 
 
         let xScale = d3.scaleLinear()
-            .domain([0, _.max(_.map(histogramData, e => e.x))]) // input
+            .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
             .range([0, swidth - 60])
 
         let yScale = d3.scaleLinear()
@@ -580,6 +618,27 @@ class CSVGatingList {
             .attr('class', 'distribution_line')
             .attr('transform', 'translate(0,-12)')
             .attr('fill', 'none')
+
+        gSimple.selectAll('.gmm1_line')
+            .data([gmm1Data])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'gmm_line')
+            .attr('transform', 'translate(0,-12)')
+            .attr('fill', 'none')
+            .attr('stroke', 'blue')
+
+        gSimple.selectAll('.gmm2_line')
+            .data([gmm2Data])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'gmm_line')
+            .attr('transform', 'translate(0,-12)')
+            .attr('fill', 'none')
+            .attr('stroke', 'red')
+
         gSimple.call(sliderSimple);
 
 

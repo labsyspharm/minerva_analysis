@@ -18,6 +18,8 @@ import re
 import zarr
 from dask import dataframe as dd
 import cv2
+from sklearn.mixture import GaussianMixture
+from scipy.stats import norm
 
 ball_tree = None
 database = None
@@ -583,13 +585,39 @@ def get_datasource_description(datasource_name):
         [hist, bin_edges] = np.histogram(column_data[~np.isnan(column_data)], bins=50, density=True)
         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
         description[column]['histogram'] = {}
+
+        gmm = GaussianMixture(n_components=2)
+        gmm.fit(column_data.reshape((-1, 1)))
+        description[column]['gate'] = np.mean(gmm.means_)
+        description[column]['gmm_means'] = gmm.means_
+        description[column]['gmm_std'] = np.sqrt(gmm.covariances_)
+        description[column]['gmm_weights'] = gmm.weights_
+        pdf_gmm1 = [gmm.weights_[0] * norm.pdf(midpoints, gmm.means_[0], np.sqrt(gmm.covariances_[0]))][0][0]
+        pdf_gmm2 = [gmm.weights_[1] * norm.pdf(midpoints, gmm.means_[1], np.sqrt(gmm.covariances_[1]))][0][0]
+
         dat = []
+        dat_gmm1 = []
+        dat_gmm2 = []
         for i in range(len(hist)):
             obj = {}
             obj['x'] = midpoints[i]
             obj['y'] = hist[i]
             dat.append(obj)
+
+            obj1 = {}
+            obj1['x'] = midpoints[i]
+            obj1['y'] = pdf_gmm1[i]
+            dat_gmm1.append(obj1)
+
+            obj2 = {}
+            obj2['x'] = midpoints[i]
+            obj2['y'] = pdf_gmm2[i]
+            dat_gmm2.append(obj2)
+
         description[column]['histogram'] = dat
+        description[column]['gmm_1'] = dat_gmm1
+        description[column]['gmm_2'] = dat_gmm2
+
     return description
 
 
