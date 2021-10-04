@@ -232,11 +232,11 @@ export class LfChannelView {
                                     if (mainManager.viewerChannels[k].short_name === this.vars.currentChannel.name) {
                                         if (!auxiManager.viewerChannels[k]) {
                                             auxiManager.colorConnector[`${k}`] = {
-
                                                 color: mainManager.colorConnector[`${k}`]?.color || d3.rgb('white')
                                             }
-                                            auxiManager.channelAdd(k);
 
+                                            auxiManager.rangeConnector[`${k}`] = mainManager.rangeConnector[`${k}`];
+                                            auxiManager.channelAdd(k);
                                         }
                                         this.vars.currentChannel.index = +k;
                                     } else {
