@@ -393,19 +393,13 @@ label {
     padding-left: 0;
 }
 
-.navbar-datasource {
-    margin: 0px 10px;
+.delete-button {
+    padding-left: 5px;
 }
 
 .fa-pencil-alt, .fa-trash {
     color: black;
 }
-
-.datasource-edit-row a {
-    padding-left: 5px;
-
-}
-
 
 #phenotype_label {
     font-size: 0.6rem;
