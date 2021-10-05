@@ -186,17 +186,17 @@ export class LfHistoSearch {
                         console.log(vis.data.contours[0]);
                     }
 
-                        d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
-                        var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("polygon")
-                            .data(vis.data.contours)
-                          .enter().append("polygon")
-                            .attr("points",function(d) {
-                                return d.map(function(d) { return [d[1],d[0]].join(","); }).join(" ");})
-                            .attr("stroke","orange")
-                            .attr("stroke-width",0.0001)
-                            .attr("stroke-opacity", 1.0)
-                            .attr("fill", "orange")
-                            .attr("fill-opacity", 0.0);
+                    d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
+                    var selPoly = d3.select(this.image_viewer.viewer.svg).selectAll("polygon")
+                        .data(vis.data.contours)
+                      .enter().append("polygon")
+                        .attr("points",function(d) {
+                            return d.map(function(d) { return [d[1],d[0]].join(","); }).join(" ");})
+                        .attr("stroke","orange")
+                        .attr("stroke-width",0.0001)
+                        .attr("stroke-opacity", 1.0)
+                        .attr("fill", "orange")
+                        .attr("fill-opacity", 0.0);
                 });
             }
             // Trigger update
