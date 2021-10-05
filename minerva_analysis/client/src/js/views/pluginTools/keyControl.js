@@ -98,7 +98,7 @@ export class KeyControl {
         tooltopDiv.append('p')
             .html('<span>]</span> - increase')
         tooltopDiv.append('p')
-            .html('<span>\\</span> - increase')
+            .html('<span>\\</span> - reset')
         tooltopDiv.append('h3')
             .text('Lens magnification');
         tooltopDiv.append('p')
