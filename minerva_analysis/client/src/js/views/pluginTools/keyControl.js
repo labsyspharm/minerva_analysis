@@ -75,22 +75,22 @@ export class KeyControl {
             .attr('class', 'lensingControl');
         // tooltopDiv.append('h2')
         //     .text('');
-        tooltopDiv.append('h3')
-            .text('Lens visibility');
-        tooltopDiv.append('p')
-            .html('<span>l</span> - toggle visibility')
+        // tooltopDiv.append('h3')
+        //     .text('Lens visibility');
+        // tooltopDiv.append('p')
+        //     .html('<span>l</span> - toggle visibility')
         tooltopDiv.append('h3')
             .text('Lens shape');
         tooltopDiv.append('p')
             .html('<span>L</span> <span>&#8679;l</span> - toggle shape')
         tooltopDiv.append('h3')
-            .text('Lens placement');
+            .text('Lens filters');
         tooltopDiv.append('p')
-            .html('<span>p</span> - toggle motion')
-        tooltopDiv.append('h3')
-            .text('Lens dot');
+            .html('<span>{</span> <span>&#8679;]</span> - previous')
         tooltopDiv.append('p')
-            .html('<span>D</span>  <span>&#8679;d</span> - snapshot')
+            .html('<span>}</span> <span>&#8679;[</span> - next')
+        tooltopDiv.append('p')
+            .html('<span>|</span> <span>&#8679;\\</span> - none')
         tooltopDiv.append('h3')
             .text('Lens size');
         tooltopDiv.append('p')
@@ -110,13 +110,13 @@ export class KeyControl {
         tooltopDiv.append('p')
             .html('<span>/</span> - no zoom')
         tooltopDiv.append('h3')
-            .text('Lens filters');
+            .text('Lens placement');
         tooltopDiv.append('p')
-            .html('<span>{</span> <span>&#8679;]</span> - previous')
+            .html('<span>p</span> - toggle motion')
+        tooltopDiv.append('h3')
+            .text('Lens dot');
         tooltopDiv.append('p')
-            .html('<span>}</span> <span>&#8679;[</span> - next')
-        tooltopDiv.append('p')
-            .html('<span>|</span> <span>&#8679;\\</span> - none')
+            .html('<span>D</span>  <span>&#8679;d</span> - snapshot')
 
     }
 }

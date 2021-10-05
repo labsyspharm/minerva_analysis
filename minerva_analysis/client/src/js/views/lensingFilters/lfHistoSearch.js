@@ -36,9 +36,17 @@ export class LfHistoSearch {
                 //remove overlay contents..
                 this.image_viewer.canvasImg = {};
                 d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
+                lensing.viewfinder.setup.render();
+                this.image_viewer.viewer.forceRedraw();
             }
 
             if (e.key === 'G') {
+                //remove old drawings first
+                this.data.contours = [];
+                this.image_viewer.canvasImg = {};
+                d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
+                lensing.viewfinder.setup.render();
+
                 // Access auxi viewer manager (lensing instance) //lenses was not updated correctly
                 const mainManager = this.image_viewer.viewerManagerVMain;
                 const channels = [];
@@ -118,6 +126,12 @@ export class LfHistoSearch {
                 });
             }
             if (e.key === 'H') {
+
+                //remove old drawings first
+                this.image_viewer.canvasImg = {};
+                d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
+                lensing.viewfinder.setup.render();
+                this.image_viewer.viewer.forceRedraw();
 
                 // Access auxi viewer manager (lensing instance) //lenses was not updated correctly
                 const mainManager = this.image_viewer.viewerManagerVMain;
@@ -349,121 +363,139 @@ export class LfHistoSearch {
 
                         },
                         wrangle: () => {
+                            // if (this.image_viewer.viewer.lensing.configs.on) {
+                                // Define this
+                                const vis = this;
 
-                            // Define this
-                            const vis = this;
-
-                            //update list of active channels and maintain their toggles
-                            const mainManager = this.image_viewer.viewerManagerVMain;
-                            let tempCombo = new Map();
-                            for (let k in mainManager.viewerChannels) {
-                                let isSet = true;
-                                if (this.vars.channelCombo.has(mainManager.viewerChannels[k].name)){
-                                    isSet = this.vars.channelCombo.get(mainManager.viewerChannels[k].name);
+                                //update list of active channels and maintain their toggles
+                                const mainManager = this.image_viewer.viewerManagerVMain;
+                                let tempCombo = new Map();
+                                for (let k in mainManager.viewerChannels) {
+                                    let isSet = true;
+                                    if (this.vars.channelCombo.has(mainManager.viewerChannels[k].name)) {
+                                        isSet = this.vars.channelCombo.get(mainManager.viewerChannels[k].name);
+                                    }
+                                    tempCombo.set(mainManager.viewerChannels[k].name, isSet);
                                 }
-                                tempCombo.set(mainManager.viewerChannels[k].name, isSet);
-                            }
-                            this.vars.channelCombo = tempCombo;
+                                this.vars.channelCombo = tempCombo;
 
+                                //set sensitivity to 0.5 if not initialized
+                                if (vis.image_viewer.viewer.lensing.configs.sensitivity == undefined ||
+                                    vis.image_viewer.viewer.lensing.configs.sensitivity == null) {
+                                    vis.image_viewer.viewer.lensing.configs.sensitivity = 0.025;
+                                }
 
-                            //set sensitivity to 0.5 if not initialized
-                            if (vis.image_viewer.viewer.lensing.configs.sensitivity == undefined ||
-                                vis.image_viewer.viewer.lensing.configs.sensitivity == null) {
-                                vis.image_viewer.viewer.lensing.configs.sensitivity = 0.025;
-                            }
+                                //create pie arc
+                                vis.pies = d3.pie()
+                                    .value(d => d)
+                                    .sort(null)
+                                    .startAngle(0 * Math.PI)
+                                    .endAngle(0.6 * Math.PI);
 
-                            //create pie arc
-                            vis.pies = d3.pie()
-                                .value( d => d)
-                                .sort(null)
-                                .startAngle(0 * Math.PI)
-	                            .endAngle(0.6 * Math.PI);
+                                //mini colorscheme
+                                vis.colors = ["#000000", '#ffffff'];
 
-                            //mini colorscheme
-                            vis.colors = ["#000000", '#ffffff'];
+                                //we have it running from 0.0 till 0.25 but show with 0 to 100
+                                const sens = 1 - vis.image_viewer.viewer.lensing.configs.sensitivity * 4;
+                                vis.threshold = [100 - sens * 100, sens * 100]
+                                vis.ticks = [100 - (sens * 100), 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
-                            //we have it running from 0.0 till 0.25 but show with 0 to 100
-                            const sens = 1-vis.image_viewer.viewer.lensing.configs.sensitivity*4;
-                            vis.threshold = [100-sens*100, sens*100]
-                            vis.ticks = [100-(sens*100), 0, 10,20,30,40,50,60,70,80,90,100]
-
-                            //arc sizes
-                            vis.arc = d3.arc()
-                                .outerRadius(vis.image_viewer.viewer.lensing.configs.rad + 12)
-                                .innerRadius(vis.image_viewer.viewer.lensing.configs.rad + 3)
+                                //arc sizes
+                                vis.arc = d3.arc()
+                                    .outerRadius(vis.image_viewer.viewer.lensing.configs.rad + 12)
+                                    .innerRadius(vis.image_viewer.viewer.lensing.configs.rad + 3)
+                            // }else{
+                            //     this.image_viewer.viewer.lensing.viewfinder.setup.destroy();
+                            // }
                         },
                         render: () => {
-                            //console.log('render');
-                            // // Define this
-                            const vis = this;
-                            const vf = this.image_viewer.viewer.lensing.viewfinder
-                            const f = d3.format(",")
+                            // if (this.image_viewer.viewer.lensing.configs.on) {
+                                //console.log('render');
+                                // // Define this
+                                const vis = this;
+                                const vf = this.image_viewer.viewer.lensing.viewfinder
+                                const f = d3.format(",")
 
-                            //draw arc (could be redone with join but not necessary)
-                            vis.vars.el_radialExtG.selectAll("path").remove();
-                            this.vars.el_radialExtG.selectAll("path")
-                                .data(vis.pies(vis.threshold))
-                                .enter()
-                                .append("path")
-                                .attr("fill", (d, i) => vis.colors[i])
-                                .attr("fill-opacity","0.5")
-                                .attr("d", vis.arc)
+                                //draw arc (could be redone with join but not necessary)
+                                vis.vars.el_radialExtG.selectAll("path").remove();
+                                this.vars.el_radialExtG.selectAll("path")
+                                    .data(vis.pies(vis.threshold))
+                                    .enter()
+                                    .append("path")
+                                    .attr("fill", (d, i) => vis.colors[i])
+                                    .attr("fill-opacity", "0.5")
+                                    .attr("d", vis.arc)
 
-                            //draw ticks on arc (could be redone with join but not necessary)
-                            this.vars.el_radialExtG.selectAll("line").remove();
-                            this.vars.el_radialExtG.selectAll("line")
-                                .data(vis.ticks)
-                                .enter().append("line")
-                                .attr("x2", 0)
-                                .attr("y1", function(d,i){
-                                    if (i==0){return vis.image_viewer.viewer.lensing.configs.rad + 20+10;}
-                                    return vis.image_viewer.viewer.lensing.configs.rad + 20+4;
-                                })
-                                .attr("stroke-width", function(d,i){
-                                    if (i==0){return 5;}
-                                    return 1;
-                                })
-                                .attr("y2", vis.image_viewer.viewer.lensing.configs.rad + 20-2)
-                                .attr("stroke", "white")
-                                .attr("stroke-opacity","0.75")
-                                .attr("transform", function(d) {
-                                  return "rotate(" + (d + 270 * Math.PI+0.6 * Math.PI/2 * (180/Math.PI)) + ")" });
+                                //draw ticks on arc (could be redone with join but not necessary)
+                                this.vars.el_radialExtG.selectAll("line").remove();
+                                this.vars.el_radialExtG.selectAll("line")
+                                    .data(vis.ticks)
+                                    .enter().append("line")
+                                    .attr("x2", 0)
+                                    .attr("y1", function (d, i) {
+                                        if (i == 0) {
+                                            return vis.image_viewer.viewer.lensing.configs.rad + 20 + 10;
+                                        }
+                                        return vis.image_viewer.viewer.lensing.configs.rad + 20 + 4;
+                                    })
+                                    .attr("stroke-width", function (d, i) {
+                                        if (i == 0) {
+                                            return 5;
+                                        }
+                                        return 1;
+                                    })
+                                    .attr("y2", vis.image_viewer.viewer.lensing.configs.rad + 20 - 2)
+                                    .attr("stroke", "white")
+                                    .attr("stroke-opacity", "0.75")
+                                    .attr("transform", function (d) {
+                                        return "rotate(" + (d + 270 * Math.PI + 0.6 * Math.PI / 2 * (180 / Math.PI)) + ")"
+                                    });
 
-                            //draw labels
-                            this.vars.el_radialExtG.selectAll("text").remove();
-                            this.vars.el_radialExtG.selectAll("text").data(vis.ticks).enter().append("text")
-                                .attr("class", "value")
-                                .attr("transform", function(d,i) {
-                                    let margin = 30
-                                    if (i==0){margin=45}
-                                return "translate(" + ((vis.image_viewer.viewer.lensing.configs.rad+margin)*Math.cos((d-90)*2*Math.PI/365)) +
-                                               "," + ((vis.image_viewer.viewer.lensing.configs.rad+margin)*Math.sin((d-90)*2*Math.PI/365)) + ")" +
-                                               "rotate(" + ((d-90)*360/365) + ")";
+                                //draw labels
+                                this.vars.el_radialExtG.selectAll("text").remove();
+                                this.vars.el_radialExtG.selectAll("text").data(vis.ticks).enter().append("text")
+                                    .attr("class", "value")
+                                    .attr("transform", function (d, i) {
+                                        let margin = 30
+                                        if (i == 0) {
+                                            margin = 45
+                                        }
+                                        return "translate(" + ((vis.image_viewer.viewer.lensing.configs.rad + margin) * Math.cos((d - 90) * 2 * Math.PI / 365)) +
+                                            "," + ((vis.image_viewer.viewer.lensing.configs.rad + margin) * Math.sin((d - 90) * 2 * Math.PI / 365)) + ")" +
+                                            "rotate(" + ((d - 90) * 360 / 365) + ")";
                                     })
 
-                                .attr("text-anchor", "left")
-                                .style("font-size", function(d,i){
-                                    if (i==0){return "10px"}
-                                    return "6px"
-                                })
-                                .style('fill', 'white')
-                                .text(function(d){
-                                  return f(d);
-                                });
+                                    .attr("text-anchor", "left")
+                                    .style("font-size", function (d, i) {
+                                        if (i == 0) {
+                                            return "10px"
+                                        }
+                                        return "6px"
+                                    })
+                                    .style('fill', 'white')
+                                    .text(function (d) {
+                                        return f(d);
+                                    });
 
 
-                            this.vars.el_boxExtG.select("#dynamic_text_elements").remove();
+                                this.vars.el_boxExtG.select("#dynamic_text_elements").remove();
 
-                            let dynamic = this.vars.el_boxExtG.append("g")
-                                .attr('id', 'dynamic_text_elements');
+                                let dynamic = this.vars.el_boxExtG.append("g")
+                                    .attr('id', 'dynamic_text_elements');
 
-                            dynamic.selectAll(".combo_channels")
-                                .data(this.vars.channelCombo, function(d){return  d}).enter()
+                                dynamic.selectAll(".combo_channels")
+                                    .data(this.vars.channelCombo, function (d) {
+                                        return d
+                                    }).enter()
                                     .append("text")
                                     .attr('class', 'combo_channels')
                                     .attr("x", 68)
-                                    .attr("y", function(d,i){ return 75 + 10*i} )
-                                    .text(function(d,i){ return d[0] + ":     " + d[1]})
+                                    .attr("y", function (d, i) {
+                                        return 75 + 10 * i
+                                    })
+                                    .text(function (d, i) {
+                                        return d[0] + ":     " + d[1]
+                                    })
                                     .attr('text-anchor', 'end')
                                     .attr('fill', 'rgba(255, 255, 255, 0.9)')
                                     .attr('font-family', 'sans-serif')
@@ -471,16 +503,18 @@ export class LfHistoSearch {
                                     .attr('font-style', 'italic')
                                     .attr('font-weight', 'lighter');
 
-                            // Update vf box size
-                            vf.els.blackboardRect.attr('height', this.vars.config_boxH);
-                            vf.els.blackboardRect.attr('width', this.vars.config_boxW);
-                            vf.configs.boxW = this.vars.config_boxW;
-                            vf.configs.boxH = this.vars.config_boxH;
-
-                        },
+                                    // Update vf box size
+                                    vf.els.blackboardRect.attr('height', this.vars.config_boxH);
+                                    vf.els.blackboardRect.attr('width', this.vars.config_boxW);
+                                    vf.configs.boxW = this.vars.config_boxW;
+                                    vf.configs.boxH = this.vars.config_boxH;
+                                // }else{
+                                //     this.image_viewer.viewer.lensing.viewfinder.setup.destroy();
+                                // }
+                            },
                         destroy: () => {
 
-                            // Remove handler
+                            // remove handler
                             document.removeEventListener('keydown', this.vars.keydown);
 
                             // remove heatmap
@@ -490,6 +524,7 @@ export class LfHistoSearch {
                             d3.select(this.image_viewer.viewer.svg).selectAll("*").remove();
                             this.vars.el_radialExtG.remove();
                             this.vars.el_boxExtG.remove();
+                            // this.image_viewer.viewer.lensing.viewfinder.els.blackboardRect.hide();this.image_viewer.viewer.lensing.viewfinder.els.blackboardRect.hide();
                         }
                     }
                 },

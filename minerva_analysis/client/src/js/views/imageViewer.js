@@ -137,6 +137,8 @@ class ImageViewer {
         const lensing_config = {};
         this.viewer.lensing = Lensing.construct(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
 
+
+
         /************************ SVG Overlay for additional graphics in the image view ***************?*/
 
         this.viewer.svgOverlay = this.viewer.svgOverlay();
@@ -251,6 +253,9 @@ class ImageViewer {
                     });
             }
         });
+
+
+
     }
 
     // drawLabelTile(tile, width, height) {
