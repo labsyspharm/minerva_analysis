@@ -26,12 +26,13 @@ class Scatterplot {
             height,
             colorBy: 'valueB',
             pointSize: 1,
+            opacity: 0.2,
             lassoColor: hexToRGBA('#ffa500', 1),
             pointSizeSelected: 1,
         });
         self.plot.set({
             pointColor: _.range(self.dataLayer.cellGroups.length).map(i => {
-                return hexToRGBA(self.colorScheme.colorMap[i].hex, 0.1)
+                return hexToRGBA(self.colorScheme.colorMap[i].hex, 0)
             }),
             pointOutlineWidth: 2
         });

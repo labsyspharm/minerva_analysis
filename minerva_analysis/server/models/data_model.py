@@ -49,14 +49,14 @@ def load_datasource(datasource_name, reload=False):
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
     print("Loading csv data.. (this can take some time)")
     datasource = pd.read_csv(csvPath)
-    if 'cellType' not in datasource.columns:
+    if 'celltype' not in datasource.columns:
         embedding_data_path = Path(config[datasource_name]['featureData'][0]['embeddingData'])
         scatter_df = pd.read_csv(embedding_data_path)
         scatter_np = scatter_df.to_numpy()
         if scatter_np.shape[1] > 3:
-            datasource['cellType'] = scatter_np[:, 3].astype('int').tolist()
+            datasource['celltype'] = scatter_np[:, 3].astype('int').tolist()
         else:
-            datasource['cellType'] = 0
+            datasource['celltype'] = 0
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
     source = datasource_name
@@ -212,9 +212,9 @@ def get_celltype_column_name(datasource):
     try:
         return config[datasource]['featureData'][0]['celltype']
     except KeyError:
-        return 'cellType'
+        return 'celltype'
     except TypeError:
-        return 'cellType'
+        return 'celltype'
 
 
 def get_phenotype_description(datasource):
@@ -253,7 +253,7 @@ def get_cell_groups(datasource_name):
             obj = celltype_df.to_numpy()[:, 1].tolist()
         else:
 
-            celltype_data = sorted(datasource['cellType'].unique())
+            celltype_data = sorted(datasource['celltype'].unique())
             obj = [str(i) for i in celltype_data]
         # Test
         return obj

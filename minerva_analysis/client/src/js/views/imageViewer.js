@@ -185,6 +185,17 @@ class ImageViewer {
             delete e.tile._tileImageData;
         });
 
+        // Get and shrink all button images
+        this.parent = d3.select(`#openseadragon`);
+        this.parent.selectAll('img')
+            .attr('height', 40);
+
+        // Force controls to bottom right
+        const controlsAnchor = this.parent.select('img').node().parentElement.parentElement.parentElement.parentElement;
+        controlsAnchor.style.left = 'unset';
+        controlsAnchor.style.top = 'unset';
+        controlsAnchor.style.right = '5px';
+        controlsAnchor.style.top = '5px';
 
         // Instantiate viewer managers
         that.viewerManagerVMain = new ViewerManager(that, seaGL.openSD, 'main');
@@ -286,7 +297,7 @@ class ImageViewer {
             tile._array.forEach((val, i) => {
                     if (val != 0 && self.selection.has(val - 1)) {
                         let labelValue = val - 1;
-                        let celltype = _.get(seaDragonViewer.selection.get(labelValue), 'cellType');
+                        let celltype = _.get(seaDragonViewer.selection.get(labelValue), 'celltype');
                         let color = seaDragonViewer.colorScheme.colorMap[celltype].rgb;
                         // let color = [255, 255, 255]
                         let index = i * 4;

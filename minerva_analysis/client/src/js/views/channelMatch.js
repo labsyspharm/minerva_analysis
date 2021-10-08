@@ -39,7 +39,7 @@ function channelMatch(data) {
         if (celltypeUploaded) {
             let celltypeIndex = _.findIndex(headers, e => {
                 let str = _.get(e, 'fullName') || e;
-                return str == 'cellType' || str == 'phenotype'
+                return str == 'celltype' || str == 'phenotype'
             });
             if (celltypeIndex != -1) {
                 val = headers[celltypeIndex]

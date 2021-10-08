@@ -30,13 +30,15 @@ class Legend {
         this.svg.append("rect")
             .attr("width", "100%")
             .attr("height", "100%")
-            .attr("fill", "white")
+            .attr("fill", "black")
+            .attr("opacity", 0.75)
         this.svg.append("text")
             .text("Clusters")
             .attr("class", "legend-title")
             .attr("x", 3)
             .attr("y", 10)
             .attr("font-size", "0.65rem")
+            .attr('fill', 'white')
 
 
         let rects = this.svg.selectAll(".myrects")
@@ -69,9 +71,7 @@ class Legend {
             .attr("y", function (d, i) {
                 return 15 + i * (size + 1) + (size / 2)
             }) // 100 is where the first dot appears. 25 is the distance between dots
-            .style("fill", d => {
-                return '#000000';
-            })
+            .style("fill", "white")
             .text(d => {
                 let cellGroup = d.cellGroup;
                 if (cellGroup == "") {
