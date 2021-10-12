@@ -22,10 +22,10 @@ class ParallelCoordinates {
         this.totalWidth = this.parent.node().getBoundingClientRect().width;
         this.totalHeight = this.parent.node().getBoundingClientRect().height;
         if (this.small) {
-            this.margin = {top: 20, right: 10, bottom: 100, left: 25};
+            this.margin = {top: 10, right: 25, bottom: 10, left: 100};
 
         } else {
-            this.margin = {top: 20, right: 10, bottom: 100, left: 10};
+            this.margin = {top: 10, right: 25, bottom: 10, left: 100};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -48,23 +48,26 @@ class ParallelCoordinates {
 
         this.svgSelector = document.getElementById(self.id + "_svg");
         // Parse the Data
-        this.x = d3.scalePoint()
+        this.x = d3.scaleLinear()
             .range([0, self.width])
-            .padding(1);
+            .domain([0, 1])
 
-        this.lineX = d3.scalePoint()
+        this.x.clamp(true);
+
+        this.lineX = d3.scaleLinear()
             .range([self.margin.left, self.width + self.margin.left])
+            .domain([0, 1])
+
+
+        this.y = d3.scalePoint()
+            .range([0, self.height])
             .padding(1);
 
 
-        this.y = d3.scaleLinear()
-            .domain([0, 1])
-            .range([self.height, 0]);
-        this.y.clamp(true);
+        this.lineY = d3.scalePoint()
+            .range([self.margin.top, self.height + self.margin.top])
+            .padding(1);
 
-        this.lineY = d3.scaleLinear()
-            .domain([0, 1])
-            .range([self.height + self.margin.top, self.margin.top]);
 
         let emptyData = _.map(this.phenotypes, pheno => {
             return [pheno, 0];
@@ -72,7 +75,7 @@ class ParallelCoordinates {
         self.svgGroup.append("path")
             .attr("fill", "none")
             .classed("average_path", true)
-            .attr("stroke", "black")
+            .attr("stroke", "white")
 
 
         this.editMode = false;
@@ -97,7 +100,7 @@ class ParallelCoordinates {
         const self = this;
         let chartData = _.get(rawData, 'cluster_summary.weighted_contribution', null);
         if (chartData) {
-            self.full_neighborhoods = _.get(rawData, 'cluster_summary.full_neighborhoods', null);
+            self.selection_neighborhoods = _.get(rawData, 'cluster_summary.selection_neighborhoods', null);
         } else {
             chartData = rawData;
         }
@@ -105,12 +108,9 @@ class ParallelCoordinates {
         if (!order) {
             order = self.phenotypes;
         }
-        const sum = _.sumBy(chartData, e => {
-            return e[1];
-        })
         this.visData = _.map(chartData, e => {
             let [k, v] = e;
-            let val = v / sum;
+            let val = v;
             if (!_.isFinite(val)) {
                 val = 0; // handle divide by 0
             }
@@ -128,10 +128,10 @@ class ParallelCoordinates {
 
 
         this.visData = _.sortBy(this.visData, ['index']);
-        self.x.domain(this.visData.map(function (d) {
+        self.y.domain(this.visData.map(function (d) {
             return d.key;
         }));
-        self.lineX.domain(this.visData.map(function (d) {
+        self.lineY.domain(this.visData.map(function (d) {
             return d.index;
         }));
         self.bottomLeft = [(self.margin.left + self.x(self.visData[0].key)) / self.totalWidth,
@@ -163,21 +163,21 @@ class ParallelCoordinates {
             .append("g")
             .attr("class", "parallel_axes")
             // I translate this element to its right position on the x axis
-            .attr("transform", function (d) {
-                return "translate(" + self.x(d.key) + ")";
-            })
+            // .attr("transform", function (d) {
+            //     return "translate(" + self.y(d.key) + ")";
+            // })
 
             // And I build the axis with the call function
             .each(function (d) {
                 if (d.index == 0) {
-                    d3.select(this).call(d3.axisLeft()
-                        .scale(self.y)
+                    d3.select(this).call(d3.axisBottom()
+                        .scale(self.x)
                         .tickSize(0)
                         .tickValues(_.range(0, 1.2, 0.2))
                         .tickFormat(d3.format(".0%")));
                 } else {
-                    d3.select(this).call(d3.axisLeft()
-                        .scale(self.y)
+                    d3.select(this).call(d3.axisBottom()
+                        .scale(self.x)
                         .tickSize(0)
                         .tickValues([]));
                 }
@@ -193,7 +193,7 @@ class ParallelCoordinates {
             .attr('x2', self.width - 20)
             .attr('y2', -15)
             .attr("stroke-width", 3)
-            .attr('stroke', 'black')
+            .attr('stroke', 'white')
 
 
         let avgLineLabel = self.svgGroup.selectAll('.average_line_label')
@@ -211,14 +211,14 @@ class ParallelCoordinates {
             .datum(self.visData)
             .classed("average_path", true)
             .attr("fill", "none")
-            .attr("stroke", "black")
+            .attr("stroke", "white")
             .attr("stroke-width", 2)
             .attr("d", d3.line()
                 .x(function (d) {
-                    return self.x(d.key);
+                    return self.x(d.value);
                 })
                 .y(function (d) {
-                    return self.y(d.value);
+                    return self.y(d.key);
                 })
             )
 
@@ -228,16 +228,16 @@ class ParallelCoordinates {
             // Add axis title
             .append("text")
             .merge(labels)
-            .style("text-anchor", "start")
-            .attr("y", 1)
-            .attr("x", 5)
+            .style("text-anchor", "end")
+            .attr("y", 0)
+            .attr("x", -3)
             .text(function (d) {
                 return d.key;
             })
             .classed("par_cor_label", true)
-            .style("fill", "black")
+            .style("fill", "white")
             .attr("transform", d => {
-                return "translate(" + self.x(d.key) + "," + self.height + ") rotate(90)"
+                return "translate(0," + self.y(d.key) + ") "
             })
             .attr('fill-opacity', d => {
                 if (d.disabled) {
@@ -265,10 +265,10 @@ class ParallelCoordinates {
             .attr("visibility", "visible")
             .attr("r", 6)
             .attr("cx", d => {
-                return self.x(d.key)
+                return self.x(d.value)
             })
             .attr("cy", d => {
-                return self.y(d.value);
+                return self.y(d.key);
             })
             .call(self.drag)
             .on("click", (event, d) => {
@@ -276,24 +276,38 @@ class ParallelCoordinates {
             })
         handler.exit().remove();
 
-        if (self.full_neighborhoods && !self.editMode) {
-            self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
-            let opacity = 0.01;
-            if (_.size(self.full_neighborhoods) < 10000) {
-                opacity = 0.05;
-            } else {
-                opacity = 0.003;
-            }
-            _.forEach(_.sampleSize(self.full_neighborhoods, 10000), row => {
-                const sum = _.sum(row);
-                const color = `hsla(0,0%,50%,${opacity})`;
+        self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
+
+        let opacity = 0.005;
+        let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.selection_neighborhoods', null);
+        _.forEach(fullNeighborhood, row => {
+            const color = `hsla(0,0%,100%,${opacity})`;
+            self.canvas.getContext('2d').strokeStyle = color;
+            self.canvas.getContext('2d').beginPath();
+            row.map(function (p, i) {
+                if (i == 0) {
+                    self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
+                } else {
+                    self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
+                }
+            });
+            self.canvas.getContext('2d').stroke();
+        })
+
+        if (self.selection_neighborhoods && !self.editMode) {
+
+
+            //Draw Selection
+            opacity = 0.01;
+            _.forEach(self.selection_neighborhoods, row => {
+                const color = `hsla(39, 100%, 50%,${opacity})`;
                 self.canvas.getContext('2d').strokeStyle = color;
                 self.canvas.getContext('2d').beginPath();
                 row.map(function (p, i) {
                     if (i == 0) {
-                        self.canvas.getContext('2d').moveTo(self.lineX(i), self.lineY(p / sum));
+                        self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
                     } else {
-                        self.canvas.getContext('2d').lineTo(self.lineX(i), self.lineY(p / sum));
+                        self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
                     }
                 });
                 self.canvas.getContext('2d').stroke();
@@ -368,7 +382,7 @@ class ParallelCoordinates {
 
     dragging(self, d, e) {
         // This handles when the line is directly vertical, as both x and y can be used to solve for the value
-        let newVal = self.y.invert(e.y);
+        let newVal = self.x.invert(e.x);
         self.visData[d.index].value = newVal;
         self.visData[d.index].disabled = false;
         self.draw(true);

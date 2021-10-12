@@ -63,14 +63,14 @@ class ImageViewer {
         this.lassoButton = document.getElementById("lasso_button");
         this.selectButton = document.getElementById("select_button");
         this.neighborhoodButton = document.getElementById("neighborhood_icon");
-        this.similaritySlider = document.getElementById("similarity_group");
+        // this.similaritySlider = document.getElementById("similarity_group");
         this.cellViewButton = document.getElementById("cell_view_icon");
-        this.similaritySlider.onchange = (e) => {
-            let val = document.getElementById("neighborhood_similarity").value;
-            let span = document.getElementById('similarity_val');
-            span.innerHTML = ''
-            span.innerHTML = _.toString((val / 100).toFixed(2));
-        }
+        // this.similaritySlider.onchange = (e) => {
+        //     let val = document.getElementById("neighborhood_similarity").value;
+        //     let span = document.getElementById('similarity_val');
+        //     span.innerHTML = ''
+        //     span.innerHTML = _.toString((val / 100).toFixed(2));
+        // }
         this.isSelectionToolActive = true;
 
     }
@@ -89,6 +89,8 @@ class ImageViewer {
         // Config viewer
         const viewer_config = {
             id: "openseadragon",
+            prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
+
             maxZoomPixelRatio: 15,
             showFullPageControl: false,
             zoomInButton: "zoom-in",
@@ -411,7 +413,8 @@ class ImageViewer {
         that.neighborhoodButton.addEventListener("click", event => {
             d3.select('#selectionPolygon').remove();
             that.neighborhoodButton.style.stroke = "orange";
-            let sim = document.getElementById('similarity_val').innerHTML || '0.8';
+            let sim = '0.8';
+            // let sim = document.getElementById('similarity_val').innerHTML || '0.8';
             let simVal = parseFloat(sim);
             seaDragonViewer.showLoader();
             if (dataLayer.getCurrentSelection().size > 0) {

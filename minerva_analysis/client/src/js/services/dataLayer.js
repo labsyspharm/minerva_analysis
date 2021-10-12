@@ -26,6 +26,8 @@ class DataLayer {
             }))
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();
+            this.fullNeighborhoods = await this.getAllCells();
+
 
         } catch (e) {
             console.log("Error Initializing Dataset", e);
@@ -52,6 +54,27 @@ class DataLayer {
             return response_data;
         } catch (e) {
             console.log("Error Getting Cells", e);
+        }
+    }
+
+
+    async getAllCells() {
+        try {
+            let response = await fetch('/get_all_cells', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource
+                    })
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting All Cells", e);
         }
     }
 

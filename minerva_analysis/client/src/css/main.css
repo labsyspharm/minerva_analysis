@@ -84,31 +84,20 @@ body {
 }
 
 #plots_display {
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    padding: 10px;
-    height: 80vh;
+    height: 100%;
 }
 
 #scatterplot_display {
-    height: 35vh;
-    padding-left: 15px;
+    height: 40vh;
     width: 100%;
 }
 
 #parallel_coordinates_display {
-    height: 38vh;
-    margin-left: 15px;
+    height: 45vh;
     width: 100%;
     position: relative;
 }
 
-.legend {
-    position: absolute;
-}
-
-.legend text {
-    font: 12px sans-serif;
-}
 
 .mylabels {
     font-size: 0.6rem;
@@ -156,7 +145,7 @@ body {
 }
 
 #channel_list {
-    height: 80vh;
+    height: 85vh;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
@@ -173,7 +162,6 @@ body {
 #channel_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
-    height: 50px;
 }
 
 #channel_list .list-group {
@@ -475,11 +463,6 @@ label {
     display: none;
 }
 
-.legend {
-    fill: #333333;
-    font-size: 6pt;
-    text-anchor: middle;
-}
 
 .tooltip {
     fill: #333333;
@@ -499,19 +482,12 @@ polygon:hover {
     vector-effect: non-scaling-stroke;
 }
 
-#legend {
-    bottom: 0;
-    right: 0;
-    position: absolute;
-    width: 120px;
-    height: 160px;
-    z-index: 1;
-}
 
 #selection-options {
+    height: 100%;
     top: 0;
     position: absolute;
-    left: 0;
+    right: 0;
     z-index: 1;
 }
 
@@ -568,6 +544,7 @@ polygon:hover {
 #neighborhood_icon, #neighborhood_composition_icon {
     fill: none;
     stroke: #c1c1c1;
+    font-size: 4rem;
     stroke-miterlimit: 10;
 }
 
@@ -577,7 +554,7 @@ polygon:hover {
 
 #neighborhood_similarity_label {
     font-size: 8pt;
-    color: #000000;
+    color: white;
     text-align: center;
     vertical-align: middle;
     display: table-cell;
@@ -598,17 +575,6 @@ polygon:hover {
     padding-right: 3px;
 }
 
-
-
-#similarity_group {
-    height: 100%;
-    padding-right: 15px;
-}
-
-#neighborhood_similarity {
-    width: 80px;
-    height: 100%;
-}
 
 #neighborhood_table_heading, #neighborhood_table_footing {
     padding: 0;
@@ -772,9 +738,6 @@ polygon:hover {
 
 }
 
-#custom_search_col span {
-    color: black;
-}
 
 .regl-plots-wrapper {
     position: relative;

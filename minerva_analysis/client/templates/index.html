@@ -1,36 +1,141 @@
 {% extends 'base.html' %}
 
 {% block style %}
-<link rel="stylesheet" href="../client/src/css/viewer.css">
+    <link rel="stylesheet" href="../client/src/css/viewer.css">
+    <link rel="stylesheet" href="../client/src/css/neighborhood.css">
 {% endblock %}
 
 {% block content %}
 
-{% if data.datasource %}
-<title>Minerva Analysis</title>
+    {% if data.datasource %}
+        <div id="container">
+        <div id="row" class="row">
 
-<div id="container" class="container">
-    <div id="row" class="row">
-
-        <div class="col" id="channel_list_wrapper">
-            <div id="lowRow1" class="row">
-                <div id="boxHeading1" class="col-auto mr-auto">
-                    <span class="box-heading">Channels</span>
-                </div>
-                <div class="col-auto" id="selected-channels-header-div">
-                    <span class="selected-channels-header" id="num-selected-channels">0</span>
-                    <span class="selected-channels-header">of 4 (Max) Selected</span>
-                </div>
-            </div>
-            <div id="channel_list">
-                <div class="row">
-                    <div class="col-auto">
-                        <div class="lds-ellipsis" id="channel_list_loader">
-                        </div>
+            <div id="channel_list_wrapper">
+                <div id="lowRow1" class="row">
+                    <div class="col-auto" id="selected-channels-header-div">
+                        <span class="selected-channels-header" id="num-selected-channels">0</span>
+                        <span class="selected-channels-header">of 4 (Max) Selected</span>
                     </div>
                 </div>
-                <div id="channel_list_div">
-                    <ul class="list-group" id="channel_list_group"></ul>
+                <div class="list" id="channel_list">
+                    <div class="row">
+                        <div class="col-auto">
+                            <div class="lds-ellipsis" id="channel_list_loader">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div id="openseadragon_wrapper" class="col-auto">
+                <div id="openseadragon">
+                    <div class="row">
+                        <div class="col-auto">
+                            <div class="lds-ellipsis" id="openseadragon_loader">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="selection-options">
+                        <div class="col">
+                            <div class="row align-items-center">
+                            <span class="material-icons" id="select_button" data-toggle="tooltip" data-placement="right"
+                                  title="Single Cell Selection">near_me</span>
+                                <span class="toolbar_title">Individual Selection</span>
+                            </div>
+                            <div class="row align-items-center">
+                            <span class="material-icons selected" id="lasso_button" data-toggle="tooltip"
+                                  data-placement="right"
+                                  title="Lasso Selection">gesture</span>
+                                <span class="toolbar_title">Lasso Selection</span>
+
+                            </div>
+
+                            <div class="row align-items-center">
+                            <span id="cell_view" data-toggle="tooltip" data-placement="right"
+                                  title="Cell View Mode">
+                                {% include 'cell_icon.html' %}
+                            </span>
+                                <span id="cell_view_title" class="toolbar_title">Single Cell View</span>
+
+
+                            </div>
+                        </div>
+
+                        <div id="legend"></div>
+                    </div>
+                    <div id="toolbox"></div>
+                    <div id="tray">
+                    </div>
+                </div>
+
+
+            </div>
+            <div id="analysis_wrapper" class="col-auto">
+
+                <div id="plots_display" class="col">
+                    <div class="row">
+                        <div class="col col-lg-2"></div>
+                        <div class="col-md-8">
+                            <h5 class="plot-label text-center">Neighborhood Composition</h5>
+                        </div>
+                        <div class="col col-lg-2">
+                        <span id="edit_neighborhood_composition" class="material-icons text-right" data-toggle="tooltip"
+                              data-placement="left"
+                              title="Edit to create custom neighborhood composition">create</span>
+                        </div>
+                    </div>
+                    <div class="row justify-content-md-center">
+                        <div class="col-md-auto" id="custom_search_col">
+                         <span class="material-icons" id="neighborhood_composition_icon"
+                               data-toggle="tooltip"
+                               data-placement="right"
+                               title="Search for Similar Neighborhoods">search</span>
+                            <span id="custom_neighborhood_search"
+                                  class="toolbar_title">Find Custom Neighborhoods</span>
+                        </div>
+                    </div>
+                    <div class="row align-items-center" id="parallel_coordinates_display"></div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5 class="plot-label text-center">Neighborhood Embedding</h5>
+                        </div>
+
+                    </div>
+                    <div class="row align-items-center" id="scatterplot_display">
+                        <canvas class="scatter_canvas" id="viewer_scatter_canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div id="neighborhood_wrapper" class="col-auto">
+                <div class="row" id="search-row">
+                    <div class="col-md-12">
+                        <h5 class="plot-label text-center">Search for Neighborhoods</h5>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row justify-content-between">
+                            <div class="col-auto">
+                                <span id="current-selection-label">Current Selection:</span>
+                            </div>
+                            <div class="col-auto">
+                                <span id="current-selection-value"></span>
+                            </div>
+                        </div>
+                        <div class="row justify-content-between" id="similarity_group">
+                            <label class="control-label" id="neighborhood_similarity_label"
+                                   for="neighborhood_similarity">
+                                Similarity Threshold: </label> <span id="similarity_val">0.8</span>
+
+                            <input type="range" class="form-control-range" min="0" max="100" value="80"
+                                   id="neighborhood_similarity">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                            <span class="material-icons" id="neighborhood_icon" data-toggle="tooltip"
+                                  data-placement="right"
+                                  title="Search for Similar Neighborhoods">search</span>
+                    </div>
+
                 </div>
                 <div id="accordion">
                     <div class="card">
@@ -70,146 +175,7 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
-
-        <div class="col viewer_col" id="openseadragon_wrapper">
-            <div class="row justify-content-between">
-                <div class="col-auto">
-                    <span class="box-heading">Image Space</span>
-                </div>
-                <div class="col-auto">
-                    <div class="row" id="similarity_group">
-                        <label class="control-label" id="neighborhood_similarity_label"
-                               for="neighborhood_similarity">
-                            Similarity Threshold: </label> <span id="similarity_val">0.8</span>
-
-                        <input type="range" class="form-control-range" min="0" max="100" value="80"
-                               id="neighborhood_similarity">
-
-                    </div>
-                </div>
-            </div>
-            <div id="openseadragon">
-                <div id="openseadragon-loader-container">
-                    <div class="lds-ellipsis" id="openseadragon_loader">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </div>
-                </div>
-                <div id="openseadragon-toolbar">
-                    <div id="toolbar-row" class="row justify-content-end">
-                        <span class="material-icons" id="zoom-in">add</span>
-                        <span class="material-icons" id="zoom-out">remove</span>
-                        <span class="material-icons" id="home">home</span>
-                    </div>
-
-                </div>
-
-                <div id="selection-options">
-                    <div class="col">
-                        <div class="row align-items-center">
-                            <span class="material-icons" id="select_button" data-toggle="tooltip" data-placement="right"
-                                  title="Single Cell Selection">near_me</span>
-                            <span class="toolbar_title">Individual Selection</span>
-                        </div>
-                        <div class="row align-items-center">
-                            <span class="material-icons selected" id="lasso_button" data-toggle="tooltip"
-                                  data-placement="right"
-                                  title="Lasso Selection">gesture</span>
-                            <span class="toolbar_title">Lasso Selection</span>
-
-                        </div>
-                        <div class="row align-items-center">
-                            <span class="material-icons" id="neighborhood_icon" data-toggle="tooltip"
-                                  data-placement="right"
-                                  title="Search for Similar Neighborhoods">search</span>
-                            <span class="toolbar_title">Find Similar Neighborhoods</span>
-                        </div>
-                        <div class="row align-items-center">
-                            <span id="cell_view" data-toggle="tooltip" data-placement="right"
-                                  title="Cell View Mode">
-                                {% include 'cell_icon.html' %}
-                            </span>
-                            <span id="cell_view_title" class="toolbar_title">Single Cell View</span>
-
-
-                        </div>
-                    </div>
-
-                </div>
-                <div class="row">
-                    <div class="col-auto">
-
-                    </div>
-                </div>
-                <div id="legend"></div>
-            </div>
-        </div>
-        <div class="col viewer_col" id="analysis_wrapper">
-            <span id="analysis_label">Analysis</span>
-            <div id="plots_display" class="col">
-                <div class="row">
-                    <div class="col col-lg-2"></div>
-                    <div class="col-md-8">
-                        <h5 id="starplot_label" class="text-center">Neighborhood Composition Space</h5>
-                    </div>
-                    <div class="col col-lg-2">
-                        <span id="edit_neighborhood_composition" class="material-icons text-right" data-toggle="tooltip"
-                              data-placement="left"
-                              title="Edit to create custom neighborhood composition">create</span>
-                    </div>
-                </div>
-                <div class="row justify-content-md-center">
-                    <div class="col-md-auto" id="custom_search_col">
-                         <span class="material-icons" id="neighborhood_composition_icon"
-                               data-toggle="tooltip"
-                               data-placement="right"
-                               title="Search for Similar Neighborhoods">search</span>
-                        <span id="custom_neighborhood_search" class="toolbar_title">Find Custom Neighborhoods</span>
-                    </div>
-                </div>
-
-
-                <div class="row" id="parallel_coordinates_display"></div>
-                <div class="row justify-content-md-center">
-                    <div class="col col-lg-2">
-                        <span id="save_lasso" class="material-icons">save</span>
-                    </div>
-                    <div class="col-md-8">
-                        <h5 id="scatterplot_label" class="text-center">Neighborhood Embedding Space</h5>
-                    </div>
-                    <div class="col col-lg-2">
-                        <span id="edit_clustering" class="material-icons text-right" data-toggle="tooltip"
-                              data-placement="left"
-                              title="Create custom clusters">create</span>
-                    </div>
-                </div>
-                <div class="row" id="scatterplot_display">
-                    <canvas class="scatter_canvas" id="viewer_scatter_canvas"></canvas>
-                </div>
-                <div class="row" id="custom_cluster">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-sm-3">
-                            <span id="custom_cluster_label">Custom Clustering</span>
-                        </div>
-                        <div class="col-sm-5">
-                            <input type="number" id="custom_cluster_number" placeholder="# of Clusters">
-                        </div>
-                        <div class="col-sm-3">
-                            <button id="custom_cluster_submit" class="btn btn-secondary">Submit</button>
-                        </div>
-                        <div class="col-sm-1" id="custom_cluster_loading"></div>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-    </div>
-    <script src="../client/src/js/main.js" defer></script>
+        <script src="../client/src/js/main.js" defer></script>
     {% endif %}
-    {% endblock %}
+{% endblock %}

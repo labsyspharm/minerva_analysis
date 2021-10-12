@@ -59,7 +59,7 @@ async function init(conf) {
     console.log('Ending Viewer Init', new Date());
     // init synchronus methods
     seaDragonViewer.init();
-    legend.draw();
+    legend.init();
     parallelCoordinates.init();
     scatterplot.init();
     console.log('Sync Init', new Date());
@@ -150,8 +150,8 @@ const selectNeighborhood = async (d) => {
 eventHandler.bind(NeighborhoodTable.events.selectNeighborhood, selectNeighborhood);
 
 const changeSelectionMode = (singleCellMode) => {
-    dataLayer.switchViewMode(singleCellMode);
-    updateSeaDragonSelection(false, false);
+    // dataLayer.switchViewMode(singleCellMode);
+    // updateSeaDragonSelection(false, false);
 }
 eventHandler.bind(ImageViewer.events.changeSelectionMode, changeSelectionMode);
 

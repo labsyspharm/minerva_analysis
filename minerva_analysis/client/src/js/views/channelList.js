@@ -63,7 +63,10 @@ class ChannelList {
         this.columns = await this.dataLayer.getChannelNames(true);
         // Hide the Loader
         document.getElementById('channel_list_loader').style.display = "none";
-        let list = document.getElementById('channel_list_group')
+        let channel_list = document.getElementById("channel_list");
+        let list = document.createElement("ul");
+        list.classList.add("list-group")
+        channel_list.appendChild(list)
         // Will show the picker when you click on a color rect
         let showPicker = e => {
             this.colorTransferHandle = d3.select(e.target);

@@ -41,6 +41,15 @@ def get_datasource_row():
     return serialize_and_submit_json(resp)
 
 
+# Gets a row based on the index
+@app.route('/get_all_cells', methods=['POST'])
+def get_all_datasource_row():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    resp = data_model.get_all_cells(datasource)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_channel_names', methods=['GET'])
 def get_channel_names():
     datasource = request.args.get('datasource')
@@ -112,8 +121,9 @@ def save_neighborhood():
     selection = post_data['selection']
     source = post_data['source']
     resp = data_model.save_neighborhood(selection, datasource, source)
-    return serialize_and_submit_json(resp)\
-
+    return serialize_and_submit_json(resp) \
+ \
+ \
 @app.route('/save_lasso', methods=['POST'])
 def save_lasso():
     post_data = json.loads(request.data)

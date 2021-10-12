@@ -10,6 +10,7 @@ import 'pngjs';
 import * as d3base from 'd3';
 import {sliderBottom} from 'd3-simple-slider';
 import createScatterplot from 'regl-scatterplot';
+import createRegl from 'regl';
 
 import {annotation} from 'd3-svg-annotation';
 import {legendColor} from 'd3-svg-legend'
@@ -23,8 +24,8 @@ import $ from 'jquery';
 import 'node-fetch';
 import convert from 'color-convert';
 import regl from 'regl';
-import Line2D from 'regl-line2d'
 import 'viawebgl'
+import * as reglLine2D from 'regl-line2d'
 import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
 
@@ -40,8 +41,8 @@ window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.viaWebGL = viaWebGL;
-window.regl = regl;
-window.Line2D = Line2D;
+window.createRegl = createRegl;
 window.OpenSeadragon = viaWebGL.OpenSeadragon;
 window.ViewerManager = ViewerManager;
 window.createScatterplot = createScatterplot;
+

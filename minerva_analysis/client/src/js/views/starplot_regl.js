@@ -59,7 +59,7 @@ class Starplot {
         const self = this;
         let chartData = _.get(rawData, 'cluster_summary.weighted_contribution', null);
         if (chartData) {
-            self.full_neighborhoods = _.get(rawData, 'cluster_summary.full_neighborhoods', null);
+            self.selection_neighborhoods = _.get(rawData, 'cluster_summary.selection_neighborhoods', null);
         } else {
             chartData = rawData;
         }
@@ -159,8 +159,8 @@ class Starplot {
                     return self.y(d.value);
                 })
             )
-        if (self.full_neighborhoods) {
-            _.forEach(_.sampleSize(self.full_neighborhoods, 2000), row => {
+        if (self.selection_neighborhoods) {
+            _.forEach(_.sampleSize(self.selection_neighborhoods, 2000), row => {
                 let points = _.map(row, (e, i) => {
                     return [self.webglX(i), self.webglY(e)]
                 })

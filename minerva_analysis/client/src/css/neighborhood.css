@@ -1,0 +1,156 @@
+#row {
+    height: 100%;
+    width: 100%;
+}
+
+#openseadragon_wrapper {
+    height: 100%;
+    position: relative;
+    width: 50vw;
+    min-width: 50vw;
+    z-index: 100;
+}
+
+#analysis_wrapper {
+    width: 25vw;
+    height: 100%;
+    max-width: 25vw;
+    min-width: 25vw;
+}
+
+#neighborhood_wrapper {
+    width: 25vw;
+    height: 100%;
+    max-width: 25vw;
+    min-width: 25vw;
+}
+
+.plot-label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+}
+
+.parallel_axes text {
+    fill: white;
+    text-anchor: start;
+
+}
+
+.legend {
+    position: absolute;
+    fill: #333333;
+    font-size: 6pt;
+    text-anchor: middle;
+}
+
+.legend text {
+    font: 12px sans-serif;
+}
+
+#legend {
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    width: 120px;
+    height: 160px;
+    z-index: 1;
+}
+
+
+#comparison_title {
+    margin-top: 5px;
+}
+
+.compare_row {
+    height: 28vh;
+}
+
+#comparison_div .compare_col, #summary_div .compare_col {
+    padding: 0;
+    height: 100%;
+}
+
+.compare_plot_body {
+    height: 90%;
+    width: 100%;
+}
+
+.compare_plot_title {
+    height: 10%;
+    width: 100%;
+}
+
+#comparison_div h5, #summary_div h5 {
+    font-size: 0.8rem;
+}
+
+#phenotype_list .list-group-item {
+    padding: 6px 3px;
+    font-size: 0.6rem;
+}
+
+#phenotype_list .material-icons {
+    font-size: 1rem;
+}
+
+#comparison_title .label {
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+#small-multiple-toggle .btn, #summary-toggle .btn {
+    padding: 3px 6px;
+    margin: 0;
+}
+
+#small-multiple-toggle *, #summary-toggle * {
+    font-size: 0.6rem;
+}
+
+#comparison_div .viewfinder_chart_area_path {
+    fill: rgba(255, 165, 0, 0.9)
+}
+
+.tooltip, .tooltip * {
+    font-size: 0.6rem;
+}
+
+#comparison_div, #summary_div {
+    text-align: center;
+}
+
+#comparison_div_parent {
+    width: 100%;
+}
+
+.domain {
+    stroke-width: 0;
+}
+
+#comparison_container #legend {
+    margin-bottom: 40px;
+}
+
+#custom_search_col span {
+    color: white;
+}
+
+.scatter_canvas {
+    height: 100%;
+    width: 100%;
+}
+
+
+#neighborhood_similarity {
+    margin-top: 3px;
+    width: 80px;
+    height: 100%;
+}
+
+#current-selection-label, #current-selection-value {
+    color: orange;
+    font-size: 8pt;
+}
+
+

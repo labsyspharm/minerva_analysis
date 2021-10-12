@@ -332,6 +332,16 @@ def get_cells(elem, datasource_name):
     return obj
 
 
+def get_all_cells(datasource_name):
+    global datasource
+    global source
+    global config
+    fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
+              config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
+    obj = get_neighborhood_stats(datasource_name, np.arange(datasource.shape[0]), fields=fields)
+    return obj['cluster_summary']
+
+
 def get_channel_names(datasource_name, shortnames=True):
     global datasource
     global source
@@ -835,9 +845,20 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
     else:
         cluster_cells = cluster_cells[default_fields]
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    full_neighborhoods = neighborhoods[indices, :]
-    cluster_summary = np.mean(full_neighborhoods, axis=0)
-    summary_stats = {'weighted_contribution': {}, 'full_neighborhoods': full_neighborhoods}
+    row_sums = neighborhoods.sum(axis=1)
+    neighborhoods = neighborhoods / row_sums[:, np.newaxis]
+    selection_neighborhoods = neighborhoods[indices, :]
+    cluster_summary = np.mean(selection_neighborhoods, axis=0)
+    # Sample down so we have 10k of full
+    if selection_neighborhoods.shape[0] > 10000:
+        selection_neighborhoods = selection_neighborhoods[
+                                  np.random.choice(selection_neighborhoods.shape[0], 10000, replace=False), :]
+    else:
+        scale_factor = int(10000 / selection_neighborhoods.shape[0])
+
+        selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
+
+    summary_stats = {'weighted_contribution': {}, 'selection_neighborhoods': selection_neighborhoods}
     phenotypes = sorted(datasource.phenotype.unique().tolist())
     summary_stats['weighted_contribution'] = tuple(zip(phenotypes, cluster_summary))
     # summary_stats['']
@@ -848,20 +869,20 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
         'cluster_summary': summary_stats,
         'phenotypes_list': phenotypes
     }
-    points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
-                           'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
-    # Hardcoded to 30 um
-    if 'neighborhood_range' in config[datasource_name]:
-        neighborhood_range = config[datasource_name]['neighborhood_range']
-    else:
-        neighborhood_range = 30  # default 30um
-    r = neighborhood_range / metadata.physical_size_x
-    neighbors = ball_tree.query_radius(points, r=r)
-    unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
-    border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells.index.values)
-    neighbor_phenotypes = {}
-    for elem in border_neighbors:
-        neighbor_phenotypes[str(elem)] = datasource.loc[elem, 'phenotype']
-    obj['neighbors'] = unique_neighbors
-    obj['neighbor_phenotypes'] = neighbor_phenotypes
+    # points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
+    #                        'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
+    # # # Hardcoded to 30 um
+    # # if 'neighborhood_range' in config[datasource_name]:
+    # #     neighborhood_range = config[datasource_name]['neighborhood_range']
+    # # else:
+    # #     neighborhood_range = 30  # default 30um
+    # # r = neighborhood_range / metadata.physical_size_x
+    # # neighbors = ball_tree.query_radius(points, r=r)
+    # # unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
+    # # border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells.index.values)
+    # # neighbor_phenotypes = {}
+    # # for elem in border_neighbors:
+    # #     neighbor_phenotypes[str(elem)] = datasource.loc[elem, 'phenotype']
+    # # obj['neighbors'] = unique_neighbors
+    # # obj['neighbor_phenotypes'] = neighbor_phenotypes
     return obj

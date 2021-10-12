@@ -24,6 +24,10 @@ module.exports = {
                 ],
             },
             {
+                test: /\.js$/,
+                loader: 'ify-loader'
+            },
+            {
                 test: /\.m?js$/,
                 exclude: /(node_modules|bower_components)/,
                 use: {
