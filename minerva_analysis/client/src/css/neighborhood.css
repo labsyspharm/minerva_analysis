@@ -153,4 +153,6 @@
     font-size: 8pt;
 }
 
-
+#search-row {
+    height: 10vh;
+}

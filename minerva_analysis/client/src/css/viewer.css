@@ -79,9 +79,14 @@ body {
 #selected-channels-header-div {
     position: absolute;
     right: 0;
-    top: -3vh;
+    top: -20px;
 }
 
+#channel-container-header-div {
+    position: absolute;
+    left: 0;
+    top: -20px;
+}
 
 .list {
     border: 1px solid rgba(255, 255, 255, 0.75);

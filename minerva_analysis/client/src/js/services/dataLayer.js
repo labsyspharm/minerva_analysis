@@ -473,24 +473,24 @@ class DataLayer {
         that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
         that.currentRawSelection = items;
         // console.log("update current selection done")
-    }
+    }switchViewMode
 
-    switchViewMode(singleCellMode) {
-        const self = this;
-        const title = document.getElementById('cell_view_title');
-        if (singleCellMode) {
-            self.currentSelection = new Map(_.get(self.getCurrentRawSelection(), 'cells').map(i => [i.id, i]));
-            title.innerHTML = "Single Cell View"
-        } else {
-
-            self.currentSelection = new Map(_.map(_.get(self.getCurrentRawSelection(), 'neighbors'), elem => {
-                let phenotype = _.get(self.currentSelection.get(elem), 'phenotype') || _.get(self.getCurrentRawSelection(), `[neighbor_phenotypes][${elem}]`)
-                return [elem, {'phenotype': phenotype}];
-            }));
-            title.innerHTML = "Full Neighborhood View";
-        }
-
-    }
+    // (singleCellMode) {
+    //     const self = this;
+    //     const title = document.getElementById('cell_view_title');
+    //     if (singleCellMode) {
+    //         self.currentSelection = new Map(_.get(self.getCurrentRawSelection(), 'cells').map(i => [i.id, i]));
+    //         title.innerHTML = "Single Cell View"
+    //     } else {
+    //
+    //         self.currentSelection = new Map(_.map(_.get(self.getCurrentRawSelection(), 'neighbors'), elem => {
+    //             let phenotype = _.get(self.currentSelection.get(elem), 'phenotype') || _.get(self.getCurrentRawSelection(), `[neighbor_phenotypes][${elem}]`)
+    //             return [elem, {'phenotype': phenotype}];
+    //         }));
+    //         title.innerHTML = "Full Neighborhood View";
+    //     }
+    //
+    // }
 
     isImageFeature(key) {
         if (this.imageChannels.hasOwnProperty(key)

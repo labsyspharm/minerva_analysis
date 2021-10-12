@@ -60,17 +60,17 @@ class ImageViewer {
         this.show_subset = false;
         this.show_selection = true;
         this.singleCellView = true;
-        this.lassoButton = document.getElementById("lasso_button");
-        this.selectButton = document.getElementById("select_button");
-        this.neighborhoodButton = document.getElementById("neighborhood_icon");
-        // this.similaritySlider = document.getElementById("similarity_group");
-        this.cellViewButton = document.getElementById("cell_view_icon");
-        // this.similaritySlider.onchange = (e) => {
-        //     let val = document.getElementById("neighborhood_similarity").value;
-        //     let span = document.getElementById('similarity_val');
-        //     span.innerHTML = ''
-        //     span.innerHTML = _.toString((val / 100).toFixed(2));
-        // }
+        // this.lassoButton = document.getElementById("lasso_button");
+        // this.selectButton = document.getElementById("select_button");
+        // this.neighborhoodButton = document.getElementById("neighborhood_icon");
+        this.similaritySlider = document.getElementById("similarity_group");
+        // this.cellViewButton = document.getElementById("cell_view_icon");
+        this.similaritySlider.onchange = (e) => {
+            let val = document.getElementById("neighborhood_similarity").value;
+            let span = document.getElementById('similarity_val');
+            span.innerHTML = ''
+            span.innerHTML = _.toString((val / 100).toFixed(2));
+        }
         this.isSelectionToolActive = true;
 
     }
@@ -380,52 +380,52 @@ class ImageViewer {
             },
         });
 
-        that.lassoButton.addEventListener("click", () => {
-            that.lassoButton.classList.add('selected');
-            that.selectButton.classList.remove('selected');
-            that.isSelectionToolActive = true;
-        })
-
-        that.selectButton.addEventListener("click", () => {
-            that.selectButton.classList.add('selected');
-            that.lassoButton.classList.remove('selected');
-            that.isSelectionToolActive = false;
-        })
-        that.cellViewButton.addEventListener("click", () => {
-            let outerCircles = that.cellViewButton.querySelectorAll('.outer-circles');
-            _.each(outerCircles, circle => {
-                let thisCircle = d3.select(circle);
-                if (that.singleCellView) {
-                    thisCircle.attr('fill', '#FEA50A')
-                } else {
-                    thisCircle.attr('fill', 'none');
-                }
-            });
-
-            that.singleCellView = !that.singleCellView;
-            that.eventHandler.trigger(ImageViewer.events.changeSelectionMode, that.singleCellView);
-
-            // that.selectButton.classList.add('selected');
-            // that.lassoButton.classList.remove('selected');
-            // that.isSelectionToolActive = false;
-        })
-
-        that.neighborhoodButton.addEventListener("click", event => {
-            d3.select('#selectionPolygon').remove();
-            that.neighborhoodButton.style.stroke = "orange";
-            let sim = '0.8';
-            // let sim = document.getElementById('similarity_val').innerHTML || '0.8';
-            let simVal = parseFloat(sim);
-            seaDragonViewer.showLoader();
-            if (dataLayer.getCurrentSelection().size > 0) {
-                return dataLayer.getSimilarNeighborhoodToSelection(simVal)
-                    .then(cells => {
-                        seaDragonViewer.hideLoader();
-                        that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
-                    })
-
-            }
-        })
+        // that.lassoButton.addEventListener("click", () => {
+        //     that.lassoButton.classList.add('selected');
+        //     that.selectButton.classList.remove('selected');
+        //     that.isSelectionToolActive = true;
+        // })
+        //
+        // that.selectButton.addEventListener("click", () => {
+        //     that.selectButton.classList.add('selected');
+        //     that.lassoButton.classList.remove('selected');
+        //     that.isSelectionToolActive = false;
+        // })
+        // that.cellViewButton.addEventListener("click", () => {
+        //     let outerCircles = that.cellViewButton.querySelectorAll('.outer-circles');
+        //     _.each(outerCircles, circle => {
+        //         let thisCircle = d3.select(circle);
+        //         if (that.singleCellView) {
+        //             thisCircle.attr('fill', '#FEA50A')
+        //         } else {
+        //             thisCircle.attr('fill', 'none');
+        //         }
+        //     });
+        //
+        //     that.singleCellView = !that.singleCellView;
+        //     that.eventHandler.trigger(ImageViewer.events.changeSelectionMode, that.singleCellView);
+        //
+        //     // that.selectButton.classList.add('selected');
+        //     // that.lassoButton.classList.remove('selected');
+        //     // that.isSelectionToolActive = false;
+        // })
+        //
+        // that.neighborhoodButton.addEventListener("click", event => {
+        //     d3.select('#selectionPolygon').remove();
+        //     that.neighborhoodButton.style.stroke = "orange";
+        //     let sim = '0.8';
+        //     // let sim = document.getElementById('similarity_val').innerHTML || '0.8';
+        //     let simVal = parseFloat(sim);
+        //     seaDragonViewer.showLoader();
+        //     if (dataLayer.getCurrentSelection().size > 0) {
+        //         return dataLayer.getSimilarNeighborhoodToSelection(simVal)
+        //             .then(cells => {
+        //                 seaDragonViewer.hideLoader();
+        //                 that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
+        //             })
+        //
+        //     }
+        // })
 
     }
 

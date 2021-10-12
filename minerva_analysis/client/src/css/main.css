@@ -145,7 +145,7 @@ body {
 }
 
 #channel_list {
-    height: 85vh;
+    height: 75vh;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
@@ -552,19 +552,17 @@ polygon:hover {
     stroke: #8f8f8f;
 }
 
-#neighborhood_similarity_label {
+.neighborhood_similarity_label {
     font-size: 8pt;
     color: white;
-    text-align: center;
     vertical-align: middle;
     display: table-cell;
     margin-bottom: 0;
-    padding-top: 4px;
 }
 
 #similarity_val {
     font-size: 9pt;
-    color: #000000;
+    color: #ffffff;
     font-weight: bold;
     text-align: center;
     vertical-align: middle;
