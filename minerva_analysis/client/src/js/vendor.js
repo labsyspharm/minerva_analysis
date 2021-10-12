@@ -25,7 +25,6 @@ import 'node-fetch';
 import convert from 'color-convert';
 import regl from 'regl';
 import 'viawebgl'
-import * as reglLine2D from 'regl-line2d'
 import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
 
