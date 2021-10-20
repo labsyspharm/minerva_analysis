@@ -1,5 +1,14 @@
+/**
+ * @class ChannelList - A view to select and deselect active image channels, set color and transfer functions
+ */
 class ChannelList {
 
+    /**
+     * @constructor
+     * @param config the cinfiguration file (json)
+     * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
+     * @param eventHandler - the event handler for distributing interface and data updates
+     */
     constructor(config, dataLayer, eventHandler) {
         this.config = config;
         this.eventHandler = eventHandler;
@@ -10,11 +19,17 @@ class ChannelList {
         this.sliders = new Map();
         var that = this;
         this.sel = {};
-
         this.currentChannels = {};
         this.rangeConnector = {};
         this.colorConnector = {};
+        this.createColorPicker();
+        this.container = d3.select("#channel_list");
+    }
 
+    /**
+     * A color picker that can be activated on each channel
+     */
+    createColorPicker(){
         //  create a color picker
         this.rainbow = rainbow();
         this.colorTransferHandle = null;
@@ -31,10 +46,12 @@ class ChannelList {
                     this.colorTransferHandle.style('fill', color);
                 })
                 .on('close', () => this.colorTransferHandle = null));
-
-        this.container = d3.select("#channel_list");
     }
 
+    /**
+     * Removes a channel form the current selection
+     * @param name - the name of the channel to remove
+     */
     removeChannel(name) {
         // Update selections
         delete this.sel[dataLayer.getFullChannelName(name)];
@@ -43,6 +60,10 @@ class ChannelList {
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
     }
 
+    /**
+     * Selects a channel as active and adds the respective viual components to the channel panel in the list view
+     * @param name - the channel to set and display as selected
+     */
     selectChannel(name) {
         const self = this;
 
@@ -69,12 +90,18 @@ class ChannelList {
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
     }
 
+    /**
+     * triggerss an event that distributes the selected channel information.
+     */
     triggerChannelSelect() {
-
         // Trigger
         this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
     }
 
+    /**
+     * initializes the view (channel list)
+     * @returns {Promise<void>}
+     */
     async init() {
         const self = this;
         this.rainbow.hide();
@@ -162,7 +189,7 @@ class ChannelList {
             channelName.textContent = column;
             nameCol.appendChild(channelName);
 
-            listItemParentDiv.addEventListener("click", e => this.abstract_click(e, svgCol));
+            listItemParentDiv.addEventListener("click", e => this.toggle_channel_panel(e, svgCol));
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
@@ -196,12 +223,13 @@ class ChannelList {
             }
         }
 
-        self.add_events();
+        self.add_download_events();
     }
 
     /**
      * @function apply_channels
-     *
+     * Applies settings (from file or db) to the channels
+     * @parms {String} source Whether it is from new file upload or saved
      */
     async apply_channels(source) {
         const self = this;
@@ -269,10 +297,10 @@ class ChannelList {
     }
 
     /**
-     * @function add_events
-     *
+     * @function add_download_events
+     *  Adds event listeners to upload/download buttons
      */
-    add_events() {
+    add_download_events() {
         const channels_download_icon = document.querySelector('#channels_download_icon');
         channels_download_icon.addEventListener('click', () => {
             this.dataLayer.downloadChannelsCSV(
@@ -299,12 +327,12 @@ class ChannelList {
 
 
     /**
-     * @function abstract_click
+     * @function toggle_channel_panel
      *
-     * @param e
-     * @param svgCol
+     * @param {Event} event The event
+     * @param svgCol the column to expand or collapse
      */
-    abstract_click(event, svgCol) {
+    toggle_channel_panel(event, svgCol) {
 
         // If you clicked on the svg, ignore this behavior
         if (event.target.closest("svg")) {
@@ -318,9 +346,6 @@ class ChannelList {
 
         // If active - else inactive
         if (status) {
-
-            // Clear everything
-            // clearOut();
 
             // Don't add channel is the max are selected
             if (_.size(this.selections) >= this.maxSelections) {
@@ -370,12 +395,12 @@ class ChannelList {
         }
     }
 
-    /*
-    add a slider
-    @data the min and max range of the slider
-    @activeRange the predefined values for the lower and upper handle
-    @name the name of the slider (used as part of the id)
-    @swidth the pixel width of the slider
+    /**
+    add a slider to a channel
+    @param {} data - the min and max range of the slider
+    @param {} activeRange - the predefined values for the lower and upper handle
+    @param {String} name - the name of the slider (used as part of the id)
+    @param {} swidth - the pixel width of the slider
      */
     addSlider(data, activeRange, name, swidth) {
 
@@ -469,7 +494,12 @@ class ChannelList {
         return sliderSimple;
     };
 
-    //move the slider handles and input fields so that input fields don't overlap when handles are close
+    /**
+     * move the slider handles and input fields so that input fields don't overlap when handles are close
+     * @param slider - the slider affected
+     * @param valArray - holds the new positions
+     * @param name - the name of the slider
+     */
     moveSliderHandles(slider, valArray, name){
         slider.silentValue(valArray);
         if (valArray[1] - valArray[0] < 10000){
@@ -480,6 +510,9 @@ class ChannelList {
         }
     }
 
+    /**
+     * rests the channel list to its initial values (usually full range)
+     */
     reset_channelList() {
         const self = this;
         let channelList = _.clone(self.selections);
@@ -490,6 +523,9 @@ class ChannelList {
     }
 }
 
+/**
+ * on window resize we re-initialize (this should be better handled with an update pattern)
+ */
 window.addEventListener("resize", function () {
     //reinitialize slider on window change..(had some bug updating with via d3 update)
     if (typeof channelList != "undefined" && channelList) {
@@ -501,7 +537,7 @@ window.addEventListener("resize", function () {
     }
 });
 
-//static vars
+//static vars: events introduced in this class and used across the app
 ChannelList.events = {
     BRUSH_MOVE: "BRUSH_MOVE",
     BRUSH_END: "BRUSH_END",
