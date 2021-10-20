@@ -135,7 +135,7 @@ body {
 #channel_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
-    height: 65px;
+    height: 70px;
 }
 
 #channel_list .list-group {
