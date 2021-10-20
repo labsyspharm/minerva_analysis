@@ -197,8 +197,8 @@ eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
  * Reset the gating list to inital values
  */
 const reset_lists = () => {
-    csv_gatingList.reset_gatingList();
-    channelList.reset_channelList();
+    csv_gatingList.resetGatingList();
+    channelList.resetChannelList();
     seaDragonViewer.forceRepaint();
 }
 eventHandler.bind(ChannelList.events.RESET_LISTS, reset_lists);

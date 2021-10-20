@@ -1,5 +1,14 @@
+/**
+ * @class CSVGatingList - A view to select and deselect channels for gating, and to set gates (filter ranges) in the tabular data
+ */
 class CSVGatingList {
 
+    /**
+     * @constructor
+     * @param config the cinfiguration file (json)
+     * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
+     * @param eventHandler - the event handler for distributing interface and data updates
+     */
     constructor(config, dataLayer, eventHandler) {
         this.config = config;
         this.eventHandler = eventHandler;
@@ -14,7 +23,7 @@ class CSVGatingList {
         this.global_channel_list = channelList;
         this.global_image_channels = imageChannels;
         this.gating_default_range = [0, 65536];
-        this.gating_channels = this.init_gating_channels();
+        this.gating_channels = this.initGatingChannels();
         this.gating_list = null;
         // Download vars
         this.download_panel_visible = false;
@@ -24,6 +33,10 @@ class CSVGatingList {
         this.eval_mode = 'and'
     }
 
+     /**
+     * Selects a channel as active and adds the respective viual components to the channel panel in the list view
+     * @param name - the channel to set and display as selected
+     */
     selectChannel(name) {
         // For overlay (and query incrementor)
         // seaDragonViewer.csvGatingOverlay.run_balancer++;
@@ -35,6 +48,10 @@ class CSVGatingList {
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
     }
 
+     /**
+     * Removes a channel form the current selection
+     * @param name - the name of the channel to remove
+     */
     removeChannel(name) {
         // For overlay (and query incrementor)
         // seaDragonViewer.csvGatingOverlay.run_balancer++;
@@ -46,6 +63,10 @@ class CSVGatingList {
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
     }
 
+     /**
+     * initializes the view (channel list)
+     * @returns {Promise<void>}
+     */
     async init() {
         // this.rainbow.hide();
         const self = this;
@@ -117,7 +138,7 @@ class CSVGatingList {
             gatingName.classList.add('gating-name');
             gatingName.textContent = column;
             nameCol.appendChild(gatingName);
-            listItemParentDiv.addEventListener("click", e => self.abstract_click(e, svgCol));
+            listItemParentDiv.addEventListener("click", e => self.toggleChannelPanel(e, svgCol));
             list.appendChild(listItemParentDiv);
 
             //add and hide gating sliders (will be visible when gating is active)
@@ -140,7 +161,7 @@ class CSVGatingList {
             autoBtn.classList.add('auto-btn');
             autoBtn.setAttribute('id', "auto-btn_" + column);
             autoBtn.textContent = "auto";
-            autoBtn.addEventListener("click", function() { self.auto_gate(fullName) });
+            autoBtn.addEventListener("click", function() { self.autoGate(fullName) });
 
             autoCol.appendChild(autoBtn);
             autoCol.addEventListener("click", e => e.stopPropagation());
@@ -158,7 +179,7 @@ class CSVGatingList {
             formData.append("datasource", datasource);
         });
         dropzone.on("queuecomplete", function (file, xhr, formData) {
-            return self.apply_gates()
+            return self.applyGates()
         });
 
         // Adding upload when you press on the up arrow
@@ -178,13 +199,13 @@ class CSVGatingList {
                 formData.append("file", file);
                 await self.dataLayer.submitGatingUpload(formData);
                 document.getElementById("gating-upload-from-arrow").value = []
-                await self.apply_gates('file')
+                await self.applyGates('file')
             }
         }
 
         let arrow_db = document.getElementById('gating_upload_icon_db')
         arrow_db.onclick = async function () {
-            await self.apply_gates('db')
+            await self.applyGates('db')
         }
 
 
@@ -208,11 +229,16 @@ class CSVGatingList {
         })
 
         // Add events
-        self.add_events();
-        self.add_events_linked();
+        self.addDownloadEvents();
+        self.addEventsLinked();
     }
 
-    async apply_gates(source) {
+     /**
+     * @function applyGates
+     * Applies settings (from file or db) to the gates in the tool
+     * @parms {String} source Whether it is from new file upload or saved
+     */
+    async applyGates(source) {
         const self = this;
         let gates;
         if (source === 'file'){
@@ -254,7 +280,11 @@ class CSVGatingList {
 
     }
 
-    auto_gate(name) {
+    /**
+     * @function autoGate - applies thresholds based on Gaussian Mixture Model
+     * @param name - the name of the channel to apply it to
+     */
+    autoGate(name) {
         const self = this;
 
         let gate = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gate']
@@ -270,11 +300,10 @@ class CSVGatingList {
     }
 
     /**
-     * @function init_gating_channels
-     *
-     * @return obj
+     * @function initGatingChannels - creates the data structure for channels
+     * @return obj - allChannels and their default range
      */
-    init_gating_channels() {
+    initGatingChannels() {
 
         // Init
         const obj = {};
@@ -290,12 +319,11 @@ class CSVGatingList {
     }
 
     /**
-     * @function abstract_click
-     *
-     * @param e
-     * @param svgCol
+     * @function toggleChannelPane - expands or collapses a channel panel in the list that was clicked on
+     * @param event - the click vent
+     * @param svgCol - the column to expand or collapse
      */
-    abstract_click(event, svgCol) {
+    toggleChannelPanel(event, svgCol) {
 
         // Define this
         const self = this;
@@ -379,10 +407,9 @@ class CSVGatingList {
     }
 
     /**
-     * @function add_events
-     *
+     * @function addDownloadEvents - adds eventl listeners an functionality to the download buttons
      */
-    add_events() {
+    addDownloadEvents() {
 
         const self = this;
 
@@ -476,10 +503,10 @@ class CSVGatingList {
     }
 
     /**
-     * @function add_events_linked
-     *
+     * @function addEventsLinked
+     * ???
      */
-    add_events_linked() {
+    addEventsLinked() {
 
         // Add events to channel
         const channelListContent = document.querySelectorAll('.channel-list-content');
@@ -518,12 +545,12 @@ class CSVGatingList {
 
     }
 
-    /*
-    add a slider
-    @data the min and max range of the slider
-    @activeRange the predefined values for the lower and upper handle
-    @name the name of the slider (used as part of the id)
-    @swidth the pixel width of the slider
+    /**
+    * @function addSlider - add a slider
+    * @param data - the min and max range of the slider
+    * @param activeRange - the predefined values for the lower and upper handle
+    * @param name - the name of the slider (used as part of the id)
+    * @param swidth - the pixel width of the slider
      */
     addSlider(data, activeRange, name, swidth) {
 
@@ -609,7 +636,6 @@ class CSVGatingList {
             })
             .curve(d3.curveMonotoneX)
 
-
         gSimple.selectAll('.distribution_line')
             .data([histogramData])
             .enter()
@@ -689,7 +715,10 @@ class CSVGatingList {
         return sliderSimple;
     };
 
-    reset_gatingList() {
+    /**
+     * @function resetGatingList - resets all channels in the list to its initial range
+     */
+    resetGatingList() {
         const self = this;
         let gatingList = Object.keys(self.selections);
         _.each(gatingList, col => {
@@ -699,7 +728,9 @@ class CSVGatingList {
         });
     };
 
-    //move the slider handles and input fields so that input fields don't overlap when handles are close
+    /**
+     * @function moveSliderHandle - move the slider handles and input fields so that input fields don't overlap when handles are close
+     */
     moveSliderHandles(slider, valArray, name){
         slider.silentValue(valArray);
         let percentage = (Math.abs(valArray[1] - valArray[0])/(Math.abs(slider.max()-slider.min())));
@@ -711,7 +742,14 @@ class CSVGatingList {
         }
     }
 
-    dist (el1, el2, buffer) {
+    /**
+     * @function dist - caclulates the distance between two rects
+     * @param el1
+     * @param el2
+     * @param buffer
+     * @returns {number}
+     */
+    dist(el1, el2, buffer) {
         var rect1 = el1.getBoundingClientRect();
         var rect2 = el2.getBoundingClientRect();
         return rect2.left - rect1.right;
@@ -754,7 +792,7 @@ window
 //    });
 // });
 
-//static vars
+//static vars: events introduced in this class and used across the app
 CSVGatingList
     .events = {
     GATING_BRUSH_MOVE: "GATING_BRUSH_MOVE",

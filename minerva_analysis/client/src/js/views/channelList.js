@@ -189,7 +189,7 @@ class ChannelList {
             channelName.textContent = column;
             nameCol.appendChild(channelName);
 
-            listItemParentDiv.addEventListener("click", e => this.toggle_channel_panel(e, svgCol));
+            listItemParentDiv.addEventListener("click", e => this.toggleChannelPanel(e, svgCol));
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
@@ -200,7 +200,7 @@ class ChannelList {
 
         let arrow_db = document.getElementById('channels_upload_icon_db')
         arrow_db.onclick = async function () {
-            await self.apply_channels('db');
+            await self.applyChannels('db');
         }
 
         let arrow = document.getElementById('channels_upload_icon')
@@ -219,19 +219,19 @@ class ChannelList {
                 formData.append("file", file);
                 await self.dataLayer.submitChannelUpload(formData);
                 document.getElementById("channels-upload-from-arrow").value = []
-                await self.apply_channels('file');
+                await self.applyChannels('file');
             }
         }
 
-        self.add_download_events();
+        self.addDownloadEvents();
     }
 
     /**
-     * @function apply_channels
+     * @function applyChannels
      * Applies settings (from file or db) to the channels
      * @parms {String} source Whether it is from new file upload or saved
      */
-    async apply_channels(source) {
+    async applyChannels(source) {
         const self = this;
 
         let channels;
@@ -297,10 +297,10 @@ class ChannelList {
     }
 
     /**
-     * @function add_download_events
+     * @function addDownloadEvents
      *  Adds event listeners to upload/download buttons
      */
-    add_download_events() {
+    addDownloadEvents() {
         const channels_download_icon = document.querySelector('#channels_download_icon');
         channels_download_icon.addEventListener('click', () => {
             this.dataLayer.downloadChannelsCSV(
@@ -327,12 +327,12 @@ class ChannelList {
 
 
     /**
-     * @function toggle_channel_panel
+     * @function toggleChannelPanel
      *
-     * @param {Event} event The event
-     * @param svgCol the column to expand or collapse
+     * @param {Event} event - The event
+     * @param svgCol - the column to expand or collapse
      */
-    toggle_channel_panel(event, svgCol) {
+    toggleChannelPanel(event, svgCol) {
 
         // If you clicked on the svg, ignore this behavior
         if (event.target.closest("svg")) {
@@ -513,7 +513,7 @@ class ChannelList {
     /**
      * rests the channel list to its initial values (usually full range)
      */
-    reset_channelList() {
+    resetChannelList() {
         const self = this;
         let channelList = _.clone(self.selections);
         _.each(channelList, col => {
