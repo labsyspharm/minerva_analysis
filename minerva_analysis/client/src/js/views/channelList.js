@@ -36,7 +36,6 @@ class ChannelList {
     }
 
     removeChannel(name) {
-
         // Update selections
         delete this.sel[dataLayer.getFullChannelName(name)];
 
@@ -294,7 +293,7 @@ class ChannelList {
                 this.rangeConnector,
                 this.dataLayer.imageBitRange
             );
-            alert("Downloaded Channels to Database");
+            alert("Saved Channels from Database");
         });
     }
 

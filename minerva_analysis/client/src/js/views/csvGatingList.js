@@ -402,7 +402,7 @@ class CSVGatingList {
 
         gating_download_icon_db.addEventListener('click', () => {
             self.dataLayer.saveGatingList(this.gating_channels, this.selections, false);
-            alert("Downloaded Gating to Database");
+            alert("Saved Gating to Database");
         })
 
         // Open / close download panel
@@ -740,19 +740,19 @@ window
     );
 
 //hide gating control panel when scrolled down to access all channels..
-$(document).ready(function()
-{
-   $('#csv_gating_list').scroll(function()
-   {
-      var div = $(this);
-      if (div[0].scrollHeight - div.scrollTop() < div.height()+10)
-      {
-            $('#gating_controls_panel').hide();
-      }else{
-            $('#gating_controls_panel').show();
-      }
-   });
-});
+// $(document).ready(function()
+// {
+//    $('#csv_gating_list').scroll(function()
+//    {
+//       var div = $(this);
+//       if (div[0].scrollHeight - div.scrollTop() < div.height()+10)
+//       {
+//             $('#gating_controls_panel').hide();
+//       }else{
+//             $('#gating_controls_panel').show();
+//       }
+//    });
+// });
 
 //static vars
 CSVGatingList

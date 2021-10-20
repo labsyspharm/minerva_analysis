@@ -303,7 +303,7 @@ class ImageViewer {
                         ];
 
                         // If outline
-                        if (this.sel_outlines) {
+                        if (this.viewerManagerVMain.sel_outlines) {
                             // Iterate grid
                             for (let j = 0; j < grid.length; j++) {
                                 // if pass test (not on tile border)
