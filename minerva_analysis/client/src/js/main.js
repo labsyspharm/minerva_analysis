@@ -1,43 +1,49 @@
 /**
-
+ * main.js Initializes main client/interface setup, and distributes events to respective views
  */
+
+
 //EVENTHANDLER
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
-
 
 //VIEWS
 let seaDragonViewer;
 let channelList;
 let csv_gatingList;
 
+//DATA MANAGEMENT
 let dataLayer;
 let config;
-
-let colorScheme;
 let dataSrcIndex = 0; // dataset id
-let k = 3;
+
+//CHANNELS
 let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
 let imageChannelsIdx = {};
 
-//Disable right clicking on element
-document.getElementById("openseadragon").addEventListener('contextmenu', event => event.preventDefault());
+//COLORS
+let colorScheme;
 
+//OTHER SETTINGS
+document.getElementById("openseadragon")
+    .addEventListener('contextmenu',
+            event => event.preventDefault()); //Disable right clicking on element
 
 //LOAD DATA
-// console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
-//d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
 d3.json(`/config?t=${Date.now()}`).then(function (config) {
     this.config = config;
     return init(config[datasource])
 });
 
+//INITS
 
-// init all views (datatable, seadragon viewer,...)
+/**
+ * init all views
+ * @param  {json} conf The configuration json file
+ */
 async function init(conf) {
 
-    // console.log('initialize system');
     config = conf;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
@@ -47,22 +53,34 @@ async function init(conf) {
             imageChannelsIdx[idx] = name;
         }
     }
-    //INIT DATA FILTER
+    //init data filter
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
-    // console.log("Data Loaded");
+
+    //init channel panel
     channelList = new ChannelList(config, dataLayer, eventHandler);
     await channelList.init();
+
+    //init gating panel
     csv_gatingList = new CSVGatingList(config, dataLayer, eventHandler);
     await csv_gatingList.init();
+
+    //init color scheme
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    //IMAGE VIEWER
+
+    //init image viewer
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
     seaDragonViewer.init();
 }
 
-//feature color map changed in ridge plot
+
+//EVENT HANDLING
+
+/**
+ * Listen to Color Transfer Change Events and forwards it to respective views
+ * @param  {package object} d The color map object
+ */
 const actionColorTransferChange = (d) => {
 
     //map to full name
@@ -74,14 +92,19 @@ const actionColorTransferChange = (d) => {
 }
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
-//feature color map changed in ridge plot
+/**
+ * Listen to Render Mode Events and forwards it to respective views
+ * @param  {package object} d The render mode object
+ */
 const actionRenderingModeChange = (d) => {
     seaDragonViewer.updateRenderingMode(d);
 }
 eventHandler.bind(ImageViewer.events.renderingMode, actionRenderingModeChange);
 
-
-//feature color map changed in ridge plot
+/**
+ * Listen to Channels set for Rendering and forwards it to respective views
+ * @param  {package object} d The channel package object
+ */
 const actionChannelsToRenderChange = (d) => {
     d3.select('body').style('cursor', 'progress');
 
@@ -95,16 +118,16 @@ const actionChannelsToRenderChange = (d) => {
 }
 eventHandler.bind(ChannelList.events.CHANNELS_CHANGE, actionChannelsToRenderChange);
 
-//image region or single cell selection (may needs to be combined with other selection events)
+/**
+ * Listen to regional or single cell selection
+ * @param  {package object} d The selections
+ */
 const actionImageClickedMultiSel = (d) => {
-    // console.log('actionImageClick3edMultSel');
     d3.select('body').style('cursor', 'progress');
     // add newly clicked item to selection
-    // console.log('add to selection');
     if (!Array.isArray(d.selectedItem)) {
         dataLayer.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
     } else {
-        // console.log(d.selectedItem.length);
         dataLayer.addAllToCurrentSelection(d.selectedItem);
     }
     updateSeaDragonSelection();
@@ -112,25 +135,30 @@ const actionImageClickedMultiSel = (d) => {
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
 
-
-// For channel select click event
+/**
+ * Listen to Channel Select Click Events
+ * @param  {package object} d The selected/deselected channels
+ */
 const channelSelect = async (sels) => {
-
     let channelCells = await dataLayer.getChannelCellIds(sels);
-
     dataLayer.addAllToCurrentSelection(channelCells);
-
     updateSeaDragonSelection(false);
 }
 eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
-
-//current fast solution for seadragon updates
+/**
+ * Listens to and updates based on selection changes (specific for seadragon)
+ * @param  {boolean} d Whether to repaint
+ */
 function updateSeaDragonSelection(repaint = true) {
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
     seaDragonViewer.csvGatingOverlay.evaluate();
 }
 
+/**
+ * Listens to and updates based on selection changes (specific for seadragon)
+ * @param  {boolean} d Whether to repaint
+ */
 const gatingBrushEnd = async (packet) => {
     // Init gated cells
     let gatedCells = [];
@@ -155,13 +183,19 @@ const gatingBrushEnd = async (packet) => {
 }
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 
-//feature range selection changed in ridge plot
+/**
+ * Listens to feature gating selection changes
+ * @param  {packet object} d The name of the channel and its gating range information
+ */
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
     seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
 }
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
+/**
+ * Reset the gating list to inital values
+ */
 const reset_lists = () => {
     csv_gatingList.reset_gatingList();
     channelList.reset_channelList();
