@@ -1,7 +1,6 @@
 /**
  * viewer.js.
- *
- * ImageViewer for imaging data based on OpenSeadragon.
+ * @class ImageViewer to render multiplexed imaging data (based on OpenSeadragon)
  *
  */
 
@@ -14,6 +13,13 @@ class ImageViewer {
     // Vars
     viewerManagers = [];
 
+    /**
+     * @constructor
+     * @param config the cinfiguration file (json)
+     * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
+     * @param eventHandler - the event handler for distributing interface and data updates
+     * @param colorScheme - the color scheme to use or selections etc.
+     */
     constructor(config, dataLayer, eventHandler, colorScheme) {
 
         this.config = config;
@@ -66,7 +72,7 @@ class ImageViewer {
     }
 
     /**
-     * @function init
+     * @function init - initializes OSD, loads metadata, tile drawing, etc.
      */
     init() {
 
@@ -273,6 +279,12 @@ class ImageViewer {
 
     }
 
+    /**
+     * @function drawLabelTile - cell-based rendering using the segmentation mask
+     * @param tile - the tile to draw
+     * @param width - width of the tile
+     * @param height - height of the tile
+     */
     drawLabelTile(tile, width, height) {
         const self = this;
         let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
@@ -340,6 +352,15 @@ class ImageViewer {
     // Tile cache management
     // =================================================================================================================
 
+    /**
+     * @function createTFArray - creates an array of colors as a transfer/lookup table for pixel values.
+     * @param min the minimum value
+     * @param max - the maximum value
+     * @param rgb1 - the start color (min)
+     * @param rgb2 - the end color (max)
+     * @param numBins - the bins for the color interpolation steps
+     * @returns {{tf: Array, min: *, max: *, num_bins: *, start_color: *, end_color: *}}
+     */
     createTFArray(min, max, rgb1, rgb2, numBins) {
 
         const tfArray = [];
@@ -369,10 +390,9 @@ class ImageViewer {
 
 
     /**
-     * @function actionFocus
+     * @function actionFocus - sets a viewport based on an action (tool or user driven)
      *
-     * @param vp
-     *
+     * @param vp - viewport
      * @returns void
      */
     actionFocus(vp) {
@@ -380,7 +400,7 @@ class ImageViewer {
     }
 
     /**
-     * @function setViewport
+     * @function setViewPort
      *
      * @param {int} x
      * @param {int} y
@@ -408,11 +428,11 @@ class ImageViewer {
     // =================================================================================================================
 
     /**
-     *
+     * @function drawCellRadius - draws a circle with certain radius around a cell
      *
      * @param radius
      * @param selection
-     * @param dragging
+     * @param  - whether it fades out
      */
     drawCellRadius(radius, selection, dragging = false) {
 
@@ -455,7 +475,7 @@ class ImageViewer {
     }
 
     /**Z
-     * @function forceRepaint
+     * @function forceRepaint - for all active viewers repaint the canvas
      *
      * @returns void
      */
@@ -602,7 +622,6 @@ class ImageViewer {
 
     }
 }
-
 
 // Static vars
 ImageViewer
