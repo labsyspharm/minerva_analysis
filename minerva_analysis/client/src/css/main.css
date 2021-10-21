@@ -145,8 +145,13 @@ body {
 }
 
 #channel_list {
-    height: 75vh;
+    height: 70vh;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+#search_header {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1rem;
 }
 
 #upload-container {
@@ -545,6 +550,7 @@ polygon:hover {
     fill: none;
     stroke: #c1c1c1;
     font-size: 4rem;
+    margin-top: 10px;
     stroke-miterlimit: 10;
 }
 
@@ -561,18 +567,24 @@ polygon:hover {
 }
 
 #similarity_val {
-    font-size: 9pt;
-    color: #ffffff;
-    font-weight: bold;
+    font-size: 8pt;
+    color: orange;
     text-align: center;
     vertical-align: middle;
     display: table-cell;
-    margin-bottom: 0;
-    padding-top: 3px;
     padding-left: 3px;
     padding-right: 3px;
 }
 
+#neighborhood_current_selection {
+    font-size: 8pt;
+    color: orange;
+    text-align: center;
+    vertical-align: middle;
+    display: table-cell;
+    padding-left: 3px;
+    padding-right: 3px;
+}
 
 #neighborhood_table_heading, #neighborhood_table_footing {
     padding: 0;
@@ -746,7 +758,7 @@ polygon:hover {
 }
 
 .par_cor_label {
-    font-size: 0.5rem;
+    font-size: 0.7rem;
 }
 
 #custom_cluster {

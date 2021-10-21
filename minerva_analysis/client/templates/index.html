@@ -18,25 +18,30 @@
                                   title="Search for Similar Neighborhoods">search</span>
                     </div>
                     <div class="col-md-8">
+                        <h5 id="search_header">Search for Neighborhoods</h5>
                         <div class="row">
-                            <div class="col-6">
-                                <span class="text-left neighborhood_similarity_label">Current Selection:</span>
+                            <div class="col-12">
+                                <span class="neighborhood_similarity_label">Selection:</span>
+                                <span class="neighborhood_similarity_label" id="neighborhood_current_selection">None</span>
+
                             </div>
-                            <div class="col-6">
-                                <span class="text-left neighborhood_similarity_label"></span>
-                            </div>
+
                         </div>
+
                         <div class="row" id="similarity_group">
-                            <div class="col-6">
+                            <div class="col-12">
                                 <label class="control-label neighborhood_similarity_label text-left"
                                        for="neighborhood_similarity">
-                                    Similarity Threshold: </label> <span id="similarity_val">0.8</span>
+                                    Threshold: </label> <span id="similarity_val">0.8</span>
                             </div>
-                            <div class="col-6">
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
                                 <input type="range" class="form-control-range" min="0" max="100" value="80"
                                        id="neighborhood_similarity">
                             </div>
                         </div>
+
                     </div>
 
 

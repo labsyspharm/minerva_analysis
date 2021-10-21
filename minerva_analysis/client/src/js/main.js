@@ -116,7 +116,10 @@ const actionImageClickedMultiSel = (d) => {
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
 
-const displaySelection = async (selection) => {
+const displaySelection = async (d) => {
+    let selection = d.selection;
+    let selectionSource = d.selectionSource || "Image";
+    document.getElementById('neighborhood_current_selection').textContent = selectionSource;
     dataLayer.addAllToCurrentSelection(selection);
     parallelCoordinates.wrangle(selection);
     scatterplot.recolor();

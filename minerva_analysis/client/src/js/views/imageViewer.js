@@ -62,8 +62,8 @@ class ImageViewer {
         this.singleCellView = true;
         // this.lassoButton = document.getElementById("lasso_button");
         // this.selectButton = document.getElementById("select_button");
-        // this.neighborhoodButton = document.getElementById("neighborhood_icon");
-        this.similaritySlider = document.getElementById("similarity_group");
+        this.neighborhoodButton = document.getElementById("neighborhood_icon");
+        this.similaritySlider = document.getElementById("neighborhood_similarity");
         // this.cellViewButton = document.getElementById("cell_view_icon");
         this.similaritySlider.onchange = (e) => {
             let val = document.getElementById("neighborhood_similarity").value;
@@ -307,7 +307,10 @@ class ImageViewer {
                                 .then(cells => {
                                     that.hideLoader();
                                     d3.select('#selectionPolygon').remove();
-                                    that.eventHandler.trigger(ImageViewer.events.displaySelection, cells);
+                                    that.eventHandler.trigger(ImageViewer.events.displaySelection, {
+                                        'selection': cells,
+                                        'selectionSource': 'Image'
+                                    });
                                 })
                         }
                     }
@@ -410,22 +413,21 @@ class ImageViewer {
         //     // that.isSelectionToolActive = false;
         // })
         //
-        // that.neighborhoodButton.addEventListener("click", event => {
-        //     d3.select('#selectionPolygon').remove();
-        //     that.neighborhoodButton.style.stroke = "orange";
-        //     let sim = '0.8';
-        //     // let sim = document.getElementById('similarity_val').innerHTML || '0.8';
-        //     let simVal = parseFloat(sim);
-        //     seaDragonViewer.showLoader();
-        //     if (dataLayer.getCurrentSelection().size > 0) {
-        //         return dataLayer.getSimilarNeighborhoodToSelection(simVal)
-        //             .then(cells => {
-        //                 seaDragonViewer.hideLoader();
-        //                 that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
-        //             })
-        //
-        //     }
-        // })
+        that.neighborhoodButton.addEventListener("click", event => {
+            d3.select('#selectionPolygon').remove();
+            that.neighborhoodButton.style.stroke = "orange";
+            let sim = document.getElementById('similarity_val').innerHTML || '0.8';
+            let simVal = parseFloat(sim);
+            seaDragonViewer.showLoader();
+            if (dataLayer.getCurrentSelection().size > 0) {
+                return dataLayer.getSimilarNeighborhoodToSelection(simVal)
+                    .then(cells => {
+                        seaDragonViewer.hideLoader();
+                        that.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
+                    })
+
+            }
+        })
 
     }
 

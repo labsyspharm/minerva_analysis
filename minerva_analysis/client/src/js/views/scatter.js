@@ -93,7 +93,10 @@ class Scatterplot {
             console.log("Selecting");
             return dataLayer.getCells(args)
                 .then(cells => {
-                    self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, cells)
+                    self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, {
+                        'selection': cells,
+                        'selectionSource': 'Embedding'
+                    })
                 });
         }
     }

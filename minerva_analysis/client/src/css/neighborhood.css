@@ -26,7 +26,7 @@
 }
 
 .plot-label {
-    font-size: 13px;
+    font-size: 16px;
     color: rgba(255, 255, 255, 0.95);
     font-weight: 500;
 }
@@ -143,7 +143,6 @@
 
 
 #neighborhood_similarity {
-    margin-top: 3px;
     width: 80px;
     height: 100%;
 }
@@ -154,5 +153,6 @@
 }
 
 #search-row {
-    height: 10vh;
+    height: 15vh;
 }
+

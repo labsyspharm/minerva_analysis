@@ -22,10 +22,10 @@ class ParallelCoordinates {
         this.totalWidth = this.parent.node().getBoundingClientRect().width;
         this.totalHeight = this.parent.node().getBoundingClientRect().height;
         if (this.small) {
-            this.margin = {top: 10, right: 25, bottom: 10, left: 100};
+            this.margin = {top: 10, right: 25, bottom: 10, left: 130};
 
         } else {
-            this.margin = {top: 10, right: 25, bottom: 10, left: 100};
+            this.margin = {top: 10, right: 25, bottom: 10, left: 130};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -296,11 +296,10 @@ class ParallelCoordinates {
 
         if (self.selection_neighborhoods && !self.editMode) {
 
-
             //Draw Selection
-            opacity = 0.01;
+            opacity = 0.008;
             _.forEach(self.selection_neighborhoods, row => {
-                const color = `hsla(39, 100%, 50%,${opacity})`;
+                const color = `hsla(39, 100%, 60%,${opacity})`;
                 self.canvas.getContext('2d').strokeStyle = color;
                 self.canvas.getContext('2d').beginPath();
                 row.map(function (p, i) {
