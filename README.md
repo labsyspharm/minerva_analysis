@@ -15,7 +15,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 `git clone https://github.com/labsyspharm/minerva_analysis.git`
 
 #### 2. Checkout Necessary Branch
-* Specific extensions (e.g,. gating, scope2screen) are organized in the different branches of this repository (see [Extensions in our wiki](https://github.com/labsyspharm/minerva_analysis/wiki/Extensions)).
+* Specific extensions (e.g., gating, scope2screen) are organized in the different branches of this repository (see [extensions in our wiki](https://github.com/labsyspharm/minerva_analysis/wiki/Extensions)).
 * **For Gating, run** `git checkout gating`
 * Run `git pull` to make sure everything is up to date 
 
