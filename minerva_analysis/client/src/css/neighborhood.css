@@ -1,28 +1,70 @@
 #row {
     height: 100%;
     width: 100%;
+    margin: 0;
 }
 
 #openseadragon_wrapper {
     height: 100%;
     position: relative;
-    width: 50vw;
-    min-width: 50vw;
     z-index: 100;
+    padding: 0;
+    margin: 0;
 }
 
+.openseadragon_wrapper_small {
+    width: 45vw !important;
+    min-width: 45vw !important;
+    max-width: 45vw !important;
+
+}
+
+.openseadragon_wrapper_large {
+    width: 65vw !important;
+    min-width: 65vw !important;
+    max-width: 65vw !important;
+
+}
+
+
 #analysis_wrapper {
-    width: 25vw;
     height: 100%;
-    max-width: 25vw;
-    min-width: 25vw;
+    padding: 0;
+    margin: 0;
+    width: 30vw !important;
+    max-width: 30vw !important;
+    min-width: 30vw !important;
 }
 
 #neighborhood_wrapper {
-    width: 25vw;
     height: 100%;
-    max-width: 25vw;
-    min-width: 25vw;
+    padding: 0;
+    margin: 0;
+}
+
+.neighborhood_wrapper_small {
+    width: 5vw !important;
+    max-width: 5vw !important;
+    min-width: 5vw !important;
+
+}
+
+.neighborhood_wrapper_large {
+    width: 25vw !important;
+    max-width: 25vw !important;
+    min-width: 25vw !important;
+}
+
+#openseadragon_wrapper, #neighborhood_wrapper, #analysis_wrapper {
+    transition-property: width, max-width, min-width;
+    transition-duration: 0.5s;
+}
+
+
+.viewer_col {
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .plot-label {
@@ -136,6 +178,7 @@
     color: white;
 }
 
+
 .scatter_canvas {
     height: 100%;
     width: 100%;
@@ -156,3 +199,26 @@
     height: 15vh;
 }
 
+.full_height {
+    height: 100%;
+}
+
+
+#expand_icon {
+    color: #3870ce;
+    font-size: 3rem;
+    cursor: pointer;
+}
+
+#neighborhood_table .table-darker {
+    background-color: #505050 !important;
+}
+
+#custom_cluster_number {
+    background-color: #505050;
+    color: white;
+}
+
+#custom_cluster_submit {
+    padding: 3px;
+}

@@ -22,7 +22,8 @@
                         <div class="row">
                             <div class="col-12">
                                 <span class="neighborhood_similarity_label">Selection:</span>
-                                <span class="neighborhood_similarity_label" id="neighborhood_current_selection">None</span>
+                                <span class="neighborhood_similarity_label"
+                                      id="neighborhood_current_selection">None</span>
 
                             </div>
 
@@ -65,7 +66,7 @@
 
                 </div>
             </div>
-            <div id="openseadragon_wrapper" class="col-auto">
+            <div id="openseadragon_wrapper" class="col-auto openseadragon_wrapper_large viewer_col">
                 <div id="openseadragon">
                     <div class="row">
                         <div class="col-auto">
@@ -78,10 +79,8 @@
                     <div id="tray">
                     </div>
                 </div>
-
-
             </div>
-            <div id="analysis_wrapper" class="col-auto">
+            <div id="analysis_wrapper" class="col-auto analysis_wrapper_large viewer_col">
 
                 <div id="plots_display" class="col">
                     <div class="row">
@@ -107,44 +106,45 @@
                     <div class="row align-items-center" id="scatterplot_display">
                         <canvas class="scatter_canvas" id="viewer_scatter_canvas"></canvas>
                     </div>
+                    <div class="row justify-content-end" id="cluster_display">
+                        <div class="col-sm-5">
+                            <input type="number" id="custom_cluster_number" placeholder="# of Clusters">
+                        </div>
+                        <div class="col-sm-3">
+                            <button id="custom_cluster_submit" class="btn btn-secondary">Cluster</button>
+                        </div>
+                        <div class="col-sm-1" id="custom_cluster_loading"></div>
+                    </div>
                 </div>
             </div>
-            <div id="neighborhood_wrapper" class="col-auto">
+            <div id="neighborhood_wrapper" class="col-auto neighborhood_wrapper_small viewer_col">
+                <div class="row align-items-center full_height">
+                    <div class="col">
+                        <i id="expand_icon" class="fas fa-arrows-alt-h"></i>
+                    </div>
+                </div>
                 <div id="accordion">
                     <div class="card">
                         <div class="card-header" id="neighborhood_table_heading">
-                            <button id="neighborhood_dropdown_button" class="btn btn-secondary collapsed"
-                                    data-toggle="collapse"
-                                    data-target="#neighborhood_table_div"
-                                    aria-expanded="true" aria-controls="neighborhood_table_div">
-                                <span id="neighborhood_table_div_label">View Neighborhood List</span>
-                            </button>
-                        </div>
-                        <div id="neighborhood_table_div" class="collapse"
-                             aria-labelledby="neighborhood_table_heading"
-                             data-parent="#accordion">
-                            <div id="neighborhood_table_card" class="card-body">
-                                <table id="neighborhood_table" class="table table-hover">
-                                    <thead id="neighborhood_table_header">
-                                    <tr>
-                                        <th scope="col">id</th>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Source</th>
-                                        <th scope="col"></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="card-footer" id="neighborhood_table_footing">
                             <button id="save_neighborhood_button"
                                     class="btn btn-primary" disabled>
-                                <span id="save_neighborhood_label">Save Neighborhood </span>
+                                <span id="save_neighborhood_label">Save</span>
                             </button>
                         </div>
+                        <div id="neighborhood_table_card" class="card-body">
+                            <table id="neighborhood_table" class="table table-hover">
+                                <thead id="neighborhood_table_header">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Source</th>
+                                    <th scope="col"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+
                     </div>
                 </div>
             </div>

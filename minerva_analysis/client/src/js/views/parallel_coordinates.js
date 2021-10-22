@@ -11,10 +11,7 @@ class ParallelCoordinates {
         if (this.editButton) {
             this.editButton.addEventListener('click', this.switchEditMode.bind(this));
         }
-        this.searchCol = document.getElementById("custom_search_col");
-        if (this.searchCol) {
-            this.searchCol.addEventListener('click', this.search.bind(this));
-        }
+
     }
 
     init() {
@@ -278,28 +275,30 @@ class ParallelCoordinates {
 
         self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
 
-        let opacity = 0.005;
-        let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.selection_neighborhoods', null);
-        _.forEach(fullNeighborhood, row => {
-            const color = `hsla(0,0%,100%,${opacity})`;
-            self.canvas.getContext('2d').strokeStyle = color;
-            self.canvas.getContext('2d').beginPath();
-            row.map(function (p, i) {
-                if (i == 0) {
-                    self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
-                } else {
-                    self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
-                }
-            });
-            self.canvas.getContext('2d').stroke();
-        })
+        if (!self.editMode) {
+            let opacity = 0.005;
+            let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.selection_neighborhoods', null);
+            _.forEach(fullNeighborhood, row => {
+                const color = `hsla(0,0%,100%,${opacity})`;
+                self.canvas.getContext('2d').strokeStyle = color;
+                self.canvas.getContext('2d').beginPath();
+                row.map(function (p, i) {
+                    if (i == 0) {
+                        self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
+                    } else {
+                        self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
+                    }
+                });
+                self.canvas.getContext('2d').stroke();
+            })
+        }
 
         if (self.selection_neighborhoods && !self.editMode) {
 
             //Draw Selection
-            opacity = 0.008;
+            let opacity = 0.01;
             _.forEach(self.selection_neighborhoods, row => {
-                const color = `hsla(39, 100%, 60%,${opacity})`;
+                const color = `hsla(39, 100%, 50%,${opacity})`;
                 self.canvas.getContext('2d').strokeStyle = color;
                 self.canvas.getContext('2d').beginPath();
                 row.map(function (p, i) {
@@ -320,10 +319,8 @@ class ParallelCoordinates {
         const self = this;
         self.editMode = !self.editMode;
         if (self.editMode) {
-            self.searchCol.style.visibility = "visible";
             self.draw();
-        } else {
-            self.searchCol.style.visibility = "hidden";
+            document.getElementById('neighborhood_current_selection').innerText = "Composition";
         }
         _.each(document.querySelectorAll('.handler'), elem => {
             if (self.editMode) {

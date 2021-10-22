@@ -2,7 +2,8 @@ class NeighborhoodTable {
     constructor(dataLayer, eventHandler) {
         this.dataLayer = dataLayer;
         this.eventHandler = eventHandler;
-        this.table = document.getElementById('neighborhood_table');
+        this.table = document.getElementById('neighborhood_table').getElementsByTagName('tbody')[0];
+
         this.selectedRow = null;
         this.selectedRowName = null;
         this.neighborhoods = null;
@@ -14,23 +15,9 @@ class NeighborhoodTable {
     async init() {
         const self = this;
         this.neighborhoods = await this.dataLayer.getNeighborhoods();
-        this.showButton = document.getElementById('neighborhood_dropdown_button');
-        this.showButton.addEventListener('click', self.displayTable.bind(self));
         return self.drawRows();
     }
 
-    displayTable() {
-        const self = this;
-        let channelListDiv = document.getElementById('channel_list_div');
-        let label = document.getElementById('neighborhood_table_div_label')
-        if ($(self.table).is(':hidden')) {
-            channelListDiv.style.height = '60%';
-            label.textContent = "Hide Neighborhood List";
-        } else {
-            channelListDiv.style.height = '92%';
-            label.textContent = "View Neighborhood List";
-        }
-    }
 
     enableSaveButton() {
         const self = this;
@@ -59,21 +46,21 @@ class NeighborhoodTable {
             });
         rows.exit().remove();
 
-        let idCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.id-col')
-            .data(d => {
-                return [d];
-            });
-
-        idCol.enter()
-            .append('th')
-            .attr('scope', 'row')
-            .attr('class', 'id-col')
-            .append('span')
-            .text(d => {
-                return _.toString(d[1])
-            });
-
-        idCol.exit().remove();
+        // let idCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.id-col')
+        //     .data(d => {
+        //         return [d];
+        //     });
+        //
+        // idCol.enter()
+        //     .append('th')
+        //     .attr('scope', 'row')
+        //     .attr('class', 'id-col')
+        //     .append('span')
+        //     .text(d => {
+        //         return _.toString(d[1])
+        //     });
+        //
+        // idCol.exit().remove();
 
 
         //
@@ -204,7 +191,7 @@ class NeighborhoodTable {
             self.neighborhoods = await self.dataLayer.saveNeighborhood();
             // If the table is hidden, show it
             if ($(self.table).is(':hidden')) {
-                document.getElementById('neighborhood_dropdown_button').click();
+                showHideRHS();
             }
 
             self.drawRows();
@@ -221,7 +208,7 @@ class NeighborhoodTable {
         let elem = findElementWithTag(e, "TR");
         // Clicking on already selected row
         if (self.selectedRow && elem != self.selectedRow) {
-            self.selectedRow.classList.remove("table-dark");
+            self.selectedRow.classList.remove("table-darker");
             if (self.selectedRowName) {
                 self.selectedRowName.setAttribute('contenteditable', false);
                 self.selectedRowName = null;
@@ -233,7 +220,7 @@ class NeighborhoodTable {
         self.selectedRow = elem;
         // Update Class To Highlight Row
         if (elem) {
-            elem.classList.add("table-dark");
+            elem.classList.add("table-darker");
         }
     }
 }

@@ -414,6 +414,9 @@ class ImageViewer {
         // })
         //
         that.neighborhoodButton.addEventListener("click", event => {
+            if (document.getElementById('neighborhood_current_selection').innerText == "Composition") {
+                return parallelCoordinates.search();
+            }
             d3.select('#selectionPolygon').remove();
             that.neighborhoodButton.style.stroke = "orange";
             let sim = document.getElementById('similarity_val').innerHTML || '0.8';

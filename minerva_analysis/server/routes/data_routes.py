@@ -121,9 +121,9 @@ def save_neighborhood():
     selection = post_data['selection']
     source = post_data['source']
     resp = data_model.save_neighborhood(selection, datasource, source)
-    return serialize_and_submit_json(resp) \
- \
- \
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/save_lasso', methods=['POST'])
 def save_lasso():
     post_data = json.loads(request.data)

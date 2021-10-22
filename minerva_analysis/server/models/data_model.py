@@ -821,13 +821,18 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
     row_sums = neighborhoods.sum(axis=1)
     neighborhoods = neighborhoods / row_sums[:, np.newaxis]
     selection_neighborhoods = neighborhoods[indices, :]
+    if neighborhoods.shape[0] == selection_neighborhoods.shape[0]:
+        sample_size = 10000
+    else:
+        sample_size = 5000
+
     cluster_summary = np.mean(selection_neighborhoods, axis=0)
     # Sample down so we have 10k of full
-    if selection_neighborhoods.shape[0] > 10000:
+    if selection_neighborhoods.shape[0] > sample_size:
         selection_neighborhoods = selection_neighborhoods[
-                                  np.random.choice(selection_neighborhoods.shape[0], 10000, replace=False), :]
+                                  np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=False), :]
     else:
-        scale_factor = int(10000 / selection_neighborhoods.shape[0])
+        scale_factor = int(sample_size / selection_neighborhoods.shape[0])
 
         selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
 

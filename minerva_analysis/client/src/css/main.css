@@ -88,8 +88,12 @@ body {
 }
 
 #scatterplot_display {
-    height: 40vh;
+    height: 38vh;
     width: 100%;
+}
+
+#cluster_display {
+    height: 5vh;
 }
 
 #parallel_coordinates_display {
@@ -138,7 +142,7 @@ body {
 
 #accordion {
     position: absolute;
-    bottom: 0;
+    top: 0;
     /*height: 8%;*/
     width: 100%;
     border-radius: 0rem;
@@ -450,10 +454,6 @@ label {
     margin: 0;
 }
 
-#channel_list_wrapper, #openseadragon_wrapper, #cell_wrapper, #analysis_wrapper {
-    padding: 0px 5px;
-}
-
 
 #cell_wrapper {
     flex: 0 0 10%;
@@ -548,14 +548,15 @@ polygon:hover {
 
 #neighborhood_icon, #neighborhood_composition_icon {
     fill: none;
-    stroke: #c1c1c1;
+    color: #3870ce;
     font-size: 4rem;
     margin-top: 10px;
     stroke-miterlimit: 10;
+    cursor: pointer;
 }
 
-#neighborhood_icon:hover, #neighborhood_composition_icon:hover {
-    stroke: #8f8f8f;
+#neighborhood_icon:hover, #neighborhood_composition_icon:hover, #expand_icon:hover {
+    color: #164d9b;
 }
 
 .neighborhood_similarity_label {
@@ -588,15 +589,18 @@ polygon:hover {
 
 #neighborhood_table_heading, #neighborhood_table_footing {
     padding: 0;
+    border: none;
 }
 
 #accordion .card {
     border-radius: 0;
+    border: 0;
 }
 
 #neighborhood_table_label {
     font-size: 10pt;
 }
+
 
 #neighborhood_dropdown_button, #save_neighborhood_button {
     margin: 0;
@@ -609,28 +613,33 @@ polygon:hover {
 }
 
 #neighborhood_table_card {
-    padding: 0 10px;
-    height: 100%;
+    background-color: black;
+    display: none;
+    padding: 0;
+    height: 20vh;
+    max-height: 20vh;
+    min-height: 20vh;
     overflow-y: scroll;
 }
 
-#accordion .show {
-    height: 28.8vh;
-}
 
 #neighborhood_table {
     margin-bottom: 5px;
+    background: black;
 }
+
 
 #neighborhood_table td, th {
     padding: 0 10px;
     font-size: 0.5rem;
+    color: white;
+    border: none;
 }
 
 .actions-column * {
     font-size: 0.8rem;
     padding: 0px 2px;
-    color: black;
+    color: white;
 }
 
 .actions-column {
@@ -647,6 +656,7 @@ polygon:hover {
 
 #neighborhood_table_header th {
     padding: 0;
+    border: none;
 }
 
 
