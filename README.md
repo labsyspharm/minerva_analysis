@@ -1,8 +1,8 @@
 # Minerva Analysis
 
 ## About
-This is  an [openseadragon](https://openseadragon.github.io/) based **Cellular Image Viewing and Analysis Tool**. 
-It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.js](https://nodejs.org/en/) javascript frontend.
+Minerva Analysis an [openseadragon](https://openseadragon.github.io/) based **Muliplex Image Data Visualization and Analysis Toolset**. Sharing a common image viewer codebase, we currently offer tools for [focus+context-based data exploration](https://github.com/labsyspharm/minerva_analysis/wiki/Scope2Screen), [interactive channel gating](https://github.com/labsyspharm/minerva_analysis/wiki/Gating), [cluster exploration](https://github.com/labsyspharm/minerva_analysis/wiki/ClusterExploration), and [spatial neighborhood analysis](https://github.com/labsyspharm/minerva_analysis/wiki/Neighborhood-Analysis).
+Minerva Analysis is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.js](https://nodejs.org/en/) javascript frontend.
 
 ## Executables (for Users)
 Releases can be found here:
@@ -13,6 +13,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 ## Clone and Run Codebase (for Developers)
 #### 1. Checkout Project
 `git clone https://github.com/labsyspharm/minerva_analysis.git`
+
 #### 2. Checkout Necessary Branch
 * **For Gating, run** `git checkout gating`
 * Run `git pull` to make sure everything is up to date 
