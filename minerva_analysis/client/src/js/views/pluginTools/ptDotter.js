@@ -197,6 +197,7 @@ export class PtDotter {
 
     /**
      * renderOverlay
+     * this renders the snapshots in the
      */
     renderOverlay(data = null) {
 
@@ -222,7 +223,6 @@ export class PtDotter {
         const vis = this;
 
         // Dots
-
         this.els.viewerOverlay.selectAll('.dotDrop').remove()
         this.els.viewerOverlay.selectAll('.dotDrop')
             .data(this.configs.isOpen ? data || this.data : [])
@@ -275,12 +275,12 @@ export class PtDotter {
                     `${vis.tools.overlayY(d.pointerPositionOnFullImage[1]) - (h / 2)}px`)
 
                 // Change opacity if magnifying
-                if (multiplier > 1) {
-                    // canvas.style('opacity', `${1 / multiplier}`);
-                    canvas.style('opacity', `0`);
-                } else {
-                    canvas.style('opacity', `1`);
-                }
+                // if (multiplier > 1) {
+                //     // canvas.style('opacity', `${1 / multiplier}`);
+                //     canvas.style('opacity', `0`);
+                // } else {
+                //     canvas.style('opacity', `1`);
+                // }
 
                 // Draw
                 const context = canvas.node().getContext('2d');
@@ -328,6 +328,7 @@ export class PtDotter {
 
     /**
      * rendrenderSnapshotserSnapshots
+     * this renders the snapshopts in the side panel (right)
      */
     renderSnapshots(optionalData = null) {
 

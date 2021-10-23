@@ -50,7 +50,7 @@ export class LensingFiltersExt {
         const lfSplit= new LfSplit(_imageViewer);
 
         //////////////////////////////////////////////////////////////////////////////// Data load - spatial correlation
-        const lfSpatialCorrelation= new LfSpatialCorrelation(_imageViewer);
+        // const lfSpatialCorrelation= new LfSpatialCorrelation(_imageViewer);
 
         // Add in reverse order
         return [

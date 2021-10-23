@@ -209,6 +209,11 @@ export class LfChannelView {
                             if (channels.length > 0 && this.vars.currentChannel.name === '') {
                                 this.vars.currentChannel.name = channels[0];
                             }
+                            // Handles situation where current channel is deactivated
+                            if (!(channels || []).includes(this.vars.currentChannel.name)) {
+                                this.vars.currentChannel.name = channels[0];
+                                this.vars.forceUpdate = true;
+                            }
 
                             // Access auxi viewer manager (lensing instance)
                             const mainManager = this.image_viewer.viewerManagerVMain;
@@ -227,8 +232,10 @@ export class LfChannelView {
                                     if (mainManager.viewerChannels[k].short_name === this.vars.currentChannel.name) {
                                         if (!auxiManager.viewerChannels[k]) {
                                             auxiManager.colorConnector[`${k}`] = {
-                                                color: mainManager.colorConnector[`${k}`].color
+                                                color: mainManager.colorConnector[`${k}`]?.color || d3.rgb('white')
                                             }
+
+                                            auxiManager.rangeConnector[`${k}`] = mainManager.rangeConnector[`${k}`];
                                             auxiManager.channelAdd(k);
                                         }
                                         this.vars.currentChannel.index = +k;
@@ -305,6 +312,10 @@ export class LfChannelView {
 
                                         // Label g
                                         const labelG = g.select('.viewfinder_charts_g_chart_g_label_g');
+
+                                        // Update text
+                                        labelG.select('.viewfinder_charts_g_chart_g_text')
+                                            .text(d);
 
                                         // update channel color
                                         labelG.select('.viewfinder_charts_g_chart_g_circle')

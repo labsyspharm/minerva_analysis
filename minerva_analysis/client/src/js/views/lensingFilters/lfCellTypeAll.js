@@ -19,7 +19,7 @@ export class LfCellTypeAll {
         cellIntensityRange: [0, 65536],
         config_boxMargin: {top: 7, right: 6, bottom: 7, left: 6},
         config_chartsMargin: {top: 50, right: 30, bottom: 5, left: 30},
-        config_boxW: 250,
+        config_boxW: 280,
         config_boxH: 200,
         config_channelR: 3,
         config_chartR0: 20,
@@ -179,14 +179,16 @@ export class LfCellTypeAll {
                                         });
                                     }
                                 });
+                                console.log(newRad, darr.length, this.data.length)
 
                                 //update cell type structure (we keep to original map as reference)
                                 this.vars.cellCount = darr.length;
                                 this.vars.cellTypeMap.forEach((value, key, map) => map.set(key, 0));
                                 let cellTypeCounts = this.vars.cellTypeMap;
-                                darr.forEach(function (d, i) {
-                                    if (d[_this.vars.cellTypeColumnName] != null) {
-                                        let fieldName = d[_this.vars.cellTypeColumnName] + '-' + dataLayer.getNameForPhenotypeId(d[_this.vars.cellTypeColumnName]);
+                                this.data.forEach(function (d, i) {
+                                    if (d.data[_this.vars.cellTypeColumnName] != null) {
+                                        let fieldName = d.data[_this.vars.cellTypeColumnName] + '-' +
+                                            dataLayer.getNameForPhenotypeId(d.data[_this.vars.cellTypeColumnName]);
                                         if (!cellTypeCounts.has(fieldName)) {
                                             cellTypeCounts.set(fieldName, 0);
                                         }
@@ -194,7 +196,7 @@ export class LfCellTypeAll {
                                     }
                                 });
                                 this.vars.cellTypes = Array.from(cellTypeCounts);
-                                console.log(this.vars.cellTypes)
+                                // console.log(this.vars.cellTypes)
 
 
                                 // Trigger update
@@ -395,13 +397,14 @@ export class LfCellTypeAll {
                                         .attr('stroke', 'black')
                                         .attr('fill', function (d, i) {
 
+
                                             //we get the index if the original map (so that colors stay consistent if filtered)
                                             let index = Array.from(vis.vars.cellTypeMap)
                                                 .map(function (val) {
                                                     return val.slice(0, -1)[0];
                                                 }).indexOf(d[0]);
 
-                                            if (Array.from(dataLayer.phenotypeDescription.keys())[index]) {
+                                            if (Array.from(dataLayer.phenotypeDescription.keys()).length > index) {
                                                 return '' + vis.vars.colorMap[Array.from(dataLayer.phenotypeDescription.keys())[index]].hex;
                                             } else {
                                                 return "#FFFFFF";
@@ -411,7 +414,7 @@ export class LfCellTypeAll {
                                     //draw bars (currently linear scaling)
                                     enter.append("rect")
                                         .attr("x", function (d, i) {
-                                            return 135;
+                                            return 170;
                                         })
                                         .attr("y", function (d, i) {
                                             return (i * 20) - 5
