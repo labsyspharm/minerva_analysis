@@ -287,7 +287,10 @@ class CSVGatingList {
     autoGate(name) {
         const self = this;
 
-        let gate = parseInt(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gate'])
+        let gate = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gate']
+        if (!this.dataLayer.isTransformed()) {
+            gate = parseInt(gate)
+        }
         // For interaction
         self.selections[name][0] = gate;
         let shortName = self.dataLayer.getShortChannelName(name);
