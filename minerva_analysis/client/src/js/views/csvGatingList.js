@@ -287,7 +287,7 @@ class CSVGatingList {
     autoGate(name) {
         const self = this;
 
-        let gate = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gate']
+        let gate = parseInt(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gate'])
         // For interaction
         self.selections[name][0] = gate;
         let shortName = self.dataLayer.getShortChannelName(name);
@@ -572,8 +572,8 @@ class CSVGatingList {
             data_min = d3.min(data)
             data_max = d3.max(data)
         } else {
-            data_min = Math.round(d3.min(data))
-            data_max = Math.round(d3.max(data))
+            data_min = parseInt(d3.min(data))
+            data_max = parseInt(d3.max(data))
         }
 
         let f = d3.format("d")

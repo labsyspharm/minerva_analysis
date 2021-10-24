@@ -327,8 +327,8 @@ class ChannelList {
 
         let fullName = self.dataLayer.getFullChannelName(name);
         let packet = await this.dataLayer.getChannelGMM(fullName);
-        let vmin = Math.round(packet['vmin']);
-        let vmax = Math.round(packet['vmax']);
+        let vmin = parseInt(packet['vmin']);
+        let vmax = parseInt(packet['vmax']);
         this.sliders.get(name).value([vmin, vmax]);
 
         let channelIdx = imageChannels[fullName];
@@ -452,8 +452,8 @@ class ChannelList {
 
         var that = this;
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram']
-        let data_min = Math.round(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_min'])
-        let data_max = Math.round(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_max'])
+        let data_min = parseInt(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_min'])
+        let data_max = parseInt(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_max'])
 
         //add range slider row content
         var sliderSimple = d3.sliderBottom()
