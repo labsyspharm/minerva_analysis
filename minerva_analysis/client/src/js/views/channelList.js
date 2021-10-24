@@ -56,6 +56,9 @@ class ChannelList {
         // Update selections
         delete this.sel[dataLayer.getFullChannelName(name)];
 
+        // Remove GMM line
+        d3.selectAll('.gmm_line_'+name).remove()
+
         // Trigger
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
     }
@@ -82,6 +85,8 @@ class ChannelList {
             selectorDoc.style.fill = rgbColor;
         }
 
+        let channelTrace = this.drawChannelGMM(name)
+
         // Update selections
         self.selections.push(name);
         self.sel[dataLayer.getFullChannelName(name)] = self.dataLayer.getImageBitRange();
@@ -106,6 +111,7 @@ class ChannelList {
         const self = this;
         this.rainbow.hide();
         this.columns = await this.dataLayer.getChannelNames(true);
+        this.databaseDescription = await self.dataLayer.getDatabaseDescription();
         // Hide the Loader
         document.getElementById('channel_list_loader').style.display = "none";
         let channel_list = document.getElementById("channel_list");
@@ -183,6 +189,25 @@ class ChannelList {
                 .on('pointerup', showPicker);
             //<rect class="color-transfer" cursor="pointer" stroke="#757575" fill="black" width="10" height="10" rx="2" ry="2" x="-5" y="4.725680443548387" transform="translate(65,0)"></rect>
             svgCol.style.display = "none";
+
+            let autoCol = document.createElement("div");
+            autoCol.classList.add("col-md-4");
+            autoCol.classList.add("ml-auto");
+            autoCol.classList.add("image-auto")
+            autoCol.setAttribute('id', "image-auto_" + column)
+            autoCol.classList.add("channel-col");
+            autoCol.classList.add("channel-svg-wrapper");
+            row.appendChild(autoCol);
+
+            let autoBtn = document.createElement("button");
+            autoBtn.classList.add('auto-btn');
+            autoBtn.setAttribute('id', "auto-btn_" + column);
+            autoBtn.textContent = "auto";
+            autoBtn.addEventListener("click", async function() { await self.auto_channel(column) });
+
+            autoCol.appendChild(autoBtn);
+            autoBtn.addEventListener("click", e => e.stopPropagation());
+            d3.select(autoCol).style('display', "none");
 
             let channelName = document.createElement("span");
             channelName.classList.add("channel-name");
@@ -296,6 +321,22 @@ class ChannelList {
         })
     }
 
+
+     async auto_channel(name) {
+        const self = this;
+
+        let fullName = self.dataLayer.getFullChannelName(name);
+        let packet = await this.dataLayer.getChannelGMM(fullName);
+        let vmin = Math.round(packet['vmin']);
+        let vmax = Math.round(packet['vmax']);
+        this.sliders.get(name).value([vmin, vmax]);
+
+        let channelIdx = imageChannels[fullName];
+        let defaultRange = self.dataLayer.imageBitRange;
+        this.rangeConnector[channelIdx] = [vmin / defaultRange[1], vmax / defaultRange[1]];
+    }
+
+
     /**
      * @function addDownloadEvents
      *  Adds event listeners to upload/download buttons
@@ -356,6 +397,7 @@ class ChannelList {
             d3.select(parent).classed("active", true);
             svgCol.style.display = "block";
             d3.select('div#channel-slider_' + name).style('display', "block")
+            d3.select('div#image-auto_' + name).style('display', "block");
 
             // Add channel
             this.selectChannel(name);
@@ -372,6 +414,7 @@ class ChannelList {
             d3.select(parent).classed("active", false);
             svgCol.style.display = "none";
             d3.select('div#channel-slider_' + name).style('display', "none")
+            d3.select('div#image-auto_' + name).style('display', "none");
 
             // Trigger viewer cleanse
             // this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, this.selections);
@@ -408,10 +451,14 @@ class ChannelList {
         const f = (d3.format('.2%'))
 
         var that = this;
+        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram']
+        let data_min = Math.round(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_min'])
+        let data_max = Math.round(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_max'])
+
         //add range slider row content
         var sliderSimple = d3.sliderBottom()
-            .min(d3.min(data))
-            .max(d3.max(data))
+            .min(data_min)
+            .max(data_max)
             .width(swidth - 75)//.tickFormat(d3.format("s"))
             .fill('orange')
             .on('onchange', val => {
@@ -426,7 +473,7 @@ class ChannelList {
               this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
             })
             .ticks(5)
-            .default(activeRange)
+            .default([data_min, data_max])
             .handle(
                 d3.symbol()
                     .type(d3.symbolCircle)
@@ -445,10 +492,38 @@ class ChannelList {
             .select('#channel-slider_' + name)
             .append('svg')
             .attr('class', 'svgslider')
+            .attr('id', 'channel-slider_svg_' + name)
             .attr('width', swidth)
-            .attr('height', 50)
+            .attr('height', 80)
             .append('g')
-            .attr('transform', 'translate(20,13)');
+            .attr('transform', 'translate(20,40)');
+
+        let xScale = d3.scaleLinear()
+            .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
+            .range([0, swidth - 73])
+
+        let yScale = d3.scaleLinear()
+            .domain([_.max(_.map(histogramData, e => e.y)), 0])
+            .range([0, 23])
+
+        let line = d3.line()
+            .x(d => {
+                return xScale(d.x)
+            })
+            .y(d => {
+                return yScale(d.y)
+            })
+            .curve(d3.curveMonotoneX)
+
+        gSimple.selectAll('.image_distribution_line')
+            .data([histogramData])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'image_distribution_line')
+            .attr('transform', 'translate(0,-31)')
+            .attr('fill', 'none')
+
         gSimple.call(sliderSimple);
 
         //slider value to be displayed closer to the slider than default
@@ -462,13 +537,13 @@ class ChannelList {
                     .attr("width", 50)
                     .attr("height", 40)
                     .attr('x', -25)
-                    .attr( 'y', -15)
+                    .attr( 'y', -17)
                     .style('padding',"10px")
                     .append("xhtml:body")
                       .attr('xmlns','http://www.w3.org/1999/xhtml')
                         .style('background', 'none')
                       .append('input')
-                        .attr( 'y', -15)
+                        .attr( 'y', -17)
                         .attr('id', 'slider-input' + name + i)
                         .attr('type', 'text')
                         .attr('class', 'input')
@@ -493,6 +568,70 @@ class ChannelList {
 
         return sliderSimple;
     };
+
+    async drawChannelGMM(name){
+        let fullname = this.dataLayer.getFullChannelName(name)
+        let packet = await this.dataLayer.getChannelGMM(fullname)
+
+        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram']
+        let channel_gmm1Data = packet['image_gmm_1']
+        let channel_gmm2Data = packet['image_gmm_2']
+        let channel_gmm3Data = packet['image_gmm_3']
+
+        let swidth = document.getElementById("channel_list").getBoundingClientRect().width
+
+        let xScale = d3.scaleLinear()
+            .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
+            .range([0, swidth - 73])
+
+        let yScale = d3.scaleLinear()
+            .domain([_.max(_.map(histogramData, e => e.y)), 0])
+            .range([0, 23])
+
+        let line = d3.line()
+            .x(d => {
+                return xScale(d.x)
+            })
+            .y(d => {
+                return yScale(d.y)
+            })
+            .curve(d3.curveMonotoneX)
+
+        let gSimple = d3.select('#channel-slider_svg_' + name + ' g')
+
+        gSimple.selectAll('.image_gmm1_line')
+            .data([channel_gmm1Data])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'gmm_line')
+            .attr('class', 'gmm_line_'+name)
+            .attr('transform', 'translate(0,-31)')
+            .attr('fill', 'none')
+            .attr('stroke', 'red')
+
+        gSimple.selectAll('.image_gmm2_line')
+            .data([channel_gmm2Data])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'gmm_line')
+            .attr('class', 'gmm_line_'+name)
+            .attr('transform', 'translate(0,-31)')
+            .attr('fill', 'none')
+            .attr('stroke', 'blue')
+
+        gSimple.selectAll('.image_gmm3_line')
+            .data([channel_gmm3Data])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'gmm_line')
+            .attr('class', 'gmm_line_'+name)
+            .attr('transform', 'translate(0,-31)')
+            .attr('fill', 'none')
+            .attr('stroke', 'green')
+    }
 
     /**
      * move the slider handles and input fields so that input fields don't overlap when handles are close

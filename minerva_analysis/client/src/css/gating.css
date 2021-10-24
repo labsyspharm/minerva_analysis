@@ -24,7 +24,7 @@
 #csv_gating_list .active {
     background-color: #bfbcbc;
     border-color: #bfbcbc;
-    height: 70px;
+    height: 90px;
 }
 
 #csv_gating_list .list-group {
@@ -35,9 +35,16 @@
     margin-left: 33px;
 }
 
+.auto-btn {
+    float: right;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: 1px;
+}
+
 .distribution_line {
     stroke: rgba(130, 130, 130, 0.5);
-    stroke-width: 2px;
+    stroke-width: 4px;
     fill: none;
 }
 
@@ -71,8 +78,4 @@ line.track {
 
 #arrow-upload-form, #arrow-upload-form * {
     display: none
-}
-
-.auto-btn {
-    float: right
 }

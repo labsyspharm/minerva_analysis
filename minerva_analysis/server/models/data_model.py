@@ -21,12 +21,14 @@ from dask import dataframe as dd
 import cv2
 from sklearn.mixture import GaussianMixture
 from scipy.stats import norm
+from skimage.measure import block_reduce
 
 ball_tree = None
 database = None
 source = None
 config = None
 seg = None
+zarray = None
 channels = None
 metadata = None
 
@@ -40,6 +42,7 @@ def load_datasource(datasource_name, reload=False):
     global source
     global config
     global seg
+    global zarray
     global channels
     global metadata
     if source is datasource_name and datasource is not None and reload is False:
@@ -67,6 +70,18 @@ def load_datasource(datasource_name, reload=False):
     except:
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
+
+    level_series = next(
+        level for level in reversed(channel_io.series[0].levels)
+        if all(d >= 200 for d in level.shape[1:])
+    )
+    zarray = zarr.open(level_series.aszarr())
+    if zarray.shape[1] > 400 or zarray.shape[2] > 400:
+        x_reduce = zarray.shape[1] // 200
+        y_reduce = zarray.shape[2] // 200
+        reduce = np.min([x_reduce, y_reduce])
+        zarray = block_reduce(zarray, (1, reduce, reduce), np.mean)
+
     print("Data loading done.")
 
 
@@ -86,6 +101,16 @@ def load_config(datasource_name):
         config[datasource_name]['featureData'][0]['src'] = str(Path(csvPath))
         if original != config[datasource_name]['featureData'][0]['src']:
             updated = True
+
+        csvPath = Path(config[datasource_name]['featureData'][0]['src'])
+        datasource = pd.read_csv(csvPath)
+        listImageData = [d['fullname'] for d in config[datasource_name]['imageData'] if d['fullname'] != 'Area']
+        datasourceImageData = datasource[[*listImageData]]
+        if np.mean(np.mean(datasourceImageData)) < 15:
+            if "transformData" not in config[datasource_name]["featureData"][0]:
+                config[datasource_name]["featureData"][0]["transformData"] = True
+                updated = True
+
         try:
             original = config[datasource_name]['segmentation']
             config[datasource_name]['segmentation'] = original.replace('static/data', 'minerva_analysis/data')
@@ -593,6 +618,7 @@ def get_datasource_description(datasource_name):
     global datasource
     global source
     global ball_tree
+    global config
 
     # Load if not loaded
     if datasource_name != source:
@@ -636,8 +662,109 @@ def get_datasource_description(datasource_name):
         description[column]['gmm_1'] = dat_gmm1
         description[column]['gmm_2'] = dat_gmm2
 
+    list_channels = config[datasource_name]['imageData']
+    image_layer = 0
+    for channel in list_channels:
+        if channel['name'] != 'Area':
+            fullName = channel['fullname']
+
+            image_data = zarray[image_layer]
+            [hist, bin_edges] = np.histogram(image_data.flatten(), bins=50, density=True)
+            midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+            description[fullName]['image_histogram'] = {}
+
+            dat = []
+            for i in range(len(hist)):
+                obj = {}
+                obj['x'] = midpoints[i]
+                obj['y'] = hist[i]
+                dat.append(obj)
+
+            description[fullName]['image_histogram'] = dat
+            description[fullName]['image_min'] = np.min(image_data)
+            description[fullName]['image_max'] = np.max(image_data)
+
+            image_layer += 1
+        else:
+            continue
+
     return description
 
+
+def get_channel_gmm(channel_name, datasource_name):
+    global datasource
+    global source
+    global ball_tree
+    global config
+
+    packet_gmm = {}
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+
+    image_channelIdx = next(index for (index, d) in enumerate(config[datasource_name]['imageData']) if d["fullname"] == channel_name) - 1
+    image_data = zarray[image_channelIdx]
+    [hist, bin_edges] = np.histogram(image_data.flatten(), bins=50, density=True)
+    midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+
+    gmm = GaussianMixture(3, max_iter=1000, tol=1e-6)
+    gmm.fit(image_data.reshape((-1, 1)))
+
+    means = gmm.means_[:, 0]
+    covars = gmm.covariances_[:, 0, 0]
+    weights = gmm.weights_
+    i0, i1, i2 = np.argsort(means)
+
+    pdf_gmm1 = weights[i0] * norm.pdf(midpoints, means[i0], np.sqrt(covars[i0]))
+    pdf_gmm2 = weights[i1] * norm.pdf(midpoints, means[i1], np.sqrt(covars[i1]))
+    pdf_gmm3 = weights[i2] * norm.pdf(midpoints, means[i2], np.sqrt(covars[i2]))
+
+    dat_gmm1 = []
+    dat_gmm2 = []
+    dat_gmm3 = []
+    for i in range(len(hist)):
+        obj1 = {}
+        obj1['x'] = midpoints[i]
+        obj1['y'] = pdf_gmm1[i]
+        dat_gmm1.append(obj1)
+
+        obj2 = {}
+        obj2['x'] = midpoints[i]
+        obj2['y'] = pdf_gmm2[i]
+        dat_gmm2.append(obj2)
+
+        obj3 = {}
+        obj3['x'] = midpoints[i]
+        obj3['y'] = pdf_gmm3[i]
+        dat_gmm3.append(obj3)
+
+    packet_gmm['image_gmm_1'] = dat_gmm1
+    packet_gmm['image_gmm_2'] = dat_gmm2
+    packet_gmm['image_gmm_3'] = dat_gmm3
+
+    yi, xi = np.floor(np.linspace(0, image_data.shape, 200, endpoint=False)).astype(int).T
+    # Slice one dimension at a time. Should generally use less memory than a meshgrid.
+    image_data = image_data[yi]
+    image_data = image_data[:, xi]
+    img_log = np.log(image_data[image_data > 0])
+    gmm = GaussianMixture(3, max_iter=1000, tol=1e-6)
+    gmm.fit(img_log.reshape((-1, 1)))
+
+    means = gmm.means_[:, 0]
+    covars = gmm.covariances_[:, 0, 0]
+    weights = gmm.weights_
+    i0, i1, i2 = np.argsort(means)
+
+    vmin, vmax = means[[i1, i2]] + covars[[i1, i2]] ** 0.5 * 2
+    if vmin >= means[i2]:
+        vmin = means[i2] + covars[i2] ** 0.5 * -1
+    vmin = max(np.exp(vmin), image_data.min(), 0)
+    vmax = min(np.exp(vmax), image_data.max())
+    packet_gmm['vmin'] = vmin
+    packet_gmm['vmax'] = vmax
+
+    return packet_gmm
 
 def generate_zarr_png(datasource_name, channel, level, tile):
     if config is None:

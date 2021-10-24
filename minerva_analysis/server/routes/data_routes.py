@@ -126,6 +126,14 @@ def get_database_description():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_channel_gmm', methods=['GET'])
+def get_channel_gmm():
+    channel = request.args.get('channel')
+    datasource = request.args.get('datasource')
+    resp = data_model.get_channel_gmm(channel, datasource)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/upload_gates', methods=['POST'])
 def upload_gates():
     file = request.files['file']

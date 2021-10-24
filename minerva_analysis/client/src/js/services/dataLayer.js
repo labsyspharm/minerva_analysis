@@ -333,6 +333,19 @@ class DataLayer {
         }
     }
 
+    async getChannelGMM(channel) {
+        try {
+            let response = await fetch('/get_channel_gmm?' + new URLSearchParams({
+                channel: channel,
+                datasource: datasource
+            }))
+            let packet_gmm = await response.json();
+            return packet_gmm;
+        } catch (e) {
+            console.log("Error Getting Channel GMM", e);
+        }
+    }
+
     async getChannelCellIds(sels) {
         try {
             let response = await fetch('/get_channel_cell_ids?' + new URLSearchParams({

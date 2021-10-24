@@ -164,7 +164,7 @@ class CSVGatingList {
             autoBtn.addEventListener("click", function() { self.autoGate(fullName) });
 
             autoCol.appendChild(autoBtn);
-            autoCol.addEventListener("click", e => e.stopPropagation());
+            autoBtn.addEventListener("click", e => e.stopPropagation());
             d3.select(autoCol).style('display', "none");
         });
 
@@ -566,16 +566,26 @@ class CSVGatingList {
         // If no data
         if (!data) return
 
+        let data_min
+        let data_max
+        if (that.dataLayer.isTransformed()) {
+            data_min = d3.min(data)
+            data_max = d3.max(data)
+        } else {
+            data_min = Math.round(d3.min(data))
+            data_max = Math.round(d3.max(data))
+        }
+
         let f = d3.format("d")
         //add range slider row content
         var sliderSimple = d3.sliderBottom()
-            .min(parseInt(d3.min(data)))
-            .max(parseInt(d3.max(data)))
+            .min(data_min)
+            .max(data_max)
             .width(swidth - 75)
             .tickFormat(f)
             .fill('orange')
             .ticks(1)
-            .default(activeRange)
+            .default([data_min, data_max])
             .handle(
                 d3.symbol()
                     .type(d3.symbolCircle)
@@ -614,18 +624,18 @@ class CSVGatingList {
             .attr('class', 'svgslider')
             .attr('id', '#csv_gating-slider_svg_' + name)
             .attr('width', swidth)
-            .attr('height', 50)
+            .attr('height', 80)
             .append('g')
-            .attr('transform', 'translate(20,13)');
+            .attr('transform', 'translate(20,40)');
 
 
         let xScale = d3.scaleLinear()
             .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
-            .range([0, swidth - 60])
+            .range([0, swidth - 73])
 
         let yScale = d3.scaleLinear()
             .domain([_.max(_.map(histogramData, e => e.y)), 0])
-            .range([0, 10])
+            .range([0, 25])
 
         let line = d3.line()
             .x(d => {
@@ -642,7 +652,7 @@ class CSVGatingList {
             .append('path')
             .attr('d', line)
             .attr('class', 'distribution_line')
-            .attr('transform', 'translate(0,-12)')
+            .attr('transform', 'translate(0,-31)')
             .attr('fill', 'none')
 
         gSimple.selectAll('.gmm1_line')
@@ -651,7 +661,7 @@ class CSVGatingList {
             .append('path')
             .attr('d', line)
             .attr('class', 'gmm_line')
-            .attr('transform', 'translate(0,-12)')
+            .attr('transform', 'translate(0,-31)')
             .attr('fill', 'none')
             .attr('stroke', 'blue')
 
@@ -661,7 +671,7 @@ class CSVGatingList {
             .append('path')
             .attr('d', line)
             .attr('class', 'gmm_line')
-            .attr('transform', 'translate(0,-12)')
+            .attr('transform', 'translate(0,-31)')
             .attr('fill', 'none')
             .attr('stroke', 'red')
 
@@ -679,13 +689,13 @@ class CSVGatingList {
                     .attr("width", 50)
                     .attr("height", 40)
                     .attr('x', -25)
-                    .attr( 'y', -15)
+                    .attr( 'y', -17)
                     .style('padding',"10px")
                     .append("xhtml:body")
                       .attr('xmlns','http://www.w3.org/1999/xhtml')
                         .style('background', 'none')
                       .append('input')
-                        .attr( 'y', -15)
+                        .attr( 'y', -17)
                         .attr('id', 'gating_slider-input' + name + i)
                         .attr('type', 'text')
                         .attr('class', 'input')
