@@ -29,7 +29,7 @@ export class ViewerOverlay {
     init() {
 
         // Add container div
-        const osd = d3.select('#openseadragon');
+        const osd = d3.select('#openseadragon').select('.openseadragon-canvas');
         this.viewerOverlayEl = osd.append('div')
             .attr('id', 'viewerOverlay')
             .style('position', 'absolute')

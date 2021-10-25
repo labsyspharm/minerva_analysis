@@ -128,6 +128,10 @@ class ImageViewer {
         controlsAnchor.style.right = '5px';
         controlsAnchor.style.bottom = '5px';
 
+        /************************************************************************************** Create viewer overlay */
+
+        this.viewer.overlay = new ViewerOverlay(this);
+
         /************************************************************************************* Lensing Implementation */
 
             // Get lensingFilters data
@@ -185,10 +189,6 @@ class ImageViewer {
             });
 
         }).catch(err => console.log(err));
-
-        /************************************************************************************** Create viewer overlay */
-
-        this.viewer.overlay = new ViewerOverlay(this);
 
         /************************************************************************************************* Use webgl  */
 

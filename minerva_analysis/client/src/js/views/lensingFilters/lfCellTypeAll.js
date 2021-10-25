@@ -179,7 +179,6 @@ export class LfCellTypeAll {
                                         });
                                     }
                                 });
-                                console.log(newRad, darr.length, this.data.length)
 
                                 //update cell type structure (we keep to original map as reference)
                                 this.vars.cellCount = darr.length;

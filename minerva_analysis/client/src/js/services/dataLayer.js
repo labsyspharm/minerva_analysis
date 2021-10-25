@@ -162,7 +162,6 @@ class DataLayer {
                 datasource: datasource
             }))
             let response_data = await response.json();
-            console.log(response_data)
             return response_data;
         } catch (e) {
             console.log("Error Getting Phenotypes", e);

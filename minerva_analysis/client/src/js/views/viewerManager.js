@@ -42,7 +42,6 @@ export class ViewerManager {
 
         // configure webgl
         this.configWebgl();
-        
 
 
     }
@@ -233,6 +232,7 @@ export class ViewerManager {
         });
 
         seaGL.addHandler('tile-loaded', (callback, e) => {
+
             var decoder = new Promise(function (resolve, reject) {
                 try {
                     const group = e.tile.url.split("/");
@@ -260,7 +260,9 @@ export class ViewerManager {
                     // return callback(e);
                 }
                 // Notify openseadragon when decoded
-                decoder.then(e.getCompletionCallback())
+                decoder.then(() => {
+                    e.getCompletionCallback()
+                })
             });
         });
 
@@ -269,6 +271,11 @@ export class ViewerManager {
             let count = _.size(e.tiledImage._tileCache._tilesLoaded);
             e.tiledImage._tileCache._imagesLoadedCount = count;
 
+            // Trigger redraw in lensing FIXME
+            if (this.imageViewer.viewer.lensing && this.viewerName === 'auxi' && e.tiledImage._tilesLoading === 0) {
+                this.imageViewer.viewer.lensing.configs.counterException = true;
+                this.imageViewer.viewer.lensing.manage_lens_update();
+            }
         })
 
         this.viewer.addHandler('tile-unloaded', (e) => {

@@ -324,6 +324,10 @@ export class LfMultiModal {
                                     // Add channels
                                     this.imageViewer.viewerManagerVAuxi.channelAdd(index);
                                 });
+
+                                // Mark others as not loaded
+                                this.vars.mmAvailable.forEach(d => d.loaded = false);
+
                                 // Mark as loaded
                                 selMM.loaded = true;
                             }
