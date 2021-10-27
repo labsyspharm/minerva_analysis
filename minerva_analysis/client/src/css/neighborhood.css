@@ -60,6 +60,11 @@
     transition-duration: 0.5s;
 }
 
+#expand_wrapper {
+    transition-property: right;
+    transition-duration: 0.5s;
+}
+
 
 .viewer_col {
     margin: 0;
@@ -68,7 +73,7 @@
 }
 
 .plot-label {
-    font-size: 16px;
+    font-size: 1.2rem;
     color: rgba(255, 255, 255, 0.95);
     font-weight: 500;
 }
@@ -196,7 +201,9 @@
 }
 
 #search-row {
-    height: 15vh;
+    padding-left: 10px;
+    padding-right: 15px;
+    margin: 0;
 }
 
 .full_height {
@@ -206,12 +213,13 @@
 
 #expand_icon {
     color: #3870ce;
-    font-size: 3rem;
+    font-size: 1rem;
+    font-weight: bolder;
     cursor: pointer;
 }
 
 #neighborhood_table .table-darker {
-    background-color: #505050 !important;
+    background-color: #757575 !important;
 }
 
 #custom_cluster_number {
@@ -221,4 +229,17 @@
 
 #custom_cluster_submit {
     padding: 3px;
+}
+
+
+.neighborhood-row, #neighborhood_table_header, #neighborhood_table_header tr, #neighborhood_table tbody, #neighborhood_table_card {
+    width: 100%;
+}
+
+.lowRow1 {
+    width: 100%;
+}
+
+.openseadragon-container {
+    border-top-right-radius: 50px;
 }

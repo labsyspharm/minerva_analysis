@@ -149,13 +149,19 @@ body {
 }
 
 #channel_list {
-    height: 70vh;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    margin-top: 35px;
+    height: 40vh;
+    margin-bottom: 5px;
 }
 
 #search_header {
     color: rgba(255, 255, 255, 0.95);
-    font-size: 1rem;
+    font-size: 1.2rem;
+}
+
+#search_wrapper .col {
+    margin: 0;
+    padding: 0;
 }
 
 #upload-container {
@@ -169,8 +175,7 @@ body {
 }
 
 #channel_list .active {
-    background-color: #bfbcbc;
-    border-color: #bfbcbc;
+    background-color: #757575;
 }
 
 #channel_list .list-group {
@@ -546,13 +551,17 @@ polygon:hover {
     width: 24px;
 }
 
-#neighborhood_icon, #neighborhood_composition_icon {
+#neighborhood_icon, #neighborhood_composition_icon, #save_neighborhood_icon {
     fill: none;
     color: #3870ce;
-    font-size: 4rem;
-    margin-top: 10px;
+    font-size: 2.2rem;
     stroke-miterlimit: 10;
     cursor: pointer;
+}
+
+
+#neighborhood_composition_icon {
+    margin-top: 10px;
 }
 
 #neighborhood_icon:hover, #neighborhood_composition_icon:hover, #expand_icon:hover {
@@ -560,7 +569,7 @@ polygon:hover {
 }
 
 .neighborhood_similarity_label {
-    font-size: 8pt;
+    font-size: 9pt;
     color: white;
     vertical-align: middle;
     display: table-cell;
@@ -568,7 +577,7 @@ polygon:hover {
 }
 
 #similarity_val {
-    font-size: 8pt;
+    font-size: 9pt;
     color: orange;
     text-align: center;
     vertical-align: middle;
@@ -578,7 +587,7 @@ polygon:hover {
 }
 
 #neighborhood_current_selection {
-    font-size: 8pt;
+    font-size: 9pt;
     color: orange;
     text-align: center;
     vertical-align: middle;
@@ -613,27 +622,33 @@ polygon:hover {
 }
 
 #neighborhood_table_card {
-    background-color: black;
-    display: none;
+    margin-top: 35px;
+    background-color: transparent;
+    /*display: none;*/
     padding: 0;
-    height: 20vh;
-    max-height: 20vh;
-    min-height: 20vh;
+    height: 33vh;
+    max-height: 33vh;
+    min-height: 33vh;
     overflow-y: scroll;
 }
 
 
 #neighborhood_table {
     margin-bottom: 5px;
-    background: black;
+    width: 95%;
 }
 
 
 #neighborhood_table td, th {
-    padding: 0 10px;
-    font-size: 0.5rem;
+    padding: .25rem 0.5rem;
+    font-size: 0.6rem;
     color: white;
     border: none;
+}
+
+
+.name-col span {
+    padding-left: 10px;
 }
 
 .actions-column * {
@@ -650,12 +665,13 @@ polygon:hover {
     padding: 0 3px !important;
 }
 
-.id-col, .name-col, .source-col {
-    padding: 0 !important;
-}
+/*.id-col, .name-col, .source-col {*/
+/*    padding: 0 !important;*/
+/*}*/
 
 #neighborhood_table_header th {
-    padding: 0;
+    padding-top: 0;
+    padding-bottom: 0;
     border: none;
 }
 
@@ -773,4 +789,10 @@ polygon:hover {
 
 #custom_cluster {
     visibility: hidden;
+}
+
+#comparison_views_label {
+    margin-left: 5px;
+    color: white;
+    font-size: 1rem;
 }

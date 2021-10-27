@@ -8,7 +8,7 @@ class NeighborhoodTable {
         this.selectedRowName = null;
         this.neighborhoods = null;
         this.enabled = false;
-        this.saveButton = document.getElementById('save_neighborhood_button');
+        this.saveButton = document.getElementById('save_neighborhood_icon');
         this.saveButton.addEventListener('click', this.saveNeighborhood.bind(this));
     }
 

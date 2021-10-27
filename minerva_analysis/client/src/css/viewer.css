@@ -58,15 +58,55 @@ body {
 }
 
 #channel_list_wrapper {
-    background-color: rgba(0, 0, 0, 0);
-    left: 0.25vw;
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    left: 1vw;
     position: absolute;
-    top: 2vh;
-    width: 13vw;
+    top: 10vh;
+    width: 16vw;
     z-index: 101;
 }
 
-#lowRow1 {
+#search_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    padding: 5px;
+    left: 1vw;
+    position: absolute;
+    top: 1vh;
+    width: 20vw;
+    z-index: 101;
+    height: 8vh;
+}
+
+#neighborhood_list_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    left: 1vw;
+    position: absolute;
+    top: 56vh;
+    width: 16vw;
+    z-index: 101;
+}
+
+#expand_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    padding: 5px;
+    position: absolute;
+    bottom: 1vh;
+    width: 8vw;
+    z-index: 101;
+}
+
+.expand_wrapper_right {
+    right: 0.5vw;
+}
+.expand_wrapper_left {
+    right: 20.5vw;
+}
+
+.lowRow1 {
     color: rgba(255, 255, 255, 0.75);
     position: relative;
 }
@@ -77,20 +117,25 @@ body {
 }
 
 #selected-channels-header-div {
+    margin-top: 5px;
+    margin-right: 10px;
     position: absolute;
     right: 0;
-    top: -20px;
+}
+
+#neighborhood_icon {
+    margin-top: 10px;
 }
 
 #channel-container-header-div {
+    margin-top: 10px;
+    margin-left: 10px;
     position: absolute;
     left: 0;
-    top: -20px;
 }
 
 .list {
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    font-size: 6pt;
+    font-size: 0.6rem;
     height: 82.5vh;
     overflow-y: scroll;
     position: relative;
@@ -103,7 +148,7 @@ body {
 }
 
 .list .list-group-item {
-    background-color: rgba(0, 0, 0, 0.75);
+    background-color: transparent;
     border: 0;
     color: rgba(255, 255, 255, 1);
     padding: 5px 2px 3px 2px;
@@ -182,4 +227,8 @@ body {
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+#neighborhood_table_header {
+    padding: 5px;
 }

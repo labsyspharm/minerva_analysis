@@ -212,26 +212,29 @@ function displayNeighborhood(selectedCell, neighborhood) {
 function showHideRHS() {
     let osd_wrapper = document.getElementById('openseadragon_wrapper');
     let neighborhood_wrapper = document.getElementById('neighborhood_wrapper');
-    let table = document.getElementById('neighborhood_table_card');
+    let expand_wrapper = document.getElementById('expand_wrapper');
+    let expand_icon = document.getElementById('expand_icon');
     if (osd_wrapper.classList.contains("openseadragon_wrapper_large")) {
         osd_wrapper.classList.remove("openseadragon_wrapper_large");
         osd_wrapper.classList.add("openseadragon_wrapper_small");
         neighborhood_wrapper.classList.remove("neighborhood_wrapper_small");
         neighborhood_wrapper.classList.add("neighborhood_wrapper_large");
-        table.style.display = "block";
+        expand_wrapper.classList.remove('expand_wrapper_right');
+        expand_wrapper.classList.add('expand_wrapper_left');
+        expand_icon.innerText = 'keyboard_double_arrow_right';
     } else {
         osd_wrapper.classList.add("openseadragon_wrapper_large");
         osd_wrapper.classList.remove("openseadragon_wrapper_small");
         neighborhood_wrapper.classList.add("neighborhood_wrapper_small");
         neighborhood_wrapper.classList.remove("neighborhood_wrapper_large");
-        table.style.display = "none";
+        expand_wrapper.classList.remove('expand_wrapper_left');
+        expand_wrapper.classList.add('expand_wrapper_right');
+        expand_icon.innerText = 'keyboard_double_arrow_left';
     }
 }
 
 function setupColExpand() {
     document.getElementById('expand_icon').addEventListener("click", () => {
-        console.log('click');
         showHideRHS();
-
     })
 }

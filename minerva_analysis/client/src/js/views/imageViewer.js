@@ -103,7 +103,14 @@ class ImageViewer {
             compositeOperation: 'lighter',
             preload: false,
             homeFillsViewer: true,
-            visibilityRatio: 1.0
+            visibilityRatio: 1.0,
+            viewportMargins: {
+                top: 0,
+                left: 250,
+                right: 0,
+                bottom: 0
+
+            }
         };
 
         // Instantiate viewer
