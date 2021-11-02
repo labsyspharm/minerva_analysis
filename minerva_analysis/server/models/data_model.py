@@ -632,12 +632,10 @@ def get_datasource_description(datasource_name):
 
         gmm = GaussianMixture(n_components=2)
         gmm.fit(column_data.reshape((-1, 1)))
+        i0, i1 = np.argsort(gmm.means_[:,0])
         description[column]['gate'] = np.mean(gmm.means_)
-        description[column]['gmm_means'] = gmm.means_
-        description[column]['gmm_std'] = np.sqrt(gmm.covariances_)
-        description[column]['gmm_weights'] = gmm.weights_
-        pdf_gmm1 = [gmm.weights_[0] * norm.pdf(midpoints, gmm.means_[0], np.sqrt(gmm.covariances_[0]))][0][0]
-        pdf_gmm2 = [gmm.weights_[1] * norm.pdf(midpoints, gmm.means_[1], np.sqrt(gmm.covariances_[1]))][0][0]
+        pdf_gmm1 = [gmm.weights_[i0] * norm.pdf(midpoints, gmm.means_[i0], np.sqrt(gmm.covariances_[i0]))][0][0]
+        pdf_gmm2 = [gmm.weights_[i1] * norm.pdf(midpoints, gmm.means_[i1], np.sqrt(gmm.covariances_[i1]))][0][0]
 
         dat = []
         dat_gmm1 = []
@@ -669,7 +667,8 @@ def get_datasource_description(datasource_name):
             fullName = channel['fullname']
 
             image_data = zarray[image_layer]
-            [hist, bin_edges] = np.histogram(image_data.flatten(), bins=50, density=True)
+            img_log = np.log(image_data[image_data > 0])
+            [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
             midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
             description[fullName]['image_histogram'] = {}
 
@@ -681,8 +680,8 @@ def get_datasource_description(datasource_name):
                 dat.append(obj)
 
             description[fullName]['image_histogram'] = dat
-            description[fullName]['image_min'] = np.min(image_data)
-            description[fullName]['image_max'] = np.max(image_data)
+            description[fullName]['image_min'] = np.min(img_log)
+            description[fullName]['image_max'] = np.max(img_log)
 
             image_layer += 1
         else:
@@ -703,18 +702,32 @@ def get_channel_gmm(channel_name, datasource_name):
     if datasource_name != source:
         load_ball_tree(datasource_name)
 
-    image_channelIdx = next(index for (index, d) in enumerate(config[datasource_name]['imageData']) if d["fullname"] == channel_name) - 1
+    image_channelIdx = next(
+        index for (index, d) in enumerate(config[datasource_name]['imageData']) if d["fullname"] == channel_name) - 1
     image_data = zarray[image_channelIdx]
-    [hist, bin_edges] = np.histogram(image_data.flatten(), bins=50, density=True)
-    midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
-
+    yi, xi = np.floor(np.linspace(0, image_data.shape, 200, endpoint=False)).astype(int).T
+    # Slice one dimension at a time. Should generally use less memory than a meshgrid.
+    image_data = image_data[yi]
+    image_data = image_data[:, xi]
+    img_log = np.log(image_data[image_data > 0])
     gmm = GaussianMixture(3, max_iter=1000, tol=1e-6)
-    gmm.fit(image_data.reshape((-1, 1)))
+    gmm.fit(img_log.reshape((-1, 1)))
 
     means = gmm.means_[:, 0]
     covars = gmm.covariances_[:, 0, 0]
     weights = gmm.weights_
     i0, i1, i2 = np.argsort(means)
+
+    vmin, vmax = means[[i1, i2]] + covars[[i1, i2]] ** 0.5 * 2
+    if vmin >= means[i2]:
+        vmin = means[i2] + covars[i2] ** 0.5 * -1
+    vmin = max(vmin, img_log.min(), 0)
+    vmax = min(vmax, img_log.max())
+    packet_gmm['vmin'] = vmin
+    packet_gmm['vmax'] = vmax
+
+    [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
+    midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
 
     pdf_gmm1 = weights[i0] * norm.pdf(midpoints, means[i0], np.sqrt(covars[i0]))
     pdf_gmm2 = weights[i1] * norm.pdf(midpoints, means[i1], np.sqrt(covars[i1]))
@@ -742,27 +755,6 @@ def get_channel_gmm(channel_name, datasource_name):
     packet_gmm['image_gmm_1'] = dat_gmm1
     packet_gmm['image_gmm_2'] = dat_gmm2
     packet_gmm['image_gmm_3'] = dat_gmm3
-
-    yi, xi = np.floor(np.linspace(0, image_data.shape, 200, endpoint=False)).astype(int).T
-    # Slice one dimension at a time. Should generally use less memory than a meshgrid.
-    image_data = image_data[yi]
-    image_data = image_data[:, xi]
-    img_log = np.log(image_data[image_data > 0])
-    gmm = GaussianMixture(3, max_iter=1000, tol=1e-6)
-    gmm.fit(img_log.reshape((-1, 1)))
-
-    means = gmm.means_[:, 0]
-    covars = gmm.covariances_[:, 0, 0]
-    weights = gmm.weights_
-    i0, i1, i2 = np.argsort(means)
-
-    vmin, vmax = means[[i1, i2]] + covars[[i1, i2]] ** 0.5 * 2
-    if vmin >= means[i2]:
-        vmin = means[i2] + covars[i2] ** 0.5 * -1
-    vmin = max(np.exp(vmin), image_data.min(), 0)
-    vmax = min(np.exp(vmax), image_data.max())
-    packet_gmm['vmin'] = vmin
-    packet_gmm['vmax'] = vmax
 
     return packet_gmm
 

@@ -327,13 +327,13 @@ class ChannelList {
 
         let fullName = self.dataLayer.getFullChannelName(name);
         let packet = await this.dataLayer.getChannelGMM(fullName);
-        let vmin = parseInt(packet['vmin']);
-        let vmax = parseInt(packet['vmax']);
+        let vmin = packet['vmin'];
+        let vmax = packet['vmax'];
         this.sliders.get(name).value([vmin, vmax]);
 
         let channelIdx = imageChannels[fullName];
         let defaultRange = self.dataLayer.imageBitRange;
-        this.rangeConnector[channelIdx] = [vmin / defaultRange[1], vmax / defaultRange[1]];
+        this.rangeConnector[channelIdx] = [Math.round(Math.exp(vmin)) / defaultRange[1], Math.round(Math.exp(vmax)) / defaultRange[1]];
     }
 
 
@@ -452,8 +452,8 @@ class ChannelList {
 
         var that = this;
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram']
-        let data_min = parseInt(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_min'])
-        let data_max = parseInt(this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_max'])
+        let data_min = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_min']
+        let data_max = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_max']
 
         //add range slider row content
         var sliderSimple = d3.sliderBottom()
@@ -463,13 +463,14 @@ class ChannelList {
             .fill('orange')
             .on('onchange', val => {
               // d3.select('p#value-range').text(val.map(d3.format('.2%')).join('-'));
-              d3.select('#slider-input' + name + 0).attr('value', Math.round(val[0]));
-              d3.select('#slider-input' + name + 0).property('value', Math.round(val[0]));
-              d3.select('#slider-input' + name + 1).attr('value', Math.round(val[1]));
-              d3.select('#slider-input' + name + 1).property('value', Math.round(val[1]));
+              d3.select('#slider-input' + name + 0).attr('value', val[0]);
+              d3.select('#slider-input' + name + 0).property('value', val[0]);
+              d3.select('#slider-input' + name + 1).attr('value', val[1]);
+              d3.select('#slider-input' + name + 1).property('value', val[1]);
               // sliderSimple.silentValue([val[0], val[1]]);
               that.moveSliderHandles(sliderSimple, val, name);
-              let packet = {name: name, dataRange: val};
+              let packet_val = [Math.round(Math.exp(val[0])), Math.round(Math.exp(val[1]))]
+              let packet = {name: name, dataRange: packet_val};
               this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
             })
             .ticks(5)
@@ -561,7 +562,8 @@ class ChannelList {
               handleVals[d.index] = val;
               that.moveSliderHandles(sliderSimple, handleVals, name)
 
-              let packet = {name: name, dataRange: handleVals};
+              let packetHandleVals = [Math.round(Math.exp(handleVals[0])), Math.round(Math.exp(handleVals[1]))]
+              let packet = {name: name, dataRange: packetHandleVals};
               that.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
           }
         })
@@ -608,7 +610,7 @@ class ChannelList {
             .attr('class', 'gmm_line_'+name)
             .attr('transform', 'translate(0,-31)')
             .attr('fill', 'none')
-            .attr('stroke', 'red')
+            .attr('stroke', 'green')
 
         gSimple.selectAll('.image_gmm2_line')
             .data([channel_gmm2Data])
@@ -630,7 +632,7 @@ class ChannelList {
             .attr('class', 'gmm_line_'+name)
             .attr('transform', 'translate(0,-31)')
             .attr('fill', 'none')
-            .attr('stroke', 'green')
+            .attr('stroke', 'red')
     }
 
     /**
@@ -641,7 +643,7 @@ class ChannelList {
      */
     moveSliderHandles(slider, valArray, name){
         slider.silentValue(valArray);
-        if (valArray[1] - valArray[0] < 10000){
+        if (valArray[1] - valArray[0] < 0.41){
             console.log('slider handles overlap..do something');
             d3.select('#foreignObject_'  + name + 1).attr('x', 5);
         }else{
