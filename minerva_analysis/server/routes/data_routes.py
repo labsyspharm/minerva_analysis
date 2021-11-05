@@ -211,10 +211,12 @@ def get_datasource_description():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_heatmap_data', methods=['GET'])
+@app.route('/get_heatmap_data', methods=['POST'])
 def get_heatmap_data():
-    datasource = request.args.get('datasource')
-    resp = data_model.get_spearmans_correlation(datasource)
+    post_data = json.loads(request.data)
+    selection_ids = post_data['selectionIds']
+    datasource = post_data['datasource']
+    resp = data_model.get_spearmans_correlation(datasource, selection_ids)
     return serialize_and_submit_json(resp)
 
 

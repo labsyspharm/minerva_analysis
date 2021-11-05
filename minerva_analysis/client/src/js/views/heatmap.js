@@ -1,13 +1,14 @@
 // Via https://www.d3-graph-gallery.com/graph/heatmap_style.html
 class Heatmap {
-    constructor(id, dataLayer) {
+    constructor(id, dataLayer, plotName) {
         this.id = id;
         this.dataLayer = dataLayer;
+        this.plotName = plotName;
     }
 
     init() {
         const self = this;
-        return self.dataLayer.getHeatmapData()
+        return self.dataLayer.getHeatmapData(self.plotName)
             .then(data => {
                 self.visData = []
                 _.each(data, (els, i) => {
@@ -27,9 +28,9 @@ class Heatmap {
     draw() {
         const self = this;
         // set the dimensions and margins of the graph
-        const margin = {top: 100, right: 100, bottom: 160, left: 160},
-            width = 600 - margin.left - margin.right,
-            height = 600 - margin.top - margin.bottom;
+        const margin = {top: 0, right: 0, bottom: 120, left: 120},
+            width = document.getElementById(self.id).clientWidth - margin.left - margin.right,
+            height = document.getElementById(self.id).clientHeight - margin.top - margin.bottom;
 
         // create a tooltip
         const tooltip = d3.select(`#${self.id}`)
@@ -66,7 +67,9 @@ class Heatmap {
             .attr("dx", "-.8em")
             .attr("dy", ".15em")
             .attr("font-size", "0.6rem")
+            .attr("fill", "white")
             .attr("transform", "rotate(-90)");
+
 
         // Build Y scales and axis:
         let y = d3.scaleBand()
@@ -76,6 +79,10 @@ class Heatmap {
         svg.append("g")
             .style("font-size", "0.6rem")
             .call(d3.axisLeft(y).tickSize(0))
+            .selectAll("text")
+            .attr("font-size", "0.6rem")
+            .attr("fill", "white");
+
         //Remove Axis Lines
 
 
@@ -91,44 +98,68 @@ class Heatmap {
             .enter()
             .append("rect")
             .attr("x", function (d) {
-                return x(d.row)
+                if (d.row === d.col) {
+                    return x(d.row) + 0.5;
+                } else {
+                    return x(d.row);
+                }
             })
             .attr("y", function (d) {
-                return y(d.col)
+                if (d.row === d.col) {
+                    return y(d.col) + 0.5;
+                } else {
+                    return y(d.col);
+                }
             })
-            .attr("rx", 4)
-            .attr("ry", 4)
-            .attr("width", x.bandwidth())
-            .attr("height", y.bandwidth())
+            .attr("rx", 1)
+            .attr("ry", 1)
+            .attr("width", d => {
+                if (d.row === d.col) {
+                    return x.bandwidth() - 1
+                } else {
+                    return x.bandwidth()
+                }
+            })
+            .attr("height", d => {
+                if (d.row === d.col) {
+                    return y.bandwidth() - 1;
+                } else {
+                    return y.bandwidth()
+                }
+            })
             .style("fill", function (d) {
                 if (d.row === d.col) {
-                    return 'white';
+                    return 'none';
                 } else {
                     return myColor(d.val)
                 }
             })
-            .style("stroke-width", 4)
-            .style("stroke", "none")
-            .style("opacity", 0.8)
+            .style("stroke-width", 1)
+            .style("stroke", d => {
+                if (d.row === d.col) {
+                    return 'white';
+                } else {
+                    return 'none';
+                }
+            })
+            .style("opacity", 1)
             .on("mouseover", (e, d) => {
-                d3.select(e.currentTarget)
-                    .style("stroke", "1px")
-                    .style("opacity", 1)
+                // d3.select(e.currentTarget)
+                //     .style("stroke", "1px")
+                //     .style("opacity", 1)
             })
             .on("mousemove", (e, d) => {
                 tooltip
                     .html(`<span>${d.row} - ${d.col}</span>
                         <br>
                         <span>Spearman Correlation coefficient: <b>${_.round(d.val, 2)}</b></span>`)
-                    .style("left", (d3.pointer(e)[0] + 20) + "px")
-                    .style("top", (d3.pointer(e)[1]) + "px")
+                    .style("left", (d3.pointer(e)[0]) + "px")
+                    .style("top", (d3.pointer(e)[1] - 50) + "px")
+                    .style("opacity", 1)
             })
             .on("mouseleave", (e, d) => {
                 tooltip
-                    .style("opacity", 1)
-                d3.select(e.currentTarget)
-                    .style("stroke", "none")
-                    .style("opacity", 0.8)
+                    .style("opacity", 0)
             })
 
         // Add title to graph
@@ -148,7 +179,6 @@ class Heatmap {
             .style("fill", "grey")
             .style("max-width", 400)
             .text("Spearman rank correlation coefficient of each pair of cell-types");
-
 
 
         // let color_scale = d3.axisTop(myColor);

@@ -8,7 +8,7 @@ const datasource = flaskVariables.datasource;
 
 
 //VIEWS
-let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable;
+let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable, comparison;
 
 //SERVICES
 let dataLayer, colorScheme;
@@ -47,7 +47,7 @@ async function init(conf) {
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
 
-
+    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler);
     channelList = new ChannelList(config, dataLayer, eventHandler);
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     legend = new Legend(dataLayer, colorScheme, eventHandler);
@@ -67,8 +67,8 @@ async function init(conf) {
     await Promise.all([channelList.init(), neighborhoodTable.init(), scatterplot.wrangle()]);
     console.log('Async Init', new Date());
     clusterData = dataLayer.getClusterCells();
-    console.log('Cluster Cells', new Date());
     setupColExpand();
+    await comparison.init();
 }
 
 //feature color map changed in ridge plot
@@ -210,6 +210,7 @@ function displayNeighborhood(selectedCell, neighborhood) {
 }
 
 function showHideRHS() {
+
     let osd_wrapper = document.getElementById('openseadragon_wrapper');
     let neighborhood_wrapper = document.getElementById('neighborhood_wrapper');
     let expand_wrapper = document.getElementById('expand_wrapper');
@@ -231,6 +232,9 @@ function showHideRHS() {
         expand_wrapper.classList.add('expand_wrapper_right');
         expand_icon.innerText = 'keyboard_double_arrow_left';
     }
+    comparison.draw();
+
+
 }
 
 function setupColExpand() {

@@ -4,13 +4,12 @@ import 'popper.js';
 import 'jquery';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-
-
 import 'pngjs';
 import * as d3base from 'd3';
 import {sliderBottom} from 'd3-simple-slider';
 import createScatterplot from 'regl-scatterplot';
 import createRegl from 'regl';
+
 
 import {annotation} from 'd3-svg-annotation';
 import {legendColor} from 'd3-svg-legend'
@@ -29,6 +28,7 @@ import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
 
 
+
 window.d3 = Object.assign(d3base, {legendColor, sliderBottom, annotation});
 window.convert = convert;
 window.$ = $;
@@ -44,4 +44,5 @@ window.createRegl = createRegl;
 window.OpenSeadragon = viaWebGL.OpenSeadragon;
 window.ViewerManager = ViewerManager;
 window.createScatterplot = createScatterplot;
+// window.GridStack = GridStack;
 

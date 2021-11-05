@@ -65,6 +65,9 @@ body {
     top: 10vh;
     width: 16vw;
     z-index: 101;
+    height: 42vh;
+    min-height: 42vh;
+    max-height: 42vh;
 }
 
 #search_wrapper {
@@ -76,7 +79,7 @@ body {
     top: 1vh;
     width: 20vw;
     z-index: 101;
-    height: 8vh;
+    max-height: 8vh;
 }
 
 #neighborhood_list_wrapper {
@@ -84,7 +87,7 @@ body {
     border-radius: 17px;
     left: 1vw;
     position: absolute;
-    top: 56vh;
+    top: 53vh;
     width: 16vw;
     z-index: 101;
 }
@@ -102,6 +105,7 @@ body {
 .expand_wrapper_right {
     right: 0.5vw;
 }
+
 .expand_wrapper_left {
     right: 20.5vw;
 }
@@ -109,6 +113,7 @@ body {
 .lowRow1 {
     color: rgba(255, 255, 255, 0.75);
     position: relative;
+    height: 4vh;
 }
 
 #boxHeading1 {
@@ -117,17 +122,25 @@ body {
 }
 
 #selected-channels-header-div {
-    margin-top: 5px;
+    bottom: 0;
+}
+
+#search-neighborhoods-header-div {
+    padding-top: 0;
+}
+
+#selected-channels-header-div, #search-neighborhoods-header-div {
     margin-right: 10px;
     position: absolute;
     right: 0;
+    height: 100%;
 }
 
 #neighborhood_icon {
     margin-top: 10px;
 }
 
-#channel-container-header-div {
+#channel-container-header-div, #neighborhood-container-header-div {
     margin-top: 10px;
     margin-left: 10px;
     position: absolute;
@@ -136,14 +149,13 @@ body {
 
 .list {
     font-size: 0.6rem;
-    height: 82.5vh;
     overflow-y: scroll;
     position: relative;
     width: 100%;
 }
 
 .list .list-group {
-    padding: 0 0 100px 0;
+    padding: 0 0 20px 0;
     width: 100%;
 }
 
@@ -152,6 +164,7 @@ body {
     border: 0;
     color: rgba(255, 255, 255, 1);
     padding: 5px 2px 3px 2px;
+    width: 100%;
 }
 
 .list .list-group-item.active {

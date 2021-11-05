@@ -226,7 +226,7 @@ class ParallelCoordinates {
             .append("text")
             .merge(labels)
             .style("text-anchor", "end")
-            .attr("y", 0)
+            .attr("y", 3)
             .attr("x", -3)
             .text(function (d) {
                 return d.key;

@@ -43,13 +43,15 @@
 }
 
 .neighborhood_wrapper_small {
-    width: 5vw !important;
-    max-width: 5vw !important;
-    min-width: 5vw !important;
+    width: 0vw !important;
+    max-width: 0vw !important;
+    min-width: 0vw !important;
+    display: none;
 
 }
 
 .neighborhood_wrapper_large {
+    display: block;
     width: 25vw !important;
     max-width: 25vw !important;
     min-width: 25vw !important;
@@ -109,13 +111,16 @@
     margin-top: 5px;
 }
 
-.compare_row {
-    height: 28vh;
-}
 
 #comparison_div .compare_col, #summary_div .compare_col {
     padding: 0;
     height: 100%;
+}
+
+.compare_col .row, .compare_row, .compare_col {
+    padding: 0;
+    margin: 0;
+    width: 100%;
 }
 
 .compare_plot_body {
@@ -164,7 +169,9 @@
 }
 
 #comparison_div, #summary_div {
-    text-align: center;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: scroll;;
 }
 
 #comparison_div_parent {
@@ -212,6 +219,7 @@
 
 
 #expand_icon {
+    padding-top: 5px;
     color: #3870ce;
     font-size: 1rem;
     font-weight: bolder;
@@ -223,12 +231,29 @@
 }
 
 #custom_cluster_number {
-    background-color: #505050;
+    width: 100%;
+    background: transparent;
     color: white;
 }
 
+#custom_cluster_number:focus {
+    outline-width: 0;
+}
+
+#custom_cluster_number::after {
+    position: absolute;
+    left: 5px;
+    top: 3px;
+    content: attr(data-placeholder);
+    pointer-events: none;
+    opacity: 0.6;
+}
+
 #custom_cluster_submit {
-    padding: 3px;
+    position: absolute;
+    padding: 0;
+    color: #3870ce;
+    font-size: 1.5rem !important;
 }
 
 
@@ -242,4 +267,54 @@
 
 .openseadragon-container {
     border-top-right-radius: 50px;
+}
+
+#channel_list .row {
+    margin: 0;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+
+.grid-stack {
+    background: #FAFAD2;
+}
+
+.grid-stack-item-content {
+    background-color: #18BC9C;
+}
+
+#comparison_container {
+    margin-right: 0;
+    padding-right: 0;
+    height: 87vh;
+    max-height: 87vh;
+}
+
+#comparison_grid, #pinned_comparison_grid {
+    width: 100%;
+}
+
+#comparison_grid {
+    overflow-y: scroll;
+}
+
+.compare_plot_title h5 {
+    color: white;
+    font-size: 0.9rem;
+}
+
+.current_selection_comparison {
+    color: orange !important;
+}
+
+#number_selected_row {
+    height: 100%;
+
+}
+
+#cluster_display {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    padding: 5px;
 }

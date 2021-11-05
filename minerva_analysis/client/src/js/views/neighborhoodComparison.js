@@ -22,13 +22,8 @@ async function init(conf) {
     await dataLayer.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    container = document.getElementById('comparison_div');
-    neighborhoods = await dataLayer.getAllNeighborhoodStats();
-    phenotypeList = document.getElementById('phenotype_list');
-    createGrid();
-    initPhenotypeList();
-    initToggles();
-    initSmallMultipleParallelCoordinates();
+
+
 }
 
 function initPhenotypeList() {

@@ -128,11 +128,24 @@ class DataLayer {
         }
     }
 
-    async getHeatmapData() {
+    async getHeatmapData(plotName) {
         try {
-            let response = await fetch('/get_heatmap_data?' + new URLSearchParams({
-                datasource: datasource
-            }))
+            let selection = null;
+            if (plotName != "overall") {
+                selection = [...this.getCurrentSelection().keys()]
+            }
+            let response = await fetch('/get_heatmap_data', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        selectionIds: selection
+                    })
+            });
             let heatmapData = await response.json();
             return heatmapData;
         } catch (e) {
@@ -473,7 +486,9 @@ class DataLayer {
         that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
         that.currentRawSelection = items;
         // console.log("update current selection done")
-    }switchViewMode
+    }
+
+    switchViewMode
 
     // (singleCellMode) {
     //     const self = this;

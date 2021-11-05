@@ -735,7 +735,7 @@ def get_pearsons_correlation(datasource_name):
     return heatmap
 
 
-def get_spearmans_correlation(datasource_name):
+def get_spearmans_correlation(datasource_name, selection_ids):
     global datasource
     global ball_tree
     global source
@@ -744,12 +744,16 @@ def get_spearmans_correlation(datasource_name):
     # Load if not loaded
     if datasource_name != source:
         load_datasource(datasource_name)
+    test = time.time()
+    if selection_ids is not None:
+        neighborhoods = neighborhoods[sorted(selection_ids), :]
+    coeffecients = spearmanr(neighborhoods)[0]
     heatmap = []
-    for i in range(0, neighborhoods.shape[1]):
-        heatmap.append([])
-        for j in range(0, i):
-            p_cor = spearmanr(neighborhoods[:, i], neighborhoods[:, j])
-            heatmap[i].append(p_cor[0])
+    for i in range(0, coeffecients.shape[0]):
+        coeff_list = coeffecients[i, 0:i].tolist()
+        coeff_list.append(None)
+        heatmap.append(coeff_list)
+    print('Spear Time', time.time() - test)
     return heatmap
 
 

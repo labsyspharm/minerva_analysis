@@ -1,5 +1,8 @@
 <!doctype html>
 <head>
+
+    <title>Visinity</title>
+
     <meta content="utf-8" http-equiv="encoding">
 
     <!-- Styles -->
@@ -16,6 +19,7 @@
         window.flaskVariables = passVariablesToFrontend({{data|tojson}});
         //<!--@formatter:on-->
     </script>
+
 
     <!-- Webpack -->
     <script src="../client/dist/vendor_bundle.js"></script>
@@ -39,12 +43,13 @@
     <script src="../client/src/js/views/heatmap.js"></script>
     <script src="../client/src/js/views/stackedBarchart.js"></script>
     <script src="../client/src/js/views/barchart.js"></script>
+    <script src="../client/src/js/views/comparison.js"></script>
     <script src="../client/src/js/services/simpleEventHandler.js"></script>
 
 </head>
 <body>
 <nav id="topBar" class="navbar navbar-expand-sm navbar-dark bg-dark">
-    <span id="title" class="navbar-brand mb-0 h1">Minerva Analysis</span>
+    <span id="title" class="navbar-brand mb-0 h1">Visinity</span>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item dropdown">

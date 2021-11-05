@@ -1,13 +1,14 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable) {
+    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, small = false) {
         this.id = id;
         this.canvasId = canvasId;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.neighborhoodTable = neighborhoodTable;
         this.lastLasso = null;
+        this.small = small;
     }
 
     init() {
