@@ -157,7 +157,7 @@ class Comparison {
                 let compare_plot_title = document.createElement("div");
                 compare_plot_title.className = "row compare_plot_title justify-content-center";
                 let title = document.createElement("h5");
-                if (i === 1) {
+                if (i === 0) {
                     title.classList.add('current_selection_comparison');
                 }
                 compare_plot_title.appendChild(title);
@@ -224,12 +224,12 @@ class Comparison {
 
     initHeatmap() {
         const self = this;
-        let plotNames = ['overall', 'selected']
+        let plotNames = ['selected', 'overall']
         self.plots = _.map(plotNames, (d, i) => {
             let div = document.getElementById(`compare_col_${i}`)
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'] || _.capitalize(d);
             let canvas_div = document.getElementById(`compare_parallel_coordinates_${i}`);
-            let heatmap = new Heatmap(`compare_parallel_coordinates_${i}`, self.dataLayer, d);
+            let heatmap = new Heatmap(`compare_parallel_coordinates_${i}`, self.dataLayer, d, self.eventHandler);
             heatmap.init();
             return heatmap;
         })

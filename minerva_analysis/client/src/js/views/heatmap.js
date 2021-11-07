@@ -4,6 +4,7 @@ class Heatmap {
         this.id = id;
         this.dataLayer = dataLayer;
         this.plotName = plotName;
+        this.eventHandler = eventHandler;
     }
 
     init() {
@@ -161,6 +162,9 @@ class Heatmap {
                 tooltip
                     .style("opacity", 0)
             })
+            .on("click", (e, d) => {
+                this.eventHandler.trigger(Heatmap.events.selectPhenotypePair, {...d, plotName: self.plotName});
+            })
 
         // Add title to graph
         svg.append("text")
@@ -184,16 +188,20 @@ class Heatmap {
         // let color_scale = d3.axisTop(myColor);
         self.color_scale = d3.scaleLinear()
             .domain([-1, 1]) // unit: km
-            .range([50, -50])
+            .range([30, -30])
         let color_axis = d3.axisRight(self.color_scale)
             .tickValues([-1, 0, 1])
         svg.append("g")
-            .attr("transform", `translate(${width + 15},${height / 2})`)
+            .attr("transform", `translate(${2 * width / 3 + 15},${0.3 * height})`)
+            .attr('class', 'heatmap_legend')
             .call(color_axis)
+            .selectAll('text')
+            .style("stroke", "white");
+
         let colorLegend = svg.append("g")
-            .attr("transform", `translate(${width + 5},${height / 2})`)
+            .attr("transform", `translate(${2 * width / 3 + 5},${0.3 * height})`)
         colorLegend.selectAll('rect')
-            .data(_.range(-50, 51))
+            .data(_.range(-30, 31))
             .enter()
             .append('rect')
             .attr('x', 0)
@@ -207,18 +215,24 @@ class Heatmap {
 
         colorLegend.append('text')
             .attr('x', 0)
-            .attr('y', 60)
-            .attr('font-size', "0.8rem")
+            .attr('y', 42)
+            .attr('font-size', "0.7rem")
             .attr('dominant-baseline', 'middle')
+            .style('fill', 'white')
             .text('Avoidance')
 
         colorLegend.append('text')
             .attr('x', 0)
-            .attr('y', -60)
-            .attr('font-size', "0.8rem")
+            .attr('y', -40)
+            .attr('font-size', "0.7rem")
             .attr('dominant-baseline', 'middle')
+            .style('fill', 'white')
             .text('Interaction')
 
 
     }
 }
+
+Heatmap.events = {
+    selectPhenotypePair: 'selectPhenotypePair'
+};

@@ -29,7 +29,7 @@ class Scatterplot {
             canvas,
             width,
             height,
-            pointColor: hexToRGBA('#808080', 0.1),
+            pointColor: hexToRGBA('#808080', 0.02),
             pointSize: 1,
             lassoColor: hexToRGBA('#ffa500', 1),
             pointOutlineWidth: 0,

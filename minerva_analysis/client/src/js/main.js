@@ -121,6 +121,7 @@ const displaySelection = async (d) => {
     let selection = d.selection;
     let selectionSource = d.selectionSource || "Image";
     document.getElementById('neighborhood_current_selection').textContent = selectionSource;
+    document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
     parallelCoordinates.wrangle(selection);
     scatterplot.recolor();
@@ -130,6 +131,8 @@ eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 
 const displayNeighborhoodSelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
+    document.getElementById('neighborhood_current_selection').textContent = 'Phenotype';
+    document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution');
     if (selection) {
         parallelCoordinates.wrangle(selection);
@@ -201,6 +204,18 @@ const selectPhenotype = async (phenotype) => {
     await displayNeighborhoodSelection(cells);
 }
 eventHandler.bind(Legend.events.selectPhenotype, selectPhenotype);
+
+const selectPhenotypePair = async (d) => {
+    console.log(d);
+    let phenotypes = [d.row, d.col];
+    let selection = null;
+    if (d.plotName != 'overall') {
+        selection = dataLayer.getCurrentRawSelection();
+    }
+    let cells = await dataLayer.getNeighborhoodByPhenotype(phenotypes, selection);
+    await displayNeighborhoodSelection(cells);
+}
+eventHandler.bind(Heatmap.events.selectPhenotypePair, selectPhenotypePair);
 
 
 function displayNeighborhood(selectedCell, neighborhood) {

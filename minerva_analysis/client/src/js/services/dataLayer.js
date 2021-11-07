@@ -536,14 +536,28 @@ class DataLayer {
     }
 
 
-    async getNeighborhoodByPhenotype(phenotype) {
+    async getNeighborhoodByPhenotype(phenotype, selection = null) {
+
         try {
-            let response = await fetch('/get_neighborhood_by_phenotype?' + new URLSearchParams({
-                datasource: datasource,
-                phenotype: phenotype
-            }))
-            let cells = await response.json();
-            return cells;
+            let selectionIds = null;
+            if (selection) {
+                selectionIds = [...this.getCurrentSelection().keys()]
+            }
+            let response = await fetch('/get_neighborhood_by_phenotype', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        phenotype: phenotype,
+                        selectionIds: selectionIds
+                    })
+            });
+            let response_data = await response.json();
+            return response_data;
         } catch (e) {
             console.log("Error Getting Cells By Phenotype", e);
         }

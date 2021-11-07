@@ -198,7 +198,7 @@
 
 
 #neighborhood_similarity {
-    width: 80px;
+    width: 60px;
     height: 100%;
 }
 
@@ -317,4 +317,11 @@
     background-color: rgba(53, 54, 58, 0.75);
     border-radius: 17px;
     padding: 5px;
+}
+
+.heatmap_legend text, .heatmap_legend line {
+    fill: white;
+    color: white;
+    font-weight: lighter;
+    font-size: 0.4rem;
 }

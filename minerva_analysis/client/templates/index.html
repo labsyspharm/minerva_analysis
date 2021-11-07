@@ -12,24 +12,28 @@
             <div id="row" class="row">
                 <div id="search_wrapper">
                     <div class="row" id="search-row">
-                        <div class="col-md-7 col">
+                        <div class="col-md-5 col">
                             <h5 id="search_header">Similarity <br> Search</h5>
                         </div>
-                        <div class="col-md-4 col">
+                        <div class="col-md-6 col">
                             <div class="row">
                                 <span class="neighborhood_similarity_label">Selection:</span>
                                 <span class="neighborhood_similarity_label"
                                       id="neighborhood_current_selection">None</span>
                             </div>
+                            <div class="row">
+                                <span class="neighborhood_similarity_label">Count:&nbsp;</span>
+                                <span class="neighborhood_similarity_label"
+                                      id="neighborhood_current_selection_count">0</span>
+                            </div>
                             <div class="row" id="similarity_group">
                                 <label class="control-label neighborhood_similarity_label text-left"
                                        for="neighborhood_similarity">
                                     Threshold: </label> <span id="similarity_val">0.8</span>
-                            </div>
-                            <div class="row">
                                 <input type="range" class="form-control-range" min="0" max="100" value="80"
                                        id="neighborhood_similarity">
                             </div>
+
                         </div>
                         <div class="col-md-1 col">
                             <span class="material-icons" id="neighborhood_icon" data-toggle="tooltip"

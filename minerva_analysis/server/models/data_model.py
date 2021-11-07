@@ -221,7 +221,7 @@ def delete_neighborhood(elem, datasource_name):
             new_neighborhoods]
 
 
-def get_neighborhood_by_phenotype(datasource_name, phenotype):
+def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None):
     global datasource
     # Load if not loaded
     if datasource_name != source:
@@ -229,7 +229,12 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype):
 
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
+    if isinstance(phenotype, list):
+        cell_ids = datasource.loc[datasource['phenotype'].isin(phenotype)].index.values
+    else:
+        cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
+    if selection_ids is not None:
+        cell_ids = np.intersect1d(np.array(selection_ids), cell_ids)
     obj = get_neighborhood_stats(datasource_name, cell_ids, fields=fields)
     return obj
 

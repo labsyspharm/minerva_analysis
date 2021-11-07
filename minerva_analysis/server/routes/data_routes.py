@@ -220,11 +220,13 @@ def get_heatmap_data():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_neighborhood_by_phenotype', methods=['GET'])
+@app.route('/get_neighborhood_by_phenotype', methods=['POST'])
 def get_neighborhood_by_phenotype():
-    datasource = request.args.get('datasource')
-    phenotype = request.args.get('phenotype')
-    resp = data_model.get_neighborhood_by_phenotype(datasource, phenotype)
+    post_data = json.loads(request.data)
+    selection_ids = post_data['selectionIds']
+    datasource = post_data['datasource']
+    phenotype = post_data['phenotype']
+    resp = data_model.get_neighborhood_by_phenotype(datasource, phenotype, selection_ids)
     return serialize_and_submit_json(resp)
 
 
