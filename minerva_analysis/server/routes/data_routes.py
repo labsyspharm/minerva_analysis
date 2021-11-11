@@ -180,8 +180,13 @@ def get_rect_cells():
 @app.route('/get_ome_metadata', methods=['GET'])
 def get_ome_metadata():
     datasource = request.args.get('datasource')
-    resp = data_model.get_ome_metadata(datasource)
-    return serialize_and_submit_json(resp)
+    resp = data_model.get_ome_metadata(datasource).json()
+    # OME-Types handles jsonify itself, so skip the orjson conversion
+    response = app.response_class(
+        response=resp,
+        mimetype='application/json'
+    )
+    return response
 
 
 @app.route('/download_gating_csv', methods=['POST'])
