@@ -1,19 +1,19 @@
-name: minerva_analysis
+name: gating
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.8
   - Flask=1.1.2
   - flask-sqlalchemy
   - numpy
   - orjson
   - pandas
-  - pillow=8.0.0
+  - pillow=8.1.1
   - requests
-  - scikit-learn=0.20.2
-  - scikit-image=0.14.2
+  - scikit-learn
+  - scikit-image
   - scipy
-  - tifffile=2020.10.1
+  - tifffile=2021.4.8
   - waitress
   - zarr
   - pyinstaller
