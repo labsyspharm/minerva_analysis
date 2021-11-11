@@ -1,4 +1,4 @@
-name: gating
+name: minerva_analysis
 channels:
   - conda-forge
 dependencies:
