@@ -39,7 +39,7 @@ jobs:
           cd ..
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: 3.8
+          python-version: 3.7
           environment-file: requirements.yml
           activate-environment: minerva_analysis
       - name: Package Windows
