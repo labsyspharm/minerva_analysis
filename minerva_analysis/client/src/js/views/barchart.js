@@ -7,7 +7,7 @@ class Barchart {
 
     init() {
         const self = this;
-        this.margin = {top: 10, right: 10, bottom: 30, left: 100},
+        this.margin = {top: 10, right: 15, bottom: 30, left: 80},
             this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
 
@@ -24,16 +24,17 @@ class Barchart {
             .rangeRound([0, this.height], .1)
             .paddingInner(0.1);
 
-        // this.y = d3.scaleSymlog()
         this.x = d3.scaleLinear()
             .range([0, this.width])
-            .domain([0, 20])
+            .domain([0, 1])
 
         this.x.clamp(true);
 
         this.xAxis = d3.axisBottom()
-            .scale(this.x);
+            .scale(this.x)
         this.xAxis.tickSizeOuter(0);
+        this.xAxis.tickFormat(d3.format(".0%"))
+        this.xAxis.tickValues([0, 0.5, 1])
 
 
         this.yAxis = d3.axisLeft()
@@ -46,17 +47,10 @@ class Barchart {
             .attr("transform", "translate(0," + this.height + ")")
             .call(this.xAxis)
 
+
         this.svg.append("g")
             .attr("class", "yaxis")
             .call(this.yAxis)
-
-        this.svg.append("text")
-            .attr("class", "x_axis_label")
-            .attr("transform", `translate(${this.width / 2},${this.height + 22})`)
-            .style("text-anchor", "middle")
-            .attr("font-size", "0.6em")
-
-            .text("Avg. Weight in Neighborhood")
 
 
         // this.svg.append("g")
@@ -77,7 +71,8 @@ class Barchart {
             order = self.phenotypes;
         }
 
-        this.visData = _.map(chartData, (v, k) => {
+        this.visData = _.map(chartData, (e) => {
+            let [k, v] = e;
             return {
                 key: k,
                 short: k,
@@ -107,7 +102,7 @@ class Barchart {
             .attr("y", 10)
             .attr("x", 0)
             .attr("dy", ".35em")
-            .attr("font-size", "0.8em")
+            .attr("font-size", "0.5em")
             .style("text-anchor", "start")
 
         self.svg.select(".yaxis")
@@ -118,7 +113,7 @@ class Barchart {
             .attr("y", 0)
             .attr("x", -10)
             .attr("dy", ".35em")
-            .attr("font-size", "0.8em")
+            .attr("font-size", "0.5em")
             .style("text-anchor", "end")
 
 
@@ -136,7 +131,7 @@ class Barchart {
             .attr("width", function (d) {
                 return self.x(d.value);
             })
-            .attr("fill", '#FFA500');
+            .attr("fill", '#8f8f8f');
 
         bars.exit().remove();
     }

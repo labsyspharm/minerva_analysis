@@ -588,7 +588,7 @@ polygon:hover {
     padding-right: 3px;
 }
 
-#neighborhood_current_selection {
+#neighborhood_current_selection, #neighborhood_current_selection_count {
     font-size: 9pt;
     color: orange;
     text-align: center;

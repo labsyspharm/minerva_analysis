@@ -76,6 +76,8 @@
 
 .plot-label {
     font-size: 1.2rem;
+    /*TODO: Figures*/
+    /*color: rgba(0, 0, 0, 0.95);*/
     color: rgba(255, 255, 255, 0.95);
     font-weight: 500;
 }
@@ -124,7 +126,7 @@
 }
 
 .compare_plot_body {
-    height: 90%;
+    height: 80%;
     width: 100%;
 }
 
@@ -300,7 +302,8 @@
 }
 
 .compare_plot_title h5 {
-    color: white;
+    color: #ffffff;
+    /*color: #000000;*/
     font-size: 0.9rem;
 }
 
@@ -324,4 +327,21 @@
     color: white;
     font-weight: lighter;
     font-size: 0.4rem;
+}
+
+.barchart text, .barchart text {
+    fill: #000000;
+    color: #000000;
+    font-weight: lighter;
+    font-size: 0.4rem;
+}
+
+#neighborhood_wrapper {
+    /*TODO: For Figures*/
+    /*background-color: white;*/
+    background-color: black;
+}
+
+#comparison_title, .compare_plot_title {
+    color: black !important;
 }

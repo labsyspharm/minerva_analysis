@@ -10,14 +10,19 @@ class Comparison {
         this.container = null;
         this.pinnedContainer = null;
         this.hidden = true;
-        this.firstDraw = true;
     }
 
     async init() {
         const self = this;
-        // self.container = document.getElementById('comparison_grid');
-        self.pinnedContainer = document.getElementById('pinned_comparison_grid');
+        self.container = document.getElementById('comparison_grid');
+        // self.pinnedContainer = document.getElementById('pinned_comparison_grid');
         self.neighborhoods = await self.dataLayer.getAllNeighborhoodStats();
+        let t = self.neighborhoods;
+        self.neighborhoods = [t[6], t[7], t[8], t[9], t[0], t[1]]
+        self.neighborhoods = self.neighborhoods.map((e, i) => {
+            e.neighborhood_name = 'Cluster ' + i;
+            return e
+        })
         console.log('Compare Ready');
 
     }
@@ -28,17 +33,18 @@ class Comparison {
         if (!this.hidden) {
             let parentHeight = document.getElementById('comparison_container').clientHeight;
             self.rowHeight = Math.round(parentHeight / 2);
-            self.pinnedContainer.style.height = self.pinnedContainer.style.maxHeight = `${self.rowHeight * 2}px`;
+            // self.pinnedContainer.style.height = self.pinnedContainer.style.maxHeight = `${self.rowHeight * 2}px`;
+            // HEATMAP
             // self.container.style.height = self.container.style.maxHeight = `${self.rowHeight}px`;
-            if (self.firstDraw) {
-                self.createGrid();
-                // self.initToggles();
-                self.firstDraw = false;
-            }
-            console.log('Drawing');
+            self.createGrid();
+            // self.initToggles();
+            //HEATMAP
+            self.currentState = 'heatmap';
+
             self.initHeatmap();
         } else {
             self.removeAllPlots();
+            self.container.innerHTML = '';
         }
     }
 
@@ -94,7 +100,7 @@ class Comparison {
                 self.currentState = 'stacked';
                 self.removeAllPlots();
                 document.getElementById("summary_div").style.display = "block";
-                document.getElementById("comparison_div_parent").style.display = "none";
+                document.getElementById("comparison_grid").style.display = "none";
                 self.initStackedBarchart();
             }
         }
@@ -120,7 +126,7 @@ class Comparison {
         const self = this;
         d3.select('#neighborhood_wrapper').selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas, #heatmap-svg, #summary_div_barchart_svg, .tooltip, #legend-svg').remove();
         document.getElementById("summary_div").style.display = "none";
-        document.getElementById("comparison_div_parent").style.display = "flex";
+        document.getElementById("comparison_grid").style.display = null;
         self.plots = [];
     }
 
@@ -139,16 +145,20 @@ class Comparison {
 
     createGrid() {
         const self = this;
-        // let width = self.container.getBoundingClientRect().width;
+        let width = self.container.getBoundingClientRect().width;
         let cols = 1;//Math.floor(width / 180);
-        // let rows = Math.ceil(_.size(self.neighborhoods) / cols);
         let rows = 2;
+        // let rows = 4;
+        //HEATMAP
+        // let rows = 2;
         let i = 0;
+        self.container.style.height = rows * self.rowHeight;
         _.each(_.range(rows), r => {
             let row = document.createElement("div");
             row.className = "row compare_row";
             row.id = `compare_row_${r}`;
             row.style.height = `${self.rowHeight}px`;
+            row.style.width = `${width}px`;
             _.each(_.range(cols), c => {
                 let col = document.createElement("div");
                 col.className = "col compare_col";
@@ -157,6 +167,7 @@ class Comparison {
                 let compare_plot_title = document.createElement("div");
                 compare_plot_title.className = "row compare_plot_title justify-content-center";
                 let title = document.createElement("h5");
+                // HEATMAP
                 if (i === 0) {
                     title.classList.add('current_selection_comparison');
                 }
@@ -168,11 +179,8 @@ class Comparison {
                 col.appendChild(compare_plot_body);
                 i++;
             })
-            if (i <= 2) {
-                self.pinnedContainer.appendChild(row);
-            } else {
-                self.container.appendChild(row);
-            }
+            self.container.appendChild(row);
+
         })
 
         let test = '';
@@ -215,7 +223,8 @@ class Comparison {
             canvas.width = canvas_div.offsetWidth;
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
-            scatterplot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer);
+            scatterplot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
+                null, true);
             scatterplot.init();
             return scatterplot;
         });
@@ -241,6 +250,14 @@ class Comparison {
         let legend = new Legend(self.dataLayer, self.colorScheme, self.eventHandler);
         legend.draw();
         stacked.init();
+    }
+
+    rewrangle(){
+        const self = this;
+        if (!self.hidden){
+            self.plots[0].rewrangle();
+        }
+
     }
 
 }

@@ -147,6 +147,8 @@ const selectNeighborhood = async (d) => {
     if (d[3] === "Lasso") {
         selection = await scatterplot.applyLasso(selection);
     }
+    document.getElementById('neighborhood_current_selection').textContent = 'Cluster';
+    document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
     // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
     parallelCoordinates.wrangle(selection);
@@ -190,6 +192,7 @@ function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     neighborhoodTable.enableSaveButton();
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
+    comparison.rewrangle();
 }
 
 //feature range selection changed in ridge plot

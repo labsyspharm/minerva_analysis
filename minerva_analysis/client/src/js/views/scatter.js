@@ -36,6 +36,9 @@ class Scatterplot {
             pointSizeSelected: 0,
             pointColorActive: hexToRGBA('#ffa500', 0.3)
         });
+        if (self.small) {
+            self.plot.set({pointColor: hexToRGBA('#808080', 0.1)});
+        }
 
         self.plot.subscribe('select', self.select.bind(self));
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));

@@ -247,13 +247,15 @@ def create_custom_clusters(datasource_name, num_clusters):
 
     g_mixtures = GaussianMixture(n_components=num_clusters)
     data = np.load(Path(config[datasource_name]['embedding']))
-    randomly_sampled = np.random.choice(data.shape[0], size=100000, replace=False)
-    g_mixtures.fit(data[randomly_sampled, :-1])
-    clusters = np.zeros((data.shape[0],))
-    for i in range(np.ceil(data.shape[0] / 100000).astype(int)):
-        bottom = i * 100000
-        top = min(data.shape[0], (i + 1) * 100000)
-        clusters[bottom:top] = g_mixtures.predict(data[bottom:top, :2])
+    g_mixtures.fit(data[:, 0:2])
+    clusters = g_mixtures.predict(data[:, 0:2])
+    # randomly_sampled = np.random.choice(data.shape[0], size=100000, replace=False)
+    # g_mixtures.fit(data[randomly_sampled, :-1])
+    # clusters = np.zeros((data.shape[0],))
+    # for i in range(np.ceil(data.shape[0] / 100000).astype(int)):
+    #     bottom = i * 100000
+    #     top = min(data.shape[0], (i + 1) * 100000)
+    #     clusters[bottom:top] = g_mixtures.predict(data[bottom:top, :2])
 
     for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
         indices = np.argwhere(clusters == cluster).flatten().tolist()
@@ -753,6 +755,7 @@ def get_spearmans_correlation(datasource_name, selection_ids):
     if selection_ids is not None:
         neighborhoods = neighborhoods[sorted(selection_ids), :]
     coeffecients = spearmanr(neighborhoods)[0]
+    coeffecients[np.isnan(coeffecients)] = 0
     heatmap = []
     for i in range(0, coeffecients.shape[0]):
         coeff_list = coeffecients[i, 0:i].tolist()

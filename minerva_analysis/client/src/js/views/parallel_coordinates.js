@@ -73,6 +73,7 @@ class ParallelCoordinates {
             .attr("fill", "none")
             .classed("average_path", true)
             .attr("stroke", "white")
+            .attr("stroke-opacity", "0.8")
 
 
         this.editMode = false;
