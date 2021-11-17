@@ -713,7 +713,7 @@ class ImageViewer {
     }
 
     showLoader() {
-        document.getElementById('openseadragon_loader').style.display = "block";
+        // document.getElementById('openseadragon_loader').style.display = "block";
 
     }
 
