@@ -551,7 +551,7 @@ def get_saved_gating_list(datasource_name):
     return pickle.loads(gating_list.cells)
 
 
-def download_channels(datasource_name, map_channels, active_channels, list_colors, list_ranges, default_range):
+def download_channels(datasource_name, map_channels, active_channels, list_colors, list_ranges, list_channels):
     global datasource
     global source
     global ball_tree
@@ -561,13 +561,11 @@ def download_channels(datasource_name, map_channels, active_channels, list_color
         load_ball_tree(datasource_name)
     arr = []
     for channel in map_channels:
-        arr.append([map_channels[channel], default_range[0], default_range[1], 255, 255, 255, 1, False])
+        channel_name = map_channels[channel]
+        arr.append([channel_name, list_channels[channel_name][0], list_channels[channel_name][1], 255, 255, 255, 1, False])
     csv = pd.DataFrame(arr)
     csv.columns = ['channel', 'start', 'end', 'r', 'g', 'b', 'opacity', 'channel_active']
 
-    for channel in list_ranges:
-        csv.loc[csv['channel'] == map_channels[channel], 'start'] = list_ranges[channel][0] * default_range[1]
-        csv.loc[csv['channel'] == map_channels[channel], 'end'] = list_ranges[channel][1] * default_range[1]
     for channel in list_colors:
         csv.loc[csv['channel'] == map_channels[channel], 'r'] = list_colors[channel]['color']['r']
         csv.loc[csv['channel'] == map_channels[channel], 'g'] = list_colors[channel]['color']['g']
@@ -579,7 +577,7 @@ def download_channels(datasource_name, map_channels, active_channels, list_color
     return csv
 
 
-def save_channel_list(datasource_name, map_channels, active_channels, list_colors, list_ranges, default_range):
+def save_channel_list(datasource_name, map_channels, active_channels, list_colors, list_ranges, list_channels):
     global datasource
     global source
     global ball_tree
@@ -589,13 +587,11 @@ def save_channel_list(datasource_name, map_channels, active_channels, list_color
         load_ball_tree(datasource_name)
     arr = []
     for channel in map_channels:
-        arr.append([map_channels[channel], default_range[0], default_range[1], 255, 255, 255, 1, False])
+        channel_name = map_channels[channel]
+        arr.append([channel_name, list_channels[channel_name][0], list_channels[channel_name][1], 255, 255, 255, 1, False])
     csv = pd.DataFrame(arr)
     csv.columns = ['channel', 'start', 'end', 'r', 'g', 'b', 'opacity', 'channel_active']
 
-    for channel in list_ranges:
-        csv.loc[csv['channel'] == map_channels[channel], 'start'] = list_ranges[channel][0] * default_range[1]
-        csv.loc[csv['channel'] == map_channels[channel], 'end'] = list_ranges[channel][1] * default_range[1]
     for channel in list_colors:
         csv.loc[csv['channel'] == map_channels[channel], 'r'] = list_colors[channel]['color']['r']
         csv.loc[csv['channel'] == map_channels[channel], 'g'] = list_colors[channel]['color']['g']
@@ -680,8 +676,8 @@ def get_datasource_description(datasource_name):
                 dat.append(obj)
 
             description[fullName]['image_histogram'] = dat
-            description[fullName]['image_min'] = np.min(img_log)
-            description[fullName]['image_max'] = np.max(img_log)
+            description[fullName]['image_min'] = np.exp(np.min(img_log))
+            description[fullName]['image_max'] = np.exp(np.max(img_log))
 
             image_layer += 1
         else:
@@ -723,8 +719,8 @@ def get_channel_gmm(channel_name, datasource_name):
         vmin = means[i2] + covars[i2] ** 0.5 * -1
     vmin = max(vmin, img_log.min(), 0)
     vmax = min(vmax, img_log.max())
-    packet_gmm['vmin'] = vmin
-    packet_gmm['vmax'] = vmax
+    packet_gmm['vmin'] = np.exp(vmin)
+    packet_gmm['vmax'] = np.exp(vmax)
 
     [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
     midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2

@@ -169,7 +169,7 @@ class DataLayer {
         }
     }
 
-    downloadChannelsCSV(map_channels, active_channels, list_colors, list_ranges, default_range) {
+    downloadChannelsCSV(map_channels, active_channels, list_colors, list_ranges, list_channels) {
         let form = document.createElement("form");
         form.action = "/download_channels_csv";
 
@@ -206,11 +206,11 @@ class DataLayer {
         rangesElement.name = "list_ranges";
         form.appendChild(rangesElement);
 
-        let defaultRangeElement = document.createElement("input");
-        defaultRangeElement.type = "hidden";
-        defaultRangeElement.value = JSON.stringify(default_range);
-        defaultRangeElement.name = "default_range";
-        form.appendChild(defaultRangeElement);
+        let channelsElement = document.createElement("input");
+        channelsElement.type = "hidden";
+        channelsElement.value = JSON.stringify(list_channels);
+        channelsElement.name = "list_channels";
+        form.appendChild(channelsElement);
 
         let datasourceElement = document.createElement("input");
         datasourceElement.type = "hidden";
@@ -221,7 +221,7 @@ class DataLayer {
         form.submit()
     }
 
-    async saveChannelList(map_channels, active_channels, list_colors, list_ranges, default_range) {
+    async saveChannelList(map_channels, active_channels, list_colors, list_ranges, list_channels) {
         const self = this;
         try {
             let response = await fetch('/save_channel_list', {
@@ -237,7 +237,7 @@ class DataLayer {
                         active_channels: active_channels,
                         list_colors: list_colors,
                         list_ranges: list_ranges,
-                        default_range: default_range
+                        list_channels: list_channels
                     }
                 )
             });

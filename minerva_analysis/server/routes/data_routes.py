@@ -241,8 +241,8 @@ def download_channels_csv():
     active_channels = json.loads(request.form['active_channels'])
     list_colors = json.loads(request.form['list_colors'])
     list_ranges = json.loads(request.form['list_ranges'])
-    default_range = json.loads(request.form['default_range'])
-    csv = data_model.download_channels(datasource, map_channels, active_channels, list_colors, list_ranges, default_range)
+    list_channels = json.loads(request.form['list_channels'])
+    csv = data_model.download_channels(datasource, map_channels, active_channels, list_colors, list_ranges, list_channels)
     return Response(
         csv.to_csv(index=False),
         mimetype="text/csv",
@@ -258,9 +258,9 @@ def save_channel_list():
     active_channels = post_data['active_channels']
     list_colors = post_data['list_colors']
     list_ranges = post_data['list_ranges']
-    default_range = post_data['default_range']
+    list_channels = post_data['list_channels']
 
-    data_model.save_channel_list(datasource, map_channels, active_channels, list_colors, list_ranges, default_range)
+    data_model.save_channel_list(datasource, map_channels, active_channels, list_colors, list_ranges, list_channels)
 
     resp = jsonify(success=True)
     return resp

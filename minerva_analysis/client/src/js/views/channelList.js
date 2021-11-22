@@ -18,6 +18,7 @@ class ChannelList {
         this.ranges = {};
         this.sliders = new Map();
         var that = this;
+        this.image_channels = {};
         this.sel = {};
         this.currentChannels = {};
         this.rangeConnector = {};
@@ -218,7 +219,11 @@ class ChannelList {
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
-            let sliderRange = this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").getBoundingClientRect().width);
+            let fullName = this.dataLayer.getFullChannelName(column)
+            let sliderMin = this.databaseDescription[fullName]['image_min']
+            let sliderMax = this.databaseDescription[fullName]['image_max']
+            self.image_channels[fullName] = [sliderMin, sliderMax];
+            let sliderRange = this.addSlider(sliderMin, sliderMax, column, document.getElementById("channel_list").getBoundingClientRect().width);
             d3.select('div#channel-slider_' + column).style('display', "none");
 
         });
@@ -293,7 +298,7 @@ class ChannelList {
             let channelIdx = imageChannels[fullName];
 
             if (this.sliders.get(col.channel)) {
-                if (col.start !== defaultRange[0] || col.end !== defaultRange[1]){
+                if (col.start !== this.image_channels[fullName][0] || col.end !== this.image_channels[fullName][1]){
                     this.sliders.get(col.channel).value([col.start, col.end]);
                     this.rangeConnector[channelIdx] = [col.start / defaultRange[1], col.end / defaultRange[1]];
                 }
@@ -349,7 +354,7 @@ class ChannelList {
                 this.currentChannels,
                 this.colorConnector,
                 this.rangeConnector,
-                this.dataLayer.imageBitRange
+                this.image_channels
             );
         });
 
@@ -360,7 +365,7 @@ class ChannelList {
                 this.currentChannels,
                 this.colorConnector,
                 this.rangeConnector,
-                this.dataLayer.imageBitRange
+                this.image_channels
             );
             alert("Saved Channels from Database");
         });
@@ -451,12 +456,13 @@ class ChannelList {
         const f = (d3.format('.2%'))
 
         var that = this;
-        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram']
-        let data_min = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_min']
-        let data_max = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_max']
+        let fullName = this.dataLayer.getFullChannelName(name);
+        let histogramData = this.databaseDescription[fullName]['image_histogram']
+        let data_min = this.databaseDescription[fullName]['image_min']
+        let data_max = this.databaseDescription[fullName]['image_max']
 
         //add range slider row content
-        var sliderSimple = d3.sliderBottom()
+        var sliderSimple = d3.sliderBottom(d3.scaleLog())
             .min(data_min)
             .max(data_max)
             .width(swidth - 75)//.tickFormat(d3.format("s"))
@@ -469,9 +475,10 @@ class ChannelList {
               d3.select('#slider-input' + name + 1).property('value', val[1]);
               // sliderSimple.silentValue([val[0], val[1]]);
               that.moveSliderHandles(sliderSimple, val, name);
-              let packet_val = [Math.round(Math.exp(val[0])), Math.round(Math.exp(val[1]))]
+              let packet_val = [val[0], val[1]]
               let packet = {name: name, dataRange: packet_val};
               this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
+              this.image_channels[this.dataLayer.getFullChannelName(name)] = packet_val;
             })
             .ticks(5)
             .default([data_min, data_max])
@@ -562,9 +569,10 @@ class ChannelList {
               handleVals[d.index] = val;
               that.moveSliderHandles(sliderSimple, handleVals, name)
 
-              let packetHandleVals = [Math.round(Math.exp(handleVals[0])), Math.round(Math.exp(handleVals[1]))]
+              let packetHandleVals = [handleVals[0], handleVals[1]]
               let packet = {name: name, dataRange: packetHandleVals};
               that.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
+              that.image_channels[fullName] = packetHandleVals;
           }
         })
 
