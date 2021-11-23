@@ -298,7 +298,7 @@ class ChannelList {
             let channelIdx = imageChannels[fullName];
 
             if (this.sliders.get(col.channel)) {
-                if (col.start !== this.image_channels[fullName][0] || col.end !== this.image_channels[fullName][1]){
+                if (col.start > this.image_channels[fullName][0] || col.end < this.image_channels[fullName][1]){
                     this.sliders.get(col.channel).value([col.start, col.end]);
                     this.rangeConnector[channelIdx] = [col.start / defaultRange[1], col.end / defaultRange[1]];
                 }
