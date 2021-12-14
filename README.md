@@ -4,7 +4,7 @@
 
 
 ## About
-Minerva Analysis an [openseadragon](https://openseadragon.github.io/) based **Muliplex Image Data Visualization and Analysis Toolset**. Sharing a common image viewer codebase, we currently offer tools for [focus+context-based data exploration](https://github.com/labsyspharm/minerva_analysis/wiki/Scope2Screen), [interactive channel gating](https://github.com/labsyspharm/minerva_analysis/wiki/Gating), [cluster exploration](https://github.com/labsyspharm/minerva_analysis/wiki/ClusterExploration), and [spatial neighborhood analysis](https://github.com/labsyspharm/minerva_analysis/wiki/Neighborhood-Analysis).
+Minerva Analysis an [openseadragon](https://openseadragon.github.io/) based **Muliplex Image Data Visualization and Analysis Toolset**. Sharing a common image viewer codebase (data import, rendering, linkage to tabular data), we currently offer tools for [focus+context-based data exploration](https://github.com/labsyspharm/minerva_analysis/wiki/Scope2Screen), [interactive channel gating](https://github.com/labsyspharm/minerva_analysis/wiki/Gating), [cluster exploration](https://github.com/labsyspharm/minerva_analysis/wiki/ClusterExploration), and [spatial neighborhood analysis](https://github.com/labsyspharm/minerva_analysis/wiki/Neighborhood-Analysis).
 Minerva Analysis is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.js](https://nodejs.org/en/) javascript frontend.
 
 ## Executables (for Users)
