@@ -676,8 +676,8 @@ def get_datasource_description(datasource_name):
                 dat.append(obj)
 
             description[fullName]['image_histogram'] = dat
-            description[fullName]['image_min'] = np.exp(np.min(img_log))
-            description[fullName]['image_max'] = np.exp(np.max(img_log))
+            description[fullName]['image_min'] = np.int(np.exp(np.min(img_log)))
+            description[fullName]['image_max'] = np.int(np.exp(np.max(img_log)))
 
             image_layer += 1
         else:
@@ -701,10 +701,6 @@ def get_channel_gmm(channel_name, datasource_name):
     image_channelIdx = next(
         index for (index, d) in enumerate(config[datasource_name]['imageData']) if d["fullname"] == channel_name) - 1
     image_data = zarray[image_channelIdx]
-    yi, xi = np.floor(np.linspace(0, image_data.shape, 200, endpoint=False)).astype(int).T
-    # Slice one dimension at a time. Should generally use less memory than a meshgrid.
-    image_data = image_data[yi]
-    image_data = image_data[:, xi]
     img_log = np.log(image_data[image_data > 0])
     gmm = GaussianMixture(3, max_iter=1000, tol=1e-6)
     gmm.fit(img_log.reshape((-1, 1)))
@@ -719,8 +715,8 @@ def get_channel_gmm(channel_name, datasource_name):
         vmin = means[i2] + covars[i2] ** 0.5 * -1
     vmin = max(vmin, img_log.min(), 0)
     vmax = min(vmax, img_log.max())
-    packet_gmm['vmin'] = np.exp(vmin)
-    packet_gmm['vmax'] = np.exp(vmax)
+    packet_gmm['vmin'] = np.int(np.exp(vmin))
+    packet_gmm['vmax'] = np.int(np.exp(vmax))
 
     [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
     midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2

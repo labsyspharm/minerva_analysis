@@ -90,7 +90,7 @@ class ChannelList {
 
         // Update selections
         self.selections.push(name);
-        self.sel[dataLayer.getFullChannelName(name)] = self.dataLayer.getImageBitRange();
+        self.sel[dataLayer.getFullChannelName(name)] = self.image_channels[name];
 
         // Trigger
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
@@ -222,7 +222,7 @@ class ChannelList {
             let fullName = this.dataLayer.getFullChannelName(column)
             let sliderMin = this.databaseDescription[fullName]['image_min']
             let sliderMax = this.databaseDescription[fullName]['image_max']
-            self.image_channels[fullName] = [sliderMin, sliderMax];
+            self.image_channels[column] = [sliderMin, sliderMax];
             let sliderRange = this.addSlider(sliderMin, sliderMax, column, document.getElementById("channel_list").getBoundingClientRect().width);
             d3.select('div#channel-slider_' + column).style('display', "none");
 
@@ -298,7 +298,7 @@ class ChannelList {
             let channelIdx = imageChannels[fullName];
 
             if (this.sliders.get(col.channel)) {
-                if (col.start > this.image_channels[fullName][0] || col.end < this.image_channels[fullName][1]){
+                if (col.start > this.image_channels[col.channel][0] || col.end < this.image_channels[col.channel][1]){
                     this.sliders.get(col.channel).value([col.start, col.end]);
                     this.rangeConnector[channelIdx] = [col.start / defaultRange[1], col.end / defaultRange[1]];
                 }
@@ -338,7 +338,7 @@ class ChannelList {
 
         let channelIdx = imageChannels[fullName];
         let defaultRange = self.dataLayer.imageBitRange;
-        this.rangeConnector[channelIdx] = [Math.round(Math.exp(vmin)) / defaultRange[1], Math.round(Math.exp(vmax)) / defaultRange[1]];
+        this.rangeConnector[channelIdx] = [vmin / defaultRange[1], vmax / defaultRange[1]];
     }
 
 
@@ -468,6 +468,7 @@ class ChannelList {
             .width(swidth - 75)//.tickFormat(d3.format("s"))
             .fill('orange')
             .on('onchange', val => {
+                val = [Math.round(val[0]), Math.round(val[1])]
               // d3.select('p#value-range').text(val.map(d3.format('.2%')).join('-'));
               d3.select('#slider-input' + name + 0).attr('value', val[0]);
               d3.select('#slider-input' + name + 0).property('value', val[0]);
@@ -478,7 +479,7 @@ class ChannelList {
               let packet_val = [val[0], val[1]]
               let packet = {name: name, dataRange: packet_val};
               this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-              this.image_channels[this.dataLayer.getFullChannelName(name)] = packet_val;
+              this.image_channels[name] = packet_val;
             })
             .ticks(5)
             .default([data_min, data_max])
@@ -572,7 +573,7 @@ class ChannelList {
               let packetHandleVals = [handleVals[0], handleVals[1]]
               let packet = {name: name, dataRange: packetHandleVals};
               that.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-              that.image_channels[fullName] = packetHandleVals;
+              that.image_channels[name] = packetHandleVals;
           }
         })
 
@@ -676,14 +677,14 @@ class ChannelList {
  * on window resize we re-initialize (this should be better handled with an update pattern)
  */
 window.addEventListener("resize", function () {
-    //reinitialize slider on window change..(had some bug updating with via d3 update)
-    if (typeof channelList != "undefined" && channelList) {
-        channelList.sliders.forEach(function (slider, name) {
-            d3.select('div#channel-slider_' + name).select('svg').remove();
-            channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
-                document.getElementById("channel_list").getBoundingClientRect().width);
-        });
-    }
+    // //reinitialize slider on window change..(had some bug updating with via d3 update)
+    // if (typeof channelList != "undefined" && channelList) {
+    //     channelList.sliders.forEach(function (slider, name) {
+    //         d3.select('div#channel-slider_' + name).select('svg').remove();
+    //         channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
+    //             document.getElementById("channel_list").getBoundingClientRect().width);
+    //     });
+    // }
 });
 
 //static vars: events introduced in this class and used across the app
