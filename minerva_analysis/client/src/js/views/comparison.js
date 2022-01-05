@@ -18,9 +18,9 @@ class Comparison {
         // self.pinnedContainer = document.getElementById('pinned_comparison_grid');
         self.neighborhoods = await self.dataLayer.getAllNeighborhoodStats();
         let t = self.neighborhoods;
-        self.neighborhoods = [t[6], t[7], t[8], t[9], t[0], t[1]]
+        // self.neighborhoods = [t[6], t[7], t[8], t[9], t[0], t[1]]
         self.neighborhoods = self.neighborhoods.map((e, i) => {
-            e.neighborhood_name = 'Cluster ' + i;
+            e.neighborhood_name = e.neighborhood_name || 'Cluster ' + i;
             return e
         })
         console.log('Compare Ready');
@@ -32,16 +32,16 @@ class Comparison {
         this.hidden = !this.hidden;
         if (!this.hidden) {
             let parentHeight = document.getElementById('comparison_container').clientHeight;
-            self.rowHeight = Math.round(parentHeight / 2);
+            self.rowHeight = Math.round(parentHeight / 4);
             // self.pinnedContainer.style.height = self.pinnedContainer.style.maxHeight = `${self.rowHeight * 2}px`;
             // HEATMAP
             // self.container.style.height = self.container.style.maxHeight = `${self.rowHeight}px`;
             self.createGrid();
             // self.initToggles();
             //HEATMAP
-            self.currentState = 'heatmap';
+            self.currentState = 'barchart';
 
-            self.initHeatmap();
+            self.initSmallMultipleBarcharts();
         } else {
             self.removeAllPlots();
             self.container.innerHTML = '';
@@ -136,7 +136,7 @@ class Comparison {
             let div = document.getElementById(`compare_col_${i}`);
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
             console.log(document.getElementById(`compare_parallel_coordinates_${i}`).getBoundingClientRect());
-            let pc = new ParallelCoordinates(`compare_parallel_coordinates_${i}`, self.dataLayer, self.eventHandler, true);
+            let pc = new ParallelCoordinates(`compare_parallel_coordinates_${i}`, self.dataLayer, self.eventHandler, self.colorScheme, true);
             pc.init();
             return pc;
         });
@@ -146,9 +146,10 @@ class Comparison {
     createGrid() {
         const self = this;
         let width = self.container.getBoundingClientRect().width;
-        let cols = 1;//Math.floor(width / 180);
-        let rows = 2;
-        // let rows = 4;
+        // let cols = 1;//Math.floor(width / 180);
+        // let rows = 2;
+        let rows = 4;
+        let cols = 2;
         //HEATMAP
         // let rows = 2;
         let i = 0;
@@ -168,9 +169,9 @@ class Comparison {
                 compare_plot_title.className = "row compare_plot_title justify-content-center";
                 let title = document.createElement("h5");
                 // HEATMAP
-                if (i === 0) {
-                    title.classList.add('current_selection_comparison');
-                }
+                // if (i === 1) {
+                //     title.classList.add('current_selection_comparison');
+                // }
                 compare_plot_title.appendChild(title);
                 col.appendChild(compare_plot_title);
                 let compare_plot_body = document.createElement("div");
@@ -233,7 +234,7 @@ class Comparison {
 
     initHeatmap() {
         const self = this;
-        let plotNames = ['selected', 'overall']
+        let plotNames = ['overall', 'selected']
         self.plots = _.map(plotNames, (d, i) => {
             let div = document.getElementById(`compare_col_${i}`)
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'] || _.capitalize(d);
@@ -252,9 +253,9 @@ class Comparison {
         stacked.init();
     }
 
-    rewrangle(){
+    rewrangle() {
         const self = this;
-        if (!self.hidden){
+        if (!self.hidden) {
             self.plots[0].rewrangle();
         }
 

@@ -29,7 +29,7 @@ class Scatterplot {
             canvas,
             width,
             height,
-            pointColor: hexToRGBA('#808080', 0.02),
+            pointColor: hexToRGBA('#b2b2b2', 0.01),
             pointSize: 1,
             lassoColor: hexToRGBA('#ffa500', 1),
             pointOutlineWidth: 0,
@@ -37,7 +37,7 @@ class Scatterplot {
             pointColorActive: hexToRGBA('#ffa500', 0.3)
         });
         if (self.small) {
-            self.plot.set({pointColor: hexToRGBA('#808080', 0.1)});
+            self.plot.set({pointColor: hexToRGBA('#000000', 0.3)});
         }
 
         self.plot.subscribe('select', self.select.bind(self));

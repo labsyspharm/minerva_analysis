@@ -1,7 +1,8 @@
 class ParallelCoordinates {
-    constructor(id, dataLayer, eventHandler, small = false) {
+    constructor(id, dataLayer, eventHandler, colorScheme, small = false) {
         this.id = id;
         this.small = small;
+        this.colorScheme = colorScheme;
         this.parent = d3.select(`#${id}`);
         this.selector = document.getElementById(id);
         this.dataLayer = dataLayer;
@@ -19,10 +20,10 @@ class ParallelCoordinates {
         this.totalWidth = this.parent.node().getBoundingClientRect().width;
         this.totalHeight = this.parent.node().getBoundingClientRect().height;
         if (this.small) {
-            this.margin = {top: 10, right: 25, bottom: 10, left: 130};
+            this.margin = {top: 10, right: 55, bottom: 10, left: 160};
 
         } else {
-            this.margin = {top: 10, right: 25, bottom: 10, left: 130};
+            this.margin = {top: 40, right: 55, bottom: 10, left: 160};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -181,28 +182,91 @@ class ParallelCoordinates {
                 }
             })
 
+        // let percentageLabel = self.svgGroup.selectAll('.percentageLabel')
+        //     .data([0])
+        // percentageLabel.enter()
+        //     .append('text')
+        //     .classed('percentageLabel', true)
+        //     .attr('x', self.x(0.5))
+        //     .attr('y', -4)
+        //     .attr('font-size', '1rem')
+        //     .attr('fill', 'white')
+        //     .attr('text-anchor', 'middle')
+        //     .text('Spatial Neighborhood Composition')
+
+        let overallLineLegend = self.svgGroup.selectAll('.overall_line')
+            .data([0])
+        overallLineLegend.enter()
+            .append('line')
+            .classed('overall_line', true)
+            .attr('x1', self.x(0.72))
+            .attr('y1', -25)
+            .attr('x2', self.x(0.76))
+            .attr('y2', -25)
+            .attr("stroke-width", 3)
+            .attr('stroke', 'grey')
+
+
+        let overallLineLabel = self.svgGroup.selectAll('.overall_line_label')
+            .data([0])
+        overallLineLabel.enter()
+            .append('text')
+            .classed('overall_line_label', true)
+            .attr('x', self.x(0.70))
+            .attr('y', -20)
+            .attr('font-size', '0.8rem')
+            .attr('fill', 'grey')
+            .attr('text-anchor', 'end')
+            .text('Overall')
+
         let avgLineLegend = self.svgGroup.selectAll('.average_line')
             .data([0])
         avgLineLegend.enter()
             .append('line')
             .classed('average_line', true)
-            .attr('x1', self.width - 40)
-            .attr('y1', -15)
-            .attr('x2', self.width - 20)
-            .attr('y2', -15)
+            .attr('x1', self.x(0.47))
+            .attr('y1', -25)
+            .attr('x2', self.x(0.51))
+            .attr('y2', -25)
             .attr("stroke-width", 3)
             .attr('stroke', 'white')
 
 
         let avgLineLabel = self.svgGroup.selectAll('.average_line_label')
             .data([0])
-        avgLineLegend.enter()
+        avgLineLabel.enter()
             .append('text')
             .classed('average_line_label', true)
-            .attr('x', self.width - 60)
-            .attr('y', -13)
-            .attr('font-size', '0.5rem')
-            .text('Avg.')
+            .attr('x', self.x(0.45))
+            .attr('y', -20)
+            .attr('font-size', '0.8rem')
+            .attr('fill', 'white')
+            .attr('text-anchor', 'end')
+            .text('Selection Avg.')
+
+        let selectionLineLegend = self.svgGroup.selectAll('.selection_line')
+            .data([0])
+        selectionLineLegend.enter()
+            .append('line')
+            .classed('selection_line', true)
+            .attr('x1', self.x(0.22))
+            .attr('y1', -25)
+            .attr('x2', self.x(0.26))
+            .attr('y2', -25)
+            .attr("stroke-width", 3)
+            .attr('stroke', 'orange')
+
+        let selectionLineLabel = self.svgGroup.selectAll('.selection_line_label')
+            .data([0])
+        selectionLineLabel.enter()
+            .append('text')
+            .classed('selection_line_label', true)
+            .attr('x', self.x(0.20))
+            .attr('y', -20)
+            .attr('font-size', '0.8rem')
+            .attr('fill', 'orange')
+            .attr('text-anchor', 'end')
+            .text('Selection')
 
 
         self.svgGroup.select(".average_path")
@@ -228,12 +292,14 @@ class ParallelCoordinates {
             .merge(labels)
             .style("text-anchor", "end")
             .attr("y", 3)
-            .attr("x", -3)
+            .attr("x", -5)
             .text(function (d) {
                 return d.key;
             })
             .classed("par_cor_label", true)
-            .style("fill", "white")
+            .style("fill", d => {
+                return self.colorScheme.colorMap[d.key].hex;
+            })
             .attr("transform", d => {
                 return "translate(0," + self.y(d.key) + ") "
             })
@@ -277,7 +343,7 @@ class ParallelCoordinates {
         self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
 
         if (!self.editMode) {
-            let opacity = 0.005;
+            let opacity = 0.002;
             let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.selection_neighborhoods', null);
             _.forEach(fullNeighborhood, row => {
                 const color = `hsla(0,0%,100%,${opacity})`;
@@ -299,17 +365,19 @@ class ParallelCoordinates {
             //Draw Selection
             let opacity = 0.01;
             _.forEach(self.selection_neighborhoods, row => {
-                const color = `hsla(39, 100%, 50%,${opacity})`;
-                self.canvas.getContext('2d').strokeStyle = color;
-                self.canvas.getContext('2d').beginPath();
-                row.map(function (p, i) {
-                    if (i == 0) {
-                        self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
-                    } else {
-                        self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
-                    }
-                });
-                self.canvas.getContext('2d').stroke();
+                if (Math.random() > 0.75) {
+                    const color = `hsla(39, 100%, 50%,${opacity})`;
+                    self.canvas.getContext('2d').strokeStyle = color;
+                    self.canvas.getContext('2d').beginPath();
+                    row.map(function (p, i) {
+                        if (i == 0) {
+                            self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
+                        } else {
+                            self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
+                        }
+                    });
+                    self.canvas.getContext('2d').stroke();
+                }
             })
         }
 

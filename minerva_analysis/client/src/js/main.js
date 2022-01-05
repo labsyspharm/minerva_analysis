@@ -51,7 +51,7 @@ async function init(conf) {
     channelList = new ChannelList(config, dataLayer, eventHandler);
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     legend = new Legend(dataLayer, colorScheme, eventHandler);
-    parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler);
+    parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer, neighborhoodTable);
     console.log('Ending Reg Init', new Date());
     //image viewer
@@ -121,7 +121,7 @@ const displaySelection = async (d) => {
     let selection = d.selection;
     let selectionSource = d.selectionSource || "Image";
     document.getElementById('neighborhood_current_selection').textContent = selectionSource;
-    document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
+    // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
     parallelCoordinates.wrangle(selection);
     scatterplot.recolor();
@@ -132,7 +132,7 @@ eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 const displayNeighborhoodSelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
     document.getElementById('neighborhood_current_selection').textContent = 'Phenotype';
-    document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
+    // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution');
     if (selection) {
         parallelCoordinates.wrangle(selection);
@@ -148,7 +148,7 @@ const selectNeighborhood = async (d) => {
         selection = await scatterplot.applyLasso(selection);
     }
     document.getElementById('neighborhood_current_selection').textContent = 'Cluster';
-    document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
+    // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
     // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
     parallelCoordinates.wrangle(selection);
@@ -159,8 +159,8 @@ const selectNeighborhood = async (d) => {
 eventHandler.bind(NeighborhoodTable.events.selectNeighborhood, selectNeighborhood);
 
 const changeSelectionMode = (singleCellMode) => {
-    // dataLayer.switchViewMode(singleCellMode);
-    // updateSeaDragonSelection(false, false);
+    dataLayer.switchViewMode(singleCellMode);
+    updateSeaDragonSelection(false, false);
 }
 eventHandler.bind(ImageViewer.events.changeSelectionMode, changeSelectionMode);
 

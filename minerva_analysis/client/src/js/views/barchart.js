@@ -7,10 +7,12 @@ class Barchart {
 
     init() {
         const self = this;
-        this.margin = {top: 10, right: 15, bottom: 30, left: 80},
+        this.margin = {top: 10, right: 23, bottom: 30, left: 120},
             this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
-
+        if (this.height <= 0) {
+            this.height = 140;
+        }
         this.svg = this.parent.append("svg")
             .attr("id", `${this.id}_barchart_svg`)
             .attr("class", "barchart")
@@ -51,6 +53,7 @@ class Barchart {
         this.svg.append("g")
             .attr("class", "yaxis")
             .call(this.yAxis)
+
 
 
         // this.svg.append("g")
@@ -102,8 +105,9 @@ class Barchart {
             .attr("y", 10)
             .attr("x", 0)
             .attr("dy", ".35em")
-            .attr("font-size", "0.5em")
+            .attr("font-size", "0.57rem")
             .style("text-anchor", "start")
+            .style('fill', 'black')
 
         self.svg.select(".yaxis")
             .transition()
@@ -113,8 +117,9 @@ class Barchart {
             .attr("y", 0)
             .attr("x", -10)
             .attr("dy", ".35em")
-            .attr("font-size", "0.5em")
+            .attr("font-size", "0.57rem")
             .style("text-anchor", "end")
+            .style('fill', 'black')
 
 
         let bars = self.svg.selectAll(".bar")
@@ -134,6 +139,15 @@ class Barchart {
             .attr("fill", '#8f8f8f');
 
         bars.exit().remove();
+
+        this.svg.select('.xaxis')
+            .append('text')
+            .attr("font-size", "0.7rem")
+            .attr("y", 25)
+            .attr("x", self.x(0.5) + 5)
+            .style("text-anchor", "middle")
+            .style('fill', 'black')
+            .text('Neighborhood Composition')
     }
 
     hide() {

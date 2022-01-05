@@ -64,7 +64,7 @@ class ImageViewer {
         // this.selectButton = document.getElementById("select_button");
         this.neighborhoodButton = document.getElementById("neighborhood_icon");
         this.similaritySlider = document.getElementById("neighborhood_similarity");
-        // this.cellViewButton = document.getElementById("cell_view_icon");
+        this.cellViewButton = document.getElementById("cell_view_icon");
         this.similaritySlider.onchange = (e) => {
             let val = document.getElementById("neighborhood_similarity").value;
             let span = document.getElementById('similarity_val');
@@ -401,19 +401,20 @@ class ImageViewer {
         //     that.lassoButton.classList.remove('selected');
         //     that.isSelectionToolActive = false;
         // })
-        // that.cellViewButton.addEventListener("click", () => {
-        //     let outerCircles = that.cellViewButton.querySelectorAll('.outer-circles');
-        //     _.each(outerCircles, circle => {
-        //         let thisCircle = d3.select(circle);
-        //         if (that.singleCellView) {
-        //             thisCircle.attr('fill', '#FEA50A')
-        //         } else {
-        //             thisCircle.attr('fill', 'none');
-        //         }
-        //     });
-        //
-        //     that.singleCellView = !that.singleCellView;
-        //     that.eventHandler.trigger(ImageViewer.events.changeSelectionMode, that.singleCellView);
+        that.cellViewButton.addEventListener("click", () => {
+            //     let outerCircles = that.cellViewButton.querySelectorAll('.outer-circles');
+            //     _.each(outerCircles, circle => {
+            //         let thisCircle = d3.select(circle);
+            //         if (that.singleCellView) {
+            //             thisCircle.attr('fill', '#FEA50A')
+            //         } else {
+            //             thisCircle.attr('fill', 'none');
+            //         }
+            //     });
+            //
+            that.singleCellView = !that.singleCellView;
+            that.eventHandler.trigger(ImageViewer.events.changeSelectionMode, that.singleCellView);
+        });
         //
         //     // that.selectButton.classList.add('selected');
         //     // that.lassoButton.classList.remove('selected');

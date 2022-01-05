@@ -15,6 +15,11 @@ class NeighborhoodTable {
     async init() {
         const self = this;
         this.neighborhoods = await this.dataLayer.getNeighborhoods();
+        this.neighborhoodStats = await self.dataLayer.getAllNeighborhoodStats();
+        this.neighborhoods = _.map(this.neighborhoods, (d, i) => {
+            d.push(i);
+            return d;
+        })
         return self.drawRows();
     }
 
@@ -69,9 +74,12 @@ class NeighborhoodTable {
                 return [d];
             });
 
-        nameCol.enter()
+        let enteredCol = nameCol.enter()
             .append('td')
-            .attr('class', 'name-col')
+            .attr('class', 'name-col');
+        enteredCol
+            .append('div')
+            .attr('class', 'row')
             .append('span')
             .text(d => {
                 return _.toString(d[2])
@@ -90,18 +98,31 @@ class NeighborhoodTable {
                     return self.editNeighborhood(d, newName);
                 }
             });
+        // enteredCol.append('div')
+        //     .attr('id', d => {
+        //         return `compare_parallel_coordinates_${d[4]}`
+        //     })
+        //     .attr('class', 'row compare_plot_body')
+            // .append('canvas')
+            // .attr('id', d => {
+            //     return `compare_col_canvas_${d[4]}`;
+            // })
+            // .attr('class', 'scatterplot scatter_canvas')
+
+
         nameCol.exit().remove();
 
-        let sourceCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.source-col')
-            .data(d => {
-                return [d];
-            });
-        sourceCol.enter()
-            .append('td')
-            .attr('class', 'source-col')
-            .append('span')
-            .text(d => d[3]);
-        sourceCol.exit().remove();
+
+        // let sourceCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.source-col')
+        //     .data(d => {
+        //         return [d];
+        //     });
+        // sourceCol.enter()
+        //     .append('td')
+        //     .attr('class', 'source-col')
+        //     .append('span')
+        //     .text(d => d[3]);
+        // sourceCol.exit().remove();
 
         let actionsCol = d3.select(self.table).selectAll('.neighborhood-row').selectAll('.actions-column')
             .data(d => {
@@ -158,6 +179,33 @@ class NeighborhoodTable {
             .attr('class', 'fas fa-trash delete_neighborhood neighborhood-table-icon');
 
         trashIcon.exit().remove();
+
+        //
+        // self.plots = _.map(self.neighborhoods, d => {
+        //     // let scatterplot = new Scatterplot(`compare_parallel_coordinates_${d[4]}`, `compare_col_canvas_${d[4]}`, self.eventHandler, self.dataLayer,
+        //     //     null, true);
+        //     // scatterplot.init();
+        //     // return scatterplot;
+        //     let barchart = new Barchart(`compare_parallel_coordinates_${d[4]}`, self.dataLayer.phenotypes);
+        //     barchart.init();
+        //     return barchart;
+        // })
+        // _.each(self.plots, (plot, i) => {
+        //     let plotData;
+        //     //TODO: For scatterplot
+        //     // plotData = _.get(self.neighborhoodStats[i], 'cells', []);
+        //     plotData = _.get(self.neighborhoodStats[i], 'cluster_summary.weighted_contribution', []);
+        //     //
+        //     // if (self.currentState == 'scatterplot') {
+        //     // } else {
+        //     //
+        //     // }
+        //     plot.wrangle(plotData, null);
+        // });
+        //wrangleSmallMultiples(order = null, scatterplot = false) {
+        //         const self = this;
+        //
+        //     }
     }
 
     async editNeighborhood(d, newName) {

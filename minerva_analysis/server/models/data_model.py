@@ -443,11 +443,13 @@ def get_color_scheme(datasource_name):
     labels = get_phenotypes(datasource_name)
     color_scheme = {}
     # http://godsnotwheregodsnot.blogspot.com/2013/11/kmeans-color-quantization-seeding.html
-    colors = palettable.colorbrewer.qualitative.Set3_12.hex_colors
-    colors.remove('#FDB462')
-    colors.append('#db4ba8')
-    colors.append('#02b72e')
-    colors.append('#2580fe')
+    # colors = palettable.colorbrewer.qualitative.Set3_12.hex_colors
+    colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
+              '#e0bf04', '#ab9a95', '#258d6b', '#934270', '#48e26f']
+    # colors.remove('#FDB462')
+    # colors.append('#db4ba8')
+    # colors.append('#02b72e')
+    # colors.append('#2580fe')
     # #db4ba8 #02b72e #2580fe
     for i in range(len(labels)):
         color_scheme[str(labels[i])] = {}
@@ -466,6 +468,8 @@ def get_cluster_labels(datasource_name):
 def get_scatterplot_data(datasource_name):
     global config
     data = np.load(Path(config[datasource_name]['embedding']))
+    if data.shape[1] < 3:
+        data = np.hstack((data, np.zeros((data.shape[0], 1))))
 
     normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :-1])
     # data[:, :2] = normalized_data
@@ -754,7 +758,8 @@ def get_spearmans_correlation(datasource_name, selection_ids):
     test = time.time()
     if selection_ids is not None:
         neighborhoods = neighborhoods[sorted(selection_ids), :]
-    coeffecients = spearmanr(neighborhoods)[0]
+    coeffecients = pd.DataFrame(neighborhoods).corr('pearson').to_numpy()
+    # coeffecients = pearsonr(neighborhoods)[0]
     coeffecients[np.isnan(coeffecients)] = 0
     heatmap = []
     for i in range(0, coeffecients.shape[0]):
@@ -836,7 +841,8 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
     if neighborhoods.shape[0] == selection_neighborhoods.shape[0]:
         sample_size = 10000
     else:
-        sample_size = 5000
+        # TODO: Replace sample_size = selection_neighborhoods.shape[0]
+        sample_size = 10000
 
     cluster_summary = np.mean(selection_neighborhoods, axis=0)
     # Sample down so we have 10k of full
@@ -844,9 +850,10 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
         selection_neighborhoods = selection_neighborhoods[
                                   np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=False), :]
     else:
-        scale_factor = int(sample_size / selection_neighborhoods.shape[0])
-
-        selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
+        selection_neighborhoods = selection_neighborhoods
+        # scale_factor = int(sample_size / selection_neighborhoods.shape[0])
+        #
+        # selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
 
     summary_stats = {'weighted_contribution': {}, 'selection_neighborhoods': selection_neighborhoods}
     phenotypes = sorted(datasource.phenotype.unique().tolist())
@@ -859,20 +866,20 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
         'cluster_summary': summary_stats,
         'phenotypes_list': phenotypes
     }
-    # points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
-    #                        'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
-    # # # Hardcoded to 30 um
-    # # if 'neighborhood_range' in config[datasource_name]:
-    # #     neighborhood_range = config[datasource_name]['neighborhood_range']
-    # # else:
-    # #     neighborhood_range = 30  # default 30um
-    # # r = neighborhood_range / metadata.physical_size_x
-    # # neighbors = ball_tree.query_radius(points, r=r)
-    # # unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
-    # # border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells.index.values)
-    # # neighbor_phenotypes = {}
-    # # for elem in border_neighbors:
-    # #     neighbor_phenotypes[str(elem)] = datasource.loc[elem, 'phenotype']
-    # # obj['neighbors'] = unique_neighbors
-    # # obj['neighbor_phenotypes'] = neighbor_phenotypes
+    points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
+                           'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
+    # Hardcoded to 30 um
+    if 'neighborhood_range' in config[datasource_name]:
+        neighborhood_range = config[datasource_name]['neighborhood_range']
+    else:
+        neighborhood_range = 30  # default 30um
+    r = neighborhood_range / metadata.physical_size_x
+    neighbors = ball_tree.query_radius(points, r=r)
+    unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
+    border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells.index.values)
+    neighbor_phenotypes = {}
+    for elem in border_neighbors:
+        neighbor_phenotypes[str(elem)] = datasource.loc[elem, 'phenotype']
+    obj['neighbors'] = unique_neighbors
+    obj['neighbor_phenotypes'] = neighbor_phenotypes
     return obj

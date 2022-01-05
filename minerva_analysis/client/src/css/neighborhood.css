@@ -4,6 +4,10 @@
     margin: 0;
 }
 
+#left-col {
+
+}
+
 #openseadragon_wrapper {
     height: 100%;
     position: relative;
@@ -83,9 +87,15 @@
 }
 
 .parallel_axes text {
+    font-size: 0.8rem;
     fill: white;
     text-anchor: start;
 
+}
+
+#custom_cluster_number::placeholder {
+    color: white;
+    opacity: 60%;
 }
 
 .legend {
@@ -209,7 +219,7 @@
     font-size: 8pt;
 }
 
-#search-row {
+#search-row, #cluster-row {
     padding-left: 10px;
     padding-right: 15px;
     margin: 0;
@@ -249,13 +259,6 @@
     content: attr(data-placeholder);
     pointer-events: none;
     opacity: 0.6;
-}
-
-#custom_cluster_submit {
-    position: absolute;
-    padding: 0;
-    color: #3870ce;
-    font-size: 1.5rem !important;
 }
 
 
@@ -298,12 +301,13 @@
 }
 
 #comparison_grid {
+    margin-top: 30px;
     overflow-y: scroll;
 }
 
 .compare_plot_title h5 {
-    color: #ffffff;
-    /*color: #000000;*/
+    /*color: #ffffff;*/
+    color: #000000;
     font-size: 0.9rem;
 }
 
@@ -332,14 +336,13 @@
 .barchart text, .barchart text {
     fill: #000000;
     color: #000000;
-    font-weight: lighter;
-    font-size: 0.4rem;
+    font-weight: bold;
 }
 
 #neighborhood_wrapper {
     /*TODO: For Figures*/
-    /*background-color: white;*/
-    background-color: black;
+    background-color: white;
+    /*background-color: black;*/
 }
 
 #comparison_title, .compare_plot_title {
