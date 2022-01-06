@@ -63,8 +63,8 @@ body {
     left: 1vw;
     width: 20vw;
     z-index: 101;
-    min-height: 47vh;
-    max-height: 57vh;
+    height: 40vh;
+    padding: 5px;
 }
 
 #search_wrapper {
@@ -97,8 +97,8 @@ body {
     left: 1vw;
     width: 20vw;
     z-index: 101;
-    min-height: 29vh;
-    max-height: 46px;
+    height: 20vh;
+    padding: 5px;
 }
 
 .left-col-row {
@@ -126,8 +126,10 @@ body {
 
 .lowRow1 {
     color: rgba(255, 255, 255, 0.75);
-    position: relative;
-    height: 4vh;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 15px !important;
 }
 
 #boxHeading1 {
@@ -154,18 +156,14 @@ body {
     margin-top: 10px;
 }
 
-#channel-container-header-div, #neighborhood-container-header-div {
-    margin-top: 10px;
-    margin-left: 10px;
-    position: absolute;
-    left: 0;
-}
 
 .list {
     font-size: 0.9rem;
     overflow-y: scroll;
     position: relative;
     width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 
 .list .list-group {
@@ -258,4 +256,9 @@ body {
 
 #neighborhood_table_header {
     padding: 5px;
+}
+
+
+.lowRow1 .col-auto {
+    padding: 0 !important;
 }

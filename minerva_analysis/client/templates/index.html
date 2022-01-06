@@ -10,7 +10,7 @@
     {% if data.datasource %}
         <div id="container">
             <div id="row" class="row">
-                <div id="left-col" class="col-auto">
+                <div id="left-col" class="col-auto d-flex flex-column">
                     <div id="search_wrapper" class="left-col-row">
                         <div class="row" id="search-row">
                             <div class="col-md-5 col">
@@ -68,35 +68,35 @@
 
                         </div>
                     </div>
-                    <div id="channel_list_wrapper" class="left-col-row">
-                        <div class="row lowRow1">
-                            <div class="col-auto align-self-start" id="channel-container-header-div">
+                    <div id="channel_list_wrapper" class="left-col-row d-flex flex-column">
+                        <div class="row lowRow1 justify-content-between">
+                            <div class="col-auto">
                                 <h5 class="plot-label text-center">Channels</h5>
                             </div>
-                            <div class="col-auto align-self-end" id="selected-channels-header-div">
+                            <div class="col-auto">
                                 <div class="row justify-content-end" id="number_selected_row">
                                     <span class="selected-channels-header align-bottom"
                                           id="num-selected-channels">0</span>
                                     <span class="selected-channels-header align-bottom">&nbsp;of 4 (Max) Selected</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="list" id="channel_list">
-                            <div class="row">
-                                <div class="col-auto">
-                                    <div class="lds-ellipsis" id="channel_list_loader">
-                                    </div>
-                                </div>
-                            </div>
 
+
+                            {#                            <div class="col-auto align-self-start" id="channel-container-header-div">#}
+                            {#                            </div>#}
+                            {#                            <div class="col-auto align-self-end" id="selected-channels-header-div">#}
+                            {#                                #}
+                            {#                            </div>#}
                         </div>
+                        <div class="list flex-grow-1 justify-content-between" id="channel_list"></div>
+                        {#                        flex-grow-1#}
                     </div>
-                    <div id="neighborhood_list_wrapper" class="left-col-row">
-                        <div class="row lowRow1">
-                            <div class="col-auto align-self-start" id="neighborhood-container-header-div">
+                    <div id="neighborhood_list_wrapper" class="left-col-row d-flex flex-column flex-grow-1">
+                        <div class="row lowRow1 justify-content-between">
+                            <div class="col-auto">
                                 <h5 class="plot-label text-center">Neighborhood Patterns</h5>
                             </div>
-                            <div class="col-auto align-self-end" id="search-neighborhoods-header-div">
+                            <div class="col-auto">
                                 <div class="row justify-content-end" style="align-self: flex-end;">
                                 <span class="material-icons" id="save_neighborhood_icon" data-toggle="tooltip"
                                       data-placement="right"
@@ -104,7 +104,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="neighborhood_table_card" class="card-body">
+                        <div id="neighborhood_table_card" class="card-body list flex-grow-1">
                             <table id="neighborhood_table" class="table table-hover">
                                 <thead id="neighborhood_table_header">
                                 <tr>
@@ -156,7 +156,6 @@
                     </div>
                 </div>
                 <div id="analysis_wrapper" class="col-auto analysis_wrapper_large viewer_col">
-
                     <div id="plots_display" class="col">
                         <div class="row">
                             <div class="col col-lg-2"></div>

@@ -144,8 +144,13 @@ body {
 }
 
 #channel_list {
-    margin-bottom: 5px;
+    height: 100%;
+    width: 100%;
+}
+
+#channel_list_parent {
     overflow-x: hidden;
+    overflow-y: scroll;
 }
 
 #search_header, #cluster_header {
@@ -203,7 +208,6 @@ body {
 }
 
 .selected-channels-header {
-    padding-top: 18px;
     font-size: 0.6rem;
 }
 
@@ -622,14 +626,11 @@ polygon:hover {
 }
 
 #neighborhood_table_card {
-    /*margin-top: 15px;*/
     margin-left: 10px;
     background-color: transparent;
-    /*display: none;*/
     padding: 0;
-    height: 21vh;
-    max-height: 21vh;
-    min-height: 21vh;
+    height: 100%;
+    width: 100%;
     overflow-y: scroll;
 }
 
@@ -641,7 +642,7 @@ polygon:hover {
 
 
 #neighborhood_table td, th {
-    padding: .25rem 0.5rem;
+    padding: .25rem 15px;
     font-size: 0.9rem;
     color: white;
     border: none;

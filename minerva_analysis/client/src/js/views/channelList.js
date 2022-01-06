@@ -62,7 +62,7 @@ class ChannelList {
         this.rainbow.hide();
         this.columns = await this.dataLayer.getChannelNames(true);
         // Hide the Loader
-        document.getElementById('channel_list_loader').style.display = "none";
+        // document.getElementById('channel_list_loader').style.display = "none";
         let channel_list = document.getElementById("channel_list");
         let list = document.createElement("ul");
         list.classList.add("list-group")
