@@ -137,9 +137,7 @@ body {
     position: relative;
 }
 
-#selected-channels-header-div {
-    bottom: 0;
-}
+
 
 #search-neighborhoods-header-div {
     padding-top: 0;
@@ -147,9 +145,7 @@ body {
 
 #selected-channels-header-div, #search-neighborhoods-header-div {
     margin-right: 10px;
-    position: absolute;
-    right: 0;
-    height: 100%;
+
 }
 
 #neighborhood_icon, #custom_cluster_submit {
