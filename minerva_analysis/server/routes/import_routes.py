@@ -8,6 +8,8 @@ from flask import render_template, request, Response, jsonify
 from pathlib import Path
 from pathlib import PurePath
 
+import numpy as np
+import pandas as pd
 import shutil
 import csv
 import json
@@ -66,8 +68,8 @@ def edit_config_with_config_name(config_name):
         if 'normalization' in config_data['featureData'][0]:
             data['normalization'] = config_data['featureData'][0]['normalization']
 
-        if 'transformData' in config_data['featureData'][0]:
-            data['transformData'] = config_data['featureData'][0]['transformData']
+        if 'isTransformed' in config_data['featureData'][0]:
+            data['isTransformed'] = config_data['featureData'][0]['isTransformed']
 
         if 'clusterData' in config_data:
             data['normCsvName'] = config_data['clusterData']
@@ -281,6 +283,16 @@ def upload_file_page():
                     config_data['labelName'] = labelName
                     config_data['datasources'] = get_config_names()
                     config_data['datasources'].append(datasetName)
+
+                    datasource = pd.read_csv(csvPath)
+                    listNotMarkers = ['CellID', 'X_centroid', 'Y_centroid', 'Area', 'MajorAxisLength', 'MinorAxisLength', 'Eccentricity', 'Solidity', 'Extent', 'Orientation', 'column_centroid', 'row_centroid', 'phenotype']
+                    listImageData = [name for name in header_full_names if name not in listNotMarkers]
+                    datasourceImageData = datasource[[*listImageData]]
+                    if np.mean(np.mean(datasourceImageData)) < 15:
+                        config_data["isTransformed"] = True
+                    else:
+                        config_data["isTransformed"] = False
+
                     return render_template('channel_match.html', data=config_data)
         except Exception as e:
             completed_task = -1
@@ -354,25 +366,24 @@ def save_config():
             celltypeName = originalData['celltypeData']
         idList = request.json['idField']
         headerList = request.json['headerList']
-        if 'transformData' in originalData:
-            transformData = originalData['transformData']
-        else:
-            transformData = request.json['transformData']
-            if transformData:
-                print("Transforming Data")
-                skip_columns = []
-                if idList[2]['value'] != 'on':
-                    skip_columns.append(idList[0]['value'])
-                for i in range(int(len(headerList) / 3)):
-                    column_name = headerList[i * 3]['value']
-                    normalize_column = headerList[i * 3 + 2]['value']
-                    if normalize_column != 'on':
-                        skip_columns.append(column_name)
-                file_path = str(Path(cwd_path, data_path, datasetName))
-                csvPath = str(Path(file_path) / csvName)
-                # pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
-                data_model.logTransform(csvPath, skip_columns=skip_columns)
-                print("Finished Transforming Data")
+
+        isTransformed = originalData['isTransformed']
+        transformData = request.json['transformData']
+        if not isTransformed and transformData:
+            print("Transforming Data")
+            skip_columns = []
+            if idList[2]['value'] != 'on':
+                skip_columns.append(idList[0]['value'])
+            for i in range(int(len(headerList) / 3)):
+                column_name = headerList[i * 3]['value']
+                normalize_column = headerList[i * 3 + 2]['value']
+                if normalize_column != 'on':
+                    skip_columns.append(column_name)
+            file_path = str(Path(cwd_path, data_path, datasetName))
+            csvPath = str(Path(file_path) / csvName)
+            # pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
+            data_model.logTransform(csvPath, skip_columns=skip_columns)
+            print("Finished Transforming Data")
         # elif 'normalizeCsvName' in request.json:
         #     normCsvName = request.json['normalizeCsvName']
         # else:
@@ -437,8 +448,10 @@ def save_config():
             if 'normalization' in originalData:
                 configData[datasetName]['featureData'][0]['normalization'] = originalData['normalization']
 
-            if transformData:
-                configData[datasetName]['featureData'][0]['transformData'] = transformData
+            if isTransformed or transformData:
+                configData[datasetName]['featureData'][0]['isTransformed'] = True
+            else:
+                configData[datasetName]['featureData'][0]['isTransformed'] = False
 
             configData[datasetName]['featureData'][0][
                 'src'] = str(data_path / datasetName / csvName)

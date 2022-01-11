@@ -102,15 +102,6 @@ def load_config(datasource_name):
         if original != config[datasource_name]['featureData'][0]['src']:
             updated = True
 
-        csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-        datasource = pd.read_csv(csvPath)
-        listImageData = [d['fullname'] for d in config[datasource_name]['imageData'] if d['fullname'] != 'Area']
-        datasourceImageData = datasource[[*listImageData]]
-        if np.mean(np.mean(datasourceImageData)) < 15:
-            if "transformData" not in config[datasource_name]["featureData"][0]:
-                config[datasource_name]["featureData"][0]["transformData"] = True
-                updated = True
-
         try:
             original = config[datasource_name]['segmentation']
             config[datasource_name]['segmentation'] = original.replace('static/data', 'minerva_analysis/data')
@@ -676,8 +667,8 @@ def get_datasource_description(datasource_name):
                 dat.append(obj)
 
             description[fullName]['image_histogram'] = dat
-            description[fullName]['image_min'] = np.int(np.exp(np.min(img_log)))
-            description[fullName]['image_max'] = np.int(np.exp(np.max(img_log)))
+            description[fullName]['image_min'] = np.rint(np.exp(np.min(img_log)))
+            description[fullName]['image_max'] = np.rint(np.exp(np.max(img_log)))
 
             image_layer += 1
         else:
@@ -715,8 +706,8 @@ def get_channel_gmm(channel_name, datasource_name):
         vmin = means[i2] + covars[i2] ** 0.5 * -1
     vmin = max(vmin, img_log.min(), 0)
     vmax = min(vmax, img_log.max())
-    packet_gmm['vmin'] = np.int(np.exp(vmin))
-    packet_gmm['vmax'] = np.int(np.exp(vmax))
+    packet_gmm['vmin'] = np.rint(np.exp(vmin))
+    packet_gmm['vmax'] = np.rint(np.exp(vmax))
 
     [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
     midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2

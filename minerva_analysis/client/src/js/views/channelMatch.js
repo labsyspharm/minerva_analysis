@@ -114,22 +114,25 @@ function channelMatch(data) {
 // Taken from pre_normalization csv
     //let markers_notToNorm = ['Field_Row', 'Field_Col', 'CellID', 'Area', 'X_centroid', 'Y_centroid', 'X_position', 'Y_position', 'Percent_Touching', 'Number_Neighbors', 'Neighbor_1', 'Neighbor_2', 'Neighbor_3', 'Neighbor_4', 'Neighbor_5', 'Eccentricity', 'Solidity', 'Extent', 'EulerNumber', 'Perimeter', 'column_centroid', 'row_centroid', 'MajorAxisLength', 'MinorAxisLength', 'Orientation', 'X_position', 'Y_position', 'phenotype']
     let markers_notToTransform = headers.map(marker => marker['fullName']).filter(marker => !marker.includes(data['substring']));
+    markers_notToTransform.push(headers.map(marker => marker['fullName'])[0])
+    markers_notToTransform.push('CellID', 'X_centroid', 'Y_centroid', 'Area', 'MajorAxisLength', 'MinorAxisLength', 'Eccentricity', 'Solidity', 'Extent', 'Orientation', 'column_centroid', 'row_centroid', 'phenotype')
     _.each(headers, (header, i) => {
         let fullName = _.get(header, 'fullName') || header;
         if (!_.includes(markers_notToTransform, fullName)) {
             $(`#transform${i}`).prop('checked', true);
         }
     });
-    let transformData = _.get(data, 'transformData');
+
+    let isTransformed = _.get(data, 'isTransformed');
     $('.transform-label').hide();
     $('.transform-checkbox').hide();
-    if (transformData == true) {
-        $('#transform-data').prop('checked', true)
+    if (isTransformed == true) {
+        $('#transform-data').prop('checked', false)
         $('.transform-label').hide();
         $('.transform-checkbox').hide();
         // $('.transform-form').hide();
         $('#transform-data').hide();
-        $("label[for = transform-data]").text("Data was transformed.");
+        $("label[for = transform-data]").text("(Log Transformed)");
     }
 
 

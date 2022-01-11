@@ -532,8 +532,8 @@ class DataLayer {
      * @returns {boolean}
      */
     isTransformed(){
-      if (this.config["featureData"][0]["transformData"]  !== undefined &&
-          this.config["featureData"][0]["transformData"] == true){
+      if (this.config["featureData"][0]["isTransformed"]  !== undefined &&
+          this.config["featureData"][0]["isTransformed"] == true){
           return true;
       }
       return false;
