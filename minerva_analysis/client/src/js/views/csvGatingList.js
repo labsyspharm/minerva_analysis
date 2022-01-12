@@ -91,6 +91,7 @@ class CSVGatingList {
         // Draws rows in the gating list
         self.columns.push('Area'); // Add 'Area' to Gating List
         _.each(self.columns, column => {
+            let channelID = self.dataLayer.getIDFromShortChannelName(column)
             // div for each row in gating list
             let listItemParentDiv = document.createElement("div");
             listItemParentDiv.classList.add("list-group-item");
@@ -115,7 +116,7 @@ class CSVGatingList {
             let sliderCol = document.createElement("div");
             sliderCol.classList.add("col-md-12");
             sliderCol.classList.add("csv_gating-slider");
-            sliderCol.setAttribute('id', "csv_gating-slider_" + column)
+            sliderCol.setAttribute('id', "csv_gating-slider_" + channelID)
             row2.appendChild(sliderCol);
 
             // column within row that contains svg for color pickers
@@ -146,20 +147,20 @@ class CSVGatingList {
             const sliderRange = [self.databaseDescription[fullName].min, self.databaseDescription[fullName].max];
             self.gating_channels[fullName] = sliderRange;
             self.addSlider(sliderRange, sliderRange, column, self.sliderWidth);
-            d3.select('div#csv_gating-slider_' + column).style('display', "none");
+            d3.select('div#csv_gating-slider_' + channelID).style('display', "none");
 
             let autoCol = document.createElement("div");
             autoCol.classList.add("col-md-4");
             autoCol.classList.add("ml-auto");
             autoCol.classList.add("csv_gating-auto")
-            autoCol.setAttribute('id', "csv_gating-auto_" + column)
+            autoCol.setAttribute('id', "csv_gating-auto_" + channelID)
             autoCol.classList.add("gating-col");
             autoCol.classList.add("gating-svg-wrapper");
             row.appendChild(autoCol);
 
             let autoBtn = document.createElement("button");
             autoBtn.classList.add('auto-btn');
-            autoBtn.setAttribute('id', "auto-btn_" + column);
+            autoBtn.setAttribute('id', "auto-btn_" + channelID);
             autoBtn.textContent = "auto";
             autoBtn.addEventListener("click", function() { self.autoGate(fullName) });
 
@@ -248,13 +249,14 @@ class CSVGatingList {
         }
         _.each(gates, col => {
             let shortName = self.dataLayer.getShortChannelName(col.channel);
+            let channelID = self.dataLayer.getIDFromShortChannelName(shortName)
             if (self.sliders.get(shortName)) {
                 self.sliders.get(shortName).value([col.gate_start, col.gate_end]);
                 this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
                 if (col.gate_active) {
                     // IF the channel isn't active, make it so
                     if (!self.selections[col.channel]) {
-                        let selector = `#csv_gating-slider_${shortName}`;
+                        let selector = `#csv_gating-slider_${channelID}`;
                         document.querySelector(selector).click();
                     }
                     self.selections[col.channel] = [col.gate_start, col.gate_end];
@@ -264,7 +266,7 @@ class CSVGatingList {
                 } else {
                     // If channel is currently active, but shouldn't be, update it
                     if (self.selections[col.channel]) {
-                        let selector = `#csv_gating-slider_${shortName}`;
+                        let selector = `#csv_gating-slider_${channelID}`;
                         document.querySelector(selector).click();
                     }
                     delete this.selections[col.channel];
@@ -339,6 +341,7 @@ class CSVGatingList {
         // Get info
         let parent = event.target.closest(".list-group-item");
         let name = parent.querySelector('.gating-name').textContent;
+        let channelID = self.dataLayer.getIDFromShortChannelName(name)
         let status = !parent.classList.contains("active");
 
         // If active - else inactive
@@ -355,8 +358,8 @@ class CSVGatingList {
             // Update properties and add slider
             d3.select(parent).classed("active", true);
             svgCol.style.display = "block";
-            d3.select('div#csv_gating-slider_' + name).style('display', "block")
-            d3.select('div#csv_gating-auto_' + name).style('display', "block");
+            d3.select('div#csv_gating-slider_' + channelID).style('display', "block")
+            d3.select('div#csv_gating-auto_' + channelID).style('display', "block");
 
             // Add channel
             this.selectChannel(name);
@@ -371,8 +374,8 @@ class CSVGatingList {
             // Hide
             d3.select(parent).classed("active", false);
             svgCol.style.display = "none";
-            d3.select('div#csv_gating-slider_' + name).style('display', "none")
-            d3.select('div#csv_gating-auto_' + name).style('display', "none");
+            d3.select('div#csv_gating-slider_' + channelID).style('display', "none")
+            d3.select('div#csv_gating-auto_' + channelID).style('display', "none");
 
             // Trigger viewer cleanse
             this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
@@ -536,7 +539,7 @@ class CSVGatingList {
                             if (match && !Array.from(match.classList).includes('active')) {
                                 const fakeEvent = {target: match};
                                 const svgCol = match.querySelector('.col-svg-wrapper')
-                                global.abstract_click(fakeEvent, svgCol);
+                                // global.abstract_click(fakeEvent, svgCol);
                             }
                         }
                     }
@@ -565,6 +568,7 @@ class CSVGatingList {
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
         let gmm1Data = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gmm_1']
         let gmm2Data = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gmm_2']
+        let channelID = this.dataLayer.getIDFromShortChannelName(name)
 
         // If no data
         if (!data) return
@@ -603,17 +607,17 @@ class CSVGatingList {
                 this.gating_channels[self.dataLayer.getFullChannelName(name)] = range;
             }).on('onchange', range => {
                   //lower range value
-                  d3.select('#gating_slider-input' + name + 0).attr('value', function(){
+                  d3.select('#gating_slider-input' + channelID + 0).attr('value', function(){
                       if (that.dataLayer.isTransformed()) { return range[0]}; return Math.round(range[0]);
                   })
-                  d3.select('#gating_slider-input' + name + 0).property('value', function(){
+                  d3.select('#gating_slider-input' + channelID + 0).property('value', function(){
                       if (that.dataLayer.isTransformed()) { return range[0]}; return Math.round(range[0]);
                   });
                   //upper range value
-                  d3.select('#gating_slider-input' + name + 1).attr('value', function(){
+                  d3.select('#gating_slider-input' + channelID + 1).attr('value', function(){
                       if (that.dataLayer.isTransformed()) { return range[1]}; return Math.round(range[1]);
                   });
-                  d3.select('#gating_slider-input' + name + 1).property('value', function(){
+                  d3.select('#gating_slider-input' + channelID + 1).property('value', function(){
                      if (that.dataLayer.isTransformed()) { return range[1]}; return Math.round(range[1]);
                   });
                   that.moveSliderHandles(sliderSimple, range, name);
@@ -622,10 +626,10 @@ class CSVGatingList {
 
         //create the slider svg and call the slider
         var gSimple = d3
-            .select('#csv_gating-slider_' + name)
+            .select('#csv_gating-slider_' + channelID)
             .append('svg')
             .attr('class', 'svgslider')
-            .attr('id', '#csv_gating-slider_svg_' + name)
+            .attr('id', '#csv_gating-slider_svg_' + channelID)
             .attr('width', swidth)
             .attr('height', 80)
             .append('g')
@@ -686,9 +690,9 @@ class CSVGatingList {
             .attr("y", 10);
 
         //both handles
-        d3.select('#csv_gating-slider_' + name).selectAll(".parameter-value").each(function(d, i) {
+        d3.select('#csv_gating-slider_' + channelID).selectAll(".parameter-value").each(function(d, i) {
         d3.select(this).append("foreignObject")
-                    .attr('id', 'c_foreignObject_' + name + i)
+                    .attr('id', 'c_foreignObject_' + channelID + i)
                     .attr("width", 50)
                     .attr("height", 40)
                     .attr('x', -25)
@@ -699,7 +703,7 @@ class CSVGatingList {
                         .style('background', 'none')
                       .append('input')
                         .attr( 'y', -17)
-                        .attr('id', 'gating_slider-input' + name + i)
+                        .attr('id', 'gating_slider-input' + channelID + i)
                         .attr('type', 'text')
                         .attr('class', 'input')
                         .attr('value', function(){return that.sliders.get(name).value()[i]});
@@ -708,7 +712,7 @@ class CSVGatingList {
         });
 
         //entering a value in the input field of a slider handle will set this value and move the slider to this position
-        d3.select('#csv_gating-slider_' + name).selectAll(".parameter-value").selectAll('.input').on('keydown', function(event, d){
+        d3.select('#csv_gating-slider_' + channelID).selectAll(".parameter-value").selectAll('.input').on('keydown', function(event, d){
           if(event.key == "Enter"){
             // if (d.index = d3.select(this).attr('id')){
               let val = parseFloat(this.value.replace("%", ""));
@@ -736,7 +740,8 @@ class CSVGatingList {
         let gatingList = Object.keys(self.selections);
         _.each(gatingList, col => {
             let shortName = self.dataLayer.getShortChannelName(col);
-            let gating_selector = `#csv_gating-slider_${shortName}`;
+            let channelID = self.dataLayer.getIDFromShortChannelName(shortName)
+            let gating_selector = `#csv_gating-slider_${channelID}`;
             document.querySelector(gating_selector).click();
         });
     };
@@ -745,13 +750,15 @@ class CSVGatingList {
      * @function moveSliderHandle - move the slider handles and input fields so that input fields don't overlap when handles are close
      */
     moveSliderHandles(slider, valArray, name){
+        const self = this;
+        let channelID = self.dataLayer.getIDFromShortChannelName(name);
         slider.silentValue(valArray);
         let percentage = (Math.abs(valArray[1] - valArray[0])/(Math.abs(slider.max()-slider.min())));
         if (percentage < 0.15){
             console.log('slider handles overlap..do something');
-            d3.select('#c_foreignObject_'  + name + 1).attr('x', 5);
+            d3.select('#c_foreignObject_'  + channelID + 1).attr('x', 5);
         }else{
-            d3.select('#c_foreignObject_'  + name + 1).attr('x', -25);
+            d3.select('#c_foreignObject_'  + channelID + 1).attr('x', -25);
         }
     }
 

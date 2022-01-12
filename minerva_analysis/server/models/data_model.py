@@ -210,7 +210,7 @@ def get_channel_cells(datasource_name, channels):
     for c in channels:
         if query_string != '':
             query_string += ' and '
-        query_string += str(range[0]) + ' < ' + c + ' < ' + str(range[1])
+        query_string += str(range[0]) + ' < `' + c + '` < ' + str(range[1])
     if query_string == None or query_string == "":
         return []
     query = datasource.query(query_string)[['id']].to_dict(orient='records')
@@ -418,7 +418,7 @@ def get_gated_cells(datasource_name, gates, start_keys):
     for key, value in gates.items():
         if query_string != '':
             query_string += ' and '
-        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
         query_keys.append(key)
     if query_string is None or query_string == "":
         return []
@@ -442,7 +442,7 @@ def get_gated_cells_custom(datasource_name, gates, start_keys):
     for key, value in gates.items():
         if query_string != '':
             query_string += ' or '
-        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
         query_keys.append(key)
     if query_string is None or query_string == "":
         return []
@@ -470,7 +470,7 @@ def download_gating_csv(datasource_name, gates, channels, encoding):
         columns.append(key)
         if query_string != '':
             query_string += ' and '
-        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
     ids = datasource.query(query_string)[['id']].to_numpy().flatten()
     if 'idField' in config[datasource_name]['featureData'][0]:
         idField = config[datasource_name]['featureData'][0]['idField']

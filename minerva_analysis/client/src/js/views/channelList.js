@@ -73,6 +73,7 @@ class ChannelList {
 
         let fullName = self.dataLayer.getFullChannelName(name);
         let channelIdx = imageChannels[fullName];
+        let channelID = self.dataLayer.getIDFromShortChannelName(name)
 
         if (!this.rangeConnector[channelIdx]) {
             let defaultRange = self.dataLayer.imageBitRange;
@@ -81,7 +82,7 @@ class ChannelList {
 
         if (!this.colorConnector[channelIdx]) {
             let rgbColor = `rgb(255, 255, 255)`;
-            let selectorColor = `#color_${name}`;
+            let selectorColor = `#color_${channelID}`;
             let selectorDoc = document.querySelector(selectorColor);
             selectorDoc.style.fill = rgbColor;
         }
@@ -129,6 +130,7 @@ class ChannelList {
         };
         // Draws rows in the channel list
         _.each(this.columns, column => {
+            let channelID = this.dataLayer.getIDFromShortChannelName(column);
             // div for each row in channel list
             let listItemParentDiv = document.createElement("div");
             listItemParentDiv.classList.add("list-group-item");
@@ -153,7 +155,7 @@ class ChannelList {
             let sliderCol = document.createElement("div");
             sliderCol.classList.add("col-md-12");
             sliderCol.classList.add("channel-slider");
-            sliderCol.setAttribute('id', "channel-slider_" + column)
+            sliderCol.setAttribute('id', "channel-slider_" + channelID)
             row2.appendChild(sliderCol);
 
             // column within row that contains svg for color pickers
@@ -176,7 +178,7 @@ class ChannelList {
             svg.selectAll("circle")
                 .data([{"color": "white", "name": column}])
                 .enter().append("rect")
-                .attr("id", "color_" + column)
+                .attr("id", "color_" + channelID)
                 .attr("class", "color-transfer")
                 .attr("cursor", "pointer")
                 .attr("stroke", "#757575")
@@ -195,14 +197,14 @@ class ChannelList {
             autoCol.classList.add("col-md-4");
             autoCol.classList.add("ml-auto");
             autoCol.classList.add("image-auto")
-            autoCol.setAttribute('id', "image-auto_" + column)
+            autoCol.setAttribute('id', "image-auto_" + channelID)
             autoCol.classList.add("channel-col");
             autoCol.classList.add("channel-svg-wrapper");
             row.appendChild(autoCol);
 
             let autoBtn = document.createElement("button");
             autoBtn.classList.add('auto-btn');
-            autoBtn.setAttribute('id', "auto-btn_" + column);
+            autoBtn.setAttribute('id', "auto-btn_" + channelID);
             autoBtn.textContent = "auto";
             autoBtn.addEventListener("click", async function() { await self.auto_channel(column) });
 
@@ -224,7 +226,7 @@ class ChannelList {
             let sliderMax = this.databaseDescription[fullName]['image_max']
             self.image_channels[column] = [sliderMin, sliderMax];
             let sliderRange = this.addSlider(sliderMin, sliderMax, column, document.getElementById("channel_list").getBoundingClientRect().width);
-            d3.select('div#channel-slider_' + column).style('display', "none");
+            d3.select('div#channel-slider_' + channelID).style('display', "none");
 
         });
 
@@ -296,6 +298,7 @@ class ChannelList {
         _.each(channels, col => {
             let fullName = self.dataLayer.getFullChannelName(col.channel);
             let channelIdx = imageChannels[fullName];
+            let channelID = self.dataLayer.getIDFromShortChannelName(col.channel)
 
             if (this.sliders.get(col.channel)) {
                 if (col.start > this.image_channels[col.channel][0] || col.end < this.image_channels[col.channel][1]){
@@ -305,7 +308,7 @@ class ChannelList {
 
                 if (col.r !== 255 || col.g !== 255 || col.b !== 255) {
                     let rgbColor = `rgb(${col.r}, ${col.g}, ${col.b})`;
-                    let selectorColor = `#color_${col.channel}`;
+                    let selectorColor = `#color_${channelID}`;
                     // document.querySelector(selectorColor).setAttribute("fill", rgbColor);
                     let selectorDoc = document.querySelector(selectorColor);
                     selectorDoc.style.fill = rgbColor;
@@ -319,7 +322,7 @@ class ChannelList {
                 }
 
                 if (col['channel_active']) {
-                    let selector = `#channel-slider_${col.channel}`;
+                    let selector = `#channel-slider_${channelID}`;
                     document.querySelector(selector).click();
                 }
             }
@@ -388,6 +391,7 @@ class ChannelList {
         // Get info
         let parent = event.target.closest(".list-group-item");
         let name = parent.querySelector('.channel-name').textContent;
+        let channelID = this.dataLayer.getIDFromShortChannelName(name);
         let status = !parent.classList.contains("active");
 
         // If active - else inactive
@@ -401,8 +405,8 @@ class ChannelList {
             // Update properties and add slider
             d3.select(parent).classed("active", true);
             svgCol.style.display = "block";
-            d3.select('div#channel-slider_' + name).style('display', "block")
-            d3.select('div#image-auto_' + name).style('display', "block");
+            d3.select('div#channel-slider_' + channelID).style('display', "block")
+            d3.select('div#image-auto_' + channelID).style('display', "block");
 
             // Add channel
             this.selectChannel(name);
@@ -418,8 +422,8 @@ class ChannelList {
             // Hide
             d3.select(parent).classed("active", false);
             svgCol.style.display = "none";
-            d3.select('div#channel-slider_' + name).style('display', "none")
-            d3.select('div#image-auto_' + name).style('display', "none");
+            d3.select('div#channel-slider_' + channelID).style('display', "none")
+            d3.select('div#image-auto_' + channelID).style('display', "none");
 
             // Trigger viewer cleanse
             // this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, this.selections);
@@ -457,6 +461,7 @@ class ChannelList {
 
         var that = this;
         let fullName = this.dataLayer.getFullChannelName(name);
+        let channelID = this.dataLayer.getIDFromShortChannelName(name);
         let histogramData = this.databaseDescription[fullName]['image_histogram']
         let data_min = this.databaseDescription[fullName]['image_min']
         let data_max = this.databaseDescription[fullName]['image_max']
@@ -470,10 +475,10 @@ class ChannelList {
             .on('onchange', val => {
                 val = [Math.round(val[0]), Math.round(val[1])]
               // d3.select('p#value-range').text(val.map(d3.format('.2%')).join('-'));
-              d3.select('#slider-input' + name + 0).attr('value', val[0]);
-              d3.select('#slider-input' + name + 0).property('value', val[0]);
-              d3.select('#slider-input' + name + 1).attr('value', val[1]);
-              d3.select('#slider-input' + name + 1).property('value', val[1]);
+              d3.select('#slider-input' + channelID + 0).attr('value', val[0]);
+              d3.select('#slider-input' + channelID + 0).property('value', val[0]);
+              d3.select('#slider-input' + channelID + 1).attr('value', val[1]);
+              d3.select('#slider-input' + channelID + 1).property('value', val[1]);
               // sliderSimple.silentValue([val[0], val[1]]);
               that.moveSliderHandles(sliderSimple, val, name);
               let packet_val = [val[0], val[1]]
@@ -498,10 +503,10 @@ class ChannelList {
 
         //create the slider svg and call the slider
         var gSimple = d3
-            .select('#channel-slider_' + name)
+            .select('#channel-slider_' + channelID)
             .append('svg')
             .attr('class', 'svgslider')
-            .attr('id', 'channel-slider_svg_' + name)
+            .attr('id', 'channel-slider_svg_' + channelID)
             .attr('width', swidth)
             .attr('height', 80)
             .append('g')
@@ -540,9 +545,9 @@ class ChannelList {
             .attr("y", 10);
 
         //both handles
-        d3.select('#channel-slider_' + name).selectAll(".parameter-value").each(function(d, i) {
+        d3.select('#channel-slider_' + channelID).selectAll(".parameter-value").each(function(d, i) {
         d3.select(this).append("foreignObject")
-                    .attr('id', 'foreignObject_' + name + i)
+                    .attr('id', 'foreignObject_' + channelID + i)
                     .attr("width", 50)
                     .attr("height", 40)
                     .attr('x', -25)
@@ -553,7 +558,7 @@ class ChannelList {
                         .style('background', 'none')
                       .append('input')
                         .attr( 'y', -17)
-                        .attr('id', 'slider-input' + name + i)
+                        .attr('id', 'slider-input' + channelID + i)
                         .attr('type', 'text')
                         .attr('class', 'input')
                         .attr('value', function(){return channelList.sliders.get(name).value()[i]});
@@ -562,7 +567,7 @@ class ChannelList {
         });
 
         //entering a value in the input field of a slider handle will set this value and move the slider to this position
-        d3.select('#channel-slider_' + name).selectAll(".parameter-value").selectAll('.input').on('keydown', function(event, d){
+        d3.select('#channel-slider_' + channelID).selectAll(".parameter-value").selectAll('.input').on('keydown', function(event, d){
           if(event.key == "Enter"){
             // if (d.index = d3.select(this).attr('id')){
               let val = parseFloat(this.value.replace("%", ""));
@@ -582,6 +587,7 @@ class ChannelList {
 
     async drawChannelGMM(name){
         let fullname = this.dataLayer.getFullChannelName(name)
+        let channelID = this.dataLayer.getIDFromShortChannelName(name)
         let packet = await this.dataLayer.getChannelGMM(fullname)
 
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram']
@@ -608,7 +614,7 @@ class ChannelList {
             })
             .curve(d3.curveMonotoneX)
 
-        let gSimple = d3.select('#channel-slider_svg_' + name + ' g')
+        let gSimple = d3.select('#channel-slider_svg_' + channelID + ' g')
 
         gSimple.selectAll('.image_gmm1_line')
             .data([channel_gmm1Data])
@@ -651,12 +657,14 @@ class ChannelList {
      * @param name - the name of the slider
      */
     moveSliderHandles(slider, valArray, name){
+        const self = this;
+        let channelID = self.dataLayer.getIDFromShortChannelName(name);
         slider.silentValue(valArray);
         if (valArray[1] - valArray[0] < 0.41){
             console.log('slider handles overlap..do something');
-            d3.select('#foreignObject_'  + name + 1).attr('x', 5);
+            d3.select('#foreignObject_'  + channelID + 1).attr('x', 5);
         }else{
-            d3.select('#foreignObject_'  + name + 1).attr('x', -25);
+            d3.select('#foreignObject_'  + channelID + 1).attr('x', -25);
         }
     }
 
@@ -667,7 +675,8 @@ class ChannelList {
         const self = this;
         let channelList = _.clone(self.selections);
         _.each(channelList, col => {
-            let channel_selector = `#channel-slider_${col}`;
+            let channelID = this.dataLayer.getIDFromShortChannelName(col)
+            let channel_selector = `#channel-slider_${channelID}`;
             document.querySelector(channel_selector).click();
         });
     }
