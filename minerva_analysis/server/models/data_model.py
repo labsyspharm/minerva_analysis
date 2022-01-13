@@ -111,6 +111,13 @@ def load_config(datasource_name):
         except KeyError:
             print(datasource_name, 'is  missing segmentation')
 
+        for channel in config[datasource_name]['imageData']:
+            if 'channelID' not in channel:
+                channelName = channel['name']
+                channelID = re.sub('[^A-Za-z0-9\-\_]', '', channelName)
+                channel['channelID'] = channelID
+                updated = True
+
         if updated:
             configJson.seek(0)  # <--- should reset file position to the beginning.
             json.dump(config, configJson, indent=4)

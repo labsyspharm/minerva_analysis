@@ -252,6 +252,16 @@ class CSVGatingList {
         } else {
             gates = await self.dataLayer.getSavedGatingList();
         }
+
+        _.each(gates, col => {
+            let shortName = self.dataLayer.getShortChannelName(col.channel);
+            let channelID = self.dataLayer.getIDFromShortChannelName(shortName)
+            if (self.selections[col.channel]) {
+                let selector = `#csv_gating-slider_${channelID}`;
+                document.querySelector(selector).click();
+            }
+        })
+
         _.each(gates, col => {
             let shortName = self.dataLayer.getShortChannelName(col.channel);
             let channelID = self.dataLayer.getIDFromShortChannelName(shortName)
