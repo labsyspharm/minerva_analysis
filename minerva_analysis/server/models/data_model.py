@@ -616,36 +616,13 @@ def get_datasource_description(datasource_name):
         [hist, bin_edges] = np.histogram(column_data[~np.isnan(column_data)], bins=50, density=True)
         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
         description[column]['histogram'] = {}
-
-        gmm = GaussianMixture(n_components=2)
-        gmm.fit(column_data.reshape((-1, 1)))
-        i0, i1 = np.argsort(gmm.means_[:,0])
-        description[column]['gate'] = np.mean(gmm.means_)
-        pdf_gmm1 = [gmm.weights_[i0] * norm.pdf(midpoints, gmm.means_[i0], np.sqrt(gmm.covariances_[i0]))][0][0]
-        pdf_gmm2 = [gmm.weights_[i1] * norm.pdf(midpoints, gmm.means_[i1], np.sqrt(gmm.covariances_[i1]))][0][0]
-
         dat = []
-        dat_gmm1 = []
-        dat_gmm2 = []
         for i in range(len(hist)):
             obj = {}
             obj['x'] = midpoints[i]
             obj['y'] = hist[i]
             dat.append(obj)
-
-            obj1 = {}
-            obj1['x'] = midpoints[i]
-            obj1['y'] = pdf_gmm1[i]
-            dat_gmm1.append(obj1)
-
-            obj2 = {}
-            obj2['x'] = midpoints[i]
-            obj2['y'] = pdf_gmm2[i]
-            dat_gmm2.append(obj2)
-
         description[column]['histogram'] = dat
-        description[column]['gmm_1'] = dat_gmm1
-        description[column]['gmm_2'] = dat_gmm2
 
     list_channels = config[datasource_name]['imageData']
     image_layer = 0
@@ -740,6 +717,51 @@ def get_channel_gmm(channel_name, datasource_name):
     packet_gmm['image_gmm_3'] = dat_gmm3
 
     return packet_gmm
+
+
+def get_gating_gmm(channel_name, datasource_name):
+    global datasource
+    global source
+    global ball_tree
+    global config
+
+    packet_gmm = {}
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    description = datasource.describe().to_dict()
+
+    column_data = datasource[channel_name].to_numpy()
+    [hist, bin_edges] = np.histogram(column_data[~np.isnan(column_data)], bins=50, density=True)
+    midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+
+    gmm = GaussianMixture(n_components=2)
+    gmm.fit(column_data.reshape((-1, 1)))
+    i0, i1 = np.argsort(gmm.means_[:, 0])
+    packet_gmm['gate'] = np.mean(gmm.means_)
+
+    pdf_gmm1 = [gmm.weights_[i0] * norm.pdf(midpoints, gmm.means_[i0], np.sqrt(gmm.covariances_[i0]))][0][0]
+    pdf_gmm2 = [gmm.weights_[i1] * norm.pdf(midpoints, gmm.means_[i1], np.sqrt(gmm.covariances_[i1]))][0][0]
+
+    dat_gmm1 = []
+    dat_gmm2 = []
+    for i in range(len(hist)):
+        obj1 = {}
+        obj1['x'] = midpoints[i]
+        obj1['y'] = pdf_gmm1[i]
+        dat_gmm1.append(obj1)
+
+        obj2 = {}
+        obj2['x'] = midpoints[i]
+        obj2['y'] = pdf_gmm2[i]
+        dat_gmm2.append(obj2)
+
+    packet_gmm['gmm_1'] = dat_gmm1
+    packet_gmm['gmm_2'] = dat_gmm2
+
+    return packet_gmm
+
 
 def generate_zarr_png(datasource_name, channel, level, tile):
     if config is None:

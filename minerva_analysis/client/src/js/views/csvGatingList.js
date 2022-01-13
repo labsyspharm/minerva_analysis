@@ -16,6 +16,7 @@ class CSVGatingList {
         this.selections = {};
         this.maxSelections = 4;
         this.ranges = {};
+        this.hasGatingGMM = {};
         this.sliders = new Map();
         // this.imageBitRange = [0, 65536];
         this.container = d3.select("#csv_gating_list");
@@ -40,6 +41,10 @@ class CSVGatingList {
     selectChannel(name) {
         // For overlay (and query incrementor)
         // seaDragonViewer.csvGatingOverlay.run_balancer++;
+
+         if (!(name in this.hasGatingGMM)) {
+            let channelTrace = this.drawGatingGMM(name);
+        }
 
         // Add
         this.selections[this.dataLayer.getFullChannelName(name)] = this.sliders.get(name).value();
@@ -288,14 +293,14 @@ class CSVGatingList {
      */
     autoGate(name) {
         const self = this;
+        let shortName = self.dataLayer.getShortChannelName(name);
 
-        let gate = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gate']
+        let gate = this.hasGatingGMM[shortName]['gate']
         if (!this.dataLayer.isTransformed()) {
             gate = parseInt(gate)
         }
         // For interaction
         self.selections[name][0] = gate;
-        let shortName = self.dataLayer.getShortChannelName(name);
         let gate_end = self.selections[name][1]
         self.sliders.get(shortName).value([gate, gate_end]);
         // For records
@@ -566,8 +571,6 @@ class CSVGatingList {
 
         const self = this;
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
-        let gmm1Data = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gmm_1']
-        let gmm2Data = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['gmm_2']
         let channelID = this.dataLayer.getIDFromShortChannelName(name)
 
         // If no data
@@ -629,7 +632,7 @@ class CSVGatingList {
             .select('#csv_gating-slider_' + channelID)
             .append('svg')
             .attr('class', 'svgslider')
-            .attr('id', '#csv_gating-slider_svg_' + channelID)
+            .attr('id', 'csv_gating-slider_svg_' + channelID)
             .attr('width', swidth)
             .attr('height', 80)
             .append('g')
@@ -661,26 +664,6 @@ class CSVGatingList {
             .attr('class', 'distribution_line')
             .attr('transform', 'translate(0,-31)')
             .attr('fill', 'none')
-
-        gSimple.selectAll('.gmm1_line')
-            .data([gmm1Data])
-            .enter()
-            .append('path')
-            .attr('d', line)
-            .attr('class', 'gmm_line')
-            .attr('transform', 'translate(0,-31)')
-            .attr('fill', 'none')
-            .attr('stroke', 'blue')
-
-        gSimple.selectAll('.gmm2_line')
-            .data([gmm2Data])
-            .enter()
-            .append('path')
-            .attr('d', line)
-            .attr('class', 'gmm_line')
-            .attr('transform', 'translate(0,-31)')
-            .attr('fill', 'none')
-            .attr('stroke', 'red')
 
         gSimple.call(sliderSimple);
 
@@ -731,6 +714,61 @@ class CSVGatingList {
 
         return sliderSimple;
     };
+
+    async drawGatingGMM(name){
+        let fullname = this.dataLayer.getFullChannelName(name)
+        let channelID = this.dataLayer.getIDFromShortChannelName(name)
+
+        let packet = await this.dataLayer.getGatingGMM(fullname)
+        this.hasGatingGMM[name] = packet;
+
+        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
+        let gmm1Data = packet['gmm_1']
+        let gmm2Data = packet['gmm_2']
+
+        let swidth = document.getElementById("csv_gating_list").getBoundingClientRect().width
+
+        let xScale = d3.scaleLinear()
+            .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
+            .range([0, swidth - 73])
+
+        let yScale = d3.scaleLinear()
+            .domain([_.max(_.map(histogramData, e => e.y)), 0])
+            .range([0, 25])
+
+        let line = d3.line()
+            .x(d => {
+                return xScale(d.x)
+            })
+            .y(d => {
+                return yScale(d.y)
+            })
+            .curve(d3.curveMonotoneX)
+
+        let gSimple = d3.select('#csv_gating-slider_svg_' + channelID + ' g')
+
+        gSimple.selectAll('.gmm1_line')
+            .data([gmm1Data])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'gmm_line')
+            .attr('class', 'gmm_line_'+name)
+            .attr('transform', 'translate(0,-31)')
+            .attr('fill', 'none')
+            .attr('stroke', 'blue')
+
+        gSimple.selectAll('.gmm2_line')
+            .data([gmm2Data])
+            .enter()
+            .append('path')
+            .attr('d', line)
+            .attr('class', 'gmm_line')
+            .attr('class', 'gmm_line_'+name)
+            .attr('transform', 'translate(0,-31)')
+            .attr('fill', 'none')
+            .attr('stroke', 'red')
+    }
 
     /**
      * @function resetGatingList - resets all channels in the list to its initial range

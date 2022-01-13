@@ -23,6 +23,7 @@ class ChannelList {
         this.currentChannels = {};
         this.rangeConnector = {};
         this.colorConnector = {};
+        this.hasChannelGMM = [];
         this.createColorPicker();
         this.container = d3.select("#channel_list");
     }
@@ -57,9 +58,6 @@ class ChannelList {
         // Update selections
         delete this.sel[dataLayer.getFullChannelName(name)];
 
-        // Remove GMM line
-        d3.selectAll('.gmm_line_'+name).remove()
-
         // Trigger
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
     }
@@ -87,7 +85,9 @@ class ChannelList {
             selectorDoc.style.fill = rgbColor;
         }
 
-        let channelTrace = this.drawChannelGMM(name)
+        if (!(name in this.hasChannelGMM)) {
+            let channelTrace = this.drawChannelGMM(name);
+        }
 
         // Update selections
         self.selections.push(name);
@@ -275,21 +275,19 @@ class ChannelList {
 
         let defaultRange = self.dataLayer.imageBitRange;
 
-        this.eventHandler.trigger(ChannelList.events.RESET_LISTS);
-        // _.each(channels, col => {
-        //     let fullName = self.dataLayer.getFullChannelName(col.channel);
-        //     let channelIdx = imageChannels[fullName];
-        //
-        //     if (this.sliders.get(col.channel)) {
-        //         if (this.currentChannels[channelIdx]) {
-        //                 let channel_selector = `#channel-slider_${col.channel}`;
-        //                 document.querySelector(channel_selector).click();
-        //
-        //                 let gating_selector = `#csv_gating-slider_${col.channel}`;
-        //                 document.querySelector(gating_selector).click();
-        //         }
-        //     }
-        // })
+        // this.eventHandler.trigger(ChannelList.events.RESET_LISTS);
+        _.each(channels, col => {
+            let fullName = self.dataLayer.getFullChannelName(col.channel);
+            let channelIdx = imageChannels[fullName];
+            let channelID = self.dataLayer.getIDFromShortChannelName(col.channel)
+
+            if (this.sliders.get(col.channel)) {
+                if (this.currentChannels[channelIdx]) {
+                        let channel_selector = `#channel-slider_${channelID}`;
+                        document.querySelector(channel_selector).click();
+                }
+            }
+        })
 
         this.currentChannels = {};
         this.rangeConnector = {};
@@ -334,9 +332,8 @@ class ChannelList {
         const self = this;
 
         let fullName = self.dataLayer.getFullChannelName(name);
-        let packet = await this.dataLayer.getChannelGMM(fullName);
-        let vmin = packet['vmin'];
-        let vmax = packet['vmax'];
+        let vmin = this.hasChannelGMM[name]['vmin'];
+        let vmax = this.hasChannelGMM[name]['vmax'];
         this.sliders.get(name).value([vmin, vmax]);
 
         let channelIdx = imageChannels[fullName];
@@ -589,6 +586,7 @@ class ChannelList {
         let fullname = this.dataLayer.getFullChannelName(name)
         let channelID = this.dataLayer.getIDFromShortChannelName(name)
         let packet = await this.dataLayer.getChannelGMM(fullname)
+        this.hasChannelGMM[name] = packet
 
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram']
         let channel_gmm1Data = packet['image_gmm_1']
