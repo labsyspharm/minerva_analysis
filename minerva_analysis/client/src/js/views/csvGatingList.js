@@ -17,6 +17,7 @@ class CSVGatingList {
         this.maxSelections = 4;
         this.ranges = {};
         this.hasGatingGMM = {};
+        this.gatingIDs = {};
         this.sliders = new Map();
         // this.imageBitRange = [0, 65536];
         this.container = d3.select("#csv_gating_list");
@@ -96,7 +97,8 @@ class CSVGatingList {
         // Draws rows in the gating list
         self.columns.push('Area'); // Add 'Area' to Gating List
         _.each(self.columns, column => {
-            let channelID = self.dataLayer.getIDFromShortChannelName(column)
+            let channelID = column.replace(/[ ,.]/g, '');
+            self.gatingIDs[column] = channelID;
             // div for each row in gating list
             let listItemParentDiv = document.createElement("div");
             listItemParentDiv.classList.add("list-group-item");
@@ -255,7 +257,7 @@ class CSVGatingList {
 
         _.each(gates, col => {
             let shortName = self.dataLayer.getShortChannelName(col.channel);
-            let channelID = self.dataLayer.getIDFromShortChannelName(shortName)
+            let channelID = self.gatingIDs[shortName];
             if (self.selections[col.channel]) {
                 let selector = `#csv_gating-slider_${channelID}`;
                 document.querySelector(selector).click();
@@ -264,7 +266,7 @@ class CSVGatingList {
 
         _.each(gates, col => {
             let shortName = self.dataLayer.getShortChannelName(col.channel);
-            let channelID = self.dataLayer.getIDFromShortChannelName(shortName)
+            let channelID = self.gatingIDs[shortName];
             if (self.sliders.get(shortName)) {
                 self.sliders.get(shortName).value([col.gate_start, col.gate_end]);
                 this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
@@ -356,7 +358,7 @@ class CSVGatingList {
         // Get info
         let parent = event.target.closest(".list-group-item");
         let name = parent.querySelector('.gating-name').textContent;
-        let channelID = self.dataLayer.getIDFromShortChannelName(name)
+        let channelID = self.gatingIDs[name];
         let status = !parent.classList.contains("active");
 
         // If active - else inactive
@@ -581,7 +583,7 @@ class CSVGatingList {
 
         const self = this;
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
-        let channelID = this.dataLayer.getIDFromShortChannelName(name)
+        let channelID = this.gatingIDs[name];
 
         // If no data
         if (!data) return
@@ -726,17 +728,17 @@ class CSVGatingList {
     };
 
     async drawGatingGMM(name){
-        let fullname = this.dataLayer.getFullChannelName(name)
-        let channelID = this.dataLayer.getIDFromShortChannelName(name)
+        let fullname = this.dataLayer.getFullChannelName(name);
+        let channelID = this.gatingIDs[name];
 
-        let packet = await this.dataLayer.getGatingGMM(fullname)
+        let packet = await this.dataLayer.getGatingGMM(fullname);
         this.hasGatingGMM[name] = packet;
 
-        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
-        let gmm1Data = packet['gmm_1']
-        let gmm2Data = packet['gmm_2']
+        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram'];
+        let gmm1Data = packet['gmm_1'];
+        let gmm2Data = packet['gmm_2'];
 
-        let swidth = document.getElementById("csv_gating_list").getBoundingClientRect().width
+        let swidth = document.getElementById("csv_gating_list").getBoundingClientRect().width;
 
         let xScale = d3.scaleLinear()
             .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
@@ -788,7 +790,7 @@ class CSVGatingList {
         let gatingList = Object.keys(self.selections);
         _.each(gatingList, col => {
             let shortName = self.dataLayer.getShortChannelName(col);
-            let channelID = self.dataLayer.getIDFromShortChannelName(shortName)
+            let channelID = self.gatingIDs[shortName];
             let gating_selector = `#csv_gating-slider_${channelID}`;
             document.querySelector(gating_selector).click();
         });
@@ -799,7 +801,7 @@ class CSVGatingList {
      */
     moveSliderHandles(slider, valArray, name){
         const self = this;
-        let channelID = self.dataLayer.getIDFromShortChannelName(name);
+        let channelID = self.gatingIDs[name];
         slider.silentValue(valArray);
         let percentage = (Math.abs(valArray[1] - valArray[0])/(Math.abs(slider.max()-slider.min())));
         if (percentage < 0.15){

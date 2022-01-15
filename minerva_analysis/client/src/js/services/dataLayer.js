@@ -528,26 +528,6 @@ class DataLayer {
         return fullname;
     }
 
-    getIDFromFullChannelName(fullname) {
-        var channelID = fullname;
-        this.config["imageData"].forEach(function (channel) {
-            if (channel.fullname == fullname) {
-                channelID = channel.channelID;
-            }
-        });
-        return channelID;
-    }
-
-    getIDFromShortChannelName(shortname) {
-        var channelID = shortname;
-        this.config["imageData"].forEach(function (channel) {
-            if (channel.name == shortname) {
-                channelID = channel.channelID;
-            }
-        });
-        return channelID;
-    }
-
     async getMetadata() {
         try {
             let response = await fetch('/get_ome_metadata?' + new URLSearchParams({

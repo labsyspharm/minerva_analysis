@@ -24,6 +24,7 @@ class ChannelList {
         this.rangeConnector = {};
         this.colorConnector = {};
         this.hasChannelGMM = [];
+        this.channelIDs = {};
         this.createColorPicker();
         this.container = d3.select("#channel_list");
     }
@@ -71,7 +72,7 @@ class ChannelList {
 
         let fullName = self.dataLayer.getFullChannelName(name);
         let channelIdx = imageChannels[fullName];
-        let channelID = self.dataLayer.getIDFromShortChannelName(name)
+        let channelID = self.channelIDs[name];
 
         if (!this.rangeConnector[channelIdx]) {
             let defaultRange = self.dataLayer.imageBitRange;
@@ -130,7 +131,8 @@ class ChannelList {
         };
         // Draws rows in the channel list
         _.each(this.columns, column => {
-            let channelID = this.dataLayer.getIDFromShortChannelName(column);
+            let channelID = column.replace(/[ ,.]/g, '');
+            this.channelIDs[column] = channelID;
             // div for each row in channel list
             let listItemParentDiv = document.createElement("div");
             listItemParentDiv.classList.add("list-group-item");
@@ -279,7 +281,7 @@ class ChannelList {
         _.each(channels, col => {
             let fullName = self.dataLayer.getFullChannelName(col.channel);
             let channelIdx = imageChannels[fullName];
-            let channelID = self.dataLayer.getIDFromShortChannelName(col.channel)
+            let channelID = self.channelIDs[col.channel];
 
             if (this.sliders.get(col.channel)) {
                 if (this.currentChannels[channelIdx]) {
@@ -296,7 +298,7 @@ class ChannelList {
         _.each(channels, col => {
             let fullName = self.dataLayer.getFullChannelName(col.channel);
             let channelIdx = imageChannels[fullName];
-            let channelID = self.dataLayer.getIDFromShortChannelName(col.channel)
+            let channelID = self.channelIDs[col.channel];
 
             if (this.sliders.get(col.channel)) {
                 if (col.start > this.image_channels[col.channel][0] || col.end < this.image_channels[col.channel][1]){
@@ -388,7 +390,7 @@ class ChannelList {
         // Get info
         let parent = event.target.closest(".list-group-item");
         let name = parent.querySelector('.channel-name').textContent;
-        let channelID = this.dataLayer.getIDFromShortChannelName(name);
+        let channelID = this.channelIDs[name];
         let status = !parent.classList.contains("active");
 
         // If active - else inactive
@@ -458,7 +460,7 @@ class ChannelList {
 
         var that = this;
         let fullName = this.dataLayer.getFullChannelName(name);
-        let channelID = this.dataLayer.getIDFromShortChannelName(name);
+        let channelID = this.channelIDs[name];
         let histogramData = this.databaseDescription[fullName]['image_histogram']
         let data_min = this.databaseDescription[fullName]['image_min']
         let data_max = this.databaseDescription[fullName]['image_max']
@@ -583,17 +585,17 @@ class ChannelList {
     };
 
     async drawChannelGMM(name){
-        let fullname = this.dataLayer.getFullChannelName(name)
-        let channelID = this.dataLayer.getIDFromShortChannelName(name)
-        let packet = await this.dataLayer.getChannelGMM(fullname)
-        this.hasChannelGMM[name] = packet
+        let fullname = this.dataLayer.getFullChannelName(name);
+        let channelID = this.channelIDs[name];
+        let packet = await this.dataLayer.getChannelGMM(fullname);
+        this.hasChannelGMM[name] = packet;
 
-        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram']
-        let channel_gmm1Data = packet['image_gmm_1']
-        let channel_gmm2Data = packet['image_gmm_2']
-        let channel_gmm3Data = packet['image_gmm_3']
+        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram'];
+        let channel_gmm1Data = packet['image_gmm_1'];
+        let channel_gmm2Data = packet['image_gmm_2'];
+        let channel_gmm3Data = packet['image_gmm_3'];
 
-        let swidth = document.getElementById("channel_list").getBoundingClientRect().width
+        let swidth = document.getElementById("channel_list").getBoundingClientRect().width;
 
         let xScale = d3.scaleLinear()
             .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
@@ -656,7 +658,7 @@ class ChannelList {
      */
     moveSliderHandles(slider, valArray, name){
         const self = this;
-        let channelID = self.dataLayer.getIDFromShortChannelName(name);
+        let channelID = self.channelIDs[name];
         slider.silentValue(valArray);
         if (valArray[1] - valArray[0] < 0.41){
             console.log('slider handles overlap..do something');
@@ -673,7 +675,7 @@ class ChannelList {
         const self = this;
         let channelList = _.clone(self.selections);
         _.each(channelList, col => {
-            let channelID = this.dataLayer.getIDFromShortChannelName(col)
+            let channelID = this.channelIDs[col];
             let channel_selector = `#channel-slider_${channelID}`;
             document.querySelector(channel_selector).click();
         });

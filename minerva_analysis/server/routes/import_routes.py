@@ -14,7 +14,6 @@ import shutil
 import csv
 import json
 import os
-import re
 
 total_tasks = 100
 completed_task = 0
@@ -461,7 +460,6 @@ def save_config():
             #
             configData[datasetName]['imageData'][0]['name'] = headerList[0][1]['value']
             configData[datasetName]['imageData'][0]['fullname'] = 'Area'
-            configData[datasetName]['imageData'][0]['channelID'] = 'Area'
             if 'labelName' in originalData and originalData['labelName'] != '':
                 configData[datasetName]['imageData'][0]['src'] = "/generated/data/" + datasetName + "/" + originalData[
                     'labelName'] + "/"
@@ -483,7 +481,6 @@ def save_config():
                 channelData['src'] = "/generated/data/" + datasetName + "/" + channel + "/"
                 channelData['name'] = headerList[i + channelStart][0]['value']
                 channelData['fullname'] = headerList[i + channelStart][1]['value']
-                channelData['channelID'] = re.sub('[^A-Za-z0-9\-\_]', '', channelData['name'])
                 configData[datasetName]['imageData'].append(channelData)
             configJson.seek(0)  # <--- should reset file position to the beginning.
             json.dump(configData, configJson, indent=4)
