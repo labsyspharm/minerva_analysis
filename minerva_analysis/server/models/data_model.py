@@ -854,7 +854,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
 
 def logTransform(csvPath, skip_columns=[]):
     RAW_DATA = np.genfromtxt(csvPath, names=True, dtype=float, delimiter=',')
-    marker_list = RAW_DATA.dtype.names
+    marker_list = pd.read_csv(csvPath).columns
     log_data = RAW_DATA.view((np.float, len(marker_list)))
 
     for marker_id in range(log_data.shape[1]):
