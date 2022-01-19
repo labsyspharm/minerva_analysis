@@ -55,7 +55,6 @@ class Barchart {
             .call(this.yAxis)
 
 
-
         // this.svg.append("g")
         //     .attr("class", "yaxis")
         //     .call(this.yAxis)
@@ -107,7 +106,9 @@ class Barchart {
             .attr("dy", ".35em")
             .attr("font-size", "0.57rem")
             .style("text-anchor", "start")
-            .style('fill', 'black')
+            .style('fill', 'white')
+        // TODO: For Figures
+        // .style('fill', 'black')
 
         self.svg.select(".yaxis")
             .transition()
@@ -119,7 +120,9 @@ class Barchart {
             .attr("dy", ".35em")
             .attr("font-size", "0.57rem")
             .style("text-anchor", "end")
-            .style('fill', 'black')
+            .style('fill', 'white')
+        // TODO: For Figures
+        // .style('fill', 'black')
 
 
         let bars = self.svg.selectAll(".bar")
@@ -142,12 +145,16 @@ class Barchart {
 
         this.svg.select('.xaxis')
             .append('text')
-            .attr("font-size", "0.7rem")
+            .attr("font-size", "0.6rem")
             .attr("y", 25)
-            .attr("x", self.x(0.5) + 5)
+            .attr("x", self.x(0.5))
             .style("text-anchor", "middle")
             .style('fill', 'black')
             .text('Neighborhood Composition')
+            .style('fill', 'white')
+        // TODO: For Figures
+        // .style('fill', 'black')
+
     }
 
     hide() {

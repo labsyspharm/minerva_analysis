@@ -189,10 +189,15 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 //current fast solution for seadragon updates
 function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
+    d3.selectAll('.contourPath').remove();
     neighborhoodTable.enableSaveButton();
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
     comparison.rewrangle();
+    if (seaDragonViewer.contourView) {
+        seaDragonViewer.drawContourLines();
+    }
+
 }
 
 //feature range selection changed in ridge plot

@@ -9,7 +9,7 @@
 
     {% if data.datasource %}
         <div id="container">
-            <div id="row" class="row">
+            <div id="left-col-wrapper" class="row">
                 <div id="left-col" class="col-auto d-flex flex-column">
                     <div id="search_wrapper" class="left-col-row">
                         <div class="row" id="search-row">
@@ -131,6 +131,8 @@
                         {#                </div>#}
                     </div>
                 </div>
+            </div>
+            <div id="relative-col" class="row">
                 <div id="openseadragon_wrapper" class="col-auto openseadragon_wrapper_large viewer_col">
                     <div id="openseadragon">
                         <div class="row">
@@ -145,11 +147,17 @@
                         </div>
                         <div id="selection-options">
                             <div class="col">
-                                <div class="row align-items-center">
-                            <span id="cell_view" data-toggle="tooltip" data-placement="right"
-                                  title="Cell View Mode">
-                                {% include 'cell_icon.html' %}
-                            </span>
+                                <div class="row align-items-center icon-rows">
+                                    <span id="cell_view" data-toggle="tooltip" data-placement="right"
+                                          title="Cell View Mode">
+                                        {% include 'cell_icon.html' %}
+                                    </span>
+                                </div>
+                                <div class="row align-items-center icon-rows">
+                                    <span id="contour_view" data-toggle="tooltip" data-placement="right"
+                                          title="Contour View Mode">
+                                        {% include 'contour_icon.html' %}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -186,27 +194,29 @@
                 <div id="neighborhood_wrapper" class="col-auto neighborhood_wrapper_small viewer_col">
                     <div id="comparison_title" class="row">
                         <div class="col-md-12">
-                            <h5 class="plot-label text-center">Compare Neighborhoods</h5>
+                            <h5 class="plot-label text-center">Compare Neighborhood Patterns</h5>
                         </div>
                         <div class="col-md-12">
 
                             <div class="row justify-content-center">
                                 <div class="form-check" id="small-multiple-toggle">
                                     <input type="radio" class="btn-check" name="options-outlined"
+                                           id="barchart-button"
+                                           autocomplete="off" checked>
+                                    <label class="btn btn-light" for="barchart-button">Composition</label>
+                                    <input type="radio" class="btn-check" name="options-outlined"
                                            id="parallel-coordinates-button"
                                            autocomplete="off"
-                                           checked>
-                                    <label class="btn btn-dark" for="parallel-coordinates-button">Pairwise
-                                        Correlation</label>
+                                    >
+                                    <label class="btn btn-light" for="parallel-coordinates-button">Pairwise</label>
                                     <input type="radio" class="btn-check" name="options-outlined"
                                            id="scatterplot-button"
                                            autocomplete="off">
-                                    <label class="btn btn-light" for="scatterplot-button">Spatial Comparison</label>
+                                    <label class="btn btn-light" for="scatterplot-button">Spatial</label>
                                     <input type="radio" class="btn-check" name="options-outlined"
-                                           id="scatterplot-button"
+                                           id="image-button"
                                            autocomplete="off">
-                                    <label class="btn btn-light" for="scatterplot-button">Composition
-                                        Comparison</label>
+                                    <label class="btn btn-light" for="image-button">Image</label>
                                 </div>
                             </div>
                         </div>
@@ -219,14 +229,14 @@
                     </div>
                 </div>
             </div>
-            <div id="expand_wrapper" class="expand_wrapper_right">
-                <div class="row">
-                    <div class="col-7">
-                        <span id="comparison_views_label">Compare</span>
-                    </div>
-                    <div class="col-5">
-                        <span id="expand_icon" class="material-icons">keyboard_double_arrow_left</span>
-                    </div>
+        </div>
+        <div id="expand_wrapper" class="expand_wrapper_right">
+            <div class="row">
+                <div class="col-7">
+                    <span id="comparison_views_label">Compare</span>
+                </div>
+                <div class="col-5">
+                    <span id="expand_icon" class="material-icons">keyboard_double_arrow_left</span>
                 </div>
             </div>
         </div>

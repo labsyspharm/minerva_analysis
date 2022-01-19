@@ -304,6 +304,23 @@ def get_gating_csv_values():
     return serialize_and_submit_json(obj)
 
 
+@app.route('/get_contour_lines', methods=['POST'])
+def get_contour_lines():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    selection_ids = post_data['selectionIds']
+
+    resp = data_model.get_contour_line_paths(datasource, selection_ids)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_related_image_data', methods=['GET'])
+def get_related_image_data():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_multi_image_scatter_results(datasource)
+    return serialize_and_submit_json(resp)
+
+
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
@@ -318,8 +335,16 @@ def generate_png(datasource, channel, level, tile):
 
 
 def serialize_and_submit_json(data):
-    response = app.response_class(
-        response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),
-        mimetype='application/json'
-    )
+    response = None
+    try:
+        response = app.response_class(
+            response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),
+            mimetype='application/json'
+        )
+    #     Handle case where array isn't C contiguous
+    except TypeError:
+        response = app.response_class(
+            response=orjson.dumps(np.ascontiguousarray(data), option=orjson.OPT_SERIALIZE_NUMPY),
+            mimetype='application/json'
+        )
     return response

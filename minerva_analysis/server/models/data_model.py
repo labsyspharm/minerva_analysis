@@ -1,6 +1,10 @@
+import numba
 from sklearn.neighbors import BallTree
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import MinMaxScaler
+from scipy import stats
+from numba import prange
+
 from sklearn.decomposition import IncrementalPCA
 from sqlalchemy import or_
 import palettable
@@ -15,9 +19,12 @@ from ome_types import from_xml
 from minerva_analysis import config_json_path
 from minerva_analysis.server.utils import pyramid_assemble
 import matplotlib.path as mpltPath
+import matplotlib.pyplot as plt
+
 from minerva_analysis.server.utils import smallestenclosingcircle
 from minerva_analysis.server.models import database_model
 from scipy.stats import pearsonr, spearmanr
+from KDEpy import FFTKDE
 
 import time
 import pickle
@@ -81,7 +88,7 @@ def init_clusters(datasource_name):
     for cluster in clusters:
         # Check if the Cluster is in the DB
         neighborhood = database_model.get(database_model.Neighborhood, datasource=datasource_name, source="Cluster",
-                                          name="Cluster " + str(cluster))
+                                          cluster_id=int(cluster))
         cluster_cells = None
         # If it's not in the Neighborhood database then create and add it
         if neighborhood is None:
@@ -228,7 +235,7 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
         load_datasource(datasource_name)
 
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
-              config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
+              config[datasource_name]['featureData'][0]['yCoordinate'], 'f', 'id']
     if isinstance(phenotype, list):
         cell_ids = datasource.loc[datasource['phenotype'].isin(phenotype)].index.values
     else:
@@ -444,9 +451,12 @@ def get_color_scheme(datasource_name):
     color_scheme = {}
     # http://godsnotwheregodsnot.blogspot.com/2013/11/kmeans-color-quantization-seeding.html
     # colors = palettable.colorbrewer.qualitative.Set3_12.hex_colors
-    colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
-              '#e0bf04', '#ab9a95', '#258d6b', '#934270', '#48e26f']
-    # colors.remove('#FDB462')
+    # colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
+    #           '#e0bf04', '#ab9a95', '#258d6b', '#934270', '#48e26f']
+    colors = ["#5648d3", "#a7e831", "#df43b0", "#36e515", "#c047ff", "#789d23", "#b36ab0", "#02531d", "#fbacf6",
+              "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+              "#ead624"]
+    # # colors.remove('#FDB462')
     # colors.append('#db4ba8')
     # colors.append('#02b72e')
     # colors.append('#2580fe')
@@ -630,10 +640,7 @@ def download_gating_csv(datasource_name, gates, channels):
             query_string += ' and '
         query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
     ids = datasource.query(query_string)[['id']].to_numpy().flatten()
-    if 'idField' in config[datasource_name]['featureData'][0]:
-        idField = config[datasource_name]['featureData'][0]['idField']
-    else:
-        idField = "CellID"
+    idField = get_cell_id_field(datasource_name)
     columns.append(idField)
 
     csv = datasource.copy()
@@ -883,3 +890,95 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
     obj['neighbors'] = unique_neighbors
     obj['neighbor_phenotypes'] = neighbor_phenotypes
     return obj
+
+
+def get_contour_line_paths(datasource_name, selection_ids):
+    global datasource
+    global config
+    idField = get_cell_id_field(datasource_name)
+    cells = datasource.iloc[selection_ids]
+    x = cells[config[datasource_name]['featureData'][0]['xCoordinate']].to_numpy()
+    y = cells[config[datasource_name]['featureData'][0]['yCoordinate']].to_numpy()
+    points = np.column_stack((x, y))
+    grid_points = 2 ** 7
+    num_levels = 4
+    kde = FFTKDE(kernel='gaussian')
+    grid, points = kde.fit(points).evaluate(grid_points)
+    grid_x, grid_y = np.unique(grid[:, 0]), np.unique(grid[:, 1])
+    z = points.reshape(grid_points, grid_points).T
+    plt.ioff()
+    cs = plt.contour(grid_x, grid_y, z, num_levels)
+    levels = {}
+    i = 0
+    for collection in cs.collections:
+        levels[str(i)] = []
+        for path in collection.get_paths():
+            levels[str(i)].append(path.vertices)
+        i += 1
+    return levels
+
+
+@numba.jit(nopython=True, parallel=True)
+def single_perm_test(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths, _vector, _threshold=0.8):
+    chunk = 50
+    _vector = _vector.astype(np.float32)
+    __phenotypes_array = _phenotypes_array.flatten()
+    perm_matrix = np.zeros((_phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
+    norms = np.zeros((_phenotypes_array.shape[0],), dtype=np.float32)
+    results = np.zeros(chunk, dtype=np.int32)
+    for j in prange(chunk):
+        chunk_sum = 0.0
+        ___phenotypes_array = np.random.permutation(__phenotypes_array)
+        for i in prange(len(_lengths)):
+            this_length = _lengths[i]
+            dist = _distances[i, 0:this_length]
+            rows = _neighbors[i, 0:this_length]
+            phenos = ___phenotypes_array[rows].flatten()
+            pheno_weight_indices = (phenos)
+            result = np.zeros((_len_phenos), dtype=np.float32)
+            for ind in prange(len(pheno_weight_indices)):
+                result[pheno_weight_indices[ind]] += _distances[i][ind]
+            result = result.astype(np.float32)
+            norms[i] = np.linalg.norm(result)
+            perm_matrix[i] = result
+        cos = np.dot(perm_matrix, _vector.flatten()) / (norms * np.linalg.norm(_vector))
+        where = np.where(cos > _threshold)
+        results[j] = len(where[0])
+    return results
+
+
+def p_val(val, perm_vals):
+    return stats.ttest_1samp(perm_vals, val)[1]
+
+
+def get_multi_image_scatter_results(datasource_name):
+    results = {}
+    if 'linkedDatasets' in config[datasource_name]:
+        for dataset in config[datasource_name]['linkedDatasets']:
+            if dataset != datasource_name:
+                csvPath = Path(config[dataset]['featureData'][0]['src'])
+                datasource = pd.read_csv(csvPath)
+                x_field = config[datasource_name]['featureData'][0]['xCoordinate']
+                y_field = config[datasource_name]['featureData'][0]['yCoordinate']
+                data = datasource[[x_field, y_field, get_cell_id_field(dataset)]].to_numpy()
+                normalized_data = normalize_scatterplot_data(data[:, 0:2])
+                data = np.column_stack((normalized_data, data[:, 2]))
+                results[dataset] = np.ascontiguousarray(data)
+
+    return results
+
+
+def normalize_scatterplot_data(data):
+    shifted_data = data - data.min()
+    scaled_data = shifted_data / shifted_data.max()
+    scaled_data = scaled_data * 2
+    # Puts everything between -1 and 1
+    scaled_data = scaled_data - 1
+    return scaled_data
+
+
+def get_cell_id_field(datasource_name):
+    if 'idField' in config[datasource_name]['featureData'][0]:
+        return config[datasource_name]['featureData'][0]['idField']
+    else:
+        return "CellID"

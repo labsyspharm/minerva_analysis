@@ -60,11 +60,13 @@ class ImageViewer {
         this.show_subset = false;
         this.show_selection = true;
         this.singleCellView = true;
+        this.contourView = false;
         // this.lassoButton = document.getElementById("lasso_button");
         // this.selectButton = document.getElementById("select_button");
         this.neighborhoodButton = document.getElementById("neighborhood_icon");
         this.similaritySlider = document.getElementById("neighborhood_similarity");
         this.cellViewButton = document.getElementById("cell_view_icon");
+        this.contourViewButton = document.getElementById("contour_icon");
         this.similaritySlider.onchange = (e) => {
             let val = document.getElementById("neighborhood_similarity").value;
             let span = document.getElementById('similarity_val');
@@ -401,6 +403,12 @@ class ImageViewer {
         //     that.lassoButton.classList.remove('selected');
         //     that.isSelectionToolActive = false;
         // })
+        that.contourViewButton.addEventListener("click", () => {
+            that.contourView = !that.contourView;
+            updateSeaDragonSelection(false, true);
+        });
+
+
         that.cellViewButton.addEventListener("click", () => {
             //     let outerCircles = that.cellViewButton.querySelectorAll('.outer-circles');
             //     _.each(outerCircles, circle => {
@@ -485,8 +493,10 @@ class ImageViewer {
                     if (val != 0 && self.selection.has(val - 1)) {
                         let labelValue = val - 1;
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype');
-                        let color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
-                        // let color = [255, 255, 255]
+                        let color = [255, 255, 255];
+                        if (!seaDragonViewer.contourView) {
+                            color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                        }
                         let index = i * 4;
                         const grid = [
                             index - 4,
@@ -766,6 +776,38 @@ class ImageViewer {
         this.viewer.forceRedraw();
         if (repaint) this.forceRepaint();
 
+    }
+
+    drawContourLines() {
+        const self = this;
+        return dataLayer.getContourLines().then(pathResp => {
+            let pathsArray = Object.values(pathResp).map(paths_el => {
+                return paths_el.map(path_el => {
+                    return path_el.map(point => {
+                        return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
+                    })
+                })
+            })
+
+            const lineFunc = d3.line(d => {
+                return d.x
+            }, d => {
+                return d.y
+            })
+
+            const groups = self.overlay
+                .selectAll("g")
+                .data(pathsArray)
+                .join("g");
+
+            groups.selectAll('path')
+                .data(d => d)
+                .join('path')
+                .classed('contourPath', true)
+                .attr("d", lineFunc)
+
+
+        })
     }
 }
 

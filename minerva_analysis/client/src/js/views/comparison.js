@@ -37,7 +37,7 @@ class Comparison {
             // HEATMAP
             // self.container.style.height = self.container.style.maxHeight = `${self.rowHeight}px`;
             self.createGrid();
-            // self.initToggles();
+            self.initToggles();
             //HEATMAP
             self.currentState = 'barchart';
 
@@ -84,7 +84,6 @@ class Comparison {
                 self.currentState = 'scatterplot';
                 self.removeAllPlots();
                 self.initSmallMultipleScatterplots();
-
             }
 
         } else if (elem.id == "heatmap-button") {
@@ -103,19 +102,26 @@ class Comparison {
                 document.getElementById("comparison_grid").style.display = "none";
                 self.initStackedBarchart();
             }
+        } else if (elem.id == "image-button") {
+            if (self.selectAndUnselect(elem, parent)) {
+                self.currentState = 'image';
+                self.removeAllPlots();
+                self.createGrid(1);
+                self.initImages();
+            }
         }
     }
 
     selectAndUnselect(elem, parent) {
         const self = this;
         let label = elem.labels[0];
-        if (label.classList.contains("btn-dark")) {
+        if (label?.classList.contains("btn-dark")) {
             console.log("Already Checked")
             return false;
         } else {
             let otherButton = parent.querySelector('.btn-dark');
-            otherButton.classList.remove('btn-dark');
-            otherButton.classList.add('btn-light');
+            otherButton?.classList.remove('btn-dark');
+            otherButton?.classList.add('btn-light');
             label.classList.add('btn-dark');
             label.classList.remove('btn-light');
             return true;
@@ -143,13 +149,14 @@ class Comparison {
         self.wrangleSmallMultiples();
     }
 
-    createGrid() {
+    createGrid(cols = 2) {
         const self = this;
+        //Clear previous
+        d3.selectAll('.compare_row').remove()
         let width = self.container.getBoundingClientRect().width;
         // let cols = 1;//Math.floor(width / 180);
         // let rows = 2;
         let rows = 4;
-        let cols = 2;
         //HEATMAP
         // let rows = 2;
         let i = 0;
@@ -183,8 +190,6 @@ class Comparison {
             self.container.appendChild(row);
 
         })
-
-        let test = '';
     }
 
     wrangleSmallMultiples(order = null, scatterplot = false) {
@@ -193,6 +198,9 @@ class Comparison {
             let plotData;
             if (self.currentState == 'scatterplot') {
                 plotData = _.get(self.neighborhoods[i], 'cells', []);
+            } else if (self.currentState == 'image') {
+                plotData = self.relatedImageData[i][1];
+
             } else {
                 plotData = _.get(self.neighborhoods[i], 'cluster_summary.weighted_contribution', []);
             }
@@ -252,6 +260,31 @@ class Comparison {
         legend.draw();
         stacked.init();
     }
+
+    async initImages() {
+        const self = this;
+        self.relatedImageData = await self.dataLayer.getRelatedImageData()
+        let tempImageData = []
+        self.plots = _.map(Object.entries(self.relatedImageData), ([k, v], i) => {
+            tempImageData.push([k, v]);
+            let div = document.getElementById(`compare_col_${i}`)
+            let header = div.querySelector('h5').innerHTML = k;
+            let canvas_div = document.getElementById(`compare_parallel_coordinates_${i}`);
+            let canvas = document.createElement("canvas");
+            canvas.className = 'scatterplot scatter_canvas';
+            canvas.id = `compare_col_canvas_${i}`;
+            canvas.width = canvas_div.offsetWidth;
+            canvas.height = canvas_div.offsetHeight;
+            canvas_div.appendChild(canvas);
+            scatterplot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
+                null, true);
+            scatterplot.init();
+            return scatterplot;
+        });
+        self.relatedImageData = tempImageData;
+        self.wrangleSmallMultiples();
+    }
+
 
     rewrangle() {
         const self = this;

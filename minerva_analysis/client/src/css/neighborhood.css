@@ -1,12 +1,16 @@
-#row {
+#left-col-wrapper {
+    position: absolute;
     height: 100%;
     width: 100%;
     margin: 0;
 }
 
-#left-col {
-
+#relative-col {
+    height: 100%;
+    width: 100%;
+    margin: 0;
 }
+
 
 #openseadragon_wrapper {
     height: 100%;
@@ -307,8 +311,8 @@
 }
 
 .compare_plot_title h5 {
-    /*color: #ffffff;*/
-    color: #000000;
+    color: #ffffff;
+    /*color: #000000;*/
     font-size: 0.9rem;
 }
 
@@ -335,15 +339,18 @@
 }
 
 .barchart text, .barchart text {
-    fill: #000000;
-    color: #000000;
+    fill: white;
+    color: white;
+    /*TODO: Figure*/
+    /*fill: #000000;*/
+    /*color: #000000;*/
     font-weight: bold;
 }
 
 #neighborhood_wrapper {
     /*TODO: For Figures*/
-    background-color: white;
-    /*background-color: black;*/
+    /*background-color: white;*/
+    background-color: black;
 }
 
 #comparison_title, .compare_plot_title {

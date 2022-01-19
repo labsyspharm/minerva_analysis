@@ -569,4 +569,38 @@ class DataLayer {
             console.log("Error Getting Metadata", e);
         }
     }
+
+      async getContourLines() {
+        try {
+            let response = await fetch('/get_contour_lines', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        selectionIds: [...this.getCurrentSelection().keys()]
+                    })
+            });
+            let paths = await response.json();
+            return paths;
+        } catch (e) {
+            console.log("Error Getting Paths", e);
+        }
+    }
+
+    async getRelatedImageData(){
+        try {
+            let response = await fetch('/get_related_image_data?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Getting Related Images", e);
+        }
+    }
+
 }
