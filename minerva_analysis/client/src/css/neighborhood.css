@@ -281,8 +281,18 @@
 
 #channel_list .row {
     margin: 0;
+}
+
+#channel_list .channel-row {
+    margin: 0;
     padding-left: 15px;
     padding-right: 15px;
+
+}
+
+#channel_list .slider-row {
+    margin: 0;
+    padding: 0;
 }
 
 

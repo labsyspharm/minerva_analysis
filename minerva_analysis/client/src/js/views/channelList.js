@@ -66,6 +66,7 @@ class ChannelList {
         let channel_list = document.getElementById("channel_list");
         let list = document.createElement("ul");
         list.classList.add("list-group")
+        list.id = 'channel_list_list_group'
         channel_list.appendChild(list)
         // Will show the picker when you click on a color rect
         let showPicker = e => {
@@ -85,10 +86,12 @@ class ChannelList {
             // row
             let row = document.createElement("div");
             row.classList.add("row");
+            row.classList.add("channel-row");
             listItemParentDiv.appendChild(row);
             // row
             let row2 = document.createElement("div");
             row2.classList.add("row");
+            row2.classList.add("slider-row");
             listItemParentDiv.appendChild(row2);
 
             // column within row that contains the name of the channel
@@ -147,7 +150,7 @@ class ChannelList {
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
-            this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").getBoundingClientRect().width);
+            this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").clientWidth);
             d3.select('div#channel-slider_' + column).style('display', "none");
         });
     }
@@ -279,7 +282,7 @@ window.addEventListener("resize", function () {
         channelList.sliders.forEach(function (slider, name) {
             d3.select('div#channel-slider_' + name).select('svg').remove();
             channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
-                document.getElementById("channel_list").getBoundingClientRect().width);
+                document.getElementById("channel_list").clientWidth);
         });
     }
 });
