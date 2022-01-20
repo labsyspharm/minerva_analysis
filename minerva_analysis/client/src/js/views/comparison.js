@@ -106,6 +106,7 @@ class Comparison {
             if (self.selectAndUnselect(elem, parent)) {
                 self.currentState = 'image';
                 self.removeAllPlots();
+                self.rowHeight = document.documentElement.clientHeight * 0.4;
                 self.createGrid(1);
                 self.initImages();
             }
@@ -277,7 +278,7 @@ class Comparison {
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
             let imagePlot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
-                null, true);
+                null, true, true);
             imagePlot.init();
             return imagePlot;
         });

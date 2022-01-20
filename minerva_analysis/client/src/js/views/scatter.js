@@ -1,7 +1,7 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, small = false) {
+    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, small = false, image = false) {
         this.id = id;
         this.canvasId = canvasId;
         this.eventHandler = eventHandler;
@@ -9,6 +9,7 @@ class Scatterplot {
         this.neighborhoodTable = neighborhoodTable;
         this.lastLasso = null;
         this.small = small;
+        this.image = image;
     }
 
     init() {
@@ -29,16 +30,21 @@ class Scatterplot {
             canvas,
             width,
             height,
-            pointColor: hexToRGBA('#b2b2b2', 0.01),
+            pointColor: hexToRGBA('#b2b2b2', 1),
+            opacityBy: 'density',
+            pointColorActive: hexToRGBA('#ffa500', 0.2),
             pointSize: 1,
-            lassoColor: hexToRGBA('#ffa500', 1),
+            lassoColor: hexToRGBA('#ffa500', 0.2),
             pointOutlineWidth: 0,
-            pointSizeSelected: 0,
-            pointColorActive: hexToRGBA('#ffa500', 0.3)
+            pointSizeSelected: 0
         });
-        // if (self.small) {
-        //     self.plot.set({pointColor: hexToRGBA('#000000', 0.3)});
-        // }
+        if (self.image) {
+            self.plot.set({
+                pointColorActive: hexToRGBA('#b2b2b2', 0),
+                lassoColor: hexToRGBA('#000000', 0.0)
+            })
+        }
+
 
         self.plot.subscribe('select', self.select.bind(self));
         self.plot.subscribe('lassoStart', self.lassoStart.bind(self));
@@ -68,7 +74,6 @@ class Scatterplot {
                     neighborhoodTable.drawRows(rows);
                 })
         }
-
     }
 
 
@@ -94,7 +99,7 @@ class Scatterplot {
         const self = this;
         // TODO: remove any points that aren't in
         // self.plot.select(_.sampleSize(args.points, 100), {preventEvent: true});
-        if (self.lassoActive) {
+        if (self.lassoActive && !self.image) {
             console.log("Selecting");
             return dataLayer.getCells(args)
                 .then(cells => {
@@ -103,6 +108,8 @@ class Scatterplot {
                         'selectionSource': 'Embedding'
                     })
                 });
+        } else if (self.image) {
+            self.plot.select([]);
         }
     }
 
@@ -117,6 +124,7 @@ class Scatterplot {
         self.lastLasso = args;
         self.lassoActive = false;
     }
+
 
     async applyLasso(points) {
         return dataLayer.getCellsInPolygon(points, false, true)
@@ -160,7 +168,14 @@ https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
         let r = h.indexOf(hex[1]) * 16 + h.indexOf(hex[2]);
         let g = h.indexOf(hex[3]) * 16 + h.indexOf(hex[4]);
         let b = h.indexOf(hex[5]) * 16 + h.indexOf(hex[6]);
-        return [r / 255, g / 255, b / 255, alpha]
+        if (alpha == 1) {
+            let rgb = [r / 255, g / 255, b / 255]
+            return rgb;
+        } else {
+            let rgba = [r / 255, g / 255, b / 255, alpha]
+            console.log('rgba', rgba);
+            return rgba;
+        }
     }
 
 Scatterplot.events = {
