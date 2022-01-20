@@ -86,7 +86,8 @@ class Scatterplot {
 
     recolor() {
         const self = this;
-        self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
+        self.plot.select(_.map(this.dataLayer.getCurrentRawSelection().cells, e => e.id));
+        // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
     }
 
     select(args) {

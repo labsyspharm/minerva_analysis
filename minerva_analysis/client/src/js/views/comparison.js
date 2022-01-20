@@ -232,10 +232,10 @@ class Comparison {
             canvas.width = canvas_div.offsetWidth;
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
-            scatterplot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
+            let spatialPlot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
                 null, true);
-            scatterplot.init();
-            return scatterplot;
+            spatialPlot.init();
+            return spatialPlot;
         });
         self.wrangleSmallMultiples();
     }
@@ -276,10 +276,10 @@ class Comparison {
             canvas.width = canvas_div.offsetWidth;
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
-            scatterplot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
+            let imagePlot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
                 null, true);
-            scatterplot.init();
-            return scatterplot;
+            imagePlot.init();
+            return imagePlot;
         });
         self.relatedImageData = tempImageData;
         self.wrangleSmallMultiples();

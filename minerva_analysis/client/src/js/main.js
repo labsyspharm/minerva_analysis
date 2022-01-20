@@ -233,7 +233,6 @@ function displayNeighborhood(selectedCell, neighborhood) {
 }
 
 function showHideRHS() {
-
     let osd_wrapper = document.getElementById('openseadragon_wrapper');
     let neighborhood_wrapper = document.getElementById('neighborhood_wrapper');
     let expand_wrapper = document.getElementById('expand_wrapper');
@@ -255,6 +254,7 @@ function showHideRHS() {
         expand_wrapper.classList.add('expand_wrapper_right');
         expand_icon.innerText = 'keyboard_double_arrow_left';
     }
+    //TODO Redraw scatterplot
     comparison.draw();
 
 

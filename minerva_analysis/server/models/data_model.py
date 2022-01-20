@@ -822,7 +822,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return {'segmentation': str(directory)}
 
 
-def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=[]):
+def     get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=[]):
     global datasource
     global ball_tree
     global source
