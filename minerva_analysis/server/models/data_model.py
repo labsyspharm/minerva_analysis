@@ -40,6 +40,7 @@ config = None
 seg = None
 channels = None
 metadata = None
+last_neighborhood_query = None
 
 
 def init(datasource_name):
@@ -53,6 +54,7 @@ def load_datasource(datasource_name, reload=False):
     global seg
     global channels
     global metadata
+    global last_neighborhood_query
     if source == datasource_name and datasource is not None and reload is False:
         return
     load_config()
@@ -63,8 +65,8 @@ def load_datasource(datasource_name, reload=False):
     datasource['id'] = datasource.index
     datasource['Cluster'] = embedding[:, -1].astype('int32').tolist()
     datasource = datasource.replace(-np.Inf, 0)
-    if reload or ball_tree is None:
-        load_ball_tree(datasource_name, reload=reload)
+    load_ball_tree(datasource_name, reload=reload)
+    last_neighborhood_query = None
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
     else:
@@ -594,15 +596,26 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
 
 def find_similarity(cluster_summary, similarity, datasource_name, disabled=None):
     global config
+    global last_neighborhood_query
+    last_neighborhood_query = {'query_vector': cluster_summary, 'disabled': disabled, 'threshold': similarity}
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    if disabled:
-        neighborhoods = np.delete(neighborhoods, disabled, axis=1)
-        cluster_summary = np.delete(cluster_summary, disabled, axis=0)
-    distances = 1 - spatial.distance.cdist([cluster_summary], neighborhoods, "cosine")[0]
-    greater_than = np.argwhere(distances > similarity).flatten()
+    greater_than = similarity_search(neighborhoods, last_neighborhood_query)
     return greater_than
 
 
+def similarity_search(neighborhoods, last_neighborhood_query):
+    disabled = last_neighborhood_query['disabled']
+    query_vector = last_neighborhood_query['query_vector']
+    threshold = last_neighborhood_query['threshold']
+    if disabled:
+        neighborhoods = np.delete(neighborhoods, disabled, axis=1)
+        cluster_summary = np.delete(query_vector, disabled, axis=0)
+    distances = 1 - spatial.distance.cdist([query_vector], neighborhoods, "cosine")[0]
+    greater_than = np.argwhere(distances > threshold).flatten()
+    return greater_than
+
+
+#
 def get_gated_cells(datasource_name, gates):
     global datasource
     global source
@@ -822,7 +835,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return {'segmentation': str(directory)}
 
 
-def     get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=[]):
+def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=[]):
     global datasource
     global ball_tree
     global source
@@ -956,14 +969,26 @@ def get_multi_image_scatter_results(datasource_name):
     if 'linkedDatasets' in config[datasource_name]:
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset != datasource_name:
-                csvPath = Path(config[dataset]['featureData'][0]['src'])
-                datasource = pd.read_csv(csvPath)
+                linked_path = Path(config[dataset]['featureData'][0]['src'])
+                linked_source = pd.read_csv(linked_path)
                 x_field = config[datasource_name]['featureData'][0]['xCoordinate']
                 y_field = config[datasource_name]['featureData'][0]['yCoordinate']
-                data = datasource[[x_field, y_field, get_cell_id_field(dataset)]].to_numpy()
+                data = linked_source[[x_field, y_field, get_cell_id_field(dataset)]].to_numpy()
                 normalized_data = normalize_scatterplot_data(data[:, 0:2])
                 data = np.column_stack((normalized_data, data[:, 2]))
                 results[dataset] = np.ascontiguousarray(data)
+
+    return results
+
+
+def search_across_image(datasource_name, linked_datasource):
+    global last_neighborhood_query
+    results = {}
+    if 'linkedDatasets' in config[datasource_name] and last_neighborhood_query is not None:
+        for dataset in config[datasource_name]['linkedDatasets']:
+            if dataset == linked_datasource:
+                linked_neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
+                results[dataset] = similarity_search(linked_neighborhoods, last_neighborhood_query)
 
     return results
 

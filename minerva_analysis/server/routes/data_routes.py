@@ -321,6 +321,14 @@ def get_related_image_data():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_image_search_results', methods=['GET'])
+def get_image_search_results():
+    datasource = request.args.get('datasource')
+    linked_datasource = request.args.get('linkedDatasource')
+    resp = data_model.search_across_image(datasource, linked_datasource)
+    return serialize_and_submit_json(resp)
+
+
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):

@@ -52,7 +52,8 @@ async function init(conf) {
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     legend = new Legend(dataLayer, colorScheme, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
-    scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer, neighborhoodTable);
+    scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
+        neighborhoodTable, false, false, datasource);
     console.log('Ending Reg Init', new Date());
     //image viewer
     seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);

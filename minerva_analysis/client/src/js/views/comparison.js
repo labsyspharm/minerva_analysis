@@ -234,7 +234,7 @@ class Comparison {
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
             let spatialPlot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
-                null, true);
+                null, true, false, datasource);
             spatialPlot.init();
             return spatialPlot;
         });
@@ -278,7 +278,7 @@ class Comparison {
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
             let imagePlot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
-                null, true, true);
+                null, true, true, k);
             imagePlot.init();
             return imagePlot;
         });

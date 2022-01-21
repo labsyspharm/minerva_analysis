@@ -1,9 +1,10 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, small = false, image = false) {
+    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, small = false, image = false, dataset = '') {
         this.id = id;
         this.canvasId = canvasId;
+        this.dataset = dataset;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.neighborhoodTable = neighborhoodTable;
@@ -40,7 +41,6 @@ class Scatterplot {
         });
         if (self.image) {
             self.plot.set({
-                pointColorActive: hexToRGBA('#b2b2b2', 0),
                 lassoColor: hexToRGBA('#000000', 0.0)
             })
         }
@@ -86,12 +86,20 @@ class Scatterplot {
             self.visData = self.visData.data;
         }
         self.plot.draw(self.visData);
+        if (self.image) {
+            self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
+            self.recolor(self.imageSelection[self.dataset]);
+        }
     }
 
 
-    recolor() {
+    recolor(selection = null) {
         const self = this;
-        self.plot.select(_.map(this.dataLayer.getCurrentRawSelection().cells, e => e.id));
+        if (!selection) {
+            selection = _.map(this.dataLayer.getCurrentRawSelection().cells, e => e.id)
+        }
+        console.log('selection', selection);
+        self.plot.select(selection, {preventEvent: true});
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
     }
 

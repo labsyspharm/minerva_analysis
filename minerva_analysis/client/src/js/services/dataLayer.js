@@ -364,8 +364,8 @@ class DataLayer {
                     {
                         datasource: datasource,
                         similarity: similarity,
-                        // selectionIds: _.map(this.getCurrentRawSelection().cells, e=>e.id)
-                        selectionIds: [...this.getCurrentSelection().keys()]
+                        selectionIds: _.map(this.getCurrentRawSelection().cells, e => e.id)
+                        // selectionIds: [...this.getCurrentSelection().keys()]
                     })
             });
             let cells = await response.json();
@@ -570,7 +570,7 @@ class DataLayer {
         }
     }
 
-      async getContourLines() {
+    async getContourLines() {
         try {
             let response = await fetch('/get_contour_lines', {
                 method: 'POST',
@@ -591,7 +591,7 @@ class DataLayer {
         }
     }
 
-    async getRelatedImageData(){
+    async getRelatedImageData() {
         try {
             let response = await fetch('/get_related_image_data?' + new URLSearchParams({
                 datasource: datasource
@@ -600,6 +600,19 @@ class DataLayer {
             return response_data;
         } catch (e) {
             console.log("Error Getting Related Images", e);
+        }
+    }
+
+    async getImageSearchResults(dataset) {
+        try {
+            let response = await fetch('/get_image_search_results?' + new URLSearchParams({
+                linkedDatasource: dataset,
+                datasource: datasource
+            }))
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Image Search Results", e);
         }
     }
 
