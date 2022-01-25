@@ -45,6 +45,7 @@ class ImageViewer {
         this.labelChannel = {};
         this.noLabel = false;
         this.sel_outlines = true;
+        this.show_scalebar = true;
 
         // Selection polygon (array of xy positions)
         this.selectionPolygonToDraw = [];
@@ -106,6 +107,7 @@ class ImageViewer {
         dataLayer.getMetadata().then(d => {
             that.imgMetadata = d;
             console.log('Image metadata:', that.imgMetadata)
+            that.addScaleBar()
         });
 
 
@@ -245,6 +247,22 @@ class ImageViewer {
         // Add overlay
         this.csvGatingOverlay = new CsvGatingOverlay(this.viewer, this);
 
+        this.viewer.scalebar({
+                location: 3,
+                minWidth: '100px',
+                type: 'Microscopy',
+                stayInsideImage: true,
+                pixelsPerMeter: 0,
+                fontColor: 'rgb(255, 255, 255)',
+                color: 'rgb(255, 255, 255)'
+        })
+
+        // Add listener for scalebar
+        const controls_scalebar = document.querySelector('#controls_scalebar')
+        controls_scalebar.addEventListener('change', e => {
+            this.show_scalebar = e.target.checked;
+            this.eventHandler.trigger(ImageViewer.events.addScaleBar)
+        })
 
         // Add event mouse handler (cell selection)
         this.viewer.addHandler('canvas-nonprimary-press', function (event) {
@@ -621,13 +639,37 @@ class ImageViewer {
         if (repaint) this.forceRepaint();
 
     }
+
+    addScaleBar(){
+        let pixelsPerMeter
+        if (this.show_scalebar){
+            if (this.imgMetadata.physical_size_x_unit === "µm" || this.imgMetadata.physical_size_x_unit === "um"){
+                pixelsPerMeter = 1000000*(this.imgMetadata.size_x / this.imgMetadata.physical_size_x);
+            } else if (this.imgMetadata.physical_size_x_unit === "nm"){
+                pixelsPerMeter = 1000000000*(this.imgMetadata.size_x / this.imgMetadata.physical_size_x);
+            } else if (this.imgMetadata.physical_size_x_unit === "cm"){
+                pixelsPerMeter = 100*(this.imgMetadata.size_x / this.imgMetadata.physical_size_x);
+            } else if (this.imgMetadata.physical_size_x_unit === "m"){
+                pixelsPerMeter = (this.imgMetadata.size_x / this.imgMetadata.physical_size_x);
+            } else{
+                pixelsPerMeter = 0;
+            }
+        } else {
+            pixelsPerMeter = 0;
+        }
+
+        this.viewer.scalebar({
+            pixelsPerMeter: pixelsPerMeter,
+        })
+    }
 }
 
 // Static vars
 ImageViewer
     .events = {
     imageClickedMultiSel: 'image_clicked_multi_selection',
-    renderingMode: 'renderingMode'
+    renderingMode: 'renderingMode',
+    addScaleBar: 'addScaleBar'
 };
 
 async function addTile(path) {

@@ -71,6 +71,17 @@
     top: 0px;
 }
 
+#scalebar-header-div {
+    position: absolute;
+    right: 0;
+    top: 0px;
+}
+
+#scalebar-header-div input {
+    height: 11px;
+    margin: 1px 10px 0 5px;
+}
+
 #download-channels-header-div {
     /*position: absolute;*/
     /*right: 0;*/

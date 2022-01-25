@@ -202,3 +202,9 @@ const reset_lists = () => {
     seaDragonViewer.forceRepaint();
 }
 eventHandler.bind(ChannelList.events.RESET_LISTS, reset_lists);
+
+const add_scalebar = () => {
+    seaDragonViewer.addScaleBar();
+    seaDragonViewer.forceRepaint();
+}
+eventHandler.bind(ImageViewer.events.addScaleBar, add_scalebar);
