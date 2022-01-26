@@ -158,7 +158,11 @@ class ImageViewer {
                         console.log('Missing Array', e.tile.url);
                         // this.refreshSegmentationMask();
                     }
-                    that.drawLabelTile(e.tile, e.tile._tileImageData.width, e.tile._tileImageData.height);
+                    try {
+                        that.drawLabelTile(e.tile, e.tile._tileImageData.width, e.tile._tileImageData.height);
+                    } catch (err) {
+                        console.log('Drawing Issue for ', e, err);
+                    }
                 }
                 if (e.tile.containsLabel) {
                     try {
@@ -781,6 +785,13 @@ class ImageViewer {
     drawContourLines() {
         const self = this;
         return dataLayer.getContourLines().then(pathResp => {
+            // let polygon = concaveman(pathResp);
+            // let pathsArray = polygon.map(point => {
+            //     return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
+            // });
+            // pathsArray = [[pathsArray]];
+
+
             let pathsArray = Object.values(pathResp).map(paths_el => {
                 return paths_el.map(path_el => {
                     return path_el.map(point => {

@@ -60,7 +60,7 @@ async function init(conf) {
     console.log('Ending Viewer Init', new Date());
     // init synchronus methods
     seaDragonViewer.init();
-    legend.init();
+    // legend.init();
     parallelCoordinates.init();
     scatterplot.init();
     console.log('Sync Init', new Date());
@@ -246,6 +246,7 @@ function showHideRHS() {
         expand_wrapper.classList.remove('expand_wrapper_right');
         expand_wrapper.classList.add('expand_wrapper_left');
         expand_icon.innerText = 'keyboard_double_arrow_right';
+        resizeAnalysisWrapper(false);
     } else {
         osd_wrapper.classList.add("openseadragon_wrapper_large");
         osd_wrapper.classList.remove("openseadragon_wrapper_small");
@@ -254,15 +255,52 @@ function showHideRHS() {
         expand_wrapper.classList.remove('expand_wrapper_left');
         expand_wrapper.classList.add('expand_wrapper_right');
         expand_icon.innerText = 'keyboard_double_arrow_left';
+        resizeAnalysisWrapper(true)
     }
+
+    function resizeAnalysisWrapper(expand = true) {
+        createTransitionEndEventListener('#analysis_wrapper', () => {
+            parallelCoordinates.rewrangle()
+            scatterplot.rewrangle()
+        })
+        let analysis_wrapper = document.getElementById('analysis_wrapper');
+        if (expand) {
+            analysis_wrapper.classList.add("analysis_wrapper_large");
+            analysis_wrapper.classList.remove("analysis_wrapper_small");
+        } else {
+            analysis_wrapper.classList.remove("analysis_wrapper_large");
+            analysis_wrapper.classList.add("analysis_wrapper_small");
+        }
+    }
+
     //TODO Redraw scatterplot
     comparison.draw();
-
-
 }
 
 function setupColExpand() {
     document.getElementById('expand_icon').addEventListener("click", () => {
         showHideRHS();
     })
+}
+
+function createTransitionEndEventListener(selector, func) {
+    let input = document.querySelector(selector);
+    let transitionEndEventName = getTransitionEndEventName();
+    input.addEventListener(transitionEndEventName, func);
+
+
+    function getTransitionEndEventName() {
+        const transitions = {
+            "transition": "transitionend",
+            "OTransition": "oTransitionEnd",
+            "MozTransition": "transitionend",
+            "WebkitTransition": "webkitTransitionEnd"
+        }
+        let bodyStyle = document.body.style;
+        for (let transition in transitions) {
+            if (bodyStyle[transition] != undefined) {
+                return transitions[transition];
+            }
+        }
+    }
 }

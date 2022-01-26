@@ -7,7 +7,7 @@ class Barchart {
 
     init() {
         const self = this;
-        this.margin = {top: 10, right: 23, bottom: 30, left: 120},
+        this.margin = {top: 10, right: 25, bottom: 30, left: 80},
             this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
         if (this.height <= 0) {

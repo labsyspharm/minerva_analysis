@@ -29,7 +29,7 @@ class Heatmap {
     draw() {
         const self = this;
         // set the dimensions and margins of the graph
-        const margin = {top: 0, right: 0, bottom: 120, left: 120},
+        const margin = {top: 0, right: 0, bottom: 80, left: 80},
             width = document.getElementById(self.id).clientWidth - margin.left - margin.right,
             height = document.getElementById(self.id).clientHeight - margin.top - margin.bottom;
 

@@ -791,7 +791,7 @@ polygon:hover {
 }
 
 .par_cor_label {
-    font-size: 0.85rem;
+    font-size: 0.6rem;
 }
 
 #custom_cluster {
@@ -831,3 +831,4 @@ polygon:hover {
 #name-div .row, #file-div .row, #seg-div .row {
     height: 4vh;
 }
+

@@ -581,7 +581,7 @@ class DataLayer {
                 body: JSON.stringify(
                     {
                         datasource: datasource,
-                        selectionIds: [...this.getCurrentSelection().keys()]
+                        selectionIds: _.map(this.getCurrentRawSelection().cells, e => e.id)
                     })
             });
             let paths = await response.json();

@@ -31,7 +31,18 @@
     width: 65vw !important;
     min-width: 65vw !important;
     max-width: 65vw !important;
+}
 
+.analysis_wrapper_large {
+    width: 30vw !important;
+    min-width: 30vw !important;
+    max-width: 30vw !important;
+}
+
+.analysis_wrapper_small {
+    width: 20vw !important;
+    min-width: 20vw !important;
+    max-width: 20vw !important;
 }
 
 
@@ -39,9 +50,6 @@
     height: 100%;
     padding: 0;
     margin: 0;
-    width: 30vw !important;
-    max-width: 30vw !important;
-    min-width: 30vw !important;
 }
 
 #neighborhood_wrapper {
@@ -60,9 +68,9 @@
 
 .neighborhood_wrapper_large {
     display: block;
-    width: 25vw !important;
-    max-width: 25vw !important;
-    min-width: 25vw !important;
+    width: 35vw !important;
+    max-width: 35vw !important;
+    min-width: 35vw !important;
 }
 
 #openseadragon_wrapper, #neighborhood_wrapper, #analysis_wrapper {
@@ -92,7 +100,7 @@
 }
 
 .parallel_axes text {
-    font-size: 0.8rem;
+    font-size: 0.6rem;
     fill: white;
     text-anchor: start;
 
@@ -312,6 +320,7 @@
 }
 
 #comparison_grid, #pinned_comparison_grid {
+    height: 100%;
     width: 100%;
 }
 

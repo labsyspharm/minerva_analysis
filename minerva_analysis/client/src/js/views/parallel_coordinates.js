@@ -20,10 +20,10 @@ class ParallelCoordinates {
         this.totalWidth = this.parent.node().getBoundingClientRect().width;
         this.totalHeight = this.parent.node().getBoundingClientRect().height;
         if (this.small) {
-            this.margin = {top: 10, right: 55, bottom: 10, left: 160};
+            this.margin = {top: 10, right: 55, bottom: 10, left: 100};
 
         } else {
-            this.margin = {top: 40, right: 55, bottom: 10, left: 160};
+            this.margin = {top: 40, right: 55, bottom: 10, left: 100};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -89,7 +89,9 @@ class ParallelCoordinates {
                     self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height)
                 }
             })
-        this.wrangle(emptyData);
+        if (!this.visData) {
+            this.wrangle(emptyData);
+        }
         self.svgGroup.selectAll(".average_path")
             .attr("stroke-width", 0)
 
@@ -127,6 +129,12 @@ class ParallelCoordinates {
 
 
         this.visData = _.sortBy(this.visData, ['index']);
+        this.scale();
+        return self.draw()
+    }
+
+    scale() {
+        const self = this;
         self.y.domain(this.visData.map(function (d) {
             return d.key;
         }));
@@ -146,8 +154,15 @@ class ParallelCoordinates {
         self.webglY = d3.scaleLinear()
             .domain([0, 1])
             .range([self.bottomLeft[1], self.topRight[1]])
-        return self.draw()
+    }
 
+    rewrangle() {
+        const self = this;
+        d3.select(`#${self.id}_svg`).remove()
+        d3.select(`#${self.id}_canvas`).remove()
+        self.init();
+        self.scale();
+        self.draw();
 
     }
 
@@ -182,16 +197,17 @@ class ParallelCoordinates {
                 }
             })
 
+        const legendTextSize = '0.6rem'
         let overallLineLegend = self.svgGroup.selectAll('.overall_line')
             .data([0])
         overallLineLegend.enter()
             .append('line')
             .classed('overall_line', true)
-            .attr('x1', self.x(0.87))
-            .attr('y1', -25)
-            .attr('x2', self.x(0.91))
-            .attr('y2', -25)
-            .attr("stroke-width", 3)
+            .attr('x1', self.x(0.02))
+            .attr('y1', -15)
+            .attr('x2', self.x(0.08))
+            .attr('y2', -15)
+            .attr("stroke-width", 4)
             .attr('stroke', 'grey')
 
 
@@ -200,9 +216,9 @@ class ParallelCoordinates {
         overallLineLabel.enter()
             .append('text')
             .classed('overall_line_label', true)
-            .attr('x', self.x(0.85))
-            .attr('y', -20)
-            .attr('font-size', '0.8rem')
+            .attr('x', self.x(0.00))
+            .attr('y', -10)
+            .attr('font-size', legendTextSize)
             .attr('fill', 'grey')
             .attr('text-anchor', 'end')
             .text('Overall')
@@ -212,11 +228,11 @@ class ParallelCoordinates {
         avgLineLegend.enter()
             .append('line')
             .classed('average_line', true)
-            .attr('x1', self.x(0.57))
-            .attr('y1', -25)
-            .attr('x2', self.x(0.61))
-            .attr('y2', -25)
-            .attr("stroke-width", 3)
+            .attr('x1', self.x(0.02))
+            .attr('y1', -35)
+            .attr('x2', self.x(0.08))
+            .attr('y2', -35)
+            .attr("stroke-width", 4)
             .attr('stroke', 'white')
 
 
@@ -225,9 +241,9 @@ class ParallelCoordinates {
         avgLineLabel.enter()
             .append('text')
             .classed('average_line_label', true)
-            .attr('x', self.x(0.55))
-            .attr('y', -20)
-            .attr('font-size', '0.8rem')
+            .attr('x', self.x(0.00))
+            .attr('y', -30)
+            .attr('font-size', legendTextSize)
             .attr('fill', 'white')
             .attr('text-anchor', 'end')
             .text('Selection Avg.')
@@ -239,9 +255,9 @@ class ParallelCoordinates {
             .classed('selection_line', true)
             .attr('x1', self.x(0.02))
             .attr('y1', -25)
-            .attr('x2', self.x(0.06))
+            .attr('x2', self.x(0.08))
             .attr('y2', -25)
-            .attr("stroke-width", 3)
+            .attr("stroke-width", 4 )
             .attr('stroke', 'orange')
 
         let selectionLineLabel = self.svgGroup.selectAll('.selection_line_label')
@@ -251,7 +267,7 @@ class ParallelCoordinates {
             .classed('selection_line_label', true)
             .attr('x', self.x(0.00))
             .attr('y', -20)
-            .attr('font-size', '0.8rem')
+            .attr('font-size', legendTextSize)
             .attr('fill', 'orange')
             .attr('text-anchor', 'end')
             .text('Selection')

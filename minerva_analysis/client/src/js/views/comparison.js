@@ -31,17 +31,17 @@ class Comparison {
         const self = this;
         this.hidden = !this.hidden;
         if (!this.hidden) {
-            let parentHeight = document.getElementById('comparison_container').clientHeight;
-            self.rowHeight = Math.round(parentHeight / 4);
+            // let parentHeight = document.getElementById('comparison_container').clientHeight;
+            // self.rowHeight = Math.round(parentHeight / 4);
             // self.pinnedContainer.style.height = self.pinnedContainer.style.maxHeight = `${self.rowHeight * 2}px`;
             // HEATMAP
             // self.container.style.height = self.container.style.maxHeight = `${self.rowHeight}px`;
-            self.createGrid();
             self.initToggles();
             //HEATMAP
-            self.currentState = 'barchart';
-
-            self.initSmallMultipleBarcharts();
+            self.removeAllPlots();
+            self.currentState = 'image';
+            self.rowHeight = document.documentElement.clientHeight * 0.4;
+            self.initImages();
         } else {
             self.removeAllPlots();
             self.container.innerHTML = '';
@@ -68,44 +68,43 @@ class Comparison {
         if (elem.id == "parallel-coordinates-button") {
             if (self.selectAndUnselect(elem, parent)) {
                 //Remove Bars
-                self.currentState = 'parallelCoordinates';
                 self.removeAllPlots();
+                self.currentState = 'parallelCoordinates';
                 self.initSmallMultipleParallelCoordinates();
             }
         } else if (elem.id == "barchart-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.currentState = 'barchart';
                 self.removeAllPlots();
+                self.currentState = 'barchart';
                 self.initSmallMultipleBarcharts();
             }
 
         } else if (elem.id == "scatterplot-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.currentState = 'scatterplot';
                 self.removeAllPlots();
+                self.currentState = 'scatterplot';
                 self.initSmallMultipleScatterplots();
             }
 
         } else if (elem.id == "heatmap-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.currentState = 'heatmap';
                 self.removeAllPlots();
-                document.getElementById("summary_div").style.display = "block";
-                document.getElementById("comparison_div_parent").style.display = "none";
+                self.currentState = 'heatmap';
                 self.initHeatmap();
             }
         } else if (elem.id == "stacked-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.currentState = 'stacked';
                 self.removeAllPlots();
+                self.currentState = 'stacked';
+
                 document.getElementById("summary_div").style.display = "block";
                 document.getElementById("comparison_grid").style.display = "none";
                 self.initStackedBarchart();
             }
         } else if (elem.id == "image-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.currentState = 'image';
                 self.removeAllPlots();
+                self.currentState = 'image';
                 self.rowHeight = document.documentElement.clientHeight * 0.4;
                 self.createGrid(1);
                 self.initImages();
@@ -131,6 +130,11 @@ class Comparison {
 
     removeAllPlots() {
         const self = this;
+        if (self.currentState == 'image' || self.currentState == 'scatterplot') {
+            self.plots.forEach(plot => {
+                plot.destroy();
+            })
+        }
         d3.select('#neighborhood_wrapper').selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas, #heatmap-svg, #summary_div_barchart_svg, .tooltip, #legend-svg').remove();
         document.getElementById("summary_div").style.display = "none";
         document.getElementById("comparison_grid").style.display = null;
@@ -150,14 +154,12 @@ class Comparison {
         self.wrangleSmallMultiples();
     }
 
-    createGrid(cols = 2) {
+    createGrid(cols = 2, numElements) {
         const self = this;
         //Clear previous
         d3.selectAll('.compare_row').remove()
         let width = self.container.getBoundingClientRect().width;
-        // let cols = 1;//Math.floor(width / 180);
-        // let rows = 2;
-        let rows = 4;
+        let rows = Math.ceil(numElements / cols);
         //HEATMAP
         // let rows = 2;
         let i = 0;
@@ -201,7 +203,6 @@ class Comparison {
                 plotData = _.get(self.neighborhoods[i], 'cells', []);
             } else if (self.currentState == 'image') {
                 plotData = self.relatedImageData[i][1];
-
             } else {
                 plotData = _.get(self.neighborhoods[i], 'cluster_summary.weighted_contribution', []);
             }
@@ -211,6 +212,7 @@ class Comparison {
 
     initSmallMultipleBarcharts() {
         const self = this;
+        self.createGrid(2, _.size(self.neighborhoods));
         self.plots = _.map(self.neighborhoods, (d, i) => {
             let div = document.getElementById(`compare_col_${i}`);
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
@@ -223,6 +225,7 @@ class Comparison {
 
     initSmallMultipleScatterplots() {
         const self = this;
+        self.createGrid(2, _.size(self.neighborhoods));
         self.plots = _.map(self.neighborhoods, (d, i) => {
             let div = document.getElementById(`compare_col_${i}`)
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
@@ -243,7 +246,8 @@ class Comparison {
 
     initHeatmap() {
         const self = this;
-        let plotNames = ['overall', 'selected']
+        let plotNames = ['overall', 'selected'];
+        self.createGrid(1, 2);
         self.plots = _.map(plotNames, (d, i) => {
             let div = document.getElementById(`compare_col_${i}`)
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'] || _.capitalize(d);
@@ -265,11 +269,13 @@ class Comparison {
     async initImages() {
         const self = this;
         self.relatedImageData = await self.dataLayer.getRelatedImageData()
+        self.createGrid(1, _.size(self.relatedImageData));
         let tempImageData = []
         self.plots = _.map(Object.entries(self.relatedImageData), ([k, v], i) => {
             tempImageData.push([k, v]);
             let div = document.getElementById(`compare_col_${i}`)
-            let header = div.querySelector('h5').innerHTML = k;
+            let header = div.querySelector('h5')
+            header.innerHTML = `<a href='/${k}'>${k}</a>`
             let canvas_div = document.getElementById(`compare_parallel_coordinates_${i}`);
             let canvas = document.createElement("canvas");
             canvas.className = 'scatterplot scatter_canvas';
@@ -277,6 +283,8 @@ class Comparison {
             canvas.width = canvas_div.offsetWidth;
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
+
+
             let imagePlot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
                 null, true, true, k);
             imagePlot.init();
@@ -290,7 +298,7 @@ class Comparison {
     rewrangle() {
         const self = this;
         if (!self.hidden) {
-            self.plots[0].rewrangle();
+            self.wrangleSmallMultiples();
         }
 
     }

@@ -19,18 +19,18 @@ class Scatterplot {
         const canvas = document.querySelector(`#${self.canvasId}`);
         let {width, height} = canvas.getBoundingClientRect();
         let ratio = window.devicePixelRatio;
+        width = width / ratio;
+        height = height / ratio;
         self.lassoActive = false;
         self.editMode = false;
         self.customClusterDiv = document.getElementById('custom_cluster');
         self.saveLassoButton = document.getElementById('save_lasso');
 
-        width = width / ratio;
-        height = height / ratio;
 
         self.plot = createScatterplot({
             canvas,
-            width,
-            height,
+            // width,
+            // height,
             pointColor: hexToRGBA('#b2b2b2', 1),
             opacityBy: 'density',
             pointColorActive: hexToRGBA('#ffa500', 0.2),
@@ -92,13 +92,12 @@ class Scatterplot {
         }
     }
 
-
     recolor(selection = null) {
         const self = this;
         if (!selection) {
             selection = _.map(this.dataLayer.getCurrentRawSelection().cells, e => e.id)
         }
-        console.log('selection', selection);
+        self.selection = selection;
         self.plot.select(selection, {preventEvent: true});
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
     }
@@ -166,6 +165,25 @@ class Scatterplot {
         } catch (e) {
         }
         document.getElementById('custom_cluster_loading').innerHTML = '';
+    }
+
+    rewrangle() {
+        const self = this;
+        // let parent = document.getElementById(self.id).getBoundingClientRect()
+        // const canvas = document.querySelector(`#${self.canvasId}`);
+        // canvas.width = parent.width;
+        // canvas.height = parent.height;
+        // let {width, height} = canvas.getBoundingClientRect();
+        // let ratio = window.devicePixelRatio;
+        // width = width / ratio;
+        // height = height / ratio;
+        // scatterplot.set({width, height, canvas});
+        self.plot.reset();
+    }
+
+    destroy() {
+        const self = this;
+        self.plot.destroy();
     }
 }
 
