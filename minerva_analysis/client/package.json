@@ -14,6 +14,7 @@
     "buffer": "^5.6.0",
     "color-convert": "^2.0.1",
     "colorbrewer": "^1.3.0",
+    "concaveman": "^1.2.1",
     "css-loader": "^3.6.0",
     "d3": "^6.2.0",
     "d3-simple-slider": "latest",

@@ -302,18 +302,21 @@ def load_ball_tree(datasource_name, reload=False):
     pickled_kd_tree_path = str(
         Path(
             os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / "ball_tree.pickle")
-    if os.path.isfile(pickled_kd_tree_path) and reload is False:
-        print("Pickled KD Tree Exists, Loading")
-        ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
-    else:
-        print("Creating KD Tree")
-        xCoordinate = config[datasource_name]['featureData'][0]['xCoordinate']
-        yCoordinate = config[datasource_name]['featureData'][0]['yCoordinate']
-        csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-        raw_data = pd.read_csv(csvPath)
-        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
-        ball_tree = BallTree(points, metric='euclidean')
-        pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
+    try:
+        if os.path.isfile(pickled_kd_tree_path) and reload is False:
+            print("Pickled KD Tree Exists, Loading")
+            ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
+            return
+    except:
+        pass
+    print("Creating KD Tree")
+    xCoordinate = config[datasource_name]['featureData'][0]['xCoordinate']
+    yCoordinate = config[datasource_name]['featureData'][0]['yCoordinate']
+    csvPath = Path(config[datasource_name]['featureData'][0]['src'])
+    raw_data = pd.read_csv(csvPath)
+    points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+    ball_tree = BallTree(points, metric='euclidean')
+    pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
 
 def query_for_closest_cell(x, y, datasource_name):
@@ -522,7 +525,7 @@ def get_rect_cells(datasource_name, rect, channels):
 def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, embedding=False):
     global config
     global datasource
-
+    import ome_types as ometypes
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     if embedding:
@@ -912,11 +915,11 @@ def get_contour_line_paths(datasource_name, selection_ids):
     cells = datasource.iloc[selection_ids]
     x = cells[config[datasource_name]['featureData'][0]['xCoordinate']].to_numpy()
     y = cells[config[datasource_name]['featureData'][0]['yCoordinate']].to_numpy()
-    points = np.column_stack((x, y))
+    cell_points = np.column_stack((x, y))
     grid_points = 2 ** 7
-    num_levels = 4
+    num_levels = 10
     kde = FFTKDE(kernel='gaussian')
-    grid, points = kde.fit(points).evaluate(grid_points)
+    grid, points = kde.fit(cell_points).evaluate(grid_points)
     grid_x, grid_y = np.unique(grid[:, 0]), np.unique(grid[:, 1])
     z = points.reshape(grid_points, grid_points).T
     plt.ioff()
@@ -929,6 +932,7 @@ def get_contour_line_paths(datasource_name, selection_ids):
             levels[str(i)].append(path.vertices)
         i += 1
     return levels
+    # return cell_points
 
 
 @numba.jit(nopython=True, parallel=True)

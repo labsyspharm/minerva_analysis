@@ -26,9 +26,7 @@ import regl from 'regl';
 import 'viawebgl'
 import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
-
-
-
+import concaveman from 'concaveman';
 window.d3 = Object.assign(d3base, {legendColor, sliderBottom, annotation});
 window.convert = convert;
 window.$ = $;
@@ -44,5 +42,6 @@ window.createRegl = createRegl;
 window.OpenSeadragon = viaWebGL.OpenSeadragon;
 window.ViewerManager = ViewerManager;
 window.createScatterplot = createScatterplot;
+window.concaveman = concaveman;
 // window.GridStack = GridStack;
 
