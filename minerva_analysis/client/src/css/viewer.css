@@ -63,7 +63,7 @@ body {
     left: 1vw;
     width: 20vw;
     z-index: 101;
-    height: 40vh;
+    max-height: 40vh;
     padding: 5px;
 }
 
@@ -72,7 +72,6 @@ body {
     border-radius: 17px;
     padding: 5px;
     left: 1vw;
-    width: 20vw;
     z-index: 101;
     max-height: 8vh;
 }
@@ -82,7 +81,6 @@ body {
     border-radius: 17px;
     padding: 5px;
     left: 1vw;
-    width: 20vw;
     z-index: 101;
     max-height: 8vh;
 }
@@ -97,7 +95,8 @@ body {
     left: 1vw;
     width: 20vw;
     z-index: 101;
-    height: 20vh;
+    /*min-height: 10vh;*/
+    max-height: 40vh;
     padding: 5px;
 }
 
@@ -136,7 +135,6 @@ body {
     font-size: 12px;
     position: relative;
 }
-
 
 
 #search-neighborhoods-header-div {

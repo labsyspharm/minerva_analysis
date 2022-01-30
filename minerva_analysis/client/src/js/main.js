@@ -8,7 +8,7 @@ const datasource = flaskVariables.datasource;
 
 
 //VIEWS
-let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable, comparison;
+let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable, comparison, multiImage;
 
 //SERVICES
 let dataLayer, colorScheme;
@@ -47,7 +47,8 @@ async function init(conf) {
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
 
-    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler);
+    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid');
+    multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_container', true);
     channelList = new ChannelList(config, dataLayer, eventHandler);
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     legend = new Legend(dataLayer, colorScheme, eventHandler);
@@ -65,11 +66,10 @@ async function init(conf) {
     scatterplot.init();
     console.log('Sync Init', new Date());
     //Async stuff
-    await Promise.all([channelList.init(), neighborhoodTable.init(), scatterplot.wrangle()]);
+    await Promise.all([channelList.init(), neighborhoodTable.init(), scatterplot.wrangle(), comparison.init(), multiImage.init()]);
     console.log('Async Init', new Date());
     clusterData = dataLayer.getClusterCells();
     setupColExpand();
-    await comparison.init();
 }
 
 //feature color map changed in ridge plot
@@ -280,8 +280,54 @@ function showHideRHS() {
 function setupColExpand() {
     document.getElementById('expand_icon').addEventListener("click", () => {
         showHideRHS();
-    })
+    });
 }
+
+function expandContractColumn(button) {
+    let channel_list = document.getElementById('channel_list');
+    let pattern_list = document.getElementById('neighborhood_table_card');
+    if (button.classList.contains('fa-chevron-up')) {
+        button.classList.remove('fa-chevron-up');
+        button.classList.add('fa-chevron-down');
+
+        if (button.id == 'expand-contract-channels') {
+            channel_list.classList.remove('channel_list_big');
+            channel_list.classList.add('channel_list_small');
+        } else {
+            pattern_list.classList.remove('neighborhood_table_card_big');
+            pattern_list.classList.add('neighborhood_table_card_small');
+        }
+
+    } else {
+        button.classList.remove('fa-chevron-down');
+        button.classList.add('fa-chevron-up');
+        if (button.id == 'expand-contract-channels') {
+
+            channel_list.classList.remove('channel_list_small');
+            channel_list.classList.add('channel_list_big');
+        } else {
+            pattern_list.classList.remove('neighborhood_table_card_small');
+            pattern_list.classList.add('neighborhood_table_card_big');
+        }
+    }
+}
+
+// function setupShowHideColumn() {
+//     let channelButton = document.getElementById('expand-contract-channels');
+//     channelButton.addEventListener('click', (event) => {
+//             let button = event.target;
+//             if (button.classList.contains('fa-chevron-up')) {
+//                 button.classList.remove('fa-chevron-up');
+//                 button.classList.add('fa-chevron-down');
+//             } else {
+//                 button.classList.remove('fa-chevron-down');
+//                 button.classList.add('fa-chevron-up');
+//                 setupShowHideColumn();
+//             }
+//         }
+//     )
+//
+// }
 
 function createTransitionEndEventListener(selector, func) {
     let input = document.querySelector(selector);

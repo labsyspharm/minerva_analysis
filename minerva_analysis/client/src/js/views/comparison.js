@@ -1,21 +1,21 @@
 class Comparison {
-    constructor(_config, _colorScheme, _dataLayer, _eventHandler) {
+    constructor(_config, _colorScheme, _dataLayer, _eventHandler, _containerId, _drawOnInit = false) {
         this.config = _config;
         this.colorScheme = _colorScheme;
         this.dataLayer = _dataLayer;
         this.eventHandler = _eventHandler;
+        this.containerId = _containerId;
         this.currentState = ''
         this.plots = []
         this.neighborhoods = null;
         this.container = null;
-        this.pinnedContainer = null;
         this.hidden = true;
+        this.drawOnInit = _drawOnInit;
     }
 
     async init() {
         const self = this;
-        self.container = document.getElementById('comparison_grid');
-        // self.pinnedContainer = document.getElementById('pinned_comparison_grid');
+        self.container = document.getElementById(self.containerId);
         self.neighborhoods = await self.dataLayer.getAllNeighborhoodStats();
         let t = self.neighborhoods;
         // self.neighborhoods = [t[6], t[7], t[8], t[9], t[0], t[1]]
@@ -24,6 +24,9 @@ class Comparison {
             return e
         })
         console.log('Compare Ready');
+        if (self.drawOnInit) {
+            self.draw();
+        }
 
     }
 
@@ -33,7 +36,6 @@ class Comparison {
         if (!this.hidden) {
             // let parentHeight = document.getElementById('comparison_container').clientHeight;
             // self.rowHeight = Math.round(parentHeight / 4);
-            // self.pinnedContainer.style.height = self.pinnedContainer.style.maxHeight = `${self.rowHeight * 2}px`;
             // HEATMAP
             // self.container.style.height = self.container.style.maxHeight = `${self.rowHeight}px`;
             self.initToggles();

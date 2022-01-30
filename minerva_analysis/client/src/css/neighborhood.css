@@ -1,8 +1,12 @@
-#left-col-wrapper {
+#left-col-wrapper, #search-col-wrapper {
     position: absolute;
     height: 100%;
     width: 100%;
     margin: 0;
+}
+
+#search-col {
+    padding-left: 0;
 }
 
 #relative-col {
@@ -20,6 +24,20 @@
     margin: 0;
 }
 
+#multi_image_wrapper_wrapper {
+    height: 100%;
+    position: relative;
+    z-index: 100;
+    padding: 0;
+    margin: 0;
+}
+
+.multi_image_wrapper_small {
+    width: 20vw !important;
+    min-width: 20vw !important;
+    max-width: 20vw !important;
+}
+
 .openseadragon_wrapper_small {
     width: 45vw !important;
     min-width: 45vw !important;
@@ -28,10 +46,11 @@
 }
 
 .openseadragon_wrapper_large {
-    width: 65vw !important;
-    min-width: 65vw !important;
-    max-width: 65vw !important;
+    width: 45vw !important;
+    min-width: 45vw !important;
+    max-width: 45vw !important;
 }
+
 
 .analysis_wrapper_large {
     width: 30vw !important;
@@ -374,4 +393,20 @@
 
 #comparison_title, .compare_plot_title {
     color: black !important;
+}
+
+#multi_image_container {
+    height: 100%;
+    width: 100%;
+}
+
+.expand-contract-button {
+    margin-left: 10px;
+    margin-right: 5px;
+}
+
+.expand-contract-button:hover {
+    cursor: pointer;
+    color: #8f8f8f;
+
 }

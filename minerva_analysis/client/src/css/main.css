@@ -144,9 +144,39 @@ body {
 }
 
 #channel_list {
-    height: 100%;
     width: 100%;
+    transition-property: height, max-height, min-height;
+    transition-duration: 0s;
 }
+
+
+.channel_list_big {
+    height: 100%;
+}
+
+.channel_list_small {
+    height: 0;
+}
+
+
+.neighborhood_table_card_big {
+    height: 100%;
+}
+
+.neighborhood_table_card_small {
+    height: 0;
+}
+
+
+
+.neighborhood_table_card_small thead {
+    display: none
+}
+
+.neighborhood_table_card_big thead {
+    display: table-header-group
+}
+
 
 #channel_list_parent {
     overflow-x: hidden;
@@ -630,9 +660,10 @@ polygon:hover {
     margin-left: 10px;
     background-color: transparent;
     padding: 0;
-    height: 100%;
     width: 100%;
     overflow-y: scroll;
+    transition-property: height, max-height, min-height;
+    transition-duration: 0s;
 }
 
 
