@@ -62,6 +62,9 @@ def load_datasource(datasource_name, reload=False):
     embedding = np.load(Path(config[datasource_name]['embedding']))
     datasource['id'] = datasource.index
     datasource['Cluster'] = embedding[:, -1].astype('int32').tolist()
+    if 'CellType' in datasource.columns:
+        datasource.rename(columns={'CellType': 'phenotype'}, inplace=True)
+
     datasource = datasource.replace(-np.Inf, 0)
     load_ball_tree(datasource_name, reload=reload)
     if config[datasource_name]['segmentation'].endswith('.zarr'):
@@ -314,6 +317,10 @@ def load_ball_tree(datasource_name, reload=False):
     raw_data = pd.read_csv(csvPath)
     points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
     ball_tree = BallTree(points, metric='euclidean')
+    parent_directory_path = Path(
+        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name
+    # Creates Directory if it doesn't exist
+    parent_directory_path.mkdir(parents=True, exist_ok=True)
     pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
 
 

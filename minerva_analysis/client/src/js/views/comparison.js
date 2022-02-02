@@ -1,5 +1,5 @@
 class Comparison {
-    constructor(_config, _colorScheme, _dataLayer, _eventHandler, _containerId, _drawOnInit = false) {
+    constructor(_config, _colorScheme, _dataLayer, _eventHandler, _containerId, _drawOnInit = false, _columns = null) {
         this.config = _config;
         this.colorScheme = _colorScheme;
         this.dataLayer = _dataLayer;
@@ -11,6 +11,7 @@ class Comparison {
         this.container = null;
         this.hidden = true;
         this.drawOnInit = _drawOnInit;
+        this.columns = _columns;
     }
 
     async init() {
@@ -42,7 +43,7 @@ class Comparison {
             //HEATMAP
             self.removeAllPlots();
             self.currentState = 'image';
-            self.rowHeight = document.documentElement.clientHeight * 0.4;
+            self.rowHeight = document.documentElement.clientHeight * 0.3;
             self.initImages();
         } else {
             self.removeAllPlots();
@@ -205,7 +206,7 @@ class Comparison {
                 plotData = _.get(self.neighborhoods[i], 'cells', []);
             } else if (self.currentState == 'image') {
 
-                    plotData = self.relatedImageData[i][1];
+                plotData = self.relatedImageData[i][1];
 
 
             } else {
@@ -274,7 +275,7 @@ class Comparison {
     async initImages() {
         const self = this;
         self.relatedImageData = await self.dataLayer.getRelatedImageData()
-        self.createGrid(1, _.size(self.relatedImageData));
+        self.createGrid(self.columns || 1, _.size(self.relatedImageData));
         let tempImageData = []
         self.plots = _.map(Object.entries(self.relatedImageData), ([k, v], i) => {
             tempImageData.push([k, v]);

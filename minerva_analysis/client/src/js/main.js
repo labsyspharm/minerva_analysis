@@ -7,6 +7,7 @@ const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
 const applyPrevious = flaskVariables.applyPrevious;
 let searching = false;
+let mode = 'multi';
 
 
 //VIEWS
@@ -50,25 +51,34 @@ async function init(conf) {
     await colorScheme.init();
 
     comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid');
-    multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_container', true);
-    channelList = new ChannelList(config, dataLayer, eventHandler);
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
-    legend = new Legend(dataLayer, colorScheme, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
         neighborhoodTable, false, false, datasource);
     console.log('Ending Reg Init', new Date());
     //image viewer
-    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-    console.log('Ending Viewer Init', new Date());
-    // init synchronus methods
-    seaDragonViewer.init();
+    if (mode === 'single') {
+        legend = new Legend(dataLayer, colorScheme, eventHandler);
+        channelList = new ChannelList(config, dataLayer, eventHandler);
+        seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
+        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true);
+        console.log('Ending Viewer Init', new Date());
+        // init synchronus methods
+        seaDragonViewer.init();
+        await channelList.init()
+    } else {
+        document.getElementById('openseadragon_wrapper').style.display = "none"
+        document.getElementById('multi_image_wrapper').style.display = "block"
+        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_wrapper',
+            true, columns = 4);
+
+    }
     // legend.init();
     parallelCoordinates.init();
     scatterplot.init();
     console.log('Sync Init', new Date());
     //Async stuff
-    await Promise.all([channelList.init(), neighborhoodTable.init(), scatterplot.wrangle(), comparison.init(), multiImage.init()]);
+    await Promise.all([neighborhoodTable.init(), scatterplot.wrangle(), comparison.init(), multiImage.init()]);
     console.log('Async Init', new Date());
     clusterData = dataLayer.getClusterCells();
     setupColExpand();

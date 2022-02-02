@@ -16,7 +16,7 @@
 }
 
 
-#openseadragon_wrapper {
+#openseadragon_wrapper, #multi_image_wrapper {
     height: 100%;
     position: relative;
     z-index: 100;
@@ -24,7 +24,12 @@
     margin: 0;
 }
 
-#multi_image_wrapper_wrapper {
+#multi_image_wrapper {
+    display: none;
+    overflow-y: scroll;
+}
+
+#related_image_wrapper_wrapper {
     height: 100%;
     position: relative;
     z-index: 100;
@@ -32,19 +37,19 @@
     margin: 0;
 }
 
-.multi_image_wrapper_small {
+.related_image_wrapper_small {
     min-width: 15vw !important;
     max-width: 20vw !important;
 }
 
-.openseadragon_wrapper_small {
+.openseadragon_wrapper_small, .multi_image_wrapper_small {
     width: 45vw !important;
     min-width: 45vw !important;
     max-width: 45vw !important;
 
 }
 
-.openseadragon_wrapper_large {
+.openseadragon_wrapper_large, .multi_image_wrapper_large {
     width: 45vw !important;
     min-width: 45vw !important;
     max-width: 45vw !important;
@@ -394,7 +399,7 @@
     color: black !important;
 }
 
-#multi_image_container {
+#related_image_container {
     height: 100%;
     width: 100%;
 }
