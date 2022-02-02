@@ -354,6 +354,8 @@ class DataLayer {
 
     async getSimilarNeighborhoodToSelection(similarity) {
         try {
+            searching = true;
+            let selectionIds = _.map(this.getCurrentRawSelection().cells, e => e.id)
             let response = await fetch('/get_similar_neighborhood_to_selection', {
                 method: 'POST',
                 headers: {
@@ -364,11 +366,12 @@ class DataLayer {
                     {
                         datasource: datasource,
                         similarity: similarity,
-                        selectionIds: _.map(this.getCurrentRawSelection().cells, e => e.id)
+                        selectionIds: selectionIds
                         // selectionIds: [...this.getCurrentSelection().keys()]
                     })
             });
             let cells = await response.json();
+            store('neighborhoodQuery', cells['neighborhood_query'])
             return cells;
         } catch (e) {
             console.log("Error Getting Similar Neighborhood", e);
@@ -377,6 +380,7 @@ class DataLayer {
 
     async findSimilarNeighborhoods(data, similarity) {
         try {
+            searching = true;
             let response = await fetch('/find_custom_neighborhood', {
                 method: 'POST',
                 headers: {
@@ -391,6 +395,7 @@ class DataLayer {
                     })
             });
             let cells = await response.json();
+            store('neighborhoodQuery', cells['neighborhood_query'])
             return cells;
         } catch (e) {
             console.log("Error Getting Custom Neighborhood", e);
@@ -607,7 +612,8 @@ class DataLayer {
         try {
             let response = await fetch('/get_image_search_results?' + new URLSearchParams({
                 linkedDatasource: dataset,
-                datasource: datasource
+                datasource: datasource,
+                neighborhoodQuery: store('neighborhoodQuery')
             }))
             let cells = await response.json();
             return cells;
@@ -615,5 +621,27 @@ class DataLayer {
             console.log("Error Getting Image Search Results", e);
         }
     }
+
+    async applyNeighborhoodQuery() {
+        try {
+            let response = await fetch('/apply_neighborhood_query', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        neighborhoodQuery: store('neighborhoodQuery')
+                    })
+            });
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Applying Previous Query", e);
+        }
+    }
+
 
 }

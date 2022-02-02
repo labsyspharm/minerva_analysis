@@ -204,7 +204,10 @@ class Comparison {
             if (self.currentState == 'scatterplot') {
                 plotData = _.get(self.neighborhoods[i], 'cells', []);
             } else if (self.currentState == 'image') {
-                plotData = self.relatedImageData[i][1];
+
+                    plotData = self.relatedImageData[i][1];
+
+
             } else {
                 plotData = _.get(self.neighborhoods[i], 'cluster_summary.weighted_contribution', []);
             }
@@ -277,7 +280,7 @@ class Comparison {
             tempImageData.push([k, v]);
             let div = document.getElementById(`compare_col_${i}`)
             let header = div.querySelector('h5')
-            header.innerHTML = `<a href='/${k}'>${k}</a>`
+            header.innerHTML = `<a href='/${k}?applyPrevious=true'>${k}</a>`
             let canvas_div = document.getElementById(`compare_parallel_coordinates_${i}`);
             let canvas = document.createElement("canvas");
             canvas.className = 'scatterplot scatter_canvas';

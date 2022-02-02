@@ -5,6 +5,8 @@
 console.log("Here");
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
+const applyPrevious = flaskVariables.applyPrevious;
+let searching = false;
 
 
 //VIEWS
@@ -70,6 +72,15 @@ async function init(conf) {
     console.log('Async Init', new Date());
     clusterData = dataLayer.getClusterCells();
     setupColExpand();
+    if (applyPrevious) {
+        searching = true;
+        return dataLayer.applyNeighborhoodQuery()
+            .then(cells => {
+                eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
+            })
+    } else {
+        store(false);
+    }
 }
 
 //feature color map changed in ridge plot
@@ -194,6 +205,7 @@ function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     neighborhoodTable.enableSaveButton();
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
+    multiImage.rewrangle();
     comparison.rewrangle();
     if (seaDragonViewer.contourView) {
         seaDragonViewer.drawContourLines();

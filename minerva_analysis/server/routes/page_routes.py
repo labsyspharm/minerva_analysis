@@ -1,5 +1,5 @@
 from minerva_analysis import app, get_config_names
-from flask import render_template, send_from_directory
+from flask import render_template, send_from_directory, request
 from pathlib import Path
 import json
 import os
@@ -10,13 +10,15 @@ def my_index():
     return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
 
 
-@app.route('/<string:datasource>')
+@app.route('/<string:datasource>', methods=['GET'])
 def image_viewer(datasource):
     datasources = get_config_names()
+    apply_previous = request.args.get('applyPrevious')
     if datasource not in datasources:
         datasource = ''
 
-    return render_template('index.html', data={'datasource': datasource, 'datasources': datasources})
+    return render_template('index.html',
+                           data={'datasource': datasource, 'datasources': datasources, 'applyPrevious': apply_previous})
 
 
 @app.route('/compare_neighborhoods/<string:datasource>')

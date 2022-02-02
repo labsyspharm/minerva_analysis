@@ -33,8 +33,7 @@
 }
 
 .multi_image_wrapper_small {
-    width: 20vw !important;
-    min-width: 20vw !important;
+    min-width: 15vw !important;
     max-width: 20vw !important;
 }
 

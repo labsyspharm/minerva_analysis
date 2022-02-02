@@ -87,8 +87,11 @@ class Scatterplot {
         }
         self.plot.draw(self.visData);
         if (self.image) {
-            self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
-            self.recolor(self.imageSelection[self.dataset]);
+            if (searching) {
+                self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
+                self.recolor(self.imageSelection[self.dataset]);
+            }
+            searching = false;
         }
     }
 

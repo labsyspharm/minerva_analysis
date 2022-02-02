@@ -325,7 +325,17 @@ def get_related_image_data():
 def get_image_search_results():
     datasource = request.args.get('datasource')
     linked_datasource = request.args.get('linkedDatasource')
-    resp = data_model.search_across_image(datasource, linked_datasource)
+    neighborhood_query = request.args.get('neighborhoodQuery')
+    resp = data_model.search_across_image(datasource, linked_datasource, neighborhood_query)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/apply_neighborhood_query', methods=['POST'])
+def apply_neighborhood_query():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    neighborhood_query = post_data['neighborhoodQuery']
+    resp = data_model.apply_neighborhood_query(datasource, neighborhood_query)
     return serialize_and_submit_json(resp)
 
 

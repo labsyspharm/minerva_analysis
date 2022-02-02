@@ -40,7 +40,6 @@ config = None
 seg = None
 channels = None
 metadata = None
-last_neighborhood_query = None
 
 
 def init(datasource_name):
@@ -54,7 +53,6 @@ def load_datasource(datasource_name, reload=False):
     global seg
     global channels
     global metadata
-    global last_neighborhood_query
     if source == datasource_name and datasource is not None and reload is False:
         return
     load_config()
@@ -66,7 +64,6 @@ def load_datasource(datasource_name, reload=False):
     datasource['Cluster'] = embedding[:, -1].astype('int32').tolist()
     datasource = datasource.replace(-np.Inf, 0)
     load_ball_tree(datasource_name, reload=reload)
-    last_neighborhood_query = None
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
     else:
@@ -570,9 +567,10 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     #     neighborhood_array = np.load(Path("minerva_analysis/data/Ton/complex_large.npy")).squeeze()
 
     selection_summary = np.mean(neighborhoods[selection_ids, :], axis=0)
-    similar_ids = find_similarity(selection_summary, similarity, datasource_name)
+    similar_ids, neighborhood_query = find_similarity(selection_summary, similarity, datasource_name)
     obj = get_neighborhood_stats(datasource_name, similar_ids, fields=fields)
     obj['raw_summary'] = selection_summary
+    obj['neighborhood_query'] = neighborhood_query
     return obj
 
 
@@ -592,25 +590,25 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
         if 'disabled' in neighborhood_composition[phenos[i]] and neighborhood_composition[phenos[i]]['disabled']:
             disabled.append(i)
 
-    similar_ids = find_similarity(neighborhood_vector, similarity, datasource_name, disabled)
+    similar_ids, neighborhood_query = find_similarity(neighborhood_vector, similarity, datasource_name, disabled)
     obj = get_neighborhood_stats(datasource_name, similar_ids, fields=fields)
     obj['raw_summary'] = neighborhood_vector
+    obj['neighborhood_query'] = neighborhood_query
     return obj
 
 
 def find_similarity(cluster_summary, similarity, datasource_name, disabled=None):
     global config
-    global last_neighborhood_query
-    last_neighborhood_query = {'query_vector': cluster_summary, 'disabled': disabled, 'threshold': similarity}
+    neighborhood_query = {'query_vector': cluster_summary, 'disabled': disabled, 'threshold': similarity}
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    greater_than = similarity_search(neighborhoods, last_neighborhood_query)
-    return greater_than
+    greater_than = similarity_search(neighborhoods, neighborhood_query)
+    return greater_than, neighborhood_query
 
 
-def similarity_search(neighborhoods, last_neighborhood_query):
-    disabled = last_neighborhood_query['disabled']
-    query_vector = last_neighborhood_query['query_vector']
-    threshold = last_neighborhood_query['threshold']
+def similarity_search(neighborhoods, neighborhood_query):
+    disabled = neighborhood_query['disabled']
+    query_vector = neighborhood_query['query_vector']
+    threshold = neighborhood_query['threshold']
     if disabled:
         neighborhoods = np.delete(neighborhoods, disabled, axis=1)
         cluster_summary = np.delete(query_vector, disabled, axis=0)
@@ -986,14 +984,13 @@ def get_multi_image_scatter_results(datasource_name):
     return results
 
 
-def search_across_image(datasource_name, linked_datasource):
-    global last_neighborhood_query
+def search_across_image(datasource_name, linked_datasource, neighborhood_query=None):
     results = {}
-    if 'linkedDatasets' in config[datasource_name] and last_neighborhood_query is not None:
+    if 'linkedDatasets' in config[datasource_name] and neighborhood_query is not None:
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset == linked_datasource:
                 linked_neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
-                results[dataset] = similarity_search(linked_neighborhoods, last_neighborhood_query)
+                results[dataset] = similarity_search(linked_neighborhoods, neighborhood_query)
 
     return results
 
@@ -1012,3 +1009,12 @@ def get_cell_id_field(datasource_name):
         return config[datasource_name]['featureData'][0]['idField']
     else:
         return "CellID"
+
+
+def apply_neighborhood_query(datasource_name, neighborhood_query):
+    global config
+    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    similar_ids = similarity_search(neighborhoods, neighborhood_query)
+    obj = get_neighborhood_stats(datasource_name, similar_ids)
+    obj['raw_summary'] = {}  # TODO: Actually calculate this
+    return obj
