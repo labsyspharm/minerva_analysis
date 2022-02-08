@@ -641,26 +641,28 @@ class ImageViewer {
     }
 
     addScaleBar(){
-        let pixelsPerMeter
+        let pixelsPerMeter;
         if (this.show_scalebar){
+            let unitConvert;
             if (this.imgMetadata.physical_size_x_unit === "µm" || this.imgMetadata.physical_size_x_unit === "um"){
-                pixelsPerMeter = 1000000*(this.imgMetadata.size_x / this.imgMetadata.physical_size_x);
+                unitConvert = 1000000;
             } else if (this.imgMetadata.physical_size_x_unit === "nm"){
-                pixelsPerMeter = 1000000000*(this.imgMetadata.size_x / this.imgMetadata.physical_size_x);
+                unitConvert = 1000000000;
             } else if (this.imgMetadata.physical_size_x_unit === "cm"){
-                pixelsPerMeter = 100*(this.imgMetadata.size_x / this.imgMetadata.physical_size_x);
+                unitConvert = 100;
             } else if (this.imgMetadata.physical_size_x_unit === "m"){
-                pixelsPerMeter = (this.imgMetadata.size_x / this.imgMetadata.physical_size_x);
+                unitConvert = 1;
             } else{
-                pixelsPerMeter = 0;
+                unitConvert = 0;
             }
+            pixelsPerMeter = unitConvert*this.imgMetadata.physical_size_x;
         } else {
             pixelsPerMeter = 0;
         }
 
         this.viewer.scalebar({
             pixelsPerMeter: pixelsPerMeter,
-        })
+        });
     }
 }
 
