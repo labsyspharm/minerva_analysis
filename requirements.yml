@@ -16,7 +16,7 @@ dependencies:
   - scipy
   - tifffile=2021.4.8
   - waitress
-  - zarr
+  - zarr=2.10.3
   - pyinstaller
   - pip
   - pip:
