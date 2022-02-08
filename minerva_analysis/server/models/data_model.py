@@ -32,6 +32,7 @@ import tifffile as tf
 import re
 import zarr
 from scipy import spatial
+from line_profiler_pycharm import profile
 
 ball_tree = None
 datasource = None
@@ -57,15 +58,7 @@ def load_datasource(datasource_name, reload=False):
         return
     load_config()
     source = datasource_name
-    csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-    datasource = pd.read_csv(csvPath)
-    embedding = np.load(Path(config[datasource_name]['embedding']))
-    datasource['id'] = datasource.index
-    datasource['Cluster'] = embedding[:, -1].astype('int32').tolist()
-    if 'CellType' in datasource.columns:
-        datasource.rename(columns={'CellType': 'phenotype'}, inplace=True)
-
-    datasource = datasource.replace(-np.Inf, 0)
+    datasource = load_csv(datasource_name)
     load_ball_tree(datasource_name, reload=reload)
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
@@ -80,6 +73,21 @@ def load_datasource(datasource_name, reload=False):
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
     init_clusters(datasource_name)
+
+
+@profile
+def load_csv(datasource_name):
+    global config
+    csvPath = Path(config[datasource_name]['featureData'][0]['src'])
+    df = pd.read_csv(csvPath, index_col=None)
+    embedding = np.load(Path(config[datasource_name]['embedding']))
+
+    df['id'] = df.index
+    df['Cluster'] = embedding[:, -1].astype('int32').tolist()
+    if 'CellType' in df.columns:
+        df.rename(columns={'CellType': 'phenotype'}, inplace=True)
+    df = df.replace(-np.Inf, 0)
+    return df
 
 
 def init_clusters(datasource_name):
@@ -111,7 +119,7 @@ def init_clusters(datasource_name):
 
         # Similarly, if the stats are not initialized, let's store them in the DB as well
         if neighborhood_stats is None:
-            obj = get_neighborhood_stats(datasource_name, indices, cluster_cells)
+            obj = get_neighborhood_stats(datasource_name, indices, datasource, cluster_cells)
             f = io.BytesIO()
             pickle.dump(obj, f)
             neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
@@ -238,19 +246,20 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
         load_datasource(datasource_name)
 
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
-              config[datasource_name]['featureData'][0]['yCoordinate'], 'f', 'id']
+              config[datasource_name]['featureData'][0]['yCoordinate'], 'id']
     if isinstance(phenotype, list):
         cell_ids = datasource.loc[datasource['phenotype'].isin(phenotype)].index.values
     else:
         cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
     if selection_ids is not None:
         cell_ids = np.intersect1d(np.array(selection_ids), cell_ids)
-    obj = get_neighborhood_stats(datasource_name, cell_ids, fields=fields)
+    obj = get_neighborhood_stats(datasource_name, cell_ids, datasource, fields=fields)
     return obj
 
 
 def create_custom_clusters(datasource_name, num_clusters):
     global config
+    global datasource
     database_model.delete(database_model.Neighborhood, custom=True)
     database_model.delete(database_model.NeighborhoodStats, custom=True)
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
@@ -276,7 +285,7 @@ def create_custom_clusters(datasource_name, num_clusters):
                                              cluster_id=max_cluster_id + 1, name="Custom Cluster " + str(cluster),
                                              cells=f.getvalue())
 
-        obj = get_neighborhood_stats(datasource_name, indices)
+        obj = get_neighborhood_stats(datasource_name, indices, datasource)
         f = io.BytesIO()
         pickle.dump(obj, f)
 
@@ -345,25 +354,75 @@ def query_for_closest_cell(x, y, datasource_name):
             return {}
 
 
-def get_cells(elem, datasource_name):
+@profile
+def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False):
     global datasource
     global source
     global config
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    ids = elem['ids']
-    obj = get_neighborhood_stats(datasource_name, ids, fields=fields)
+
+    if mode == 'multi':
+        obj = {}
+        sorted_ids = np.array(sorted(elem['ids']))
+        this_time = time.time()
+        if 'linkedDatasets' in config[datasource_name]:
+            index_sum = 0
+            for dataset in config[datasource_name]['linkedDatasets']:
+                df = load_csv(dataset)
+                next_sum = index_sum + df.shape[0]
+                if linked_dataset is not None and is_image is True:
+                    if linked_dataset == dataset:
+                        obj[dataset] = get_neighborhood_stats(dataset, sorted_ids, df, fields=fields,
+                                                              compute_neighbors=False)
+                        embedding_ids = sorted_ids + index_sum
+                        obj[dataset]['embedding_ids'] = embedding_ids
+                else:
+                    relevant_ids = sorted_ids[np.where((sorted_ids >= index_sum) & (sorted_ids < next_sum))]
+                    relevant_ids = relevant_ids - index_sum
+                    obj[dataset] = get_neighborhood_stats(dataset, relevant_ids, df, fields=fields,
+                                                          compute_neighbors=False)
+                    print('ranges', index_sum, next_sum)
+                index_sum = next_sum
+        print('Get Cells Multi Time', time.time() - this_time)
+    else:
+        ids = elem['ids']
+        obj = get_neighborhood_stats(datasource_name, ids, datasource, fields=fields)
     return obj
 
 
-def get_all_cells(datasource_name):
+def get_all_cells(datasource_name, mode):
     global datasource
     global source
     global config
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    obj = get_neighborhood_stats(datasource_name, np.arange(datasource.shape[0]), fields=fields)
-    return obj['cluster_summary']
+    if mode == 'single':
+        neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+        row_sums = neighborhoods.sum(axis=1)
+        neighborhoods = neighborhoods / row_sums[:, np.newaxis]
+        selection_neighborhoods = neighborhoods[np.arange(neighborhoods.shape[0]), :]
+        return {'selection_neighborhoods': selection_neighborhoods}
+        # obj = get_neighborhood_stats(datasource_name, np.arange(datasource.shape[0]), fields=fields)
+    else:
+        if 'linkedDatasets' in config[datasource_name]:
+            combined_neighborhoods = None
+            for dataset in config[datasource_name]['linkedDatasets']:
+                neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
+                row_sums = neighborhoods.sum(axis=1)
+                neighborhoods = neighborhoods / row_sums[:, np.newaxis]
+                selection_neighborhoods = neighborhoods[np.arange(neighborhoods.shape[0]), :]
+                if combined_neighborhoods is None:
+                    combined_neighborhoods = neighborhoods
+                else:
+                    combined_neighborhoods = np.vstack((combined_neighborhoods, selection_neighborhoods))
+            return {'selection_neighborhoods': combined_neighborhoods}
+
+    #     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    #     row_sums = neighborhoods.sum(axis=1)
+    #     neighborhoods = neighborhoods / row_sums[:, np.newaxis]
+    #     selection_neighborhoods = neighborhoods[indices, :]
+    #
 
 
 def get_channel_names(datasource_name, shortnames=True):
@@ -485,11 +544,24 @@ def get_cluster_labels(datasource_name):
     return clusters.astype('int32').tolist()
 
 
-def get_scatterplot_data(datasource_name):
+def get_scatterplot_data(datasource_name, mode):
     global config
-    data = np.load(Path(config[datasource_name]['embedding']))
-    if data.shape[1] < 3:
-        data = np.hstack((data, np.zeros((data.shape[0], 1))))
+    this_time = time.time()
+    if 'linkedDatasets' in config[datasource_name] and mode == 'multi':
+
+        combined_embedding = None
+        for dataset in config[datasource_name]['linkedDatasets']:
+            embedding = np.load(Path(config[dataset]['embedding']))  # TODO Replace
+            if embedding.shape[1] < 3:
+                embedding = np.hstack((embedding, np.zeros((embedding.shape[0], 1))))
+            if combined_embedding is None:
+                combined_embedding = embedding
+            else:
+                combined_embedding = np.vstack((combined_embedding, embedding))
+        data = combined_embedding
+        print('Combine Embedding Time', time.time() - this_time, 'and shape', data.shape)
+    else:
+        data = np.load(Path(config[datasource_name]['embedding']))
 
     normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :-1])
     # data[:, :2] = normalized_data
@@ -498,6 +570,7 @@ def get_scatterplot_data(datasource_name):
         'data': list_of_obs,
         'clusters': np.unique(data[:, -1]).astype('int32').tolist()
     }
+    print('Total Embedding Time', time.time() - this_time)
     return visData
 
 
@@ -552,7 +625,7 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, em
         path = mpltPath.Path(point_tuples)
         inside = path.contains_points(neighbor_points[:, [0, 1]].astype('float'))
         neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
-    obj = get_neighborhood_stats(datasource_name, neighbor_ids, fields=fields)
+    obj = get_neighborhood_stats(datasource_name, neighbor_ids, datasource, fields=fields)
     return obj
 
 
@@ -575,7 +648,7 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
 
     selection_summary = np.mean(neighborhoods[selection_ids, :], axis=0)
     similar_ids, neighborhood_query = find_similarity(selection_summary, similarity, datasource_name)
-    obj = get_neighborhood_stats(datasource_name, similar_ids, fields=fields)
+    obj = get_neighborhood_stats(datasource_name, similar_ids, datasource, fields=fields)
     obj['raw_summary'] = selection_summary
     obj['neighborhood_query'] = neighborhood_query
     return obj
@@ -598,7 +671,7 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
             disabled.append(i)
 
     similar_ids, neighborhood_query = find_similarity(neighborhood_vector, similarity, datasource_name, disabled)
-    obj = get_neighborhood_stats(datasource_name, similar_ids, fields=fields)
+    obj = get_neighborhood_stats(datasource_name, similar_ids, datasource, fields=fields)
     obj['raw_summary'] = neighborhood_vector
     obj['neighborhood_query'] = neighborhood_query
     return obj
@@ -844,8 +917,8 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return {'segmentation': str(directory)}
 
 
-def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=[]):
-    global datasource
+@profile
+def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fields=[], compute_neighbors=True):
     global ball_tree
     global source
     global config
@@ -855,18 +928,20 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
     for field in fields:
         if field not in default_fields:
             default_fields.append(field)
-
+    time_neighborhood_stats = time.time()
     if 'useCellID' in config[datasource_name]['featureData'][0]:
         default_fields.append('CellID')
 
     if cluster_cells is None:
-        cluster_cells = datasource.loc[indices, default_fields]
+        cluster_cells = df.loc[indices, default_fields]
     else:
         cluster_cells = cluster_cells[default_fields]
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     row_sums = neighborhoods.sum(axis=1)
     neighborhoods = neighborhoods / row_sums[:, np.newaxis]
     selection_neighborhoods = neighborhoods[indices, :]
+    print('Loading Neighborhood Time', time.time() - time_neighborhood_stats)
+
     if neighborhoods.shape[0] == selection_neighborhoods.shape[0]:
         sample_size = 10000
     else:
@@ -885,32 +960,34 @@ def get_neighborhood_stats(datasource_name, indices, cluster_cells=None, fields=
         # selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
 
     summary_stats = {'weighted_contribution': {}, 'selection_neighborhoods': selection_neighborhoods}
-    phenotypes = sorted(datasource.phenotype.unique().tolist())
+    phenotypes = sorted(df.phenotype.unique().tolist())
     summary_stats['weighted_contribution'] = tuple(zip(phenotypes, cluster_summary))
-    # summary_stats['']
-    # for i in range(len(phenotypes)):
-    #     weight = cluster_summary[i]
+
     obj = {
-        'cells': cluster_cells.to_dict(orient='records'),
+        # 'cells': cluster_cells.to_dict(orient='records'),
+        'cells': fast_to_dict_records(cluster_cells),
         'cluster_summary': summary_stats,
         'phenotypes_list': phenotypes
     }
-    points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
-                           'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
-    # Hardcoded to 30 um
-    if 'neighborhood_range' in config[datasource_name]:
-        neighborhood_range = config[datasource_name]['neighborhood_range']
-    else:
-        neighborhood_range = 30  # default 30um
-    r = neighborhood_range / metadata.physical_size_x
-    neighbors = ball_tree.query_radius(points, r=r)
-    unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
-    border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells.index.values)
-    neighbor_phenotypes = {}
-    for elem in border_neighbors:
-        neighbor_phenotypes[str(elem)] = datasource.loc[elem, 'phenotype']
-    obj['neighbors'] = unique_neighbors
-    obj['neighbor_phenotypes'] = neighbor_phenotypes
+    print('Computing Stats Time', time.time() - time_neighborhood_stats)
+    if compute_neighbors:
+        points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
+                               'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
+        # Hardcoded to 30 um
+        if 'neighborhood_range' in config[datasource_name]:
+            neighborhood_range = config[datasource_name]['neighborhood_range']
+        else:
+            neighborhood_range = 30  # default 30um
+        r = neighborhood_range / metadata.physical_size_x
+        neighbors = ball_tree.query_radius(points, r=r)
+        unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
+        border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells.index.values)
+        neighbor_phenotypes = {}
+        for elem in border_neighbors:
+            neighbor_phenotypes[str(elem)] = df.loc[elem, 'phenotype']
+        obj['neighbors'] = unique_neighbors
+        obj['neighbor_phenotypes'] = neighbor_phenotypes
+    print('Neighbors Time', time.time() - time_neighborhood_stats)
     return obj
 
 
@@ -974,17 +1051,17 @@ def p_val(val, perm_vals):
     return stats.ttest_1samp(perm_vals, val)[1]
 
 
-def get_multi_image_scatter_results(datasource_name):
+def get_multi_image_scatter_results(datasource_name, mode):
     results = {}
     if 'linkedDatasets' in config[datasource_name]:
         for dataset in config[datasource_name]['linkedDatasets']:
-            if dataset != datasource_name:
-                linked_path = Path(config[dataset]['featureData'][0]['src'])
-                linked_source = pd.read_csv(linked_path)
+            if dataset != datasource_name or mode == 'multi' or mode == 'single':  # TODO:Remove
+                df = load_csv(dataset)
                 x_field = config[datasource_name]['featureData'][0]['xCoordinate']
                 y_field = config[datasource_name]['featureData'][0]['yCoordinate']
-                data = linked_source[[x_field, y_field, get_cell_id_field(dataset)]].to_numpy()
+                data = df[[x_field, y_field, 'id']].to_numpy()
                 normalized_data = normalize_scatterplot_data(data[:, 0:2])
+                normalized_data[:, 1] = normalized_data[:, 1] * -1.0  # Flip image
                 data = np.column_stack((normalized_data, data[:, 2]))
                 results[dataset] = np.ascontiguousarray(data)
 
@@ -1022,6 +1099,15 @@ def apply_neighborhood_query(datasource_name, neighborhood_query):
     global config
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     similar_ids = similarity_search(neighborhoods, neighborhood_query)
-    obj = get_neighborhood_stats(datasource_name, similar_ids)
+    obj = get_neighborhood_stats(datasource_name, similar_ids, datasource)
     obj['raw_summary'] = {}  # TODO: Actually calculate this
     return obj
+
+# Via https://stackoverflow.com/questions/67050899/why-pandas-dataframe-to-dictrecords-performance-is-bad-compared-to-another-n
+def fast_to_dict_records(df):
+    data = df.values.tolist()
+    columns = df.columns.tolist()
+    return [
+        dict(zip(columns, datum))
+        for datum in data
+    ]

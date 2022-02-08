@@ -37,7 +37,10 @@ def get_datasource_row():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     elem = post_data['elem']
-    resp = data_model.get_cells(elem, datasource)
+    mode = post_data['mode']
+    linked_dataset = post_data['linkedDataset']
+    is_image = post_data['isImage']
+    resp = data_model.get_cells(elem, datasource, mode, linked_dataset, is_image)
     return serialize_and_submit_json(resp)
 
 
@@ -46,7 +49,8 @@ def get_datasource_row():
 def get_all_datasource_row():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
-    resp = data_model.get_all_cells(datasource)
+    mode = post_data['mode']
+    resp = data_model.get_all_cells(datasource, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -162,7 +166,8 @@ def get_num_cells_in_circle():
 @app.route('/get_scatterplot_data', methods=['GET'])
 def get_scatterplot_data():
     datasource = request.args.get('datasource')
-    resp = data_model.get_scatterplot_data(datasource)
+    mode = request.args.get('mode')
+    resp = data_model.get_scatterplot_data(datasource, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -317,7 +322,8 @@ def get_contour_lines():
 @app.route('/get_related_image_data', methods=['GET'])
 def get_related_image_data():
     datasource = request.args.get('datasource')
-    resp = data_model.get_multi_image_scatter_results(datasource)
+    mode = request.args.get('mode')
+    resp = data_model.get_multi_image_scatter_results(datasource, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -325,7 +331,7 @@ def get_related_image_data():
 def get_image_search_results():
     datasource = request.args.get('datasource')
     linked_datasource = request.args.get('linkedDatasource')
-    neighborhood_query = request.args.get('neighborhoodQuery')
+    neighborhood_query = json.loads(request.args.get('neighborhoodQuery'))
     resp = data_model.search_across_image(datasource, linked_datasource, neighborhood_query)
     return serialize_and_submit_json(resp)
 
