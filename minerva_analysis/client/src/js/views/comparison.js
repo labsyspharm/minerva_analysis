@@ -198,17 +198,14 @@ class Comparison {
         })
     }
 
-    wrangleSmallMultiples(order = null, scatterplot = false) {
+    wrangleSmallMultiples(order = null, scatterplot = false, rewrangle = false) {
         const self = this;
         _.each(self.plots, (plot, i) => {
             let plotData;
             if (self.currentState == 'scatterplot') {
                 plotData = _.get(self.neighborhoods[i], 'cells', []);
             } else if (self.currentState == 'image') {
-
                 plotData = self.relatedImageData[i][1];
-
-
             } else {
                 plotData = _.get(self.neighborhoods[i], 'cluster_summary.weighted_contribution', []);
             }
@@ -304,9 +301,26 @@ class Comparison {
     rewrangle() {
         const self = this;
         if (!self.hidden) {
-            self.wrangleSmallMultiples();
+            if (mode == 'single' || self.currentState != 'image') {
+                self.wrangleSmallMultiples();
+            } else {
+                _.each(self.plots, (plot, i) => {
+                    let plotData = self.dataLayer.getCurrentSelection()[plot.dataset];
+                    plotData = Array.from(plotData.keys());
+                    plot.recolor(plotData);
+                })
+            }
         }
 
+    }
+
+    clear(dataset) {
+        const self = this;
+        _.each(self.plots, (plot, i) => {
+            if (plot?.image && plot.dataset !== dataset) {
+                plot.recolor([])
+            }
+        })
     }
 
 }

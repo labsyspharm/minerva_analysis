@@ -39,7 +39,7 @@ class Scatterplot {
             pointOutlineWidth: 0,
             pointSizeSelected: 0
         });
-        if (self.image) {
+        if (self.image && mode === 'single') {
             self.plot.set({
                 lassoColor: hexToRGBA('#000000', 0.0)
             })
@@ -100,6 +100,7 @@ class Scatterplot {
         if (!selection) {
             selection = _.map(this.dataLayer.getCurrentRawSelection().cells, e => e.id)
         }
+        console.log('Recolor Size', _.size(selection), selection.sort());
         self.selection = selection;
         self.plot.select(selection, {preventEvent: true});
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
@@ -107,18 +108,26 @@ class Scatterplot {
 
     select(args) {
         const self = this;
+        console.log('Selection Size', _.size(args.points), args.points.sort());
         // TODO: remove any points that aren't in
         // self.plot.select(_.sampleSize(args.points, 100), {preventEvent: true});
-        if (self.lassoActive && !self.image) {
-            console.log("Selecting");
-            return dataLayer.getCells(args)
+        if (self.lassoActive && (!self.image || mode === 'multi')) {
+            return dataLayer.getCells(args, self.dataset, self.image)
                 .then(cells => {
-                    self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, {
-                        'selection': cells,
-                        'selectionSource': 'Embedding'
-                    })
+                    if (self.image) {
+                        self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, {
+                            'selection': cells,
+                            'selectionSource': 'Multi Image',
+                            'dataset': self.dataset
+                        })
+                    } else {
+                        self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, {
+                            'selection': cells,
+                            'selectionSource': 'Embedding'
+                        })
+                    }
                 });
-        } else if (self.image) {
+        } else if (self.image && mode === 'single') {
             self.plot.select([]);
         }
     }
@@ -202,7 +211,6 @@ https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
             return rgb;
         } else {
             let rgba = [r / 255, g / 255, b / 255, alpha]
-            console.log('rgba', rgba);
             return rgba;
         }
     }

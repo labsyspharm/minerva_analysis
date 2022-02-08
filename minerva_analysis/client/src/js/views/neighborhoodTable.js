@@ -15,7 +15,6 @@ class NeighborhoodTable {
     async init() {
         const self = this;
         this.neighborhoods = await this.dataLayer.getNeighborhoods();
-        this.neighborhoodStats = await self.dataLayer.getAllNeighborhoodStats();
         this.neighborhoods = _.map(this.neighborhoods, (d, i) => {
             d.push(i);
             return d;
@@ -180,32 +179,6 @@ class NeighborhoodTable {
 
         trashIcon.exit().remove();
 
-        //
-        // self.plots = _.map(self.neighborhoods, d => {
-        //     // let scatterplot = new Scatterplot(`compare_parallel_coordinates_${d[4]}`, `compare_col_canvas_${d[4]}`, self.eventHandler, self.dataLayer,
-        //     //     null, true);
-        //     // scatterplot.init();
-        //     // return scatterplot;
-        //     let barchart = new Barchart(`compare_parallel_coordinates_${d[4]}`, self.dataLayer.phenotypes);
-        //     barchart.init();
-        //     return barchart;
-        // })
-        // _.each(self.plots, (plot, i) => {
-        //     let plotData;
-        //     //TODO: For scatterplot
-        //     // plotData = _.get(self.neighborhoodStats[i], 'cells', []);
-        //     plotData = _.get(self.neighborhoodStats[i], 'cluster_summary.weighted_contribution', []);
-        //     //
-        //     // if (self.currentState == 'scatterplot') {
-        //     // } else {
-        //     //
-        //     // }
-        //     plot.wrangle(plotData, null);
-        // });
-        //wrangleSmallMultiples(order = null, scatterplot = false) {
-        //         const self = this;
-        //
-        //     }
     }
 
     async editNeighborhood(d, newName) {
