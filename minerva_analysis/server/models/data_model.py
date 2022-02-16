@@ -25,6 +25,7 @@ from minerva_analysis.server.utils import smallestenclosingcircle
 from minerva_analysis.server.models import database_model
 from scipy.stats import pearsonr, spearmanr
 from KDEpy import FFTKDE
+from copy import deepcopy
 
 import time
 import pickle
@@ -75,7 +76,7 @@ def load_datasource(datasource_name, reload=False):
     init_clusters(datasource_name)
 
 
-@profile
+# @profile
 def load_csv(datasource_name):
     global config
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
@@ -354,7 +355,7 @@ def query_for_closest_cell(x, y, datasource_name):
             return {}
 
 
-@profile
+# @profile
 def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False):
     global datasource
     global source
@@ -384,12 +385,31 @@ def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False):
                                                           compute_neighbors=False)
                     print('ranges', index_sum, next_sum)
                 index_sum = next_sum
+        obj['composition_summary'] = weight_multi_image_neighborhood(obj, datasource_name, len(sorted_ids))
+
         print('Get Cells Multi Time', time.time() - this_time)
     else:
         ids = elem['ids']
         obj = get_neighborhood_stats(datasource_name, ids, datasource, fields=fields)
     return obj
 
+
+def weight_multi_image_neighborhood(neighborhood_obj, datasource_name, selection_length):
+    global config
+    obj = {'weighted_contribution': None, 'selection_neighborhoods': None}
+    for dataset in config[datasource_name]['linkedDatasets']:
+        if dataset in neighborhood_obj:
+            dataset_weight = len(neighborhood_obj[dataset]['cells']) / selection_length
+            if obj['weighted_contribution'] is None:
+                obj['weighted_contribution'] = deepcopy(neighborhood_obj[dataset]['composition_summary']['weighted_contribution'])
+                obj['selection_neighborhoods'] = neighborhood_obj[dataset]['composition_summary']['selection_neighborhoods']
+                for i, val in enumerate(neighborhood_obj[dataset]['composition_summary']['weighted_contribution']):
+                    obj['weighted_contribution'][i][1] *= dataset_weight
+            else:
+                for i, val in enumerate(neighborhood_obj[dataset]['composition_summary']['weighted_contribution']):
+                    obj['weighted_contribution'][i][1] += (val[1] * dataset_weight)
+                obj['selection_neighborhoods'] = np.vstack((obj['selection_neighborhoods'], neighborhood_obj[dataset]['composition_summary']['selection_neighborhoods']))
+    return obj
 
 def get_all_cells(datasource_name, mode):
     global datasource
@@ -677,9 +697,9 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
     return obj
 
 
-def find_similarity(cluster_summary, similarity, datasource_name, disabled=None):
+def find_similarity(composition_summary, similarity, datasource_name, disabled=None):
     global config
-    neighborhood_query = {'query_vector': cluster_summary, 'disabled': disabled, 'threshold': similarity}
+    neighborhood_query = {'query_vector': composition_summary, 'disabled': disabled, 'threshold': similarity}
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     greater_than = similarity_search(neighborhoods, neighborhood_query)
     return greater_than, neighborhood_query
@@ -691,7 +711,7 @@ def similarity_search(neighborhoods, neighborhood_query):
     threshold = neighborhood_query['threshold']
     if disabled:
         neighborhoods = np.delete(neighborhoods, disabled, axis=1)
-        cluster_summary = np.delete(query_vector, disabled, axis=0)
+        composition_summary = np.delete(query_vector, disabled, axis=0)
     distances = 1 - spatial.distance.cdist([query_vector], neighborhoods, "cosine")[0]
     greater_than = np.argwhere(distances > threshold).flatten()
     return greater_than
@@ -917,7 +937,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return {'segmentation': str(directory)}
 
 
-@profile
+# @profile
 def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fields=[], compute_neighbors=True):
     global ball_tree
     global source
@@ -948,25 +968,25 @@ def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fie
         # TODO: Replace sample_size = selection_neighborhoods.shape[0]
         sample_size = 10000
 
-    cluster_summary = np.mean(selection_neighborhoods, axis=0)
+    composition_summary = np.mean(selection_neighborhoods, axis=0)
     # Sample down so we have 10k of full
-    if selection_neighborhoods.shape[0] > sample_size:
-        selection_neighborhoods = selection_neighborhoods[
-                                  np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=False), :]
-    else:
-        selection_neighborhoods = selection_neighborhoods
+    # if selection_neighborhoods.shape[0] > sample_size:
+    #     selection_neighborhoods = selection_neighborhoods[
+    #                               np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=False), :]
+    # else:
+    #     selection_neighborhoods = selection_neighborhoods
         # scale_factor = int(sample_size / selection_neighborhoods.shape[0])
         #
         # selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
 
     summary_stats = {'weighted_contribution': {}, 'selection_neighborhoods': selection_neighborhoods}
     phenotypes = sorted(df.phenotype.unique().tolist())
-    summary_stats['weighted_contribution'] = tuple(zip(phenotypes, cluster_summary))
+    summary_stats['weighted_contribution'] = list(map(list, zip(phenotypes, composition_summary)))
 
     obj = {
         # 'cells': cluster_cells.to_dict(orient='records'),
         'cells': fast_to_dict_records(cluster_cells),
-        'cluster_summary': summary_stats,
+        'composition_summary': summary_stats,
         'phenotypes_list': phenotypes
     }
     print('Computing Stats Time', time.time() - time_neighborhood_stats)
@@ -1102,6 +1122,7 @@ def apply_neighborhood_query(datasource_name, neighborhood_query):
     obj = get_neighborhood_stats(datasource_name, similar_ids, datasource)
     obj['raw_summary'] = {}  # TODO: Actually calculate this
     return obj
+
 
 # Via https://stackoverflow.com/questions/67050899/why-pandas-dataframe-to-dictrecords-performance-is-bad-compared-to-another-n
 def fast_to_dict_records(df):

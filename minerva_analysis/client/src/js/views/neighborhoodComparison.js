@@ -216,7 +216,7 @@ function wrangleSmallMultiples(order = null, scatterplot = false) {
         if (currentState == 'scatterplot') {
             plotData = _.get(neighborhoods[i], 'cells', []);
         } else {
-            plotData = _.get(neighborhoods[i], 'cluster_summary.weighted_contribution', []);
+            plotData = _.get(neighborhoods[i], 'composition_summary.weighted_contribution', []);
         }
         plot.wrangle(plotData, order);
     });

@@ -7,7 +7,7 @@ const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
 const applyPrevious = flaskVariables.applyPrevious;
 let searching = false;
-let mode = 'multi';
+let mode = 'single';
 
 
 //VIEWS
@@ -146,7 +146,7 @@ const displaySelection = async (d) => {
     document.getElementById('neighborhood_current_selection').textContent = selectionSource;
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
-    // parallelCoordinates.wrangle(selection);
+    parallelCoordinates.wrangle(selection);
     if (d.selectionSource === "Multi Image") {
         multiImage.clear(d.dataset)
         scatterplot.recolor(d.selection[d.dataset]["embedding_ids"]);

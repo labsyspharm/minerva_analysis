@@ -207,7 +207,7 @@ class Comparison {
             } else if (self.currentState == 'image') {
                 plotData = self.relatedImageData[i][1];
             } else {
-                plotData = _.get(self.neighborhoods[i], 'cluster_summary.weighted_contribution', []);
+                plotData = _.get(self.neighborhoods[i], 'composition_summary.weighted_contribution', []);
             }
             plot.wrangle(plotData, order);
         });

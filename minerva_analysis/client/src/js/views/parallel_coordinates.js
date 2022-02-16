@@ -99,9 +99,9 @@ class ParallelCoordinates {
 
     wrangle(rawData, order = null) {
         const self = this;
-        let chartData = _.get(rawData, 'cluster_summary.weighted_contribution', null);
+        let chartData = _.get(rawData, 'composition_summary.weighted_contribution', null);
         if (chartData) {
-            self.selection_neighborhoods = _.get(rawData, 'cluster_summary.selection_neighborhoods', null);
+            self.selection_neighborhoods = _.get(rawData, 'composition_summary.selection_neighborhoods', null);
         } else {
             chartData = rawData;
         }
