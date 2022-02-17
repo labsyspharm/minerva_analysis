@@ -199,7 +199,7 @@ class Scatterplot {
     }
 }
 
-https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
+// https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
     function hexToRGBA(hex, alpha) {
         hex = _.toUpper(hex);
         const h = "0123456789ABCDEF";

@@ -49,7 +49,7 @@ async function init(conf) {
     await dataLayer.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid');
+    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid', false, null, 'barchart');
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
@@ -59,7 +59,7 @@ async function init(conf) {
         legend = new Legend(dataLayer, colorScheme, eventHandler);
         channelList = new ChannelList(config, dataLayer, eventHandler);
         seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true);
+        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null,'image');
         // init synchronus methods
         seaDragonViewer.init();
         await channelList.init()

@@ -98,12 +98,14 @@
                                     </table>
                                 </div>
                             </div>
-                            <div class="left-col-row">
-                                <div class="col-md-12">
-                                    <h5 class="plot-label text-left">Related Images</h5>
+                            <div id="related_image_list_wrapper" class="left-col-row d-flex flex-column flex-grow-1">
+                                <div class="left-col-row">
+                                    <div class="col-md-12">
+                                        <h5 class="plot-label text-left">Related Images</h5>
+                                    </div>
                                 </div>
+                                <div id="related_image_container" class="left-col-row flex-grow-1"></div>
                             </div>
-                            <div id="related_image_container" class="left-col-row"></div>
                         </div>
                     </div>
                 </div>
@@ -216,7 +218,7 @@
                             <div class="row justify-content-center">
                                 <div class="form-check" id="small-multiple-toggle">
                                     <input type="radio" class="btn-check" name="options-outlined"
-                                           id="barchart-button"
+                                           id="barchart-button" checked
                                            autocomplete="off">
                                     <label class="btn btn-light" for="barchart-button">Composition</label>
                                     <input type="radio" class="btn-check" name="options-outlined"
@@ -229,7 +231,7 @@
                                            autocomplete="off">
                                     <label class="btn btn-light" for="scatterplot-button">Spatial</label>
                                     <input type="radio" class="btn-check" name="options-outlined"
-                                           id="image-button" checked
+                                           id="image-button"
                                            autocomplete="off">
                                     <label class="btn btn-light" for="image-button">Image</label>
                                 </div>

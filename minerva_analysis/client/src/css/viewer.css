@@ -93,7 +93,7 @@ body {
     background-color: rgba(53, 54, 58, 0.75);
     border-radius: 17px;
     left: 1vw;
-    width: 13vw;
+    /*width: 13vw;*/
     z-index: 101;
     /*min-height: 10vh;*/
     max-height: 40vh;

@@ -7,6 +7,7 @@
 
 #search-col {
     padding-left: 0;
+    height: 100%;
 }
 
 #relative-col {
@@ -38,14 +39,14 @@
 }
 
 .related_image_wrapper_small {
-    min-width: 15vw !important;
+    min-width: 20vw !important;
     max-width: 20vw !important;
 }
 
 .openseadragon_wrapper_small, .multi_image_wrapper_small {
-    width: 45vw !important;
-    min-width: 45vw !important;
-    max-width: 45vw !important;
+    width: 30vw !important;
+    min-width: 30vw !important;
+    max-width: 30vw !important;
 
 }
 
@@ -91,9 +92,9 @@
 
 .neighborhood_wrapper_large {
     display: block;
-    width: 35vw !important;
-    max-width: 35vw !important;
-    min-width: 35vw !important;
+    width: 30vw !important;
+    max-width: 30vw !important;
+    min-width: 30vw !important;
 }
 
 #openseadragon_wrapper, #neighborhood_wrapper, #analysis_wrapper {
@@ -399,10 +400,13 @@
     color: black !important;
 }
 
-#related_image_container {
-    height: 100%;
-    width: 100%;
-}
+/*#related_image_list_wrapper_container{*/
+/*    overflow-y: scroll;*/
+/*}*/
+
+/*#related_image_container {*/
+/*    !*height: 2000px;*!*/
+/*}*/
 
 .expand-contract-button {
     margin-left: 10px;
@@ -413,4 +417,15 @@
     cursor: pointer;
     color: #8f8f8f;
 
+}
+
+#related_image_list_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    left: 1vw;
+    /*width: 13vw;*/
+    z-index: 101;
+    /*min-height: 10vh;*/
+    padding: 5px;
+    overflow-y:scroll;'
 }
