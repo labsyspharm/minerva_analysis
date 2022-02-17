@@ -17,6 +17,7 @@ class DataLayer {
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
         this.phenotypes = [];
+        this.neighborhoodStats = null;
     }
 
     async init() {
@@ -34,7 +35,7 @@ class DataLayer {
         }
     }
 
-    async getCells(ids) {
+    async getCells(ids, linkedDataset = null, isImage=false) {
         try {
             let response = await fetch('/get_cells', {
                 method: 'POST',
@@ -47,7 +48,10 @@ class DataLayer {
                         datasource: datasource,
                         elem: {
                             'ids': ids.points
-                        }
+                        },
+                        mode: mode,
+                        linkedDataset: linkedDataset,
+                        isImage: isImage,
                     })
             });
             let response_data = await response.json();
@@ -68,7 +72,8 @@ class DataLayer {
                 },
                 body: JSON.stringify(
                     {
-                        datasource: datasource
+                        datasource: datasource,
+                        mode: mode
                     })
             });
             let response_data = await response.json();
@@ -354,6 +359,8 @@ class DataLayer {
 
     async getSimilarNeighborhoodToSelection(similarity) {
         try {
+            searching = true;
+            let selectionIds = _.map(this.getCurrentRawSelection().cells, e => e.id)
             let response = await fetch('/get_similar_neighborhood_to_selection', {
                 method: 'POST',
                 headers: {
@@ -364,11 +371,12 @@ class DataLayer {
                     {
                         datasource: datasource,
                         similarity: similarity,
-                        selectionIds: _.map(this.getCurrentRawSelection().cells, e => e.id)
+                        selectionIds: selectionIds
                         // selectionIds: [...this.getCurrentSelection().keys()]
                     })
             });
             let cells = await response.json();
+            store('neighborhoodQuery', cells['neighborhood_query'])
             return cells;
         } catch (e) {
             console.log("Error Getting Similar Neighborhood", e);
@@ -377,6 +385,7 @@ class DataLayer {
 
     async findSimilarNeighborhoods(data, similarity) {
         try {
+            searching = true;
             let response = await fetch('/find_custom_neighborhood', {
                 method: 'POST',
                 headers: {
@@ -391,6 +400,7 @@ class DataLayer {
                     })
             });
             let cells = await response.json();
+            store('neighborhoodQuery', cells['neighborhood_query'])
             return cells;
         } catch (e) {
             console.log("Error Getting Custom Neighborhood", e);
@@ -400,7 +410,8 @@ class DataLayer {
     async getScatterplotData() {
         try {
             let response = await fetch('/get_scatterplot_data?' + new URLSearchParams({
-                datasource: datasource
+                datasource: datasource,
+                mode: mode
             }))
             let scatterplotData = await response.json();
             return scatterplotData;
@@ -480,10 +491,20 @@ class DataLayer {
         }
     }
 
-    addAllToCurrentSelection(items, allowDelete, clearPriors) {
+     addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
-        that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
+        if (mode == 'single') {
+            that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.id || i.CellID - 1, i]));
+        } else {
+            let multiImageSelection = {}
+            Object.entries(items).forEach(([key, value], index) => {
+                if (value?.cells){
+                    multiImageSelection[key] = new Map(value?.cells.map(i => [i.id || i.CellID - 1, i]));
+                }
+            })
+            that.currentSelection = multiImageSelection;
+        }
         that.currentRawSelection = items;
         // console.log("update current selection done")
     }
@@ -594,7 +615,8 @@ class DataLayer {
     async getRelatedImageData() {
         try {
             let response = await fetch('/get_related_image_data?' + new URLSearchParams({
-                datasource: datasource
+                datasource: datasource,
+                mode: mode,
             }))
             let response_data = await response.json();
             return response_data;
@@ -607,7 +629,8 @@ class DataLayer {
         try {
             let response = await fetch('/get_image_search_results?' + new URLSearchParams({
                 linkedDatasource: dataset,
-                datasource: datasource
+                datasource: datasource,
+                neighborhoodQuery: JSON.stringify(store('neighborhoodQuery'))
             }))
             let cells = await response.json();
             return cells;
@@ -615,5 +638,27 @@ class DataLayer {
             console.log("Error Getting Image Search Results", e);
         }
     }
+
+    async applyNeighborhoodQuery() {
+        try {
+            let response = await fetch('/apply_neighborhood_query', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        neighborhoodQuery: store('neighborhoodQuery')
+                    })
+            });
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Applying Previous Query", e);
+        }
+    }
+
 
 }

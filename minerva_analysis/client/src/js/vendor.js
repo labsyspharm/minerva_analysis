@@ -9,7 +9,7 @@ import * as d3base from 'd3';
 import {sliderBottom} from 'd3-simple-slider';
 import createScatterplot from 'regl-scatterplot';
 import createRegl from 'regl';
-
+import store from "store2";
 
 import {annotation} from 'd3-svg-annotation';
 import {legendColor} from 'd3-svg-legend'
@@ -43,5 +43,6 @@ window.OpenSeadragon = viaWebGL.OpenSeadragon;
 window.ViewerManager = ViewerManager;
 window.createScatterplot = createScatterplot;
 window.concaveman = concaveman;
+window.store = store;
 // window.GridStack = GridStack;
 

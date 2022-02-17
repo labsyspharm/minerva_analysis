@@ -99,9 +99,9 @@ class ParallelCoordinates {
 
     wrangle(rawData, order = null) {
         const self = this;
-        let chartData = _.get(rawData, 'cluster_summary.weighted_contribution', null);
+        let chartData = _.get(rawData, 'composition_summary.weighted_contribution', null);
         if (chartData) {
-            self.selection_neighborhoods = _.get(rawData, 'cluster_summary.selection_neighborhoods', null);
+            self.selection_neighborhoods = _.get(rawData, 'composition_summary.selection_neighborhoods', null);
         } else {
             chartData = rawData;
         }
@@ -197,7 +197,7 @@ class ParallelCoordinates {
                 }
             })
 
-        const legendTextSize = '0.6rem'
+        const legendTextSize = '0.92vh'
         let overallLineLegend = self.svgGroup.selectAll('.overall_line')
             .data([0])
         overallLineLegend.enter()
@@ -257,7 +257,7 @@ class ParallelCoordinates {
             .attr('y1', -25)
             .attr('x2', self.x(0.08))
             .attr('y2', -25)
-            .attr("stroke-width", 4 )
+            .attr("stroke-width", 4)
             .attr('stroke', 'orange')
 
         let selectionLineLabel = self.svgGroup.selectAll('.selection_line_label')
@@ -368,6 +368,9 @@ class ParallelCoordinates {
 
             //Draw Selection
             let opacity = 0.01;
+            if (_.size(self.selection_neighborhoods) < 1000) {
+                opacity = 0.1;
+            }
             _.forEach(self.selection_neighborhoods, row => {
                 if (Math.random() > 0.75) {
                     const color = `hsla(39, 100%, 50%,${opacity})`;

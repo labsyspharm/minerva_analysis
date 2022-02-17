@@ -1,21 +1,22 @@
 class Comparison {
-    constructor(_config, _colorScheme, _dataLayer, _eventHandler) {
+    constructor(_config, _colorScheme, _dataLayer, _eventHandler, _containerId, _drawOnInit = false, _columns = null, _currentState = '') {
         this.config = _config;
         this.colorScheme = _colorScheme;
         this.dataLayer = _dataLayer;
         this.eventHandler = _eventHandler;
-        this.currentState = ''
+        this.containerId = _containerId;
+        this.currentState = _currentState;
         this.plots = []
         this.neighborhoods = null;
         this.container = null;
-        this.pinnedContainer = null;
         this.hidden = true;
+        this.drawOnInit = _drawOnInit;
+        this.columns = _columns;
     }
 
     async init() {
         const self = this;
-        self.container = document.getElementById('comparison_grid');
-        // self.pinnedContainer = document.getElementById('pinned_comparison_grid');
+        self.container = document.getElementById(self.containerId);
         self.neighborhoods = await self.dataLayer.getAllNeighborhoodStats();
         let t = self.neighborhoods;
         // self.neighborhoods = [t[6], t[7], t[8], t[9], t[0], t[1]]
@@ -24,6 +25,9 @@ class Comparison {
             return e
         })
         console.log('Compare Ready');
+        if (self.drawOnInit) {
+            self.draw();
+        }
 
     }
 
@@ -33,15 +37,14 @@ class Comparison {
         if (!this.hidden) {
             // let parentHeight = document.getElementById('comparison_container').clientHeight;
             // self.rowHeight = Math.round(parentHeight / 4);
-            // self.pinnedContainer.style.height = self.pinnedContainer.style.maxHeight = `${self.rowHeight * 2}px`;
             // HEATMAP
             // self.container.style.height = self.container.style.maxHeight = `${self.rowHeight}px`;
             self.initToggles();
             //HEATMAP
             self.removeAllPlots();
-            self.currentState = 'image';
-            self.rowHeight = document.documentElement.clientHeight * 0.4;
-            self.initImages();
+            self.rowHeight = document.documentElement.clientHeight * 0.3;
+            self.initByType()
+            // self.initImages();
         } else {
             self.removeAllPlots();
             self.container.innerHTML = '';
@@ -61,6 +64,19 @@ class Comparison {
                 self.switchSmallMultipleType(elem, smallMultipleToggles);
             }
         });
+    }
+
+    initByType() {
+        const self = this;
+        if (self.currentState == 'barchart') {
+            self.initSmallMultipleBarcharts();
+        } else if (self.currentState == 'scatterplot') {
+            self.initSmallMultipleScatterplots();
+        } else if (self.currentState == 'heatmap') {
+            self.initHeatmap();
+        } else if (self.currentState == 'image') {
+            self.initImages();
+        }
     }
 
     switchSmallMultipleType(elem, parent) {
@@ -135,7 +151,7 @@ class Comparison {
                 plot.destroy();
             })
         }
-        d3.select('#neighborhood_wrapper').selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas, #heatmap-svg, #summary_div_barchart_svg, .tooltip, #legend-svg').remove();
+        d3.select(`#${self.containerId}`).selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas, #heatmap-svg, #summary_div_barchart_svg, .tooltip, #legend-svg').remove();
         document.getElementById("summary_div").style.display = "none";
         document.getElementById("comparison_grid").style.display = null;
         self.plots = [];
@@ -144,10 +160,10 @@ class Comparison {
     initSmallMultipleParallelCoordinates() {
         const self = this;
         self.plots = _.map(self.neighborhoods, (d, i) => {
-            let div = document.getElementById(`compare_col_${i}`);
+            let div = document.getElementById(`${self.containerId}_compare_col_${i}`);
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
-            console.log(document.getElementById(`compare_parallel_coordinates_${i}`).getBoundingClientRect());
-            let pc = new ParallelCoordinates(`compare_parallel_coordinates_${i}`, self.dataLayer, self.eventHandler, self.colorScheme, true);
+            console.log(document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`).getBoundingClientRect());
+            let pc = new ParallelCoordinates(`${self.containerId}_compare_parallel_coordinates_${i}`, self.dataLayer, self.eventHandler, self.colorScheme, true);
             pc.init();
             return pc;
         });
@@ -157,13 +173,13 @@ class Comparison {
     createGrid(cols = 2, numElements) {
         const self = this;
         //Clear previous
-        d3.selectAll('.compare_row').remove()
+        d3.select(`#${self.containerId}`).selectAll('.compare_row').remove()
         let width = self.container.getBoundingClientRect().width;
         let rows = Math.ceil(numElements / cols);
         //HEATMAP
         // let rows = 2;
         let i = 0;
-        self.container.style.height = rows * self.rowHeight;
+        // self.container.style.height = rows * self.rowHeight;
         _.each(_.range(rows), r => {
             let row = document.createElement("div");
             row.className = "row compare_row";
@@ -173,7 +189,7 @@ class Comparison {
             _.each(_.range(cols), c => {
                 let col = document.createElement("div");
                 col.className = "col compare_col";
-                col.id = `compare_col_${i}`;
+                col.id = `${self.containerId}_compare_col_${i}`;
                 row.appendChild(col);
                 let compare_plot_title = document.createElement("div");
                 compare_plot_title.className = "row compare_plot_title justify-content-center";
@@ -185,7 +201,7 @@ class Comparison {
                 compare_plot_title.appendChild(title);
                 col.appendChild(compare_plot_title);
                 let compare_plot_body = document.createElement("div");
-                compare_plot_body.id = `compare_parallel_coordinates_${i}`
+                compare_plot_body.id = `${self.containerId}_compare_parallel_coordinates_${i}`
                 compare_plot_body.className = "row compare_plot_body";
                 col.appendChild(compare_plot_body);
                 i++;
@@ -195,7 +211,7 @@ class Comparison {
         })
     }
 
-    wrangleSmallMultiples(order = null, scatterplot = false) {
+    wrangleSmallMultiples(order = null, scatterplot = false, rewrangle = false) {
         const self = this;
         _.each(self.plots, (plot, i) => {
             let plotData;
@@ -204,7 +220,7 @@ class Comparison {
             } else if (self.currentState == 'image') {
                 plotData = self.relatedImageData[i][1];
             } else {
-                plotData = _.get(self.neighborhoods[i], 'cluster_summary.weighted_contribution', []);
+                plotData = _.get(self.neighborhoods[i], 'composition_summary.weighted_contribution', []);
             }
             plot.wrangle(plotData, order);
         });
@@ -214,9 +230,9 @@ class Comparison {
         const self = this;
         self.createGrid(2, _.size(self.neighborhoods));
         self.plots = _.map(self.neighborhoods, (d, i) => {
-            let div = document.getElementById(`compare_col_${i}`);
+            let div = document.getElementById(`${self.containerId}_compare_col_${i}`);
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
-            let barchart = new Barchart(`compare_parallel_coordinates_${i}`, self.dataLayer.phenotypes);
+            let barchart = new Barchart(`${self.containerId}_compare_parallel_coordinates_${i}`, self.dataLayer.phenotypes);
             barchart.init();
             return barchart;
         });
@@ -227,16 +243,16 @@ class Comparison {
         const self = this;
         self.createGrid(2, _.size(self.neighborhoods));
         self.plots = _.map(self.neighborhoods, (d, i) => {
-            let div = document.getElementById(`compare_col_${i}`)
+            let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
-            let canvas_div = document.getElementById(`compare_parallel_coordinates_${i}`);
+            let canvas_div = document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`);
             let canvas = document.createElement("canvas");
             canvas.className = 'scatterplot scatter_canvas';
-            canvas.id = `compare_col_canvas_${i}`;
+            canvas.id = `${self.containerId}_compare_col_canvas_${i}`;
             canvas.width = canvas_div.offsetWidth;
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
-            let spatialPlot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
+            let spatialPlot = new Scatterplot(`${self.containerId}_compare_parallel_coordinates_${i}`, `${self.containerId}_compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
                 null, true, false, datasource);
             spatialPlot.init();
             return spatialPlot;
@@ -249,10 +265,10 @@ class Comparison {
         let plotNames = ['overall', 'selected'];
         self.createGrid(1, 2);
         self.plots = _.map(plotNames, (d, i) => {
-            let div = document.getElementById(`compare_col_${i}`)
+            let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'] || _.capitalize(d);
-            let canvas_div = document.getElementById(`compare_parallel_coordinates_${i}`);
-            let heatmap = new Heatmap(`compare_parallel_coordinates_${i}`, self.dataLayer, d, self.eventHandler);
+            let canvas_div = document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`);
+            let heatmap = new Heatmap(`${self.containerId}_compare_parallel_coordinates_${i}`, self.dataLayer, d, self.eventHandler);
             heatmap.init();
             return heatmap;
         })
@@ -269,23 +285,23 @@ class Comparison {
     async initImages() {
         const self = this;
         self.relatedImageData = await self.dataLayer.getRelatedImageData()
-        self.createGrid(1, _.size(self.relatedImageData));
+        self.createGrid(self.columns || 1, _.size(self.relatedImageData));
         let tempImageData = []
         self.plots = _.map(Object.entries(self.relatedImageData), ([k, v], i) => {
             tempImageData.push([k, v]);
-            let div = document.getElementById(`compare_col_${i}`)
+            let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
             let header = div.querySelector('h5')
-            header.innerHTML = `<a href='/${k}'>${k}</a>`
-            let canvas_div = document.getElementById(`compare_parallel_coordinates_${i}`);
+            header.innerHTML = `<a href='/${k}?applyPrevious=true'>${k}</a>`
+            let canvas_div = document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`);
             let canvas = document.createElement("canvas");
             canvas.className = 'scatterplot scatter_canvas';
-            canvas.id = `compare_col_canvas_${i}`;
+            canvas.id = `${self.containerId}_compare_col_canvas_${i}`;
             canvas.width = canvas_div.offsetWidth;
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
 
 
-            let imagePlot = new Scatterplot(`compare_parallel_coordinates_${i}`, `compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
+            let imagePlot = new Scatterplot(`${self.containerId}_compare_parallel_coordinates_${i}`, `${self.containerId}_compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
                 null, true, true, k);
             imagePlot.init();
             return imagePlot;
@@ -298,9 +314,26 @@ class Comparison {
     rewrangle() {
         const self = this;
         if (!self.hidden) {
-            self.wrangleSmallMultiples();
+            if (mode == 'single' || self.currentState != 'image') {
+                self.wrangleSmallMultiples();
+            } else {
+                _.each(self.plots, (plot, i) => {
+                    let plotData = self.dataLayer.getCurrentSelection()[plot.dataset];
+                    plotData = Array.from(plotData.keys());
+                    plot.recolor(plotData);
+                })
+            }
         }
 
+    }
+
+    clear(dataset) {
+        const self = this;
+        _.each(self.plots, (plot, i) => {
+            if (plot?.image && plot.dataset !== dataset) {
+                plot.recolor([])
+            }
+        })
     }
 
 }

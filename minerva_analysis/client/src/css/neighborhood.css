@@ -1,8 +1,13 @@
-#left-col-wrapper {
+#left-col-wrapper, #search-col-wrapper {
     position: absolute;
     height: 100%;
     width: 100%;
     margin: 0;
+}
+
+#search-col {
+    padding-left: 0;
+    height: 100%;
 }
 
 #relative-col {
@@ -12,7 +17,7 @@
 }
 
 
-#openseadragon_wrapper {
+#openseadragon_wrapper, #multi_image_wrapper {
     height: 100%;
     position: relative;
     z-index: 100;
@@ -20,18 +25,37 @@
     margin: 0;
 }
 
-.openseadragon_wrapper_small {
+#multi_image_wrapper {
+    display: none;
+    overflow-y: scroll;
+}
+
+#related_image_wrapper_wrapper {
+    height: 100%;
+    position: relative;
+    z-index: 100;
+    padding: 0;
+    margin: 0;
+}
+
+.related_image_wrapper_small {
+    min-width: 20vw !important;
+    max-width: 20vw !important;
+}
+
+.openseadragon_wrapper_small, .multi_image_wrapper_small {
+    width: 30vw !important;
+    min-width: 30vw !important;
+    max-width: 30vw !important;
+
+}
+
+.openseadragon_wrapper_large, .multi_image_wrapper_large {
     width: 45vw !important;
     min-width: 45vw !important;
     max-width: 45vw !important;
-
 }
 
-.openseadragon_wrapper_large {
-    width: 65vw !important;
-    min-width: 65vw !important;
-    max-width: 65vw !important;
-}
 
 .analysis_wrapper_large {
     width: 30vw !important;
@@ -68,9 +92,9 @@
 
 .neighborhood_wrapper_large {
     display: block;
-    width: 35vw !important;
-    max-width: 35vw !important;
-    min-width: 35vw !important;
+    width: 30vw !important;
+    max-width: 30vw !important;
+    min-width: 30vw !important;
 }
 
 #openseadragon_wrapper, #neighborhood_wrapper, #analysis_wrapper {
@@ -374,4 +398,34 @@
 
 #comparison_title, .compare_plot_title {
     color: black !important;
+}
+
+/*#related_image_list_wrapper_container{*/
+/*    overflow-y: scroll;*/
+/*}*/
+
+/*#related_image_container {*/
+/*    !*height: 2000px;*!*/
+/*}*/
+
+.expand-contract-button {
+    margin-left: 10px;
+    margin-right: 5px;
+}
+
+.expand-contract-button:hover {
+    cursor: pointer;
+    color: #8f8f8f;
+
+}
+
+#related_image_list_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    left: 1vw;
+    /*width: 13vw;*/
+    z-index: 101;
+    /*min-height: 10vh;*/
+    padding: 5px;
+    overflow-y:scroll;'
 }

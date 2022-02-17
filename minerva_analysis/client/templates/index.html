@@ -9,131 +9,142 @@
 
     {% if data.datasource %}
         <div id="container">
-            <div id="left-col-wrapper" class="row">
-                <div id="left-col" class="col-auto d-flex flex-column">
-                    <div id="search_wrapper" class="left-col-row">
-                        <div class="row" id="search-row">
-                            <div class="col-md-5 col">
-                                <h5 id="search_header">Similarity <br> Search</h5>
-                            </div>
-                            <div class="col-md-6 col">
-                                <div class="row">
-                                    <span class="neighborhood_similarity_label">Selection:</span>
-                                    <span class="neighborhood_similarity_label"
-                                          id="neighborhood_current_selection">None</span>
-                                </div>
-                                {#                            <div class="row">#}
-                                {#                                <span class="neighborhood_similarity_label">Count:&nbsp;</span>#}
-                                {#                                <span class="neighborhood_similarity_label"#}
-                                {#                                      id="neighborhood_current_selection_count">0</span>#}
-                                {#                            </div>#}
-                                <div class="row" id="similarity_group">
-                                    <label class="control-label neighborhood_similarity_label text-left"
-                                           for="neighborhood_similarity">
-                                        Threshold: </label> <span id="similarity_val">0.8</span>
-                                    <input type="range" class="form-control-range" min="0" max="100" value="80"
-                                           id="neighborhood_similarity">
-                                </div>
 
-                            </div>
-                            <div class="col-md-1 col">
+            <div id="relative-col" class="row">
+                <div id="related_image_wrapper" class="col-auto related_image_wrapper_small">
+                    <div id="search-col-wrapper" class="row">
+                        <div id="search-col" class="col-auto d-flex flex-column">
+                            <div id="search_wrapper" class="left-col-row">
+                                <div class="row" id="search-row">
+                                    <div class="col-md-5 col">
+                                        <h5 id="search_header">Similarity <br> Search</h5>
+                                    </div>
+                                    <div class="col-md-6 col">
+                                        <div class="row">
+                                            <span class="neighborhood_similarity_label">Selection:</span>
+                                            <span class="neighborhood_similarity_label"
+                                                  id="neighborhood_current_selection">None</span>
+                                        </div>
+                                        {#                            <div class="row">#}
+                                        {#                                <span class="neighborhood_similarity_label">Count:&nbsp;</span>#}
+                                        {#                                <span class="neighborhood_similarity_label"#}
+                                        {#                                      id="neighborhood_current_selection_count">0</span>#}
+                                        {#                            </div>#}
+                                        <div class="row" id="similarity_group">
+                                            <label class="control-label neighborhood_similarity_label text-left"
+                                                   for="neighborhood_similarity">
+                                                Threshold: </label> <span id="similarity_val">0.8</span>
+                                            <input type="range" class="form-control-range" min="0" max="100" value="80"
+                                                   id="neighborhood_similarity">
+                                        </div>
+
+                                    </div>
+                                    <div class="col-md-1 col">
                             <span class="material-icons" id="neighborhood_icon" data-toggle="tooltip"
                                   data-placement="right"
                                   title="Search for Similar Neighborhoods">search</span>
-                            </div>
+                                    </div>
 
-                        </div>
-                    </div>
-                    <div id="cluster_wrapper" class="left-col-row">
-                        <div class="row" id="cluster-row">
-                            <div class="col-md-5 col">
-                                <h5 id="cluster_header">Cluster <br> Neighborhoods</h5>
-                            </div>
-                            <div class="col-md-6 col">
-                                <div class="row" id="cluster-number-input">
-                                    <input type="number" id="custom_cluster_number" placeholder="Cluster Count">
-                                </div>
-                                {#                            <div class="row">#}
-                                {#                                <span class="neighborhood_similarity_label">Count:&nbsp;</span>#}
-                                {#                                <span class="neighborhood_similarity_label"#}
-                                {#                                      id="neighborhood_current_selection_count">0</span>#}
-                                {#                            </div>#}
-
-                            </div>
-                            <div class="col-md-1 col">
-                            <span class="material-icons" id="custom_cluster_submit" data-toggle="tooltip"
-                                  data-placement="right"
-                                  title="Cluster Neighborhoods">bubble_chart</span>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div id="channel_list_wrapper" class="left-col-row d-flex flex-column">
-                        <div class="row lowRow1 justify-content-between">
-                            <div class="col-auto">
-                                <h5 class="plot-label text-center">Channels</h5>
-                            </div>
-                            <div class="col-auto" id="selected-channels-header-div">
-                                <div class="row justify-content-end" id="number_selected_row">
-                                    <span class="selected-channels-header align-bottom"
-                                          id="num-selected-channels">0</span>
-                                    <span class="selected-channels-header align-bottom">&nbsp;of 4 (Max) Selected</span>
                                 </div>
                             </div>
+                            <div id="cluster_wrapper" class="left-col-row">
+                                <div class="row" id="cluster-row">
+                                    <div class="col-md-5 col">
+                                        <h5 id="cluster_header">Cluster <br> Neighborhoods</h5>
+                                    </div>
+                                    <div class="col-md-6 col">
+                                        <div class="row" id="cluster-number-input">
+                                            <input type="number" id="custom_cluster_number" placeholder="Cluster Count">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1 col">
+                                        <span class="material-icons" id="custom_cluster_submit" data-toggle="tooltip"
+                                              data-placement="right"
+                                              title="Cluster Neighborhoods">bubble_chart</span>
+                                    </div>
 
-
-                            {#                            <div class="col-auto align-self-start" id="channel-container-header-div">#}
-                            {#                            </div>#}
-                            {#                            <div class="col-auto align-self-end" id="selected-channels-header-div">#}
-                            {#                                #}
-                            {#                            </div>#}
-                        </div>
-                        <div class="list flex-grow-1 justify-content-between" id="channel_list"></div>
-                        {#                        flex-grow-1#}
-                    </div>
-                    <div id="neighborhood_list_wrapper" class="left-col-row d-flex flex-column flex-grow-1">
-                        <div class="row lowRow1 justify-content-between">
-                            <div class="col-auto">
-                                <h5 class="plot-label text-center">Neighborhood Patterns</h5>
+                                </div>
                             </div>
-                            <div class="col-auto">
-                                <div class="row justify-content-end" style="align-self: flex-end;">
+                            <div id="neighborhood_list_wrapper" class="left-col-row d-flex flex-column">
+                                <div class="row lowRow1 justify-content-between">
+                                    <div class="col-auto">
+                                        <div class="row">
+                                            <i id="expand-contract-patterns"
+                                               class="fas fa-chevron-up expand-contract-button"
+                                               onclick="expandContractColumn(this)"></i>
+                                            <h5 class="plot-label text-center">Neighborhood Patterns</h5>
+                                        </div>
+
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="row justify-content-end" style="align-self: flex-end;">
                                 <span class="material-icons" id="save_neighborhood_icon" data-toggle="tooltip"
                                       data-placement="right"
                                       title="Save Neighborhood">save</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="neighborhood_table_card" class="card-body list neighborhood_table_card_big">
+                                    <table id="neighborhood_table" class="table table-hover">
+                                        <thead id="neighborhood_table_header">
+                                        <tr>
+                                            <th scope="col"><span>Name</span></th>
+                                            {#                                <th scope="col"><span>Source</span></th>#}
+                                            <th scope="col"></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
+                            <div id="related_image_list_wrapper" class="left-col-row d-flex flex-column flex-grow-1">
+                                <div class="left-col-row">
+                                    <div class="col-md-12">
+                                        <h5 class="plot-label text-left">Related Images</h5>
+                                    </div>
+                                </div>
+                                <div id="related_image_container" class="left-col-row flex-grow-1"></div>
+                            </div>
                         </div>
-                        <div id="neighborhood_table_card" class="card-body list flex-grow-1">
-                            <table id="neighborhood_table" class="table table-hover">
-                                <thead id="neighborhood_table_header">
-                                <tr>
-                                    <th scope="col"><span>Name</span></th>
-                                    {#                                <th scope="col"><span>Source</span></th>#}
-                                    <th scope="col"></th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {#                <div id="accordion">#}
-                        {#                    <div class="card">#}
-                        {#                        <div class="card-header" id="neighborhood_table_heading">#}
-                        {#                            <button id="save_neighborhood_button"#}
-                        {#                                    class="btn btn-primary" disabled>#}
-                        {#                                <span id="save_neighborhood_label">Save</span>#}
-                        {#                            </button>#}
-                        {#                        </div>#}
-                        {##}
-                        {#                    </div>#}
-                        {#                </div>#}
                     </div>
                 </div>
-            </div>
-            <div id="relative-col" class="row">
                 <div id="openseadragon_wrapper" class="col-auto openseadragon_wrapper_large viewer_col">
+                    <div id="left-col-wrapper" class="row">
+                        <div id="left-col" class="col-auto d-flex flex-column">
+                            <div id="channel_list_wrapper" class="left-col-row d-flex flex-column">
+                                <div class="row lowRow1 justify-content-between">
+                                    <div class="col-auto">
+
+                                        <div class="row">
+                                            <i id="expand-contract-channels"
+                                               class="fas fa-chevron-up expand-contract-button"
+                                               onclick="expandContractColumn(this)"></i>
+                                            <h5 class="plot-label text-center">Channels</h5>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto" id="selected-channels-header-div">
+                                        <div class="row justify-content-end" id="number_selected_row">
+                                    <span class="selected-channels-header align-bottom"
+                                          id="num-selected-channels">0</span>
+                                            <span class="selected-channels-header align-bottom">&nbsp;of 4 (Max) Selected</span>
+                                        </div>
+                                    </div>
+
+
+                                    {#                            <div class="col-auto align-self-start" id="channel-container-header-div">#}
+                                    {#                            </div>#}
+                                    {#                            <div class="col-auto align-self-end" id="selected-channels-header-div">#}
+                                    {#                                #}
+                                    {#                            </div>#}
+                                </div>
+                                <div class="list flex-grow-1 justify-content-between channel_list_big"
+                                     id="channel_list"></div>
+                                {#                        flex-grow-1#}
+                            </div>
+
+                        </div>
+                    </div>
                     <div id="openseadragon">
                         <div class="row">
                             <div class="col-auto">
@@ -160,6 +171,12 @@
                                     </span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="multi_image_wrapper" class="col-auto multi_image_wrapper_large viewer_col">
+                    <div id="left-col-wrapper" class="row">
+                        <div id="left-col" class="col-auto d-flex flex-column">
                         </div>
                     </div>
                 </div>
@@ -201,7 +218,7 @@
                             <div class="row justify-content-center">
                                 <div class="form-check" id="small-multiple-toggle">
                                     <input type="radio" class="btn-check" name="options-outlined"
-                                           id="barchart-button"
+                                           id="barchart-button" checked
                                            autocomplete="off">
                                     <label class="btn btn-light" for="barchart-button">Composition</label>
                                     <input type="radio" class="btn-check" name="options-outlined"
@@ -214,7 +231,7 @@
                                            autocomplete="off">
                                     <label class="btn btn-light" for="scatterplot-button">Spatial</label>
                                     <input type="radio" class="btn-check" name="options-outlined"
-                                           id="image-button" checked
+                                           id="image-button"
                                            autocomplete="off">
                                     <label class="btn btn-light" for="image-button">Image</label>
                                 </div>
@@ -229,14 +246,14 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div id="expand_wrapper" class="expand_wrapper_right">
-            <div class="row">
-                <div class="col-7">
-                    <span id="comparison_views_label">Compare</span>
-                </div>
-                <div class="col-5">
-                    <span id="expand_icon" class="material-icons">keyboard_double_arrow_left</span>
+            <div id="expand_wrapper" class="expand_wrapper_right">
+                <div class="row">
+                    <div class="col-7">
+                        <span id="comparison_views_label">Compare</span>
+                    </div>
+                    <div class="col-5">
+                        <span id="expand_icon" class="material-icons">keyboard_double_arrow_left</span>
+                    </div>
                 </div>
             </div>
         </div>

@@ -80,7 +80,7 @@ class StackedBarchart {
         const self = this;
         self.visData = _.map(neighborhoods, (elem, index) => {
             let neighborhoodName = _.get(elem, 'neighborhood_name', '');
-            let arr = elem.cluster_summary.weighted_contribution || [];
+            let arr = elem.composition_summary.weighted_contribution || [];
             let sum = _.sumBy(arr, d => {
                 return d[1];
             });

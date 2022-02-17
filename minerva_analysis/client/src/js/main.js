@@ -5,10 +5,13 @@
 console.log("Here");
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
+const applyPrevious = flaskVariables.applyPrevious;
+let searching = false;
+let mode = 'single';
 
 
 //VIEWS
-let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable, comparison;
+let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable, comparison, multiImage;
 
 //SERVICES
 let dataLayer, colorScheme;
@@ -46,30 +49,49 @@ async function init(conf) {
     await dataLayer.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-
-    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler);
-    channelList = new ChannelList(config, dataLayer, eventHandler);
+    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid', false, null, 'barchart');
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
-    legend = new Legend(dataLayer, colorScheme, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
         neighborhoodTable, false, false, datasource);
-    console.log('Ending Reg Init', new Date());
     //image viewer
-    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-    console.log('Ending Viewer Init', new Date());
-    // init synchronus methods
-    seaDragonViewer.init();
+    if (mode === 'single') {
+        legend = new Legend(dataLayer, colorScheme, eventHandler);
+        channelList = new ChannelList(config, dataLayer, eventHandler);
+        seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
+        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null,'image');
+        // init synchronus methods
+        seaDragonViewer.init();
+        await channelList.init()
+    } else {
+        document.getElementById('openseadragon_wrapper').style.display = "none"
+        document.getElementById('multi_image_wrapper').style.display = "block"
+        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_wrapper',
+            true, columns = 4);
+
+    }
     // legend.init();
+    console.log('Ending Multi', new Date());
+    console.log('PCP Init', new Date())
     parallelCoordinates.init();
+    console.log('Scatter Init', new Date())
     scatterplot.init();
     console.log('Sync Init', new Date());
     //Async stuff
-    await Promise.all([channelList.init(), neighborhoodTable.init(), scatterplot.wrangle()]);
-    console.log('Async Init', new Date());
+    console.log('Starting Async', new Date());
+    await Promise.all([neighborhoodTable.init(), scatterplot.wrangle(), comparison.init(), multiImage.init()]);
+    console.log('Ending Async', new Date());
     clusterData = dataLayer.getClusterCells();
-    setupColExpand();
-    await comparison.init();
+    setupPageInteractivity();
+    if (applyPrevious) {
+        searching = true;
+        return dataLayer.applyNeighborhoodQuery()
+            .then(cells => {
+                return displayNeighborhoodSelection(cells)
+            })
+    } else {
+        store(false);
+    }
 }
 
 //feature color map changed in ridge plot
@@ -125,8 +147,14 @@ const displaySelection = async (d) => {
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
     parallelCoordinates.wrangle(selection);
-    scatterplot.recolor();
+    if (d.selectionSource === "Multi Image") {
+        multiImage.clear(d.dataset)
+        scatterplot.recolor(d.selection[d.dataset]["embedding_ids"]);
+    } else {
+        scatterplot.recolor();
+    }
     updateSeaDragonSelection(false, false);
+
 }
 eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 
@@ -134,7 +162,6 @@ const displayNeighborhoodSelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
     document.getElementById('neighborhood_current_selection').textContent = 'Phenotype';
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
-    // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution');
     if (selection) {
         parallelCoordinates.wrangle(selection);
         scatterplot.recolor();
@@ -151,7 +178,6 @@ const selectNeighborhood = async (d) => {
     document.getElementById('neighborhood_current_selection').textContent = 'Cluster';
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
-    // let starplotData = _.get(selection, 'cluster_summary.weighted_contribution', []);
     parallelCoordinates.wrangle(selection);
     scatterplot.recolor();
     updateSeaDragonSelection(false, false);
@@ -192,10 +218,13 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     d3.selectAll('.contourPath').remove();
     neighborhoodTable.enableSaveButton();
-    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
-    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
+    if (mode == 'single') {
+        seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
+        seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
+    }
+    multiImage.rewrangle();
     comparison.rewrangle();
-    if (seaDragonViewer.contourView) {
+    if (seaDragonViewer?.contourView) {
         seaDragonViewer.drawContourLines();
     }
 
@@ -280,8 +309,54 @@ function showHideRHS() {
 function setupColExpand() {
     document.getElementById('expand_icon').addEventListener("click", () => {
         showHideRHS();
-    })
+    });
 }
+
+function expandContractColumn(button) {
+    let channel_list = document.getElementById('channel_list');
+    let pattern_list = document.getElementById('neighborhood_table_card');
+    if (button.classList.contains('fa-chevron-up')) {
+        button.classList.remove('fa-chevron-up');
+        button.classList.add('fa-chevron-down');
+
+        if (button.id == 'expand-contract-channels') {
+            channel_list.classList.remove('channel_list_big');
+            channel_list.classList.add('channel_list_small');
+        } else {
+            pattern_list.classList.remove('neighborhood_table_card_big');
+            pattern_list.classList.add('neighborhood_table_card_small');
+        }
+
+    } else {
+        button.classList.remove('fa-chevron-down');
+        button.classList.add('fa-chevron-up');
+        if (button.id == 'expand-contract-channels') {
+
+            channel_list.classList.remove('channel_list_small');
+            channel_list.classList.add('channel_list_big');
+        } else {
+            pattern_list.classList.remove('neighborhood_table_card_small');
+            pattern_list.classList.add('neighborhood_table_card_big');
+        }
+    }
+}
+
+// function setupShowHideColumn() {
+//     let channelButton = document.getElementById('expand-contract-channels');
+//     channelButton.addEventListener('click', (event) => {
+//             let button = event.target;
+//             if (button.classList.contains('fa-chevron-up')) {
+//                 button.classList.remove('fa-chevron-up');
+//                 button.classList.add('fa-chevron-down');
+//             } else {
+//                 button.classList.remove('fa-chevron-down');
+//                 button.classList.add('fa-chevron-up');
+//                 setupShowHideColumn();
+//             }
+//         }
+//     )
+//
+// }
 
 function createTransitionEndEventListener(selector, func) {
     let input = document.querySelector(selector);
@@ -303,4 +378,39 @@ function createTransitionEndEventListener(selector, func) {
             }
         }
     }
+}
+
+function setupPageInteractivity() {
+    setupColExpand();
+
+//    Setup Neighborhood Query Button
+    const neighborhoodButton = document.getElementById("neighborhood_icon");
+    neighborhoodButton.addEventListener("click", event => {
+        if (document.getElementById('neighborhood_current_selection').innerText == "Composition") {
+            return parallelCoordinates.search();
+        }
+        d3.select('#selectionPolygon').remove();
+        neighborhoodButton.style.stroke = "orange";
+        let sim = document.getElementById('similarity_val').innerHTML || '0.8';
+        let simVal = parseFloat(sim);
+        seaDragonViewer.showLoader();
+        if (dataLayer.getCurrentSelection().size > 0) {
+            return dataLayer.getSimilarNeighborhoodToSelection(simVal)
+                .then(cells => {
+                    seaDragonViewer.hideLoader();
+                    return displayNeighborhoodSelection(cells);
+                })
+
+        }
+    })
+
+    const similaritySlider = document.getElementById("neighborhood_similarity");
+    similaritySlider.onchange = (e) => {
+        let val = document.getElementById("neighborhood_similarity").value;
+        let span = document.getElementById('similarity_val');
+        span.innerHTML = ''
+        span.innerHTML = _.toString((val / 100).toFixed(2));
+    }
+
+
 }
