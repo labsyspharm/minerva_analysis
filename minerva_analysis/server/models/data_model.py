@@ -644,8 +644,8 @@ def get_datasource_description(datasource_name):
                 dat.append(obj)
 
             description[fullName]['image_histogram'] = dat
-            description[fullName]['image_min'] = np.rint(np.exp(np.min(img_log)))
-            description[fullName]['image_max'] = np.rint(np.exp(np.max(img_log)))
+            description[fullName]['image_min'] = np.ceil(np.exp(np.min(img_log)))
+            description[fullName]['image_max'] = np.ceil(np.exp(np.max(img_log)))
 
             image_layer += 1
         else:
