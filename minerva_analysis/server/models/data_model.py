@@ -4,6 +4,8 @@ from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import MinMaxScaler
 from scipy import stats
 from numba import prange
+import dask.dataframe as dd
+import dask.array as da
 
 from sklearn.decomposition import IncrementalPCA
 from sqlalchemy import or_
@@ -76,17 +78,18 @@ def load_datasource(datasource_name, reload=False):
     init_clusters(datasource_name)
 
 
-# @profile
+@profile
 def load_csv(datasource_name):
     global config
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-    df = pd.read_csv(csvPath, index_col=None)
-    embedding = np.load(Path(config[datasource_name]['embedding']))
-
+    # df = pd.read_csv(csvPath, index_col=None)
+    df = dd.read_csv(csvPath, assume_missing=True).set_index('id')
     df['id'] = df.index
-    df['Cluster'] = embedding[:, -1].astype('int32').tolist()
+    # df['Cluster'] = embedding[:, -1].astype('int32').tolist()
+    df['Cluster'] = 0
+
     if 'CellType' in df.columns:
-        df.rename(columns={'CellType': 'phenotype'}, inplace=True)
+        df = df.rename(columns={'CellType': 'phenotype'})
     df = df.replace(-np.Inf, 0)
     return df
 
@@ -95,7 +98,8 @@ def init_clusters(datasource_name):
     global datasource
     global source
     # Select Cluster Stats
-    clusters = np.sort(datasource['Cluster'].unique().tolist())
+    clusters = np.sort(datasource['Cluster'].unique().compute().tolist())
+    # clusters = np.sort(datasource['Cluster'].unique().tolist())
     for cluster in clusters:
         # Check if the Cluster is in the DB
         neighborhood = database_model.get(database_model.Neighborhood, datasource=datasource_name, source="Cluster",
@@ -132,7 +136,8 @@ def init_clusters(datasource_name):
 def get_cluster_cells(datasource_name):
     global datasource
     global source
-    clusters = datasource['Cluster'].unique().tolist()
+    # clusters = datasource['Cluster'].unique().tolist()
+    clusters = datasource['Cluster'].unique().compute().tolist()
     obj = {}
     for cluster in clusters:
         # Check if the Cluster is in the DB
@@ -355,7 +360,7 @@ def query_for_closest_cell(x, y, datasource_name):
             return {}
 
 
-# @profile
+@profile
 def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False):
     global datasource
     global source
@@ -371,7 +376,7 @@ def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False):
             index_sum = 0
             for dataset in config[datasource_name]['linkedDatasets']:
                 df = load_csv(dataset)
-                next_sum = index_sum + df.shape[0]
+                next_sum = index_sum + df.shape[0].compute()
                 if linked_dataset is not None and is_image is True:
                     if linked_dataset == dataset:
                         obj[dataset] = get_neighborhood_stats(dataset, sorted_ids, df, fields=fields,
@@ -401,15 +406,20 @@ def weight_multi_image_neighborhood(neighborhood_obj, datasource_name, selection
         if dataset in neighborhood_obj:
             dataset_weight = len(neighborhood_obj[dataset]['cells']) / selection_length
             if obj['weighted_contribution'] is None:
-                obj['weighted_contribution'] = deepcopy(neighborhood_obj[dataset]['composition_summary']['weighted_contribution'])
-                obj['selection_neighborhoods'] = neighborhood_obj[dataset]['composition_summary']['selection_neighborhoods']
+                obj['weighted_contribution'] = deepcopy(
+                    neighborhood_obj[dataset]['composition_summary']['weighted_contribution'])
+                obj['selection_neighborhoods'] = neighborhood_obj[dataset]['composition_summary'][
+                    'selection_neighborhoods']
                 for i, val in enumerate(neighborhood_obj[dataset]['composition_summary']['weighted_contribution']):
                     obj['weighted_contribution'][i][1] *= dataset_weight
             else:
                 for i, val in enumerate(neighborhood_obj[dataset]['composition_summary']['weighted_contribution']):
                     obj['weighted_contribution'][i][1] += (val[1] * dataset_weight)
-                obj['selection_neighborhoods'] = np.vstack((obj['selection_neighborhoods'], neighborhood_obj[dataset]['composition_summary']['selection_neighborhoods']))
+                obj['selection_neighborhoods'] = np.vstack((obj['selection_neighborhoods'],
+                                                            neighborhood_obj[dataset]['composition_summary'][
+                                                                'selection_neighborhoods']))
     return obj
+
 
 def get_all_cells(datasource_name, mode):
     global datasource
@@ -421,8 +431,10 @@ def get_all_cells(datasource_name, mode):
         neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
         row_sums = neighborhoods.sum(axis=1)
         neighborhoods = neighborhoods / row_sums[:, np.newaxis]
-        selection_neighborhoods = neighborhoods[np.arange(neighborhoods.shape[0]), :]
-        return {'selection_neighborhoods': selection_neighborhoods}
+        indices = np.arange(neighborhoods.shape[0])
+        selection_neighborhoods = neighborhoods[indices, :]
+        return {'selection_neighborhoods': selection_neighborhoods,
+                'selection_indices': indices}
         # obj = get_neighborhood_stats(datasource_name, np.arange(datasource.shape[0]), fields=fields)
     else:
         if 'linkedDatasets' in config[datasource_name]:
@@ -431,12 +443,15 @@ def get_all_cells(datasource_name, mode):
                 neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
                 row_sums = neighborhoods.sum(axis=1)
                 neighborhoods = neighborhoods / row_sums[:, np.newaxis]
-                selection_neighborhoods = neighborhoods[np.arange(neighborhoods.shape[0]), :]
+                indices = np.arange(neighborhoods.shape[0])
+                selection_neighborhoods = neighborhoods[indices, :]
                 if combined_neighborhoods is None:
                     combined_neighborhoods = neighborhoods
                 else:
                     combined_neighborhoods = np.vstack((combined_neighborhoods, selection_neighborhoods))
-            return {'selection_neighborhoods': combined_neighborhoods}
+            return {'selection_neighborhoods': combined_neighborhoods,
+                    'selection_indices': indices}
+
 
     #     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     #     row_sums = neighborhoods.sum(axis=1)
@@ -493,7 +508,9 @@ def get_phenotypes(datasource_name):
     if datasource_name != source:
         load_datasource(datasource_name)
     if phenotype_field in datasource.columns:
-        return sorted(datasource[phenotype_field].unique().tolist())
+        return sorted(datasource[phenotype_field].unique().compute().tolist())
+        # return sorted(datasource[phenotype_field].unique().tolist())
+
     else:
         return ['']
 
@@ -682,7 +699,8 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
         load_datasource(datasource_name)
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    phenos = sorted(datasource.phenotype.unique().tolist())
+    phenos = sorted(datasource.phenotype.unique().compute().tolist())
+    # phenos = sorted(datasource.phenotype.unique().tolist())
     neighborhood_vector = np.zeros((len(phenos)))
     disabled = []
     for i in range(len(phenos)):
@@ -937,7 +955,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return {'segmentation': str(directory)}
 
 
-# @profile
+@profile
 def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fields=[], compute_neighbors=True):
     global ball_tree
     global source
@@ -975,12 +993,14 @@ def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fie
     #                               np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=False), :]
     # else:
     #     selection_neighborhoods = selection_neighborhoods
-        # scale_factor = int(sample_size / selection_neighborhoods.shape[0])
-        #
-        # selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
+    # scale_factor = int(sample_size / selection_neighborhoods.shape[0])
+    #
+    # selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
 
-    summary_stats = {'weighted_contribution': {}, 'selection_neighborhoods': selection_neighborhoods}
-    phenotypes = sorted(df.phenotype.unique().tolist())
+    summary_stats = {'weighted_contribution': {}, 'selection_neighborhoods': selection_neighborhoods,
+                     'selection_indices': indices}
+    # phenotypes = sorted(df.phenotype.unique().tolist())
+    phenotypes = sorted(df.phenotype.unique().compute().tolist())
     summary_stats['weighted_contribution'] = list(map(list, zip(phenotypes, composition_summary)))
 
     obj = {
@@ -1079,7 +1099,8 @@ def get_multi_image_scatter_results(datasource_name, mode):
                 df = load_csv(dataset)
                 x_field = config[datasource_name]['featureData'][0]['xCoordinate']
                 y_field = config[datasource_name]['featureData'][0]['yCoordinate']
-                data = df[[x_field, y_field, 'id']].to_numpy()
+                data = df[[x_field, y_field, 'id']].compute().to_numpy()
+                # data = df[[x_field, y_field, 'id']].to_numpy()
                 normalized_data = normalize_scatterplot_data(data[:, 0:2])
                 normalized_data[:, 1] = normalized_data[:, 1] * -1.0  # Flip image
                 data = np.column_stack((normalized_data, data[:, 2]))
@@ -1126,7 +1147,8 @@ def apply_neighborhood_query(datasource_name, neighborhood_query):
 
 # Via https://stackoverflow.com/questions/67050899/why-pandas-dataframe-to-dictrecords-performance-is-bad-compared-to-another-n
 def fast_to_dict_records(df):
-    data = df.values.tolist()
+    # data = df.values.tolist()
+    data = df.values.compute().tolist()
     columns = df.columns.tolist()
     return [
         dict(zip(columns, datum))

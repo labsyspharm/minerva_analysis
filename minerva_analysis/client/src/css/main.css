@@ -97,6 +97,7 @@ body {
     height: 45vh;
     width: 100%;
     position: relative;
+    margin: 0;
 }
 
 
@@ -166,7 +167,6 @@ body {
 .neighborhood_table_card_small {
     height: 0;
 }
-
 
 
 .neighborhood_table_card_small thead {
@@ -823,6 +823,7 @@ polygon:hover {
 
 .par_cor_label {
     font-size: 1vh;
+    cursor: move;
 }
 
 #custom_cluster {
@@ -863,3 +864,15 @@ polygon:hover {
     height: 4vh;
 }
 
+#parallel_coordinates_canvas_parent {
+    height: 100%;
+    width: 100%;
+}
+
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}

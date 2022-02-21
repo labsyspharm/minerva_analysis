@@ -67,7 +67,7 @@ async function init(conf) {
         document.getElementById('openseadragon_wrapper').style.display = "none"
         document.getElementById('multi_image_wrapper').style.display = "block"
         multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_wrapper',
-            true, columns = 4);
+            true, columns = 4, 'image');
 
     }
     // legend.init();
