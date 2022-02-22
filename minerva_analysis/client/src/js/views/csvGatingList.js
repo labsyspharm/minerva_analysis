@@ -36,7 +36,7 @@ class CSVGatingList {
     }
 
      /**
-     * Selects a channel as active and adds the respective viual components to the channel panel in the list view
+     * Selects a channel as active and adds the respective visual components to the channel panel in the list view
      * @param name - the channel to set and display as selected
      */
     selectChannel(name) {
@@ -44,7 +44,7 @@ class CSVGatingList {
         // seaDragonViewer.csvGatingOverlay.run_balancer++;
 
          if (!(name in this.hasGatingGMM)) {
-            let channelTrace = this.drawGatingGMM(name);
+            let channelTrace = this.getAndDrawGatingGMM(name);
         }
 
         // Add
@@ -153,7 +153,7 @@ class CSVGatingList {
             const fullName = self.dataLayer.getFullChannelName(column);
             const sliderRange = [self.databaseDescription[fullName].min, self.databaseDescription[fullName].max];
             self.gating_channels[fullName] = sliderRange;
-            self.addSlider(sliderRange, sliderRange, column, self.sliderWidth);
+            self.addSlider(column, self.sliderWidth, sliderRange, sliderRange);
             d3.select('div#csv_gating-slider_' + channelID).style('display', "none");
 
             let autoCol = document.createElement("div");
@@ -575,27 +575,31 @@ class CSVGatingList {
     * @param name - the name of the slider (used as part of the id)
     * @param swidth - the pixel width of the slider
      */
-    addSlider(data, activeRange, name, swidth) {
+    addSlider(name, swidth, data, activeRange) {
 
         let that = this;
 
+        // If no data
         if (!data) return;
 
         const self = this;
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
         let channelID = this.gatingIDs[name];
 
-        // If no data
-        if (!data) return
-
         let data_min
         let data_max
+        let handle_min
+        let handle_max
         if (that.dataLayer.isTransformed()) {
             data_min = d3.min(data)
             data_max = d3.max(data)
+            handle_min = activeRange[0]
+            handle_max = activeRange[1]
         } else {
             data_min = parseInt(d3.min(data))
             data_max = parseInt(d3.max(data))
+            handle_min = parseInt(activeRange[0])
+            handle_max = parseInt(activeRange[1])
         }
 
         let f = d3.format("d")
@@ -607,7 +611,7 @@ class CSVGatingList {
             .tickFormat(f)
             .fill('orange')
             .ticks(1)
-            .default([data_min, data_max])
+            .default([handle_min, handle_max])
             .handle(
                 d3.symbol()
                     .type(d3.symbolCircle)
@@ -727,12 +731,19 @@ class CSVGatingList {
         return sliderSimple;
     };
 
-    async drawGatingGMM(name){
+    async getAndDrawGatingGMM(name){
+        let fullname = this.dataLayer.getFullChannelName(name);
+        let packet = await this.dataLayer.getGatingGMM(fullname);
+        this.hasGatingGMM[name] = packet;
+
+        this.drawGatingGMM(name);
+    }
+
+    drawGatingGMM(name){
         let fullname = this.dataLayer.getFullChannelName(name);
         let channelID = this.gatingIDs[name];
 
-        let packet = await this.dataLayer.getGatingGMM(fullname);
-        this.hasGatingGMM[name] = packet;
+        let packet = this.hasGatingGMM[name];
 
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram'];
         let gmm1Data = packet['gmm_1'];
@@ -827,25 +838,20 @@ class CSVGatingList {
 }
 
 //resize sliders, etc on window change
-window
-    .addEventListener(
-        "resize"
-        ,
-
-        function () {
-            // //reinitialize slider on window change..(had some bug updating with via d3 update)
-            // if (typeof csv_gatingList != "undefined" && csv_gatingList) {
-            //     csv_gatingList.sliders.forEach(function (slider, name) {
-            //         d3.select('div#csv_gating-slider_' + name).select('svg').remove();
-            //         //add and hide gating sliders (will be visible when gating is active)
-            //         let fullName = csv_gatingList.dataLayer.getFullChannelName(name);
-            //         let sliderRange = [csv_gatingList.databaseDescription[fullName].min, csv_gatingList.databaseDescription[fullName].max];
-            //         csv_gatingList.addSlider(sliderRange, slider.value(), name,
-            //             document.getElementById("csv_gating_list").getBoundingClientRect().width);
-            //     });
-            // }
-        }
-    );
+window.addEventListener("resize", function () {
+    if (typeof csv_gatingList != "undefined" && csv_gatingList) {
+        csv_gatingList.sliders.forEach(function (slider, name) {
+            d3.select('div#csv_gating-slider_' + name).select('svg').remove();
+            let fullName = csv_gatingList.dataLayer.getFullChannelName(name);
+            let sliderRange = [csv_gatingList.databaseDescription[fullName].min, csv_gatingList.databaseDescription[fullName].max];
+            csv_gatingList.addSlider(name, document.getElementById("csv_gating_list").getBoundingClientRect().width,
+                sliderRange, slider.value());
+            if (csv_gatingList.hasGatingGMM[name]) {
+                let channelTrace = csv_gatingList.drawGatingGMM(name);
+            }
+        });
+    }
+});
 
 //hide gating control panel when scrolled down to access all channels..
 // $(document).ready(function()

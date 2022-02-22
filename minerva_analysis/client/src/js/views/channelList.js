@@ -87,7 +87,7 @@ class ChannelList {
         }
 
         if (!(name in this.hasChannelGMM)) {
-            let channelTrace = this.drawChannelGMM(name);
+            let channelTrace = this.getAndDrawChannelGMM(name);
         }
 
         // Update selections
@@ -227,7 +227,7 @@ class ChannelList {
             let sliderMin = this.databaseDescription[fullName]['image_min']
             let sliderMax = this.databaseDescription[fullName]['image_max']
             self.image_channels[column] = [sliderMin, sliderMax];
-            let sliderRange = this.addSlider(sliderMin, sliderMax, column, document.getElementById("channel_list").getBoundingClientRect().width);
+            let sliderRange = this.addSlider(column, document.getElementById("channel_list").getBoundingClientRect().width, [sliderMin, sliderMax]);
             d3.select('div#channel-slider_' + channelID).style('display', "none");
 
         });
@@ -453,7 +453,7 @@ class ChannelList {
     @param {String} name - the name of the slider (used as part of the id)
     @param {} swidth - the pixel width of the slider
      */
-    addSlider(data, activeRange, name, swidth) {
+    addSlider(name, swidth, activeRange) {
 
         //formatter
         const f = (d3.format('.2%'))
@@ -486,7 +486,7 @@ class ChannelList {
               this.image_channels[name] = packet_val;
             })
             .ticks(5)
-            .default([data_min, data_max])
+            .default([Math.round(activeRange[0]), Math.round(activeRange[1])])
             .handle(
                 d3.symbol()
                     .type(d3.symbolCircle)
@@ -584,11 +584,18 @@ class ChannelList {
         return sliderSimple;
     };
 
-    async drawChannelGMM(name){
+    async getAndDrawChannelGMM(name){
         let fullname = this.dataLayer.getFullChannelName(name);
-        let channelID = this.channelIDs[name];
         let packet = await this.dataLayer.getChannelGMM(fullname);
         this.hasChannelGMM[name] = packet;
+
+        this.drawChannelGMM(name);
+    }
+
+    drawChannelGMM(name){
+        let fullname = this.dataLayer.getFullChannelName(name);
+        let channelID = this.channelIDs[name];
+        let packet = this.hasChannelGMM[name];
 
         let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram'];
         let channel_gmm1Data = packet['image_gmm_1'];
@@ -686,14 +693,15 @@ class ChannelList {
  * on window resize we re-initialize (this should be better handled with an update pattern)
  */
 window.addEventListener("resize", function () {
-    // //reinitialize slider on window change..(had some bug updating with via d3 update)
-    // if (typeof channelList != "undefined" && channelList) {
-    //     channelList.sliders.forEach(function (slider, name) {
-    //         d3.select('div#channel-slider_' + name).select('svg').remove();
-    //         channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
-    //             document.getElementById("channel_list").getBoundingClientRect().width);
-    //     });
-    // }
+    if (typeof channelList != "undefined" && channelList) {
+        channelList.sliders.forEach(function (slider, name) {
+            d3.select('div#channel-slider_' + name).select('svg').remove();
+            channelList.addSlider(name, document.getElementById("channel_list").getBoundingClientRect().width, slider.value());
+            if (channelList.hasChannelGMM[name]) {
+                let channelTrace = channelList.drawChannelGMM(name);
+            }
+        });
+    }
 });
 
 //static vars: events introduced in this class and used across the app
