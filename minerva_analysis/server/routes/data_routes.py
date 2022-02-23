@@ -186,8 +186,9 @@ def find_custom_neighborhood():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     similarity = post_data['similarity']
+    mode = post_data['mode']
     neighborhood_composition = post_data['neighborhoodComposition']
-    resp = data_model.find_custom_neighborhood(datasource, neighborhood_composition, similarity)
+    resp = data_model.find_custom_neighborhood(datasource, neighborhood_composition, similarity, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -197,7 +198,8 @@ def get_similar_neighborhood_to_selection():
     datasource = post_data['datasource']
     similarity = post_data['similarity']
     selection_ids = post_data['selectionIds']
-    resp = data_model.get_similar_neighborhood_to_selection(datasource, selection_ids, similarity)
+    mode = post_data['mode']
+    resp = data_model.get_similar_neighborhood_to_selection(datasource, selection_ids, similarity, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -332,7 +334,7 @@ def get_image_search_results():
     datasource = request.args.get('datasource')
     linked_datasource = request.args.get('linkedDatasource')
     neighborhood_query = json.loads(request.args.get('neighborhoodQuery'))
-    resp = data_model.search_across_image(datasource, linked_datasource, neighborhood_query)
+    resp = data_model.search_across_images(datasource, linked_datasource, neighborhood_query)
     return serialize_and_submit_json(resp)
 
 

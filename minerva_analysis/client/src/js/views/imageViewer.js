@@ -308,7 +308,7 @@ class ImageViewer {
                     if (that.isSelectionToolActive) {
                         that.lasso_end(event);
                         if (_.size(that.polygonSelection) > 2) {
-                            that.showLoader();
+                            // that.showLoader();
                             return dataLayer.getCellsInPolygon(that.polygonSelection, false, false)
                                 .then(cells => {
                                     that.hideLoader();

@@ -349,30 +349,39 @@ class ParallelCoordinates {
 
     drawDots() {
         const self = this;
-        window.devicePixelRatio = 1;
-        self.plot = createScatterplot({
-            canvas: self.canvas,
-            pointColor: hexToRGBA('#b2b2b2', 1),
-            opacityBy: 'density',
-            pointColorActive: hexToRGBA('#ffa500', 0.2),
-            pointSize: 8,
-            lassoColor: hexToRGBA('#ffa500', 0.2),
-            pointOutlineWidth: 0,
-            pointSizeSelected: 0
-        });
-        let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.selection_neighborhoods', null);
-        let indices = _.get(dataLayer, 'fullNeighborhoods.selection_indices', null);
-        let points = [];
-        _.forEach(fullNeighborhood, (row, rowIndex) => {
-            let orderedRow = _.cloneDeep(row);
-            self.phenotypes.map((d, i) => {
-                orderedRow[self.order[d]] = row[i]
+        if (!self.editMode) {
+            if (!self.plot) {
+                window.devicePixelRatio = 1;
+                self.plot = createScatterplot({
+                    canvas: self.canvas,
+                    pointColor: hexToRGBA('#b2b2b2', 1),
+                    // opacityBy: 'density',
+                    pointColorActive: hexToRGBA('#ffa500', 0.2),
+                    pointSize: 3,
+
+                    lassoColor: hexToRGBA('#ffa500', 0.2),
+                    // pointOutlineWidth: 0,
+                    // pointSizeSelected: 0
+                });
+            }
+            let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.full_neighborhoods', null);
+            // let indices = _.get(dataLayer, 'fullNeighborhoods.selection_ids', null);
+            let points = [];
+            _.forEach(fullNeighborhood, (row, rowIndex) => {
+                let orderedRow = _.cloneDeep(row);
+                self.phenotypes.map((d, i) => {
+                    orderedRow[self.order[d]] = row[i]
+                })
+                orderedRow.forEach((d, i) => {
+                    points.push([((2.0 * self.lineX(d)) / self.canvas.width) - 1,
+                        (2.0 * self.lineY(i) / self.canvas.height) - 1]);
+                })
             })
-            orderedRow.forEach((d, i) => {
-                points.push([((2.0 * self.lineX(d)) / self.canvas.width) - 1, (2.0 * self.lineY(i) / self.canvas.height) - 1]);
-            })
-        })
-        self.plot.draw(points);
+            self.plot.draw(points);
+        } else {
+            self.plot?.clear();
+            // self.plot?.destroy();
+        }
     }
 
     drawPaths() {
@@ -422,7 +431,7 @@ class ParallelCoordinates {
 
         if (!self.editMode) {
             let opacity = 0.002;
-            let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.selection_neighborhoods', null);
+            let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.full_neighborhoods', null);
             _.forEach(fullNeighborhood, row => {
                 const color = `hsla(0,0%,100%,${opacity})`;
                 self.canvas.getContext('2d').strokeStyle = color;
@@ -512,6 +521,9 @@ class ParallelCoordinates {
             });
         gSimple.call(sliderSimple);
 
+        d3.selectAll('.track, .track-inset')
+            .attr('opacity', 0.3)
+
 
         return sliderSimple;
     };
@@ -555,11 +567,11 @@ class ParallelCoordinates {
         const self = this;
         self.editMode = !self.editMode;
         if (self.editMode) {
-            self.draw();
             self.svgGroup.selectAll(".average_path")
                 .attr("stroke-width", 0)
             document.getElementById('neighborhood_current_selection').innerText = "Composition";
         }
+        self.draw();
         self.svgGroup.selectAll(".value-slider-group")
             .classed("hidden", !self.editMode)
             .classed("visible", self.editMode)
@@ -613,13 +625,12 @@ class ParallelCoordinates {
         })
 
         self.draw();
-        seaDragonViewer.showLoader();
+        // seaDragonViewer.showLoader();
         let sim = document.getElementById('similarity_val').innerHTML || '0.8';
         let simVal = parseFloat(sim);
         return dataLayer.findSimilarNeighborhoods(_.keyBy(self.visData, 'key'), simVal)
             .then(cells => {
                 self.switchEditMode();
-                seaDragonViewer.hideLoader();
                 self.eventHandler.trigger(ImageViewer.events.displayNeighborhoodSelection, cells);
             })
     }

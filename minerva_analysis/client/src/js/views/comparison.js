@@ -313,13 +313,20 @@ class Comparison {
 
     rewrangle() {
         const self = this;
+        let now = new Date().getTime();
+        console.log('Rewrangling Multi')
         if (!self.hidden) {
             if (mode == 'single' || self.currentState != 'image') {
                 self.wrangleSmallMultiples();
             } else {
                 _.each(self.plots, (plot, i) => {
+                    console.log('plot', new Date().getTime() - now);
                     let plotData = self.dataLayer.getCurrentSelection()[plot.dataset];
-                    plotData = Array.from(plotData.keys());
+                    if (plotData) {
+                        plotData = Array.from(plotData.keys());
+                    } else {
+                        plotData = [];
+                    }
                     plot.recolor(plotData);
                 })
             }

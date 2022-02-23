@@ -35,7 +35,7 @@ class DataLayer {
         }
     }
 
-    async getCells(ids, linkedDataset = null, isImage=false) {
+    async getCells(ids, linkedDataset = null, isImage = false) {
         try {
             let response = await fetch('/get_cells', {
                 method: 'POST',
@@ -360,7 +360,16 @@ class DataLayer {
     async getSimilarNeighborhoodToSelection(similarity) {
         try {
             searching = true;
-            let selectionIds = _.map(this.getCurrentRawSelection().cells, e => e.id)
+            let selectionIds = {};
+            if (mode === 'single') {
+                selectionIds[datasource] = _.map(this.getCurrentRawSelection().cells, e => e.id);
+            } else if (mode === 'multi') {
+                _.forEach(this.getCurrentRawSelection(), (val, key) => {
+                    if (key !== 'selection_ids' && key !== 'composition_summary') {
+                        selectionIds[key] = _.map(val.cells, e => e.id);
+                    }
+                })
+            }
             let response = await fetch('/get_similar_neighborhood_to_selection', {
                 method: 'POST',
                 headers: {
@@ -371,7 +380,8 @@ class DataLayer {
                     {
                         datasource: datasource,
                         similarity: similarity,
-                        selectionIds: selectionIds
+                        selectionIds: selectionIds,
+                        mode: mode
                         // selectionIds: [...this.getCurrentSelection().keys()]
                     })
             });
@@ -396,7 +406,8 @@ class DataLayer {
                     {
                         datasource: datasource,
                         neighborhoodComposition: data,
-                        similarity: similarity
+                        similarity: similarity,
+                        mode: mode
                     })
             });
             let cells = await response.json();
@@ -491,15 +502,15 @@ class DataLayer {
         }
     }
 
-     addAllToCurrentSelection(items, allowDelete, clearPriors) {
+    addAllToCurrentSelection(items, allowDelete, clearPriors) {
         // console.log("update current selection")
         var that = this;
         if (mode == 'single') {
-            that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.id || i.CellID - 1, i]));
+            that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
         } else {
             let multiImageSelection = {}
             Object.entries(items).forEach(([key, value], index) => {
-                if (value?.cells){
+                if (value?.cells) {
                     multiImageSelection[key] = new Map(value?.cells.map(i => [i.id || i.CellID - 1, i]));
                 }
             })

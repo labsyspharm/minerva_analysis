@@ -35,7 +35,7 @@ import tifffile as tf
 import re
 import zarr
 from scipy import spatial
-from line_profiler_pycharm import profile
+# from line_profiler_pycharm import profile
 
 ball_tree = None
 datasource = None
@@ -44,6 +44,7 @@ config = None
 seg = None
 channels = None
 metadata = None
+np_datasource = None
 
 
 def init(datasource_name):
@@ -57,11 +58,13 @@ def load_datasource(datasource_name, reload=False):
     global seg
     global channels
     global metadata
+    global np_datasource
     if source == datasource_name and datasource is not None and reload is False:
         return
     load_config()
     source = datasource_name
     datasource = load_csv(datasource_name)
+    np_datasource = load_csv(datasource_name, numpy=True)
     load_ball_tree(datasource_name, reload=reload)
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
@@ -78,12 +81,20 @@ def load_datasource(datasource_name, reload=False):
     init_clusters(datasource_name)
 
 
-@profile
-def load_csv(datasource_name):
+# @profile
+def load_csv(datasource_name, numpy=False):
     global config
+    numpy_file_name = datasource_name + "_np.npy"
+    numpy_path = Path(
+        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / numpy_file_name
+    if numpy:
+        if numpy_path.is_file():
+            return np.load(numpy_path, allow_pickle=True)
+
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-    # df = pd.read_csv(csvPath, index_col=None)
-    df = dd.read_csv(csvPath, assume_missing=True).set_index('id')
+    df = pd.read_csv(csvPath, index_col=None)
+    # df = dd.read_csv(csvPath, assume_missing=True).set_index('id')
+    df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
     df['id'] = df.index
     # df['Cluster'] = embedding[:, -1].astype('int32').tolist()
     df['Cluster'] = 0
@@ -91,15 +102,21 @@ def load_csv(datasource_name):
     if 'CellType' in df.columns:
         df = df.rename(columns={'CellType': 'phenotype'})
     df = df.replace(-np.Inf, 0)
-    return df
+    if numpy:
+        # np_df = df.compute().to_numpy()
+        np_df = df.to_numpy()
+        np.save(str(numpy_path), np_df)
+        return np_df
+    else:
+        return df
 
 
 def init_clusters(datasource_name):
     global datasource
     global source
     # Select Cluster Stats
-    clusters = np.sort(datasource['Cluster'].unique().compute().tolist())
-    # clusters = np.sort(datasource['Cluster'].unique().tolist())
+    # clusters = np.sort(datasource['Cluster'].unique().compute().tolist())
+    clusters = np.sort(datasource['Cluster'].unique().tolist())
     for cluster in clusters:
         # Check if the Cluster is in the DB
         neighborhood = database_model.get(database_model.Neighborhood, datasource=datasource_name, source="Cluster",
@@ -108,6 +125,7 @@ def init_clusters(datasource_name):
         # If it's not in the Neighborhood database then create and add it
         if neighborhood is None:
             cluster_cells = datasource.loc[datasource['Cluster'] == cluster]
+            # indices = np.array(cluster_cells.index.values.compute().tolist())
             indices = np.array(cluster_cells.index.values.tolist())
             f = io.BytesIO()
             np.save(f, indices)
@@ -124,7 +142,7 @@ def init_clusters(datasource_name):
 
         # Similarly, if the stats are not initialized, let's store them in the DB as well
         if neighborhood_stats is None:
-            obj = get_neighborhood_stats(datasource_name, indices, datasource, cluster_cells)
+            obj = get_neighborhood_stats(datasource_name, indices, np_datasource, cluster_cells)
             f = io.BytesIO()
             pickle.dump(obj, f)
             neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
@@ -136,8 +154,8 @@ def init_clusters(datasource_name):
 def get_cluster_cells(datasource_name):
     global datasource
     global source
-    # clusters = datasource['Cluster'].unique().tolist()
-    clusters = datasource['Cluster'].unique().compute().tolist()
+    clusters = datasource['Cluster'].unique().tolist()
+    # clusters = datasource['Cluster'].unique().compute().tolist()
     obj = {}
     for cluster in clusters:
         # Check if the Cluster is in the DB
@@ -259,7 +277,7 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
         cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
     if selection_ids is not None:
         cell_ids = np.intersect1d(np.array(selection_ids), cell_ids)
-    obj = get_neighborhood_stats(datasource_name, cell_ids, datasource, fields=fields)
+    obj = get_neighborhood_stats(datasource_name, cell_ids, np_datasource, fields=fields)
     return obj
 
 
@@ -291,7 +309,7 @@ def create_custom_clusters(datasource_name, num_clusters):
                                              cluster_id=max_cluster_id + 1, name="Custom Cluster " + str(cluster),
                                              cells=f.getvalue())
 
-        obj = get_neighborhood_stats(datasource_name, indices, datasource)
+        obj = get_neighborhood_stats(datasource_name, indices, np_datasource)
         f = io.BytesIO()
         pickle.dump(obj, f)
 
@@ -360,7 +378,7 @@ def query_for_closest_cell(x, y, datasource_name):
             return {}
 
 
-@profile
+# @profile
 def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False):
     global datasource
     global source
@@ -369,33 +387,39 @@ def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False):
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
 
     if mode == 'multi':
-        obj = {}
+        obj = {'selection_ids': elem['ids']}
         sorted_ids = np.array(sorted(elem['ids']))
         this_time = time.time()
         if 'linkedDatasets' in config[datasource_name]:
             index_sum = 0
             for dataset in config[datasource_name]['linkedDatasets']:
-                df = load_csv(dataset)
-                next_sum = index_sum + df.shape[0].compute()
+                np_df = load_csv(dataset, numpy=True)
+                next_sum = index_sum + len(np_df)
+                # next_sum = index_sum + df.shape[0].compute()
                 if linked_dataset is not None and is_image is True:
                     if linked_dataset == dataset:
-                        obj[dataset] = get_neighborhood_stats(dataset, sorted_ids, df, fields=fields,
+                        obj[dataset] = get_neighborhood_stats(dataset, sorted_ids, np_df, fields=fields,
                                                               compute_neighbors=False)
-                        embedding_ids = sorted_ids + index_sum
-                        obj[dataset]['embedding_ids'] = embedding_ids
+                        selection_ids = sorted_ids + index_sum
+                        obj[dataset]['selection_ids'] = selection_ids
                 else:
                     relevant_ids = sorted_ids[np.where((sorted_ids >= index_sum) & (sorted_ids < next_sum))]
                     relevant_ids = relevant_ids - index_sum
-                    obj[dataset] = get_neighborhood_stats(dataset, relevant_ids, df, fields=fields,
+                    obj[dataset] = get_neighborhood_stats(dataset, relevant_ids, np_df, fields=fields,
                                                           compute_neighbors=False)
                     print('ranges', index_sum, next_sum)
                 index_sum = next_sum
         obj['composition_summary'] = weight_multi_image_neighborhood(obj, datasource_name, len(sorted_ids))
+        # Deleting redundant data
+        for dataset in config[datasource_name]['linkedDatasets']:
+            if 'dataset' in obj:
+                del obj[dataset]['composition_summary']['selection_neighborhoods']
+                del obj[dataset]['composition_summary']['selection_ids']
 
         print('Get Cells Multi Time', time.time() - this_time)
     else:
-        ids = elem['ids']
-        obj = get_neighborhood_stats(datasource_name, ids, datasource, fields=fields)
+        ids = np.array(elem['ids'], dtype=int)
+        obj = get_neighborhood_stats(datasource_name, ids, np_datasource, fields=fields)
     return obj
 
 
@@ -404,7 +428,10 @@ def weight_multi_image_neighborhood(neighborhood_obj, datasource_name, selection
     obj = {'weighted_contribution': None, 'selection_neighborhoods': None}
     for dataset in config[datasource_name]['linkedDatasets']:
         if dataset in neighborhood_obj:
-            dataset_weight = len(neighborhood_obj[dataset]['cells']) / selection_length
+            try:
+                dataset_weight = len(neighborhood_obj[dataset]['cells']) / selection_length
+            except ZeroDivisionError:
+                dataset_weight = 0
             if obj['weighted_contribution'] is None:
                 obj['weighted_contribution'] = deepcopy(
                     neighborhood_obj[dataset]['composition_summary']['weighted_contribution'])
@@ -418,6 +445,7 @@ def weight_multi_image_neighborhood(neighborhood_obj, datasource_name, selection
                 obj['selection_neighborhoods'] = np.vstack((obj['selection_neighborhoods'],
                                                             neighborhood_obj[dataset]['composition_summary'][
                                                                 'selection_neighborhoods']))
+
     return obj
 
 
@@ -433,8 +461,8 @@ def get_all_cells(datasource_name, mode):
         neighborhoods = neighborhoods / row_sums[:, np.newaxis]
         indices = np.arange(neighborhoods.shape[0])
         selection_neighborhoods = neighborhoods[indices, :]
-        return {'selection_neighborhoods': selection_neighborhoods,
-                'selection_indices': indices}
+        return {'full_neighborhoods': selection_neighborhoods,
+                'selection_ids': indices}
         # obj = get_neighborhood_stats(datasource_name, np.arange(datasource.shape[0]), fields=fields)
     else:
         if 'linkedDatasets' in config[datasource_name]:
@@ -445,13 +473,16 @@ def get_all_cells(datasource_name, mode):
                 neighborhoods = neighborhoods / row_sums[:, np.newaxis]
                 indices = np.arange(neighborhoods.shape[0])
                 selection_neighborhoods = neighborhoods[indices, :]
+                sample_size = 10000
+                selection_neighborhoods = selection_neighborhoods[
+                                          np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True),
+                                          :]
                 if combined_neighborhoods is None:
                     combined_neighborhoods = neighborhoods
                 else:
                     combined_neighborhoods = np.vstack((combined_neighborhoods, selection_neighborhoods))
-            return {'selection_neighborhoods': combined_neighborhoods,
-                    'selection_indices': indices}
-
+            return {'full_neighborhoods': combined_neighborhoods}
+            # 'selection_ids': indices}
 
     #     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     #     row_sums = neighborhoods.sum(axis=1)
@@ -462,9 +493,6 @@ def get_all_cells(datasource_name, mode):
 
 def get_channel_names(datasource_name, shortnames=True):
     global datasource
-    global source
-    if datasource_name != source:
-        load_datasource(datasource_name)
     if shortnames:
         channel_names = [channel['name'] for channel in config[datasource_name]['imageData'][1:]]
     else:
@@ -508,8 +536,8 @@ def get_phenotypes(datasource_name):
     if datasource_name != source:
         load_datasource(datasource_name)
     if phenotype_field in datasource.columns:
-        return sorted(datasource[phenotype_field].unique().compute().tolist())
-        # return sorted(datasource[phenotype_field].unique().tolist())
+        # return sorted(datasource[phenotype_field].unique().compute().tolist())
+        return sorted(datasource[phenotype_field].unique().tolist())
 
     else:
         return ['']
@@ -651,6 +679,7 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, em
         embedding = np.load(Path(config[datasource_name]['embedding']))
         inside = path.contains_points(embedding[:, [0, 1]].astype('float'))
         print('Points in Embedding Polygon', time.process_time() - start)
+        # neighbor_ids = datasource.loc[np.where(inside == True), 'id'].compute().tolist()
         neighbor_ids = datasource.loc[np.where(inside == True), 'id'].tolist()
     else:
         point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
@@ -661,37 +690,43 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, em
         neighbor_points = pd.DataFrame(circle_neighbors).values
         path = mpltPath.Path(point_tuples)
         inside = path.contains_points(neighbor_points[:, [0, 1]].astype('float'))
-        neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten().tolist()
-    obj = get_neighborhood_stats(datasource_name, neighbor_ids, datasource, fields=fields)
+        neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten()
+    obj = get_neighborhood_stats(datasource_name, neighbor_ids, np_datasource, fields=fields)
     return obj
 
 
-def get_similar_neighborhood_to_selection(datasource_name, selection_ids, similarity):
+def get_similar_neighborhood_to_selection(datasource_name, selection_ids, similarity, mode='single'):
     global config
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    obj = {}
-    # This is the standard 50 radius neighborhood data
-    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    query_vector = None
 
-    # neighborhoods = np.load(Path("minerva_analysis/data/Ton/complex_small.npy")).squeeze()
-    # Dynamic Neighborhood Array Code
-    # if len(selection_ids) < 1000:
-    #     neighborhood_array = standard_neighborhoods
-    # elif len(selection_ids) < 10000:
-    #     neighborhood_array = np.load(Path("minerva_analysis/data/Ton/complex_medium.npy")).squeeze()
-    # else:
-    #     neighborhood_array = np.load(Path("minerva_analysis/data/Ton/complex_large.npy")).squeeze()
+    if mode == 'multi' and 'linkedDatasets' in config[datasource_name]:
+        combined_selection = None
+        for dataset in config[datasource_name]['linkedDatasets']:
+            if dataset in selection_ids:
+                neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
+                selected_rows = neighborhoods[selection_ids[dataset], :]
+                if combined_selection is None:
+                    combined_selection = selected_rows
+                else:
+                    combined_selection = np.vstack((combined_selection, selected_rows))
+        query_vector = np.mean(combined_selection, axis=0)
+    else:
+        neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+        query_vector = np.mean(neighborhoods[selection_ids[datasource_name], :], axis=0)
 
-    selection_summary = np.mean(neighborhoods[selection_ids, :], axis=0)
-    similar_ids, neighborhood_query = find_similarity(selection_summary, similarity, datasource_name)
-    obj = get_neighborhood_stats(datasource_name, similar_ids, datasource, fields=fields)
-    obj['raw_summary'] = selection_summary
-    obj['neighborhood_query'] = neighborhood_query
+    # We expect query in the form of a dict with a bit more info
+    query_vector = query_vector.flatten()
+    query_vector_dict = {}
+    for i, phenotype in enumerate(sorted(datasource.phenotype.unique().tolist())):
+        query_vector_dict[phenotype] = {'value': query_vector[i], 'key': phenotype}
+
+    obj = find_custom_neighborhood(datasource_name, query_vector_dict, similarity, mode)
     return obj
 
 
-def find_custom_neighborhood(datasource_name, neighborhood_composition, similarity):
+def find_custom_neighborhood(datasource_name, neighborhood_composition, similarity, mode='single'):
     global datasource
     global source
     # Load if not loaded
@@ -699,8 +734,8 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
         load_datasource(datasource_name)
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    phenos = sorted(datasource.phenotype.unique().compute().tolist())
-    # phenos = sorted(datasource.phenotype.unique().tolist())
+    # phenos = sorted(datasource.phenotype.unique().compute().tolist())
+    phenos = sorted(datasource.phenotype.unique().tolist())
     neighborhood_vector = np.zeros((len(phenos)))
     disabled = []
     for i in range(len(phenos)):
@@ -708,10 +743,32 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
         if 'disabled' in neighborhood_composition[phenos[i]] and neighborhood_composition[phenos[i]]['disabled']:
             disabled.append(i)
 
-    similar_ids, neighborhood_query = find_similarity(neighborhood_vector, similarity, datasource_name, disabled)
-    obj = get_neighborhood_stats(datasource_name, similar_ids, datasource, fields=fields)
-    obj['raw_summary'] = neighborhood_vector
-    obj['neighborhood_query'] = neighborhood_query
+    if mode == 'multi' and 'linkedDatasets' in config[datasource_name]:
+        selection_ids = np.array([])
+        obj = {}
+        index_sum = 0
+        query = None
+        for dataset in config[datasource_name]['linkedDatasets']:
+            np_df = load_csv(dataset, numpy=True)
+            next_sum = index_sum + len(np_df)
+            similar_ids, neighborhood_query = find_similarity(neighborhood_vector, similarity, dataset,
+                                                              disabled)
+            selection_ids = np.concatenate([selection_ids, similar_ids + index_sum])
+            obj[dataset] = get_neighborhood_stats(dataset, similar_ids, np_df, fields=fields, compute_neighbors=False)
+            query = neighborhood_query
+        obj['composition_summary'] = weight_multi_image_neighborhood(obj, datasource_name, len(selection_ids))
+        # Deleting redundant data
+        for dataset in config[datasource_name]['linkedDatasets']:
+            if 'dataset' in obj:
+                del obj[dataset]['composition_summary']['selection_neighborhoods']
+                del obj[dataset]['composition_summary']['selection_ids']
+        obj['selection_ids'] = selection_ids.tolist()
+
+    else:
+        similar_ids, neighborhood_query = find_similarity(neighborhood_vector, similarity, datasource_name, disabled)
+        obj = get_neighborhood_stats(datasource_name, similar_ids, np_datasource, fields=fields)
+        query = neighborhood_query
+    obj['neighborhood_query'] = query
     return obj
 
 
@@ -955,23 +1012,28 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return {'segmentation': str(directory)}
 
 
-@profile
-def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fields=[], compute_neighbors=True):
+# @profile
+def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, fields=[], compute_neighbors=True):
     global ball_tree
     global source
     global config
     global metadata
+    global datasource
     default_fields = ['id', 'Cluster', 'phenotype', config[datasource_name]['featureData'][0]['xCoordinate'],
                       config[datasource_name]['featureData'][0]['yCoordinate']]
     for field in fields:
         if field not in default_fields:
             default_fields.append(field)
     time_neighborhood_stats = time.time()
+    if indices.dtype.kind != 'i':
+        indices = indices.astype(int)
     if 'useCellID' in config[datasource_name]['featureData'][0]:
         default_fields.append('CellID')
 
+    column_indices = get_column_indices(default_fields)
+
     if cluster_cells is None:
-        cluster_cells = df.loc[indices, default_fields]
+        cluster_cells = np_df[indices, :][:, column_indices]
     else:
         cluster_cells = cluster_cells[default_fields]
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
@@ -987,6 +1049,8 @@ def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fie
         sample_size = 10000
 
     composition_summary = np.mean(selection_neighborhoods, axis=0)
+    selection_neighborhoods = selection_neighborhoods[
+                              np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True), :]
     # Sample down so we have 10k of full
     # if selection_neighborhoods.shape[0] > sample_size:
     #     selection_neighborhoods = selection_neighborhoods[
@@ -998,21 +1062,22 @@ def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fie
     # selection_neighborhoods = np.tile(selection_neighborhoods, (scale_factor, 1))
 
     summary_stats = {'weighted_contribution': {}, 'selection_neighborhoods': selection_neighborhoods,
-                     'selection_indices': indices}
+                     'selection_ids': indices}
+    phenotypes = sorted(datasource.phenotype.unique().tolist())
     # phenotypes = sorted(df.phenotype.unique().tolist())
-    phenotypes = sorted(df.phenotype.unique().compute().tolist())
+    # phenotypes = sorted(datasource.phenotype.unique().compute().tolist())
     summary_stats['weighted_contribution'] = list(map(list, zip(phenotypes, composition_summary)))
 
     obj = {
         # 'cells': cluster_cells.to_dict(orient='records'),
-        'cells': fast_to_dict_records(cluster_cells),
+        'cells': fast_to_dict_records(cluster_cells, default_fields),
         'composition_summary': summary_stats,
         'phenotypes_list': phenotypes
     }
     print('Computing Stats Time', time.time() - time_neighborhood_stats)
     if compute_neighbors:
-        points = pd.DataFrame({'x': cluster_cells[config[datasource_name]['featureData'][0]['xCoordinate']],
-                               'y': cluster_cells[config[datasource_name]['featureData'][0]['yCoordinate']]}).to_numpy()
+
+        points = cluster_cells[:, [3, 4]]
         # Hardcoded to 30 um
         if 'neighborhood_range' in config[datasource_name]:
             neighborhood_range = config[datasource_name]['neighborhood_range']
@@ -1021,10 +1086,10 @@ def get_neighborhood_stats(datasource_name, indices, df, cluster_cells=None, fie
         r = neighborhood_range / metadata.physical_size_x
         neighbors = ball_tree.query_radius(points, r=r)
         unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
-        border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells.index.values)
+        border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells[:, 0].astype(int))
         neighbor_phenotypes = {}
         for elem in border_neighbors:
-            neighbor_phenotypes[str(elem)] = df.loc[elem, 'phenotype']
+            neighbor_phenotypes[str(elem)] = np_df[elem, get_column_indices(['phenotype'])][0]
         obj['neighbors'] = unique_neighbors
         obj['neighbor_phenotypes'] = neighbor_phenotypes
     print('Neighbors Time', time.time() - time_neighborhood_stats)
@@ -1091,15 +1156,17 @@ def p_val(val, perm_vals):
     return stats.ttest_1samp(perm_vals, val)[1]
 
 
+# @profile
 def get_multi_image_scatter_results(datasource_name, mode):
     results = {}
     if 'linkedDatasets' in config[datasource_name]:
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset != datasource_name or mode == 'multi' or mode == 'single':  # TODO:Remove
-                df = load_csv(dataset)
+                np_df = load_csv(dataset, numpy=True)
                 x_field = config[datasource_name]['featureData'][0]['xCoordinate']
                 y_field = config[datasource_name]['featureData'][0]['yCoordinate']
-                data = df[[x_field, y_field, 'id']].compute().to_numpy()
+                column_indices = get_column_indices([x_field, y_field, 'id'])
+                data = np_df[:, column_indices].astype(int)
                 # data = df[[x_field, y_field, 'id']].to_numpy()
                 normalized_data = normalize_scatterplot_data(data[:, 0:2])
                 normalized_data[:, 1] = normalized_data[:, 1] * -1.0  # Flip image
@@ -1109,7 +1176,13 @@ def get_multi_image_scatter_results(datasource_name, mode):
     return results
 
 
-def search_across_image(datasource_name, linked_datasource, neighborhood_query=None):
+def get_column_indices(column_names):
+    global datasource
+    csv_column_names = list(datasource.columns)
+    return [csv_column_names.index(column_name) for column_name in column_names]
+
+
+def search_across_images(datasource_name, linked_datasource, neighborhood_query=None):
     results = {}
     if 'linkedDatasets' in config[datasource_name] and neighborhood_query is not None:
         for dataset in config[datasource_name]['linkedDatasets']:
@@ -1140,16 +1213,15 @@ def apply_neighborhood_query(datasource_name, neighborhood_query):
     global config
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
     similar_ids = similarity_search(neighborhoods, neighborhood_query)
-    obj = get_neighborhood_stats(datasource_name, similar_ids, datasource)
-    obj['raw_summary'] = {}  # TODO: Actually calculate this
+    obj = get_neighborhood_stats(datasource_name, similar_ids, np_datasource)
     return obj
 
 
 # Via https://stackoverflow.com/questions/67050899/why-pandas-dataframe-to-dictrecords-performance-is-bad-compared-to-another-n
-def fast_to_dict_records(df):
+def fast_to_dict_records(np_df, columns=None):
+    global datasource
     # data = df.values.tolist()
-    data = df.values.compute().tolist()
-    columns = df.columns.tolist()
+    data = np_df.tolist()
     return [
         dict(zip(columns, datum))
         for datum in data

@@ -86,7 +86,7 @@ class Scatterplot {
             self.visData = self.visData.data;
         }
         self.plot.draw(self.visData);
-        if (self.image) {
+        if (self.image || mode === 'multi') {
             if (searching) {
                 self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
                 self.recolor(self.imageSelection[self.dataset]);
@@ -97,10 +97,11 @@ class Scatterplot {
 
     recolor(selection = null) {
         const self = this;
+        console.log('recoloring', self.id)
         if (!selection) {
             selection = _.map(this.dataLayer.getCurrentRawSelection().cells, e => e.id)
+            console.log('Finding Selection Because Not Specified', selection)
         }
-        console.log('Recolor Size', _.size(selection), selection.sort());
         self.selection = selection;
         self.plot.select(selection, {preventEvent: true});
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
@@ -115,21 +116,22 @@ class Scatterplot {
             return dataLayer.getCells(args, self.dataset, self.image)
                 .then(cells => {
                     if (self.image) {
-                        self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, {
+                        self.eventHandler.trigger(Scatterplot.events.selectFromScatterplot, {
                             'selection': cells,
                             'selectionSource': 'Multi Image',
                             'dataset': self.dataset
                         })
                     } else {
-                        self.eventHandler.trigger(Scatterplot.events.selectFromEmbedding, {
+                        self.eventHandler.trigger(Scatterplot.events.selectFromScatterplot, {
                             'selection': cells,
                             'selectionSource': 'Embedding'
                         })
                     }
                 });
         } else if (self.image && mode === 'single') {
-            self.plot.select([]);
+            self.plot.select([], {preventEvent: true});
         }
+        console.log('Selection Done', self.id)
     }
 
     lassoStart() {
@@ -200,22 +202,22 @@ class Scatterplot {
 }
 
 // https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
-    function hexToRGBA(hex, alpha) {
-        hex = _.toUpper(hex);
-        const h = "0123456789ABCDEF";
-        let r = h.indexOf(hex[1]) * 16 + h.indexOf(hex[2]);
-        let g = h.indexOf(hex[3]) * 16 + h.indexOf(hex[4]);
-        let b = h.indexOf(hex[5]) * 16 + h.indexOf(hex[6]);
-        if (alpha == 1) {
-            let rgb = [r / 255, g / 255, b / 255]
-            return rgb;
-        } else {
-            let rgba = [r / 255, g / 255, b / 255, alpha]
-            return rgba;
-        }
+function hexToRGBA(hex, alpha) {
+    hex = _.toUpper(hex);
+    const h = "0123456789ABCDEF";
+    let r = h.indexOf(hex[1]) * 16 + h.indexOf(hex[2]);
+    let g = h.indexOf(hex[3]) * 16 + h.indexOf(hex[4]);
+    let b = h.indexOf(hex[5]) * 16 + h.indexOf(hex[6]);
+    if (alpha == 1) {
+        let rgb = [r / 255, g / 255, b / 255]
+        return rgb;
+    } else {
+        let rgba = [r / 255, g / 255, b / 255, alpha]
+        return rgba;
     }
+}
 
 Scatterplot.events = {
-    selectFromEmbedding: 'selectFromEmbedding'
+    selectFromScatterplot: 'selectFromScatterplot'
 };
 

@@ -59,7 +59,7 @@ async function init(conf) {
         legend = new Legend(dataLayer, colorScheme, eventHandler);
         channelList = new ChannelList(config, dataLayer, eventHandler);
         seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null,'image');
+        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null, 'image');
         // init synchronus methods
         seaDragonViewer.init();
         await channelList.init()
@@ -141,15 +141,23 @@ const actionImageClickedMultiSel = (d) => {
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
 
 const displaySelection = async (d) => {
+    let now = new Date().getTime();
     let selection = d.selection;
     let selectionSource = d.selectionSource || "Image";
     document.getElementById('neighborhood_current_selection').textContent = selectionSource;
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
+    console.log('Added to Selection', new Date().getTime() - now)
     parallelCoordinates.wrangle(selection);
+    console.log('Added to Par Cor', new Date().getTime() - now)
     if (d.selectionSource === "Multi Image") {
+        console.log('Clearing', new Date().getTime() - now)
         multiImage.clear(d.dataset)
-        scatterplot.recolor(d.selection[d.dataset]["embedding_ids"]);
+        console.log('Recolor Embedding', new Date().getTime() - now)
+        scatterplot.recolor(d.selection[d.dataset]["selection_ids"]);
+    } else if (mode === 'multi') {
+        // We return back the scatter ids on from the request payload
+        scatterplot.recolor(d.selection['selection_ids']);
     } else {
         scatterplot.recolor();
     }
@@ -163,8 +171,12 @@ const displayNeighborhoodSelection = async (selection) => {
     document.getElementById('neighborhood_current_selection').textContent = 'Phenotype';
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     if (selection) {
+        if (mode == 'single') {
+            scatterplot.recolor();
+        } else if (mode == 'multi') {
+            scatterplot.recolor(selection['selection_ids']);
+        }
         parallelCoordinates.wrangle(selection);
-        scatterplot.recolor();
     }
     updateSeaDragonSelection(false, false);
 }
@@ -192,7 +204,7 @@ const changeSelectionMode = (singleCellMode) => {
 eventHandler.bind(ImageViewer.events.changeSelectionMode, changeSelectionMode);
 
 
-eventHandler.bind(Scatterplot.events.selectFromEmbedding, displaySelection);
+eventHandler.bind(Scatterplot.events.selectFromScatterplot, displaySelection);
 
 // const computeCellNeighborhood = async ({distance, selectedCell}) => {
 //     let neighborhood = await dataLayer.getIndividualNeighborhood(distance, selectedCell);
@@ -393,11 +405,11 @@ function setupPageInteractivity() {
         neighborhoodButton.style.stroke = "orange";
         let sim = document.getElementById('similarity_val').innerHTML || '0.8';
         let simVal = parseFloat(sim);
-        seaDragonViewer.showLoader();
-        if (dataLayer.getCurrentSelection().size > 0) {
+        // seaDragonViewer.showLoader();
+        if (_.size(dataLayer.getCurrentSelection()) > 0) {
             return dataLayer.getSimilarNeighborhoodToSelection(simVal)
                 .then(cells => {
-                    seaDragonViewer.hideLoader();
+                    // seaDragonViewer.hideLoader();
                     return displayNeighborhoodSelection(cells);
                 })
 
