@@ -8,6 +8,7 @@ minerva_analysis/client/node_modules/
 /.pnp
 .pnp.js
 *.sqlite3
+*.pclprof
 */.ipynb_checkpoints/
 .ipynb_checkpoints/
 minerva_analysis/data/
