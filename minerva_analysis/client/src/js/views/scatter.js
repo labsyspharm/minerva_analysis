@@ -1,12 +1,13 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, small = false, image = false, dataset = '') {
+    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, colorScheme, small = false, image = false, dataset = '') {
         this.id = id;
         this.canvasId = canvasId;
         this.dataset = dataset;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
+        this.colorScheme = colorScheme;
         this.neighborhoodTable = neighborhoodTable;
         this.lastLasso = null;
         this.small = small;
@@ -31,18 +32,26 @@ class Scatterplot {
             canvas,
             // width,
             // height,
-            pointColor: hexToRGBA('#b2b2b2', 1),
-            opacityBy: 'density',
+            pointColor: hexToRGBA('#b2b2b2', 0.08),
             pointColorActive: hexToRGBA('#ffa500', 0.2),
+
+            // opacityBy: 'density',
+            // pointColorActive: hexToRGBA('#ffa500', 0.2),
             pointSize: 1,
             lassoColor: hexToRGBA('#ffa500', 0.2),
             pointOutlineWidth: 0,
             pointSizeSelected: 0
         });
-        if (self.image && mode === 'single') {
+        if (self.image) {
+
             self.plot.set({
-                lassoColor: hexToRGBA('#000000', 0.0)
+                opacityBy: 'density',
             })
+            if (mode === 'single') {
+                self.plot.set({
+                    lassoColor: hexToRGBA('#000000', 0.0)
+                })
+            }
         }
 
 
@@ -85,14 +94,70 @@ class Scatterplot {
             self.visData = await dataLayer.getScatterplotData();
             self.visData = self.visData.data;
         }
+        if (colorByCellType) {
+            let colorMap = _.map(_.range(_.size(self.colorScheme.colorMap) / 2), i => {
+                return hexToRGBA(self.colorScheme.colorMap[_.toString(i)].hex, 0.08)
+            });
+            let activeColorMap = _.map(_.range(_.size(colorMap)), i => {
+                return hexToRGBA('#ffa500', 1);
+            })
+
+            self.plot.set({
+                pointColor: colorMap,
+                pointColorActive: activeColorMap,
+                pointColorHover: activeColorMap,
+                colorBy: 'valueB',
+            });
+
+        } else {
+            self.plot.set({
+                pointColor: hexToRGBA('#b2b2b2', 0.08),
+                pointColorActive: hexToRGBA('#ffa500', 0.2),
+            });
+        }
+
+
         self.plot.draw(self.visData);
         if (self.image || mode === 'multi') {
             if (searching) {
                 self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
-                self.recolor(self.imageSelection[self.dataset]);
+                self.recolor(self.imageSelection[self.dataset].cells);
+                // self.addImageResultInfo(self.imageSelection[self.dataset]['num_results'], self.imageSelection[self.dataset]['p_value'])
             }
             searching = false;
         }
+    }
+
+    addImageResultInfo(numResults, pValue) {
+        const self = this;
+        d3.select(`#${self.id}`).selectAll('.image_result_info').remove()
+        let absoluteContainer = d3.select(`#${self.id}`).append('div')
+            .classed('image_result_info', true)
+        let row1 = absoluteContainer.append('div').classed('row', true)
+        let row1col1 = row1.append('div')
+            .classed('col-6', true)
+        row1col1.append('span')
+            .classed('image_result_info', true)
+            .text('Results')
+        let row1col2 = row1.append('div')
+            .classed('col-6', true)
+        row1col2.append('span')
+            .classed('image_result_value', true)
+            .text(numResults)
+
+        let row2 = absoluteContainer.append('div').classed('row', true)
+        let row2col1 = row2.append('div')
+            .classed('col-6', true)
+        row2col1.append('span')
+            .classed('image_result_info', true)
+            .text('P Value')
+        let row2col2 = row2.append('div')
+            .classed('col-6', true)
+        row2col2.append('span')
+            .classed('image_result_value', true)
+            .text(Number((pValue).toFixed(1)))
+
+
     }
 
     recolor(selection = null) {
@@ -172,13 +237,13 @@ class Scatterplot {
             return;
         }
         numberOfClusters = _.toInteger(numberOfClusters.value);
-        document.getElementById('custom_cluster_loading').innerHTML += '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+        // document.getElementById('custom_cluster_loading').innerHTML += '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
         try {
             let updatedNeighborhoods = await self.dataLayer.customCluster(numberOfClusters)
             self.neighborhoodTable.updateNeighborhoods(updatedNeighborhoods);
         } catch (e) {
         }
-        document.getElementById('custom_cluster_loading').innerHTML = '';
+        // document.getElementById('custom_cluster_loading').innerHTML = '';
     }
 
     rewrangle() {
@@ -202,22 +267,21 @@ class Scatterplot {
 }
 
 // https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
-function hexToRGBA(hex, alpha) {
+function
+
+hexToRGBA(hex, alpha) {
     hex = _.toUpper(hex);
     const h = "0123456789ABCDEF";
     let r = h.indexOf(hex[1]) * 16 + h.indexOf(hex[2]);
     let g = h.indexOf(hex[3]) * 16 + h.indexOf(hex[4]);
     let b = h.indexOf(hex[5]) * 16 + h.indexOf(hex[6]);
-    if (alpha == 1) {
-        let rgb = [r / 255, g / 255, b / 255]
-        return rgb;
-    } else {
-        let rgba = [r / 255, g / 255, b / 255, alpha]
-        return rgba;
-    }
+    let rgba = [r / 255, g / 255, b / 255, alpha]
+    return rgba;
+
 }
 
-Scatterplot.events = {
+Scatterplot
+    .events = {
     selectFromScatterplot: 'selectFromScatterplot'
 };
 

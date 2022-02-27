@@ -10,7 +10,7 @@ class Legend {
 
     init() {
         const self = this;
-        let docHeight = 16 + _.size(this.dataLayer.phenotypes) * (11.125);
+        let docHeight = 20 + _.size(this.dataLayer.phenotypes) * (15.125);
         docHeight = _.toString(_.toInteger(docHeight));
 
         self.svg = d3.select(`#${this.parentSelector}`)
@@ -20,7 +20,7 @@ class Legend {
             .attr("id", "legend-svg");
 
         document.getElementById(this.parentSelector).style.height = docHeight + 'px';
-        const size = 10;
+        const size = 14;
         let colorMap = this.colorScheme.colorMap;
         let data = _.map(this.dataLayer.phenotypes, phenotype => {
             return {'phenotype': phenotype, 'color': `${colorMap[phenotype].hex}`};
@@ -37,7 +37,7 @@ class Legend {
             .attr("class", "legend-title")
             .attr("x", 3)
             .attr("y", 10)
-            .attr("font-size", "0.65rem")
+            .attr("font-size", "0.85rem")
             .attr('fill', 'white')
 
 

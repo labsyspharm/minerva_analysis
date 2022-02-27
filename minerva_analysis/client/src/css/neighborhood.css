@@ -40,6 +40,7 @@
 
 .related_image_wrapper_small {
     min-width: 20vw !important;
+    /*min-width: 14vw !important;*/
     max-width: 20vw !important;
 }
 
@@ -51,9 +52,9 @@
 }
 
 .openseadragon_wrapper_large, .multi_image_wrapper_large {
-    width: 45vw !important;
-    min-width: 45vw !important;
-    max-width: 45vw !important;
+    width: 49vw !important;
+    min-width: 49vw !important;
+    max-width: 49vw !important;
 }
 
 
@@ -299,8 +300,14 @@
 }
 
 
-.neighborhood-row, #neighborhood_table_header, #neighborhood_table_header tr, #neighborhood_table tbody, #neighborhood_table_card {
+.neighborhood-row, #neighborhood_table_header, #neighborhood_table_header tr, #neighborhood_table tbody, #neighborhood_table_card, .actions-row {
     width: 100%;
+}
+
+.neighborhood-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 310px !important;
 }
 
 .lowRow1 {
@@ -427,7 +434,38 @@
     z-index: 101;
     /*min-height: 10vh;*/
     padding: 5px;
-    overflow-y:scroll;'
+    overflow-y: scroll;
+'
 }
 
+.image_result_info {
+    position: absolute;
+}
 
+.image_result_info {
+    color: white;
+    font-size: 8pt;
+    font-weight: bold;
+}
+
+.image_result_value {
+    color: white;
+    font-size: 8pt;
+}
+
+.image_result_info {
+    width: 150px;
+}
+
+.overall_line_label, .selection_line_label, .average_line_label {
+    font-weight: bold;
+}
+
+#parallel_coordinates_display .parallel_axes text {
+    font-size: 1.5vh;
+    font-weight: bold;
+}
+
+.neighborhood-table-icon {
+    font-size: 18px;
+}

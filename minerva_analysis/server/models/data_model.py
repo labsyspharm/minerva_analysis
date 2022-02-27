@@ -8,6 +8,7 @@ import dask.dataframe as dd
 import dask.array as da
 
 from sklearn.decomposition import IncrementalPCA
+from sklearn.decomposition import PCA
 from sqlalchemy import or_
 import palettable
 import numpy as np
@@ -34,8 +35,10 @@ import pickle
 import tifffile as tf
 import re
 import zarr
+from numcodecs import Blosc
 from scipy import spatial
-# from line_profiler_pycharm import profile
+
+from line_profiler_pycharm import profile
 
 ball_tree = None
 datasource = None
@@ -72,11 +75,7 @@ def load_datasource(datasource_name, reload=False):
         seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
-    try:
-        xml = channel_io.pages[0].tags['ImageDescription'].value
-        metadata = from_xml(xml).images[0].pixels
-    except:
-        metadata = {}
+    metadata = get_ome_metadata(datasource_name)
     channels = zarr.open(channel_io.series[0].aszarr())
     init_clusters(datasource_name)
 
@@ -86,7 +85,7 @@ def load_csv(datasource_name, numpy=False):
     global config
     numpy_file_name = datasource_name + "_np.npy"
     numpy_path = Path(
-        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / numpy_file_name
+        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "featureData" / numpy_file_name
     if numpy:
         if numpy_path.is_file():
             return np.load(numpy_path, allow_pickle=True)
@@ -290,8 +289,16 @@ def create_custom_clusters(datasource_name, num_clusters):
 
     g_mixtures = GaussianMixture(n_components=num_clusters)
     data = np.load(Path(config[datasource_name]['embedding']))
-    g_mixtures.fit(data[:, 0:2])
-    clusters = g_mixtures.predict(data[:, 0:2])
+    # TODO REMOVE CLUSTER HARDCODE
+    coords = data[:, 0:2]
+    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    tes = np.hstack((coords, neighborhoods))
+    tes = np.hstack((coords, tes))
+    tes = np.hstack((coords, tes))
+    tes = np.hstack((coords, tes))
+    pcaed_tes = PCA(n_components=3).fit_transform(tes);
+    g_mixtures.fit(pcaed_tes)
+    clusters = g_mixtures.predict(pcaed_tes)
     # randomly_sampled = np.random.choice(data.shape[0], size=100000, replace=False)
     # g_mixtures.fit(data[randomly_sampled, :-1])
     # clusters = np.zeros((data.shape[0],))
@@ -301,7 +308,7 @@ def create_custom_clusters(datasource_name, num_clusters):
     #     clusters[bottom:top] = g_mixtures.predict(data[bottom:top, :2])
 
     for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
-        indices = np.argwhere(clusters == cluster).flatten().tolist()
+        indices = np.argwhere(clusters == cluster).flatten()
         f = io.BytesIO()
         np.save(f, indices)
         neighborhood = database_model.create(database_model.Neighborhood,
@@ -461,6 +468,10 @@ def get_all_cells(datasource_name, mode):
         neighborhoods = neighborhoods / row_sums[:, np.newaxis]
         indices = np.arange(neighborhoods.shape[0])
         selection_neighborhoods = neighborhoods[indices, :]
+        sample_size = 5000
+        selection_neighborhoods = selection_neighborhoods[
+                                  np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True),
+                                  :]
         return {'full_neighborhoods': selection_neighborhoods,
                 'selection_ids': indices}
         # obj = get_neighborhood_stats(datasource_name, np.arange(datasource.shape[0]), fields=fields)
@@ -473,7 +484,7 @@ def get_all_cells(datasource_name, mode):
                 neighborhoods = neighborhoods / row_sums[:, np.newaxis]
                 indices = np.arange(neighborhoods.shape[0])
                 selection_neighborhoods = neighborhoods[indices, :]
-                sample_size = 10000
+                sample_size = 6000
                 selection_neighborhoods = selection_neighborhoods[
                                           np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True),
                                           :]
@@ -538,7 +549,6 @@ def get_phenotypes(datasource_name):
     if phenotype_field in datasource.columns:
         # return sorted(datasource[phenotype_field].unique().compute().tolist())
         return sorted(datasource[phenotype_field].unique().tolist())
-
     else:
         return ['']
 
@@ -599,6 +609,9 @@ def get_color_scheme(datasource_name):
         color_scheme[str(labels[i])] = {}
         color_scheme[str(labels[i])]['rgb'] = list(ImageColor.getcolor(colors[i], "RGB"))
         color_scheme[str(labels[i])]['hex'] = colors[i]
+        color_scheme[str(i)] = {}
+        color_scheme[str(i)]['rgb'] = list(ImageColor.getcolor(colors[i], "RGB"))
+        color_scheme[str(i)]['hex'] = colors[i]
     return color_scheme
 
 
@@ -611,14 +624,23 @@ def get_cluster_labels(datasource_name):
 
 def get_scatterplot_data(datasource_name, mode):
     global config
+    global datasource
     this_time = time.time()
     if 'linkedDatasets' in config[datasource_name] and mode == 'multi':
 
         combined_embedding = None
+        phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+
         for dataset in config[datasource_name]['linkedDatasets']:
             embedding = np.load(Path(config[dataset]['embedding']))  # TODO Replace
+            np_df = load_csv(dataset, numpy=True)
+            phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
+            for i in range(phenotypes_array.shape[0]):
+                phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
+            phenotypes_array = np.array(phenotypes_array, dtype='uint16')
             if embedding.shape[1] < 3:
                 embedding = np.hstack((embedding, np.zeros((embedding.shape[0], 1))))
+            embedding = np.hstack((embedding, phenotypes_array))
             if combined_embedding is None:
                 combined_embedding = embedding
             else:
@@ -627,10 +649,18 @@ def get_scatterplot_data(datasource_name, mode):
         print('Combine Embedding Time', time.time() - this_time, 'and shape', data.shape)
     else:
         data = np.load(Path(config[datasource_name]['embedding']))
+        np_df = load_csv(datasource_name, numpy=True)
+        phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+        phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
+        for i in range(phenotypes_array.shape[0]):
+            phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
+        phenotypes_array = np.array(phenotypes_array, dtype='uint16')
+        data = np.hstack((data, phenotypes_array))
 
-    normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :-1])
+    data[:, 0:2] = normalize_scatterplot_data(data[:, 0:2])
+    # normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :-1])
     # data[:, :2] = normalized_data
-    list_of_obs = [[elem[0], elem[1], id] for id, elem in enumerate(normalized_data)]
+    list_of_obs = [[elem[0], elem[1], id, int(elem[3])] for id, elem in enumerate(data)]
     visData = {
         'data': list_of_obs,
         'clusters': np.unique(data[:, -1]).astype('int32').tolist()
@@ -787,8 +817,10 @@ def similarity_search(neighborhoods, neighborhood_query):
     if disabled:
         neighborhoods = np.delete(neighborhoods, disabled, axis=1)
         composition_summary = np.delete(query_vector, disabled, axis=0)
-    distances = 1 - spatial.distance.cdist([query_vector], neighborhoods, "cosine")[0]
-    greater_than = np.argwhere(distances > threshold).flatten()
+    # distances = 1 - spatial.distance.cdist([query_vector], neighborhoods, "cosine")[0]
+    # distances = 1 - spatial.distance.cdist([query_vector], neighborhoods, "cosine")[0]
+    scores = euclidian_distance_score(neighborhoods, np.array(query_vector))
+    greater_than = np.argwhere(scores > threshold).flatten()
     return greater_than
 
 
@@ -968,10 +1000,27 @@ def get_spearmans_correlation(datasource_name, selection_ids):
 
 
 def get_ome_metadata(datasource_name):
+    global config
+    timer = time.time()
     if config is None:
         load_datasource(datasource_name)
-    global metadata
-    return metadata
+
+    try:
+        metadata_file_name = datasource_name + "_metadata.pickle"
+        metadata_path = Path(
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "metadata" / metadata_file_name
+        if metadata_path.is_file():
+            image_metadata = pickle.load(open(metadata_path, "rb"))
+
+        else:
+            channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+            xml = channel_io.pages[0].tags['ImageDescription'].value
+            image_metadata = from_xml(xml).images[0].pixels
+            pickle.dump(image_metadata, open(metadata_path, 'wb'))
+    except:
+        image_metadata = {}
+    print('Metadata Time', time.time() - timer)
+    return image_metadata
 
 
 def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
@@ -1049,8 +1098,9 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         sample_size = 10000
 
     composition_summary = np.mean(selection_neighborhoods, axis=0)
-    selection_neighborhoods = selection_neighborhoods[
-                              np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True), :]
+    if selection_neighborhoods.shape[0] > 0:
+        selection_neighborhoods = selection_neighborhoods[
+                                  np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True), :]
     # Sample down so we have 10k of full
     # if selection_neighborhoods.shape[0] > sample_size:
     #     selection_neighborhoods = selection_neighborhoods[
@@ -1075,6 +1125,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         'phenotypes_list': phenotypes
     }
     print('Computing Stats Time', time.time() - time_neighborhood_stats)
+    compute_neighbors = False;
     if compute_neighbors:
 
         points = cluster_cells[:, [3, 4]]
@@ -1123,17 +1174,20 @@ def get_contour_line_paths(datasource_name, selection_ids):
     # return cell_points
 
 
+import gzip
+
+
+#
+# @profile
 @numba.jit(nopython=True, parallel=True)
-def single_perm_test(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths, _vector, _threshold=0.8):
+def single_perm_test(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
     chunk = 50
-    _vector = _vector.astype(np.float32)
     __phenotypes_array = _phenotypes_array.flatten()
+    z = np.zeros((_phenotypes_array.shape[0], _len_phenos, chunk), dtype=np.float32)
     perm_matrix = np.zeros((_phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
-    norms = np.zeros((_phenotypes_array.shape[0],), dtype=np.float32)
-    results = np.zeros(chunk, dtype=np.int32)
     for j in prange(chunk):
-        chunk_sum = 0.0
         ___phenotypes_array = np.random.permutation(__phenotypes_array)
+        ___phenotypes_array = __phenotypes_array
         for i in prange(len(_lengths)):
             this_length = _lengths[i]
             dist = _distances[i, 0:this_length]
@@ -1143,13 +1197,45 @@ def single_perm_test(_phenotypes_array, _len_phenos, _neighbors, _distances, _le
             result = np.zeros((_len_phenos), dtype=np.float32)
             for ind in prange(len(pheno_weight_indices)):
                 result[pheno_weight_indices[ind]] += _distances[i][ind]
-            result = result.astype(np.float32)
-            norms[i] = np.linalg.norm(result)
-            perm_matrix[i] = result
-        cos = np.dot(perm_matrix, _vector.flatten()) / (norms * np.linalg.norm(_vector))
-        where = np.where(cos > _threshold)
+            # normalized = result
+            # result = normalized.astype(np.float32)
+            # norms[i] = np.linalg.norm(result)
+            perm_matrix[i] = result / result.sum()
+        # z[:, :, j] = perm_matrix / np.linalg.norm(perm_matrix, ord=1, axis=1)[:, np.newaxis]
+        z[:, :, j] = perm_matrix
+
+        # f = gzip.GzipFile('/Users/swarchol/Research/minerva_analysis/minerva_analysis/data/perm_test.npy.gz', "w")
+        # np.save(file=f, arr=perm_matrix)
+        # zarr.save('/Users/swarchol/Research/minerva_analysis/minerva_analysis/data/perm_test.zarr', perm_matrix)
+        # cos = np.dot(perm_matrix, _vector.flatten()) / (norms * np.linalg.norm(_vector))
+        # where = np.where(cos > _threshold)
+        # results[j] = len(where[0])
+    return z
+
+
+# @numba.jit(nopython=True, parallel=True)
+def test_with_saved_perm(_phenotypes_array, _perm_matrix, _vector, _lengths, _threshold=0.8):
+    chunk = 1
+    _vector = _vector.astype(np.float32)
+    __phenotypes_array = _phenotypes_array.flatten()
+    # LOAD
+    perm_matrix = _perm_matrix
+
+    norms = np.zeros((_phenotypes_array.shape[0],), dtype=np.float32)
+    results = np.zeros(chunk, dtype=np.int32)
+    for j in prange(chunk):
+        scores = euclidian_distance_score(perm_matrix[:, :, j], _vector)
+        # for i in prange(len(_lengths)):
+        #     norms[i] = np.linalg.norm(perm_matrix[i, :, j])
+        # cos = np.dot(perm_matrix[:, :, j], _vector.flatten()) / (norms * np.linalg.norm(_vector))
+        where = np.where(scores > _threshold)
         results[j] = len(where[0])
     return results
+
+
+@numba.jit(nopython=True, parallel=True)
+def euclidian_distance_score(y1, y2):
+    return 1.0 / ((np.sqrt(np.sum((y1 - y2) ** 2, axis=1))) + 1.0)
 
 
 def p_val(val, perm_vals):
@@ -1167,10 +1253,18 @@ def get_multi_image_scatter_results(datasource_name, mode):
                 y_field = config[datasource_name]['featureData'][0]['yCoordinate']
                 column_indices = get_column_indices([x_field, y_field, 'id'])
                 data = np_df[:, column_indices].astype(int)
+                # Get Cell Types
+                phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+                phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
+                for i in range(phenotypes_array.shape[0]):
+                    phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
+                phenotypes_array = np.array(phenotypes_array, dtype='uint16')
+                data = np.hstack((data, phenotypes_array))
+
                 # data = df[[x_field, y_field, 'id']].to_numpy()
                 normalized_data = normalize_scatterplot_data(data[:, 0:2])
                 normalized_data[:, 1] = normalized_data[:, 1] * -1.0  # Flip image
-                data = np.column_stack((normalized_data, data[:, 2]))
+                data = np.column_stack((normalized_data, data[:, 2:4]))
                 results[dataset] = np.ascontiguousarray(data)
 
     return results
@@ -1188,9 +1282,113 @@ def search_across_images(datasource_name, linked_datasource, neighborhood_query=
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset == linked_datasource:
                 linked_neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
-                results[dataset] = similarity_search(linked_neighborhoods, neighborhood_query)
+                results[dataset] = {}
+                results[dataset]['cells'] = similarity_search(linked_neighborhoods, neighborhood_query)
+                num_results = len(results[dataset]['cells'])
+                results[dataset]['num_results'] = num_results
+                other_results = calc_p_value(dataset, linked_neighborhoods, neighborhood_query)
+                results[dataset]['p_value'] = p_val(num_results, other_results)
+
+                print('P Value', results[dataset]['p_value'])
 
     return results
+
+
+@profile
+def calc_p_value(datasource_name, linked_neighborhoods, neighborhood_query):
+    global config
+    global datasource
+
+    vector = np.array(neighborhood_query['query_vector'], dtype='float32')
+
+    matrix_file_name = datasource_name + "_matrix.pk"
+    matrix_paths = Path(
+        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / matrix_file_name
+
+    test = time.time()
+    if matrix_paths.is_file():
+        perm_data = pickle.load(open(matrix_paths, "rb"))
+    else:
+        perm_data = get_perm_data(datasource_name, matrix_paths)
+    print('P Load Data,', time.time() - test)
+    test = time.time()
+
+    zarr_file_name = datasource_name + "_perm.zarr"
+    zarr_path = Path(
+        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / zarr_file_name
+
+    if zarr_path.is_dir():
+        results = test_with_saved_perm(perm_data['phenotypes_array'], zarr.load(zarr_path), vector,
+                                       perm_data['lengths'],
+                                       neighborhood_query['threshold'])
+    else:
+        print('P Done Load Data,', time.time() - test)
+        test = time.time()
+        perms = single_perm_test(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+                                 perm_data['distances'], perm_data['lengths'])
+        print('P Create Perm Matrix,', time.time() - test)
+        test = time.time()
+        zarr_perms = zarr.array(perms, chunks=(10000, perms.shape[1], None), compressor=Blosc(cname='zstd', clevel=3))
+        zarr.save_array(zarr_path, zarr_perms)
+        results = test_with_saved_perm(perm_data['phenotypes_array'], perms, vector,
+                                       perm_data['lengths'],
+                                       neighborhood_query['threshold'])
+        print('P Calc Results,', time.time() - test)
+        test = time.time()
+
+    print('P Compute Perms,', time.time() - test)
+
+    return results
+
+
+def get_perm_data(datasource_name, matrix_paths):
+    test = time.time()
+    column_indices = get_column_indices([config[datasource_name]['featureData'][0]['xCoordinate'],
+                                         config[datasource_name]['featureData'][0]['yCoordinate']])
+    np_df = load_csv(datasource_name, numpy=True)
+    print('P Done Data Loading,', time.time() - test)
+    test = time.time()
+    points = np_df[:, column_indices].astype(int)
+    image_ball_tree = BallTree(points, metric='euclidean')
+    print('P Ball Tree,', time.time() - test)
+    test = time.time()
+    image_metadata = get_ome_metadata(datasource_name)
+    print('P Metadata,', time.time() - test)
+    test = time.time()
+    neighborhood_range = 50  # Default 30 microns
+    r = neighborhood_range / image_metadata.physical_size_x
+    neighbors, distances = image_ball_tree.query_radius(points, r=r, return_distance=True)
+    print('P Query,', time.time() - test)
+    test = time.time()
+
+    max_neighbors = 0
+    lengths = np.zeros((len(neighbors),))
+    for i in range(len(neighbors)):
+        lengths[i] = len(neighbors[i])
+        if max_neighbors < len(neighbors[i]):
+            max_neighbors = len(neighbors[i])
+    neighbors_matrix = np.zeros((len(neighbors), max_neighbors))
+    distances_matrix = np.zeros((len(neighbors), max_neighbors))
+
+    for i in range(len(neighbors)):
+        neighbors_matrix[i, 0:len(neighbors[i])] = neighbors[i]
+        distances_matrix[i, 0:len(distances[i])] = 1 - (distances[i] / r)
+
+    lengths = lengths.astype('uint16')
+    neighbors_matrix = neighbors_matrix.astype('uint32')
+    distances_matrix = distances_matrix.astype('float32')
+
+    print('P Building Matrices,', time.time() - test)
+    phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+    phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
+    for i in range(phenotypes_array.shape[0]):
+        phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
+    phenotypes_array = np.array(phenotypes_array, dtype='uint16').flatten()
+    len_phenos = np.array([len(phenotypes_dict)], dtype='uint16')[0]
+    perm_data = {'lengths': lengths, 'neighbors': neighbors_matrix, 'distances': distances_matrix,
+                 'phenotypes_array': phenotypes_array, 'len_phenos': len_phenos}
+    pickle.dump(perm_data, open(matrix_paths, 'wb'))
+    return perm_data
 
 
 def normalize_scatterplot_data(data):

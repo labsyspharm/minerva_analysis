@@ -253,7 +253,7 @@ class Comparison {
             canvas.height = canvas_div.offsetHeight;
             canvas_div.appendChild(canvas);
             let spatialPlot = new Scatterplot(`${self.containerId}_compare_parallel_coordinates_${i}`, `${self.containerId}_compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
-                null, true, false, datasource);
+                null, self.colorScheme, true, false, datasource);
             spatialPlot.init();
             return spatialPlot;
         });
@@ -302,7 +302,7 @@ class Comparison {
 
 
             let imagePlot = new Scatterplot(`${self.containerId}_compare_parallel_coordinates_${i}`, `${self.containerId}_compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
-                null, true, true, k);
+                null, self.colorScheme, true, true, k);
             imagePlot.init();
             return imagePlot;
         });

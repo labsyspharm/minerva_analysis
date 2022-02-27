@@ -8,6 +8,7 @@ const datasource = flaskVariables.datasource;
 const applyPrevious = flaskVariables.applyPrevious;
 let searching = false;
 let mode = 'single';
+let colorByCellType = false;
 
 
 //VIEWS
@@ -53,7 +54,7 @@ async function init(conf) {
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
-        neighborhoodTable, false, false, datasource);
+        neighborhoodTable, colorScheme,false, false, datasource);
     //image viewer
     if (mode === 'single') {
         legend = new Legend(dataLayer, colorScheme, eventHandler);
@@ -70,7 +71,7 @@ async function init(conf) {
             true, columns = 4, 'image');
 
     }
-    // legend.init();
+    legend.init();
     console.log('Ending Multi', new Date());
     console.log('PCP Init', new Date())
     parallelCoordinates.init();

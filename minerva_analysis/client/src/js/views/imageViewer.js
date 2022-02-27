@@ -94,6 +94,7 @@ class ImageViewer {
             loadTilesWithAjax: true,
             immediateRender: false,
             maxImageCacheCount: 100,
+            imageLoaderLimit: 3,
             timeout: 90000,
             compositeOperation: 'lighter',
             preload: false,

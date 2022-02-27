@@ -102,7 +102,7 @@ body {
 
 
 .mylabels {
-    font-size: 0.6rem;
+    font-size: 0.8rem;
 }
 
 #neighborhood_form {
@@ -662,6 +662,7 @@ polygon:hover {
     padding: 0;
     width: 100%;
     overflow-y: scroll;
+    overflow-x: hidden;
     transition-property: height, max-height, min-height;
     transition-duration: 0s;
 }
@@ -822,7 +823,8 @@ polygon:hover {
 }
 
 .par_cor_label {
-    font-size: 1vh;
+    font-size: 1.3vh;
+    font-weight: bold;
     cursor: move;
 }
 

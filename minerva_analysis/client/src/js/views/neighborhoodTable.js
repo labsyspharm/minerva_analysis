@@ -44,7 +44,7 @@ class NeighborhoodTable {
             .data(self.neighborhoods)
         rows.enter()
             .append("tr")
-            .attr('class', 'neighborhood-row')
+            .attr('class', 'neighborhood-row row justify-content-between')
             .on('click', (e, d) => {
                 return self.selectRow(e, d);
             });
@@ -75,7 +75,7 @@ class NeighborhoodTable {
 
         let enteredCol = nameCol.enter()
             .append('td')
-            .attr('class', 'name-col');
+            .attr('class', 'name-col col-8');
         enteredCol
             .append('div')
             .attr('class', 'row')
@@ -130,9 +130,9 @@ class NeighborhoodTable {
 
         actionsCol.enter()
             .append('td')
-            .attr('class', 'actions-column')
+            .attr('class', 'actions-column col-4')
             .append('div')
-            .attr('class', 'row actions-row')
+            .attr('class', 'row actions-row justify-content-end')
             .datum(d => d)
         actionsCol.exit().remove();
 

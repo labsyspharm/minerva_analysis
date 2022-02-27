@@ -265,7 +265,7 @@ class ChannelList {
             .attr('width', swidth)
             .attr('height', 30)
             .append('g')
-            .attr('transform', 'translate(20,10)');
+            .attr('transform', 'translate(20,5)');
         gSimple.call(sliderSimple);
 
         //slider value to be displayed closer to the slider than default

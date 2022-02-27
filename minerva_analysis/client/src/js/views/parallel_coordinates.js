@@ -9,6 +9,7 @@ class ParallelCoordinates {
         this.dataLayer = dataLayer;
         this.phenotypes = this.dataLayer.phenotypes;
         this.eventHandler = eventHandler;
+        this.hideOverall = false;
         this.editButton = document.getElementById("edit_neighborhood_composition");
         if (this.editButton) {
             this.editButton.addEventListener('click', this.switchEditMode.bind(this));
@@ -148,18 +149,23 @@ class ParallelCoordinates {
             })
             .on("end", () => {
                 if (self.editMode) {
-                    self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height)
+                    let test = '';
+                    // self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height)
                 }
             })
         if (!this.visData) {
+            emptyData.forEach((d, i) => {
+                self.order[d[0]] = i;
+            })
             this.wrangle(emptyData);
         }
         self.svgGroup.selectAll(".average_path")
             .attr("stroke-width", 0)
 
-        _.sortBy(Object.entries(self.order), d => d[1]).forEach(d => {
-            self.addSlider(d[0])
-        })
+
+        // _.sortBy(Object.entries(self.order), d => d[1]).forEach(d => {
+        //     self.addSlider(d[0])
+        // })
     }
 
     wrangle(rawData, order = null) {
@@ -170,11 +176,11 @@ class ParallelCoordinates {
         } else {
             chartData = rawData;
         }
-        if (!order) {
+        if (!order && !self.order) {
             self.phenotypes.forEach((d, i) => {
                 self.order[d] = i
             })
-        } else {
+        } else if (order) {
             self.order = order;
         }
 
@@ -198,6 +204,7 @@ class ParallelCoordinates {
 
 
         this.visData = _.sortBy(this.visData, ['index']);
+
         this.scale();
         return self.draw()
     }
@@ -246,6 +253,7 @@ class ParallelCoordinates {
             .data(self.visData).enter()
             .append("g")
             .attr("class", "parallel_axes")
+            .attr("transform", "translate(0, -3)")
             // I translate this element to its right position on the x axis
             // .attr("transform", function (d) {
             //     return "translate(" + self.y(d.key) + ")";
@@ -267,18 +275,25 @@ class ParallelCoordinates {
                 }
             })
 
-        const legendTextSize = '0.92vh'
+        const legendTextSize = '1.4vh'
         let overallLineLegend = self.svgGroup.selectAll('.overall_line')
             .data([0])
         overallLineLegend.enter()
             .append('line')
             .classed('overall_line', true)
             .attr('x1', self.x(0.02))
-            .attr('y1', -15)
+            .attr('y1', -9)
             .attr('x2', self.x(0.08))
-            .attr('y2', -15)
+            .attr('y2', -9)
             .attr("stroke-width", 4)
             .attr('stroke', 'grey')
+            .attr('stroke-opacity', () => {
+                if (self.hideOverall) {
+                    return 0.5;
+                } else {
+                    return 1;
+                }
+            })
 
 
         let overallLineLabel = self.svgGroup.selectAll('.overall_line_label')
@@ -287,11 +302,15 @@ class ParallelCoordinates {
             .append('text')
             .classed('overall_line_label', true)
             .attr('x', self.x(0.00))
-            .attr('y', -10)
+            .attr('y', -4)
             .attr('font-size', legendTextSize)
             .attr('fill', 'grey')
             .attr('text-anchor', 'end')
             .text('Overall')
+            .on("click", (event, d) => {
+                self.hideOverall = !self.hideOverall;
+                self.draw();
+            })
 
         let avgLineLegend = self.svgGroup.selectAll('.average_line')
             .data([0])
@@ -324,9 +343,9 @@ class ParallelCoordinates {
             .append('line')
             .classed('selection_line', true)
             .attr('x1', self.x(0.02))
-            .attr('y1', -25)
+            .attr('y1', -22)
             .attr('x2', self.x(0.08))
-            .attr('y2', -25)
+            .attr('y2', -22)
             .attr("stroke-width", 4)
             .attr('stroke', 'orange')
 
@@ -336,7 +355,7 @@ class ParallelCoordinates {
             .append('text')
             .classed('selection_line_label', true)
             .attr('x', self.x(0.00))
-            .attr('y', -20)
+            .attr('y', -17)
             .attr('font-size', legendTextSize)
             .attr('fill', 'orange')
             .attr('text-anchor', 'end')
@@ -429,7 +448,7 @@ class ParallelCoordinates {
 
         self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
 
-        if (!self.editMode) {
+        if (!self.editMode && !self.hideOverall) {
             let opacity = 0.002;
             let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.full_neighborhoods', null);
             _.forEach(fullNeighborhood, row => {
@@ -452,12 +471,13 @@ class ParallelCoordinates {
             })
         }
 
-        if (self.selection_neighborhoods && !self.editMode) {
+        // if (self.selection_neighborhoods && !self.editMode) {
+        if (self.selection_neighborhoods) {
 
             //Draw Selection
             let opacity = 0.01;
             if (_.size(self.selection_neighborhoods) < 1000) {
-                opacity = 0.1;
+                opacity = 0.05;
             }
             _.forEach(self.selection_neighborhoods, row => {
                 if (Math.random() > 0.75) {
@@ -478,6 +498,9 @@ class ParallelCoordinates {
                     self.canvas.getContext('2d').stroke();
                 }
             })
+        } else {
+            self.svgGroup.selectAll(".average_path")
+                .attr("stroke-width", 0)
         }
     }
 
@@ -508,7 +531,7 @@ class ParallelCoordinates {
             .handle(
                 d3.symbol()
                     .type(d3.symbolCircle)
-                    .size(50)
+                    .size(150)
             )
             .tickValues([])
         this.sliders.set(name, sliderSimple);
@@ -565,23 +588,24 @@ class ParallelCoordinates {
 
     switchEditMode() {
         const self = this;
+        console.log('switching')
         self.editMode = !self.editMode;
+        self.draw();
+        // self.svgGroup.selectAll(".value-slider-group")
+        //     .classed("hidden", !self.editMode)
+        //     .classed("visible", self.editMode)
         if (self.editMode) {
-            self.svgGroup.selectAll(".average_path")
-                .attr("stroke-width", 0)
+            // self.svgGroup.selectAll(".average_path")
+            //     .attr("stroke-width", 0)
             document.getElementById('neighborhood_current_selection').innerText = "Composition";
         }
-        self.draw();
-        self.svgGroup.selectAll(".value-slider-group")
-            .classed("hidden", !self.editMode)
-            .classed("visible", self.editMode)
-        // _.each(document.querySelectorAll('.handler'), elem => {
-        //     if (self.editMode) {
-        //         elem.style.cursor = 'move';
-        //     } else {
-        //         elem.style.cursor = 'default';
-        //     }
-        // })
+        _.each(document.querySelectorAll('.handler'), elem => {
+            if (self.editMode) {
+                elem.style.cursor = 'move';
+            } else {
+                elem.style.cursor = 'default';
+            }
+        })
         //
         // _.each(document.querySelectorAll('.viewfinder_chart_label_g_g_text_g'), elem => {
         //     if (self.editMode) {
@@ -613,16 +637,19 @@ class ParallelCoordinates {
     search() {
         const self = this;
         // First we reproportion values to be percentages
-        // let total = _.sumBy(self.visData, 'value');
-        let total = 0;
-        self.sliders.forEach(d => {
-            total += d.value();
+        let total = _.sumBy(self.visData, 'value');
+        _.each(self.visData, el => {
+            el.value = el.value / total;
         })
-        self.sliders.forEach((d, name) => {
-            let newVal = d.value() / total;
-            self.visData[self.visData.findIndex(d => d.key == name)].value = newVal;
-            d.value(newVal);
-        })
+        // let total = 0;
+        // self.sliders.forEach(d => {
+        //     total += d.value();
+        // })
+        // self.sliders.forEach((d, name) => {
+        //     let newVal = d.value() / total;
+        //     self.visData[self.visData.findIndex(d => d.key == name)].value = newVal;
+        //     d.value(newVal);
+        // })
 
         self.draw();
         // seaDragonViewer.showLoader();
