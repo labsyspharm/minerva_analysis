@@ -484,12 +484,12 @@ def get_all_cells(datasource_name, mode):
                 neighborhoods = neighborhoods / row_sums[:, np.newaxis]
                 indices = np.arange(neighborhoods.shape[0])
                 selection_neighborhoods = neighborhoods[indices, :]
-                sample_size = 6000
+                sample_size = 400
                 selection_neighborhoods = selection_neighborhoods[
                                           np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True),
                                           :]
                 if combined_neighborhoods is None:
-                    combined_neighborhoods = neighborhoods
+                    combined_neighborhoods = selection_neighborhoods
                 else:
                     combined_neighborhoods = np.vstack((combined_neighborhoods, selection_neighborhoods))
             return {'full_neighborhoods': combined_neighborhoods}
@@ -780,13 +780,17 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
         query = None
         for dataset in config[datasource_name]['linkedDatasets']:
             np_df = load_csv(dataset, numpy=True)
-            next_sum = index_sum + len(np_df)
             similar_ids, neighborhood_query = find_similarity(neighborhood_vector, similarity, dataset,
                                                               disabled)
             selection_ids = np.concatenate([selection_ids, similar_ids + index_sum])
             obj[dataset] = get_neighborhood_stats(dataset, similar_ids, np_df, fields=fields, compute_neighbors=False)
             query = neighborhood_query
+            index_sum = index_sum + len(np_df)
         obj['composition_summary'] = weight_multi_image_neighborhood(obj, datasource_name, len(selection_ids))
+        obj['composition_summary']['selection_neighborhoods'] = obj['composition_summary']['selection_neighborhoods'][
+                                                                np.random.choice(obj['composition_summary'][
+                                                                                     'selection_neighborhoods'].shape[
+                                                                                     0], 10000, replace=True), :]
         # Deleting redundant data
         for dataset in config[datasource_name]['linkedDatasets']:
             if 'dataset' in obj:
