@@ -169,7 +169,7 @@ class CSVGatingList {
             autoBtn.classList.add('auto-btn');
             autoBtn.setAttribute('id', "auto-btn_" + channelID);
             autoBtn.textContent = "auto";
-            autoBtn.addEventListener("click", function() { self.autoGate(fullName) });
+            autoBtn.addEventListener("click", async function() { await self.autoGate(fullName) });
 
             autoCol.appendChild(autoBtn);
             autoBtn.addEventListener("click", e => e.stopPropagation());
@@ -303,13 +303,15 @@ class CSVGatingList {
      * @function autoGate - applies thresholds based on Gaussian Mixture Model
      * @param name - the name of the channel to apply it to
      */
-    autoGate(name) {
+    async autoGate(name) {
         const self = this;
         let shortName = self.dataLayer.getShortChannelName(name);
 
         let gate = this.hasGatingGMM[shortName]['gate']
         if (!this.dataLayer.isTransformed()) {
             gate = parseInt(gate)
+        } else {
+            gate = gate.toFixed(7);
         }
         // For interaction
         self.selections[name][0] = gate;
@@ -705,7 +707,7 @@ class CSVGatingList {
                         .attr('id', 'gating_slider-input' + channelID + i)
                         .attr('type', 'text')
                         .attr('class', 'input')
-                        .attr('value', function(){return that.sliders.get(name).value()[i]});
+                        .attr('value', function(){return csv_gatingList.sliders.get(name).value()[i]});
             //remove the previous text label
             d3.select(this).select('text').remove();
         });
