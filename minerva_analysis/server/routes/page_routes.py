@@ -13,12 +13,14 @@ def my_index():
 @app.route('/<string:datasource>', methods=['GET'])
 def image_viewer(datasource):
     datasources = get_config_names()
-    apply_previous = request.args.get('applyPrevious')
+    apply_previous = request.args.get('applyPrevious', default=False)
+    mode = request.args.get('mode', default='single')
     if datasource not in datasources:
         datasource = ''
 
     return render_template('index.html',
-                           data={'datasource': datasource, 'datasources': datasources, 'applyPrevious': apply_previous})
+                           data={'datasource': datasource, 'datasources': datasources,
+                                 'applyPrevious': apply_previous, 'mode': mode})
 
 
 @app.route('/compare_neighborhoods/<string:datasource>')

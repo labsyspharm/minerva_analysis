@@ -373,28 +373,37 @@ class ParallelCoordinates {
                 window.devicePixelRatio = 1;
                 self.plot = createScatterplot({
                     canvas: self.canvas,
-                    pointColor: hexToRGBA('#b2b2b2', 1),
-                    // opacityBy: 'density',
+                    pointColor: hexToRGBA('#b2b2b2'),
+                    opacityBy: 'density',
                     pointColorActive: hexToRGBA('#ffa500', 0.2),
-                    pointSize: 3,
+                    pointConnectionColor: hexToRGBA('#b2b2b2', 0.01),
 
+                    pointSize: 3,
+                    showPointConnections: true,
                     lassoColor: hexToRGBA('#ffa500', 0.2),
                     // pointOutlineWidth: 0,
                     // pointSizeSelected: 0
                 });
             }
             let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.full_neighborhoods', null);
-            // let indices = _.get(dataLayer, 'fullNeighborhoods.selection_ids', null);
+            let indices = _.get(dataLayer, 'fullNeighborhoods.selection_ids', null);
             let points = [];
             _.forEach(fullNeighborhood, (row, rowIndex) => {
                 let orderedRow = _.cloneDeep(row);
                 self.phenotypes.map((d, i) => {
                     orderedRow[self.order[d]] = row[i]
                 })
-                orderedRow.forEach((d, i) => {
-                    points.push([((2.0 * self.lineX(d)) / self.canvas.width) - 1,
-                        (2.0 * self.lineY(i) / self.canvas.height) - 1]);
-                })
+                if (indices && indices[rowIndex]) {
+                    orderedRow.forEach((d, i) => {
+                        points.push([((2.0 * self.lineX(d)) / self.canvas.width) - 1,
+                            (2.0 * self.lineY(i) / self.canvas.height) - 1, 0, 0, indices[rowIndex]]);
+                    })
+                } else {
+                    orderedRow.forEach((d, i) => {
+                        points.push([((2.0 * self.lineX(d)) / self.canvas.width) - 1,
+                            (2.0 * self.lineY(i) / self.canvas.height) - 1]);
+                    })
+                }
             })
             self.plot.draw(points);
         } else {

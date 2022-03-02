@@ -26,33 +26,62 @@ class Scatterplot {
         self.editMode = false;
         self.customClusterDiv = document.getElementById('custom_cluster');
         self.saveLassoButton = document.getElementById('save_lasso');
-
-
-        self.plot = createScatterplot({
-            canvas,
-            // width,
-            // height,
-            pointColor: hexToRGBA('#b2b2b2', 0.08),
-            pointColorActive: hexToRGBA('#ffa500', 0.2),
-
-            // opacityBy: 'density',
-            // pointColorActive: hexToRGBA('#ffa500', 0.2),
-            pointSize: 1,
-            lassoColor: hexToRGBA('#ffa500', 0.2),
-            pointOutlineWidth: 0,
-            pointSizeSelected: 0
+        self.plot = null;
+        self.colorMap = _.map(_.range(_.size(self.colorScheme.colorMap) / 2), i => {
+            return hexToRGBA(self.colorScheme.colorMap[_.toString(i)].hex, 0.1)
         });
-        if (self.image) {
+        self.orangeMap = _.map(_.range(_.size(self.colorScheme.colorMap) / 2), i => {
+            return hexToRGBA('#ffa500', 0.1)
+        });
+        self.greyMap = _.map(_.range(_.size(self.colorScheme.colorMap) / 2), i => {
+            return hexToRGBA('#fffff', 0.01)
+        });
 
-            self.plot.set({
+        if (self.image) {
+            self.plot = createScatterplot({
+                canvas,
+                // width,
+                // height,
+                pointColor: self.greyMap,
+                pointColorActive: self.orangeMap,
+                pointColorHover: self.orangeMap,
                 opacityBy: 'density',
-            })
-            if (mode === 'single') {
-                self.plot.set({
-                    lassoColor: hexToRGBA('#000000', 0.0)
-                })
-            }
+                colorBy: 'valueB',
+                // opacityBy: 'density',
+                // opacityBy: 'density',
+                // pointColorActive: hexToRGBA('#ffa500', 0.2),
+                // backgroundColor: [0, 0, 0, 0],
+                pointSize: 1,
+                lassoColor: hexToRGBA('#ffa500', 0.2),
+                pointOutlineWidth: 0,
+                pointSizeSelected: 1
+            });
+        } else {
+            self.plot = createScatterplot({
+                canvas,
+                // width,
+                // height,
+                pointColor: self.greyMap,
+                pointColorActive: self.orangeMap,
+                pointColorHover: self.orangeMap,
+                colorBy: 'valueB',
+                // pointColorActive: hexToRGBA('#ffa500', 0.2),
+                backgroundColor: [0, 0, 0, 0],
+                pointSize: 1,
+                lassoColor: hexToRGBA('#ffa500', 0.2),
+                pointOutlineWidth: 0,
+                pointSizeSelected: 0
+            });
         }
+        // if (self.image) {
+        //
+        //
+        //     if (mode === 'single') {
+        //         self.plot.set({
+        //             lassoColor: hexToRGBA('#000000', 0.0)
+        //         })
+        //     }
+        // }
 
 
         self.plot.subscribe('select', self.select.bind(self));
@@ -94,30 +123,32 @@ class Scatterplot {
             self.visData = await dataLayer.getScatterplotData();
             self.visData = self.visData.data;
         }
-        if (colorByCellType) {
-            let colorMap = _.map(_.range(_.size(self.colorScheme.colorMap) / 2), i => {
-                return hexToRGBA(self.colorScheme.colorMap[_.toString(i)].hex, 0.08)
-            });
-            let activeColorMap = _.map(_.range(_.size(colorMap)), i => {
-                return hexToRGBA('#ffa500', 1);
-            })
-
-            self.plot.set({
-                pointColor: colorMap,
-                pointColorActive: activeColorMap,
-                pointColorHover: activeColorMap,
-                colorBy: 'valueB',
-            });
-
+        // if (colorByCellType) {
+        //     let colorMap = _.map(_.range(_.size(self.colorScheme.colorMap) / 2), i => {
+        //         return hexToRGBA(self.colorScheme.colorMap[_.toString(i)].hex, 0.08)
+        //     });
+        //     let activeColorMap = _.map(_.range(_.size(colorMap)), i => {
+        //         return hexToRGBA('#ffa500', 1);
+        //     })
+        //
+        //     self.plot.set({
+        //         pointColor: colorMap,
+        //         pointColorActive: activeColorMap,
+        //         pointColorHover: activeColorMap,
+        //         colorBy: 'valueB',
+        //     });
+        //
+        // } else {
+        //     self.plot.set({
+        //         pointColor: hexToRGBA('#b2b2b2', 0.08),
+        //         pointColorActive: hexToRGBA('#ffa500', 0.2),
+        //     });
+        // }
+        if (!self.image) {
+            self.plot.draw(self.visData);
         } else {
-            self.plot.set({
-                pointColor: hexToRGBA('#b2b2b2', 0.08),
-                pointColorActive: hexToRGBA('#ffa500', 0.2),
-            });
+            self.plot.draw(self.visData);
         }
-
-
-        self.plot.draw(self.visData);
         if (self.image || mode === 'multi') {
             if (searching) {
                 self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
@@ -170,6 +201,23 @@ class Scatterplot {
         self.selection = selection;
         self.plot.select(selection, {preventEvent: true});
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
+    }
+
+    changeColoring(colorByCellType) {
+        const self = this;
+        if (colorByCellType) {
+            self.plot.set({
+                pointColorActive: self.colorMap,
+                pointColorHover: self.colorMap,
+            })
+        } else {
+            self.plot.set({
+                pointColorActive: self.orangeMap,
+                pointColorHover: self.orangeMap
+            })
+        }
+
+
     }
 
     select(args) {

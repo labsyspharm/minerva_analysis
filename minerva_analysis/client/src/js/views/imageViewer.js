@@ -67,6 +67,7 @@ class ImageViewer {
         this.contourViewButton = document.getElementById("contour_icon");
 
         this.isSelectionToolActive = true;
+        this.colorByCellType = true;
 
     }
 
@@ -475,7 +476,11 @@ class ImageViewer {
                         let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype');
                         let color = [255, 255, 255];
                         if (!seaDragonViewer.contourView) {
-                            color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                            if (seaDragonViewer.colorByCellType) {
+                                color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
+                            } else {
+                                color = [255, 165, 0]
+                            }
                         }
                         let index = i * 4;
                         const grid = [
@@ -795,6 +800,12 @@ class ImageViewer {
 
 
         })
+    }
+
+    changeColoring(colorByCellType) {
+        const that = this;
+        that.colorByCellType = !that.colorByCellType;
+        updateSeaDragonSelection(false, true);
     }
 }
 

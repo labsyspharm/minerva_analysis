@@ -198,6 +198,8 @@ def get_all_neighborhood_stats(datasource_name):
         nonlocal scaler
         neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood,
                                                 datasource=datasource_name)
+        if neighborhood_stats is None:
+            return {}
         stats = pickle.load(io.BytesIO(neighborhood_stats.stats))
         stats['neighborhood_id'] = neighborhood_stats.neighborhood_id
         stats['name'] = neighborhood_stats.name

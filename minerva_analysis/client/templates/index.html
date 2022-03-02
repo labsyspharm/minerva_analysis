@@ -99,10 +99,13 @@
                                 </div>
                             </div>
                             <div id="related_image_list_wrapper" class="left-col-row d-flex flex-column flex-grow-1">
-                                <div class="left-col-row">
-                                    <div class="col-md-12">
-                                        <h5 class="plot-label text-left">Related Images</h5>
+                                <div class="row lowRow1 justify-content-between">
+                                    <div class="col-auto">
+                                        <h5 class="plot-label text-left"><a
+                                                href="/{{ data.datasource }}?applyPrevious=true&mode=multi">Related
+                                            Images</a></h5>
                                     </div>
+                                    <div id="recolor_related_images" class="col-auto"></div>
                                 </div>
                                 <div id="related_image_container" class="left-col-row flex-grow-1"></div>
                             </div>
@@ -170,11 +173,19 @@
                                         {% include 'contour_icon.html' %}
                                     </span>
                                 </div>
+                                <div id="recolor_image_viewer" class="row align-items-center icon-rows"></div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div id="multi_image_wrapper" class="col-auto multi_image_wrapper_large viewer_col">
+                    <div class="row">
+                        <div class="col col-lg-2"></div>
+                        <div class="col-md-8">
+                            <h5 id="multi-image-title" class="plot-label text-center">Images</h5>
+                        </div>
+                        <div id="recolor_multi_image" class="col col-lg-2"></div>
+                    </div>
                     <div id="left-col-wrapper" class="row">
                         <div id="left-col" class="col-auto d-flex flex-column">
                         </div>
@@ -198,9 +209,12 @@
                         <div class="row align-items-center" id="parallel_coordinates_display">
                         </div>
                         <div class="row">
-                            <div class="col-md-12">
-                                <h5 class="plot-label text-center">Neighborhood Embedding</h5>
+                            <div class="col col-lg-2"></div>
+                            <div class="col-md-8">
+                                <h5 id="neighborhood-embedding-title" class="plot-label text-center">Neighborhood
+                                    Embedding</h5>
                             </div>
+                            <div id="recolor_neighborhood_embedding_col" class="col col-lg-2"></div>
 
                         </div>
                         <div class="row align-items-center" id="scatterplot_display">

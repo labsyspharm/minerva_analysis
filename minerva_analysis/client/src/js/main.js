@@ -2,18 +2,18 @@
 
  */
 //EVENTHANDLER
-console.log("Here");
+// console.log("Here");
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
-const applyPrevious = flaskVariables.applyPrevious;
+let applyPrevious = flaskVariables.applyPrevious;
+let mode = flaskVariables.mode;
 let searching = false;
-let mode = 'single';
-let colorByCellType = false;
+let colorByCellType = true;
 
 
 //VIEWS
 let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable, comparison, multiImage;
-
+let scatterColorToggle;
 //SERVICES
 let dataLayer, colorScheme;
 
@@ -54,24 +54,33 @@ async function init(conf) {
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
-        neighborhoodTable, colorScheme,false, false, datasource);
+        neighborhoodTable, colorScheme, false, false, datasource);
+    scatterColorToggle = new ColorToggle('recolor_neighborhood_embedding_col', [scatterplot])
     //image viewer
     if (mode === 'single') {
+        document.getElementById('related_image_list_wrapper').style.visibility = "visible";
         legend = new Legend(dataLayer, colorScheme, eventHandler);
         channelList = new ChannelList(config, dataLayer, eventHandler);
         seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
         multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null, 'image');
+        let multiImageColorToggle = new ColorToggle('recolor_related_images', [multiImage]);
         // init synchronus methods
         seaDragonViewer.init();
+        let viewerColorToggle = new ColorToggle('recolor_image_viewer', [seaDragonViewer], true);
+        legend.init();
         await channelList.init()
+
     } else {
         document.getElementById('openseadragon_wrapper').style.display = "none"
         document.getElementById('multi_image_wrapper').style.display = "block"
+        document.getElementById('related_image_list_wrapper').style.visibility = "hidden";
+
         multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_wrapper',
             true, columns = 4, 'image');
+        let viewerColorToggle = new ColorToggle('recolor_multi_image', [multiImage], false);
+
 
     }
-    legend.init();
     console.log('Ending Multi', new Date());
     console.log('PCP Init', new Date())
     parallelCoordinates.init();

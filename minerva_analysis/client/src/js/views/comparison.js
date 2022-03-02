@@ -291,7 +291,7 @@ class Comparison {
             tempImageData.push([k, v]);
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
             let header = div.querySelector('h5')
-            header.innerHTML = `<a href='/${k}?applyPrevious=true'>${k}</a>`
+            header.innerHTML = `<a href='/${k}?applyPrevious=true&mode=single'>${k}</a>`
             let canvas_div = document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`);
             let canvas = document.createElement("canvas");
             canvas.className = 'scatterplot scatter_canvas';
@@ -332,6 +332,14 @@ class Comparison {
             }
         }
 
+    }
+
+
+    changeColoring(colorByCellType) {
+        const self = this;
+        _.each(self.plots, (plot, i) => {
+            plot?.changeColoring(colorByCellType);
+        });
     }
 
     clear(dataset) {
