@@ -346,6 +346,12 @@ def apply_neighborhood_query():
     resp = data_model.apply_neighborhood_query(datasource, neighborhood_query)
     return serialize_and_submit_json(resp)
 
+@app.route('/get_axis_order', methods=['GET'])
+def get_axis_order():
+    datasource = request.args.get('datasource')
+    resp = data_model.calculate_axis_order(datasource)
+    return serialize_and_submit_json(resp)
+
 
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')

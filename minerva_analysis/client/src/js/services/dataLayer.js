@@ -17,6 +17,7 @@ class DataLayer {
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
         this.phenotypes = [];
+        this.defaultOrder = []
         this.neighborhoodStats = null;
     }
 
@@ -28,6 +29,7 @@ class DataLayer {
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();
             this.fullNeighborhoods = await this.getAllCells();
+            this.defaultOrder = await this.getAxisOrder();
 
 
         } catch (e) {
@@ -648,6 +650,18 @@ class DataLayer {
             return cells;
         } catch (e) {
             console.log("Error Getting Image Search Results", e);
+        }
+    }
+
+    async getAxisOrder() {
+        try {
+            let response = await fetch('/get_axis_order?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Axis Ordering", e);
         }
     }
 

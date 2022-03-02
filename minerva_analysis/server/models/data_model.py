@@ -6,6 +6,7 @@ from scipy import stats
 from numba import prange
 import dask.dataframe as dd
 import dask.array as da
+import math
 
 from sklearn.decomposition import IncrementalPCA
 from sklearn.decomposition import PCA
@@ -965,13 +966,8 @@ def generate_zarr_png(datasource_name, channel, level, tile):
 
 def get_pearsons_correlation(datasource_name):
     global datasource
-    global ball_tree
     global source
-    global config
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    # Load if not loaded
-    if datasource_name != source:
-        load_datasource(datasource_name)
     heatmap = np.zeros((neighborhoods.shape[1], neighborhoods.shape[1]))
     for i in range(0, neighborhoods.shape[1]):
         for j in range(0, i):
@@ -1419,6 +1415,46 @@ def apply_neighborhood_query(datasource_name, neighborhood_query):
     similar_ids = similarity_search(neighborhoods, neighborhood_query)
     obj = get_neighborhood_stats(datasource_name, similar_ids, np_datasource)
     return obj
+
+
+def calculate_axis_order(datasource_name):
+    global datasource
+    global config
+    correlation_matrix = np.absolute(get_pearsons_correlation(datasource_name))
+    phenotypes = get_phenotypes(datasource_name)
+    order = [None for e in range(len(phenotypes))]
+    starting_index = math.ceil(len(phenotypes) / 2.0)
+    above_index = starting_index - 2
+    below_index = starting_index
+    below = True
+    for i in range(starting_index):
+        # Final Iter
+        if i == starting_index - 1:
+            remaining_phenotypes = list(filter(lambda x: x is not None, phenotypes))
+            order[len(phenotypes) - 1] = remaining_phenotypes[0]
+            if len(phenotypes) % 2 == 0:
+                order[0] = remaining_phenotypes[1]
+        else:
+            top_corrs = np.argwhere(correlation_matrix.max() == correlation_matrix)[0]
+            pair_one = top_corrs[0]
+            pair_two = top_corrs[1]
+            if below:
+                order[below_index] = phenotypes[pair_one]
+                order[below_index - 1] = phenotypes[pair_two]
+                below_index += 2
+            else:
+                order[above_index] = phenotypes[pair_one]
+                order[above_index - 1] = phenotypes[pair_two]
+                above_index -= 2
+            correlation_matrix[:, pair_one] = -1
+            correlation_matrix[:, pair_two] = -1
+            correlation_matrix[pair_one, :] = -1
+            correlation_matrix[pair_two, :] = -1
+            phenotypes[pair_one] = None
+            phenotypes[pair_two] = None
+            below = not below
+    return order
+
 
 
 # Via https://stackoverflow.com/questions/67050899/why-pandas-dataframe-to-dictrecords-performance-is-bad-compared-to-another-n

@@ -16,6 +16,10 @@ class ParallelCoordinates {
         }
         this.labelPositions = {}
         this.order = {};
+        this.dataLayer.defaultOrder.forEach((d, i) => {
+            this.order[d] = i;
+        })
+        // this.order = this.dataLayer.defaultOrder;
         this.sliders = new Map();
         this.dragHandler = d3.drag()
             .on('drag', (e, d) => {
@@ -154,9 +158,6 @@ class ParallelCoordinates {
                 }
             })
         if (!this.visData) {
-            emptyData.forEach((d, i) => {
-                self.order[d[0]] = i;
-            })
             this.wrangle(emptyData);
         }
         self.svgGroup.selectAll(".average_path")
