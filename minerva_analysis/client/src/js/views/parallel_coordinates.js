@@ -251,32 +251,26 @@ class ParallelCoordinates {
         // this.line2d.render({points: [0.5, 0.5, 0.6, 0.6], opacity: 0.5, color: [0, 0, 0]})
         self.svgGroup.selectAll(".parallel_axes")
             // For each dimension of the dataset I add a 'g' element:
-            .data(self.visData).enter()
+            .data([null]).enter()
             .append("g")
             .attr("class", "parallel_axes")
-            .attr("transform", "translate(0, -3)")
+            .attr("transform", "translate(0, 0)")
             // I translate this element to its right position on the x axis
             // .attr("transform", function (d) {
             //     return "translate(" + self.y(d.key) + ")";
             // })
 
             // And I build the axis with the call function
-            .each(function (d) {
-                if (d.index == 0) {
-                    d3.select(this).call(d3.axisBottom()
-                        .scale(self.x)
-                        .tickSize(0)
-                        .tickValues(_.range(0, 1.2, 0.2))
-                        .tickFormat(d3.format(".0%")));
-                } else {
-                    d3.select(this).call(d3.axisBottom()
-                        .scale(self.x)
-                        .tickSize(0)
-                        .tickValues([]));
-                }
+            .each(function (d,i) {
+                d3.select(this).call(d3.axisBottom()
+                    .scale(self.x)
+                    .tickSize(0)
+                    .tickValues(_.range(0, 1.2, 0.2))
+                    .tickFormat(d3.format(".0%")));
             })
 
-        const legendTextSize = '1.4vh'
+        // const legendTextSize = '1.4vh'
+        const legendTextSize = '0.7rem'
         let overallLineLegend = self.svgGroup.selectAll('.overall_line')
             .data([0])
         overallLineLegend.enter()

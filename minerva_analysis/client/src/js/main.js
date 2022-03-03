@@ -97,7 +97,9 @@ async function init(conf) {
         searching = true;
         return dataLayer.applyNeighborhoodQuery()
             .then(cells => {
-                return displayNeighborhoodSelection(cells)
+                if (cells) {
+                    return displayNeighborhoodSelection(cells)
+                }
             })
     } else {
         store(false);

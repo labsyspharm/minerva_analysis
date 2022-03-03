@@ -188,7 +188,7 @@ def find_custom_neighborhood():
     similarity = post_data['similarity']
     mode = post_data['mode']
     neighborhood_composition = post_data['neighborhoodComposition']
-    resp = data_model.find_custom_neighborhood(datasource, neighborhood_composition, similarity, mode)
+    resp = data_model.find_custom_neighborhood_wrapper(datasource, neighborhood_composition, similarity, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -200,6 +200,15 @@ def get_similar_neighborhood_to_selection():
     selection_ids = post_data['selectionIds']
     mode = post_data['mode']
     resp = data_model.get_similar_neighborhood_to_selection(datasource, selection_ids, similarity, mode)
+    return serialize_and_submit_json(resp)
+
+@app.route('/compute_p_value', methods=['POST'])
+def compute_p_value():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    num_results = post_data['numResults']
+    neighborhood_query = json.loads(post_data['neighborhoodQuery'])
+    resp = data_model.compute_individual_p_value(datasource, num_results, neighborhood_query)
     return serialize_and_submit_json(resp)
 
 
@@ -343,13 +352,15 @@ def apply_neighborhood_query():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     neighborhood_query = post_data['neighborhoodQuery']
-    resp = data_model.apply_neighborhood_query(datasource, neighborhood_query)
+    mode = post_data['mode']
+    resp = data_model.apply_neighborhood_query(datasource, neighborhood_query, mode)
     return serialize_and_submit_json(resp)
 
 @app.route('/get_axis_order', methods=['GET'])
 def get_axis_order():
     datasource = request.args.get('datasource')
-    resp = data_model.calculate_axis_order(datasource)
+    mode = request.args.get('mode')
+    resp = data_model.calculate_axis_order(datasource, mode)
     return serialize_and_submit_json(resp)
 
 

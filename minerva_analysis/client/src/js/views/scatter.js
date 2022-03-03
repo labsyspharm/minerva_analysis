@@ -153,7 +153,7 @@ class Scatterplot {
             if (searching) {
                 self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
                 self.recolor(self.imageSelection[self.dataset].cells);
-                // self.addImageResultInfo(self.imageSelection[self.dataset]['num_results'], self.imageSelection[self.dataset]['p_value'])
+                self.addImageResultInfo(self.imageSelection[self.dataset]['num_results'], self.imageSelection[self.dataset]['p_value'])
             }
             searching = false;
         }
@@ -258,7 +258,6 @@ class Scatterplot {
         self.lastLasso = args;
         self.lassoActive = false;
     }
-
 
     async applyLasso(points) {
         return dataLayer.getCellsInPolygon(points, false, true)

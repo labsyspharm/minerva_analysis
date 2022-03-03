@@ -733,9 +733,10 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     query_vector = None
-
+    calc_p_value = True
     if mode == 'multi' and 'linkedDatasets' in config[datasource_name]:
         combined_selection = None
+        calc_p_value = False
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset in selection_ids:
                 neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
@@ -755,11 +756,30 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     for i, phenotype in enumerate(sorted(datasource.phenotype.unique().tolist())):
         query_vector_dict[phenotype] = {'value': query_vector[i], 'key': phenotype}
 
-    obj = find_custom_neighborhood(datasource_name, query_vector_dict, similarity, mode)
+    obj = find_custom_neighborhood_wrapper(datasource_name, query_vector_dict, similarity, mode, calc_p_value)
     return obj
 
 
-def find_custom_neighborhood(datasource_name, neighborhood_composition, similarity, mode='single'):
+def build_neighborhood_vector(neighborhood_composition):
+    global datasource
+    phenos = sorted(datasource.phenotype.unique().tolist())
+    disabled = []
+    neighborhood_vector = np.zeros((len(phenos)))
+    for i in range(len(phenos)):
+        neighborhood_vector[i] = neighborhood_composition[phenos[i]]['value']
+        if 'disabled' in neighborhood_composition[phenos[i]] and neighborhood_composition[phenos[i]]['disabled']:
+            disabled.append(i)
+    return neighborhood_vector, disabled
+
+
+def find_custom_neighborhood_wrapper(datasource_name, neighborhood_composition, similarity, mode='single',
+                                     calc_p_value=True):
+    neighborhood_vector, disabled = build_neighborhood_vector(neighborhood_composition)
+    return find_custom_neighborhood(datasource_name, neighborhood_vector, disabled, similarity, mode, calc_p_value)
+
+
+def find_custom_neighborhood(datasource_name, neighborhood_vector, disabled, similarity, mode='single',
+                             calc_p_value=True):
     global datasource
     global source
     # Load if not loaded
@@ -767,14 +787,6 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
         load_datasource(datasource_name)
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
-    # phenos = sorted(datasource.phenotype.unique().compute().tolist())
-    phenos = sorted(datasource.phenotype.unique().tolist())
-    neighborhood_vector = np.zeros((len(phenos)))
-    disabled = []
-    for i in range(len(phenos)):
-        neighborhood_vector[i] = neighborhood_composition[phenos[i]]['value']
-        if 'disabled' in neighborhood_composition[phenos[i]] and neighborhood_composition[phenos[i]]['disabled']:
-            disabled.append(i)
 
     if mode == 'multi' and 'linkedDatasets' in config[datasource_name]:
         selection_ids = np.array([])
@@ -783,10 +795,11 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
         query = None
         for dataset in config[datasource_name]['linkedDatasets']:
             np_df = load_csv(dataset, numpy=True)
-            similar_ids, neighborhood_query = find_similarity(neighborhood_vector, similarity, dataset,
-                                                              disabled)
+            similar_ids, neighborhood_query, _ = find_similarity(neighborhood_vector, similarity, dataset,
+                                                                 disabled, False)
             selection_ids = np.concatenate([selection_ids, similar_ids + index_sum])
             obj[dataset] = get_neighborhood_stats(dataset, similar_ids, np_df, fields=fields, compute_neighbors=False)
+
             query = neighborhood_query
             index_sum = index_sum + len(np_df)
         obj['composition_summary'] = weight_multi_image_neighborhood(obj, datasource_name, len(selection_ids))
@@ -802,33 +815,53 @@ def find_custom_neighborhood(datasource_name, neighborhood_composition, similari
         obj['selection_ids'] = selection_ids.tolist()
 
     else:
-        similar_ids, neighborhood_query = find_similarity(neighborhood_vector, similarity, datasource_name, disabled)
+        similar_ids, neighborhood_query, p_value = find_similarity(neighborhood_vector, similarity, datasource_name,
+                                                                   disabled, calc_p_value)
         obj = get_neighborhood_stats(datasource_name, similar_ids, np_datasource, fields=fields)
+        obj['p_value'] = p_value
+        obj['num_results'] = len(similar_ids)
         query = neighborhood_query
     obj['neighborhood_query'] = query
     return obj
 
 
-def find_similarity(composition_summary, similarity, datasource_name, disabled=None):
+def find_similarity(composition_summary, similarity, datasource_name, disabled=None, calc_p_value=True):
     global config
     neighborhood_query = {'query_vector': composition_summary, 'disabled': disabled, 'threshold': similarity}
+    # neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    greater_than, p_value = similarity_search(datasource_name, neighborhood_query, calc_p_value)
+    return greater_than, neighborhood_query, p_value
+
+
+def similarity_search(datasource_name, neighborhood_query, calc_p_value=True):
+    global config
+    timer = time.time()
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    greater_than = similarity_search(neighborhoods, neighborhood_query)
-    return greater_than, neighborhood_query
-
-
-def similarity_search(neighborhoods, neighborhood_query):
     disabled = neighborhood_query['disabled']
     query_vector = neighborhood_query['query_vector']
     threshold = neighborhood_query['threshold']
     if disabled:
         neighborhoods = np.delete(neighborhoods, disabled, axis=1)
         composition_summary = np.delete(query_vector, disabled, axis=0)
-    # distances = 1 - spatial.distance.cdist([query_vector], neighborhoods, "cosine")[0]
-    # distances = 1 - spatial.distance.cdist([query_vector], neighborhoods, "cosine")[0]
+
     scores = euclidian_distance_score(neighborhoods, np.array(query_vector))
     greater_than = np.argwhere(scores > threshold).flatten()
-    return greater_than
+
+    # test
+    num_results = len(greater_than)
+    if calc_p_value:
+        permuted_results = get_permuted_results(datasource_name, neighborhood_query)
+        p_value = p_val(num_results, permuted_results)
+        print('Sim Search Time', time.time() - timer)
+        return greater_than, p_value
+    else:
+        return greater_than, None
+
+
+def compute_individual_p_value(datasource_name, num_results, neighborhood_query):
+    permuted_results = get_permuted_results(datasource_name, neighborhood_query)
+    p_value = p_val(num_results, permuted_results)
+    return p_value
 
 
 #
@@ -964,10 +997,20 @@ def generate_zarr_png(datasource_name, channel, level, tile):
     return tile
 
 
-def get_pearsons_correlation(datasource_name):
+def get_pearsons_correlation(datasource_name, mode='single'):
     global datasource
     global source
-    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    global config
+    neighborhoods = None
+
+    if mode == 'single' or 'linkedDatasets' not in config[datasource_name]:
+        neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    else:
+        for dataset in config[datasource_name]['linkedDatasets']:
+            if neighborhoods is None:
+                neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
+            else:
+                neighborhoods = np.vstack((neighborhoods, np.load(Path(config[dataset]['neighborhoods']))))
     heatmap = np.zeros((neighborhoods.shape[1], neighborhoods.shape[1]))
     for i in range(0, neighborhoods.shape[1]):
         for j in range(0, i):
@@ -1189,33 +1232,22 @@ def single_perm_test(_phenotypes_array, _len_phenos, _neighbors, _distances, _le
     perm_matrix = np.zeros((_phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
     for j in prange(chunk):
         ___phenotypes_array = np.random.permutation(__phenotypes_array)
-        ___phenotypes_array = __phenotypes_array
         for i in prange(len(_lengths)):
             this_length = _lengths[i]
-            dist = _distances[i, 0:this_length]
             rows = _neighbors[i, 0:this_length]
             phenos = ___phenotypes_array[rows].flatten()
             pheno_weight_indices = (phenos)
             result = np.zeros((_len_phenos), dtype=np.float32)
             for ind in prange(len(pheno_weight_indices)):
                 result[pheno_weight_indices[ind]] += _distances[i][ind]
-            # normalized = result
-            # result = normalized.astype(np.float32)
-            # norms[i] = np.linalg.norm(result)
             perm_matrix[i] = result / result.sum()
-        # z[:, :, j] = perm_matrix / np.linalg.norm(perm_matrix, ord=1, axis=1)[:, np.newaxis]
         z[:, :, j] = perm_matrix
-
-        # f = gzip.GzipFile('/Users/swarchol/Research/minerva_analysis/minerva_analysis/data/perm_test.npy.gz', "w")
-        # np.save(file=f, arr=perm_matrix)
-        # zarr.save('/Users/swarchol/Research/minerva_analysis/minerva_analysis/data/perm_test.zarr', perm_matrix)
-        # cos = np.dot(perm_matrix, _vector.flatten()) / (norms * np.linalg.norm(_vector))
-        # where = np.where(cos > _threshold)
-        # results[j] = len(where[0])
     return z
 
 
 # @numba.jit(nopython=True, parallel=True)
+# @profile
+@numba.jit(nopython=True, parallel=True, cache=True)
 def test_with_saved_perm(_phenotypes_array, _perm_matrix, _vector, _lengths, _threshold=0.8):
     chunk = 1
     _vector = _vector.astype(np.float32)
@@ -1223,25 +1255,23 @@ def test_with_saved_perm(_phenotypes_array, _perm_matrix, _vector, _lengths, _th
     # LOAD
     perm_matrix = _perm_matrix
 
-    norms = np.zeros((_phenotypes_array.shape[0],), dtype=np.float32)
     results = np.zeros(chunk, dtype=np.int32)
     for j in prange(chunk):
         scores = euclidian_distance_score(perm_matrix[:, :, j], _vector)
-        # for i in prange(len(_lengths)):
-        #     norms[i] = np.linalg.norm(perm_matrix[i, :, j])
-        # cos = np.dot(perm_matrix[:, :, j], _vector.flatten()) / (norms * np.linalg.norm(_vector))
         where = np.where(scores > _threshold)
         results[j] = len(where[0])
     return results
 
 
-@numba.jit(nopython=True, parallel=True)
+@numba.jit(nopython=True, parallel=True, cache=True)
 def euclidian_distance_score(y1, y2):
     return 1.0 / ((np.sqrt(np.sum((y1 - y2) ** 2, axis=1))) + 1.0)
 
 
 def p_val(val, perm_vals):
-    return stats.ttest_1samp(perm_vals, val)[1]
+    p_value = len(perm_vals[perm_vals >= val]) / len(perm_vals)
+    print('P Value', p_value)
+    return p_value
 
 
 # @profile
@@ -1283,21 +1313,17 @@ def search_across_images(datasource_name, linked_datasource, neighborhood_query=
     if 'linkedDatasets' in config[datasource_name] and neighborhood_query is not None:
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset == linked_datasource:
-                linked_neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
+                # linked_neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
                 results[dataset] = {}
-                results[dataset]['cells'] = similarity_search(linked_neighborhoods, neighborhood_query)
-                num_results = len(results[dataset]['cells'])
-                results[dataset]['num_results'] = num_results
-                other_results = calc_p_value(dataset, linked_neighborhoods, neighborhood_query)
-                results[dataset]['p_value'] = p_val(num_results, other_results)
-
-                print('P Value', results[dataset]['p_value'])
-
+                cells, p_value = similarity_search(dataset, neighborhood_query)
+                results[dataset]['cells'] = cells
+                results[dataset]['p_value'] = p_value
+                results[dataset]['num_results'] = len(cells)
     return results
 
 
 @profile
-def calc_p_value(datasource_name, linked_neighborhoods, neighborhood_query):
+def get_permuted_results(datasource_name, neighborhood_query):
     global config
     global datasource
 
@@ -1312,7 +1338,7 @@ def calc_p_value(datasource_name, linked_neighborhoods, neighborhood_query):
         perm_data = pickle.load(open(matrix_paths, "rb"))
     else:
         perm_data = get_perm_data(datasource_name, matrix_paths)
-    print('P Load Data,', time.time() - test)
+    # print('P Load Data,', time.time() - test)
     test = time.time()
 
     zarr_file_name = datasource_name + "_perm.zarr"
@@ -1320,25 +1346,27 @@ def calc_p_value(datasource_name, linked_neighborhoods, neighborhood_query):
         os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / zarr_file_name
 
     if zarr_path.is_dir():
+        test = time.time()
         results = test_with_saved_perm(perm_data['phenotypes_array'], zarr.load(zarr_path), vector,
                                        perm_data['lengths'],
                                        neighborhood_query['threshold'])
+
     else:
-        print('P Done Load Data,', time.time() - test)
-        test = time.time()
+        # print('P Done Load Data,', time.time() - test)
+        # test = time.time()
         perms = single_perm_test(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
                                  perm_data['distances'], perm_data['lengths'])
-        print('P Create Perm Matrix,', time.time() - test)
-        test = time.time()
+        # print('P Create Perm Matrix,', time.time() - test)
+        # test = time.time()
         zarr_perms = zarr.array(perms, chunks=(10000, perms.shape[1], None), compressor=Blosc(cname='zstd', clevel=3))
         zarr.save_array(zarr_path, zarr_perms)
         results = test_with_saved_perm(perm_data['phenotypes_array'], perms, vector,
                                        perm_data['lengths'],
                                        neighborhood_query['threshold'])
-        print('P Calc Results,', time.time() - test)
-        test = time.time()
+        # print('P Calc Results,', time.time() - test)
+        # test = time.time()
 
-    print('P Compute Perms,', time.time() - test)
+    # print('P Compute Perms,', time.time() - test)
 
     return results
 
@@ -1409,18 +1437,33 @@ def get_cell_id_field(datasource_name):
         return "CellID"
 
 
-def apply_neighborhood_query(datasource_name, neighborhood_query):
+def apply_neighborhood_query(datasource_name, neighborhood_query, mode):
     global config
-    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    similar_ids = similarity_search(neighborhoods, neighborhood_query)
-    obj = get_neighborhood_stats(datasource_name, similar_ids, np_datasource)
-    return obj
+
+    results = {}
+    # neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    disabled = neighborhood_query['disabled']
+    query_vector = neighborhood_query['query_vector']
+    threshold = neighborhood_query['threshold']
+
+    return find_custom_neighborhood(datasource_name, query_vector, disabled, threshold, mode)
+
+    # if mode == 'multi' and 'linkedDatasets' in config[datasource_name] and neighborhood_query is not None:
+    #     for dataset in config[datasource_name]['linkedDatasets']:
+    #         results[dataset] = {}
+    #         cells, _ = similarity_search(dataset, neighborhood_query, False)
+    #         results[dataset]['cells'] = cells
+    # else:
+    #     similar_ids, p_value = similarity_search(datasource_name, neighborhood_query)
+    #     results = get_neighborhood_stats(datasource_name, similar_ids, np_datasource)
+    #     results['p_value'] = p_value
+    # return results
 
 
-def calculate_axis_order(datasource_name):
+def calculate_axis_order(datasource_name, mode):
     global datasource
     global config
-    correlation_matrix = np.absolute(get_pearsons_correlation(datasource_name))
+    correlation_matrix = np.absolute(get_pearsons_correlation(datasource_name, mode))
     phenotypes = get_phenotypes(datasource_name)
     order = [None for e in range(len(phenotypes))]
     starting_index = math.ceil(len(phenotypes) / 2.0)
@@ -1454,7 +1497,6 @@ def calculate_axis_order(datasource_name):
             phenotypes[pair_two] = None
             below = not below
     return order
-
 
 
 # Via https://stackoverflow.com/questions/67050899/why-pandas-dataframe-to-dictrecords-performance-is-bad-compared-to-another-n

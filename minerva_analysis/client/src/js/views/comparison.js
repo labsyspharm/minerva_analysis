@@ -185,7 +185,7 @@ class Comparison {
             row.className = "row compare_row";
             row.id = `compare_row_${r}`;
             row.style.height = `${self.rowHeight}px`;
-            row.style.width = `${width}px`;
+            // row.style.width = `${width}px`;
             _.each(_.range(cols), c => {
                 let col = document.createElement("div");
                 col.className = "col compare_col";

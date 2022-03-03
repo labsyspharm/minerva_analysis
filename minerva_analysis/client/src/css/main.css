@@ -614,7 +614,7 @@ polygon:hover {
 
 #similarity_val {
     font-size: 9pt;
-    color: rgba(255, 165, 0, 0.2);
+    color: rgba(255, 165, 0);
     text-align: center;
     vertical-align: middle;
     display: table-cell;
@@ -824,7 +824,7 @@ polygon:hover {
 }
 
 .par_cor_label {
-    font-size: 1.3vh;
+    font-size: 0.7rem;
     font-weight: bold;
     cursor: move;
 }

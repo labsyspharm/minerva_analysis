@@ -360,6 +360,7 @@ class DataLayer {
     }
 
     async getSimilarNeighborhoodToSelection(similarity) {
+        const self = this;
         try {
             searching = true;
             let selectionIds = {};
@@ -388,6 +389,9 @@ class DataLayer {
                     })
             });
             let cells = await response.json();
+            if (mode == 'multi') {
+                cells = await self.permAcrossResults(cells);
+            }
             store('neighborhoodQuery', cells['neighborhood_query'])
             return cells;
         } catch (e) {
@@ -395,7 +399,44 @@ class DataLayer {
         }
     }
 
+    async permAcrossResults(cells) {
+        const self = this;
+        let images = Object.entries(cells).filter(ele => {
+            return ele[0] != 'composition_summary' && ele[0] != 'neighborhood_query' && ele[0] != 'selection_ids'
+        })
+        await Promise.all(images.map(async (ele) => {
+            let numResults = _.size(ele[1].cells);
+            cells[ele[0]]['num_results'] = numResults
+            cells[ele[0]]['p_value'] = await self.computePValue(ele[0], numResults, cells['neighborhood_query'])
+        }))
+        return cells;
+    }
+
+
+    async computePValue(dataset, numResults, query_vector) {
+        try {
+            let response = await fetch('/compute_p_value', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: dataset,
+                        numResults: numResults,
+                        neighborhoodQuery: JSON.stringify(query_vector)
+                    })
+            });
+            let p_value = await response.json();
+            return p_value;
+        } catch (e) {
+            console.log("Error Getting P Value", e);
+        }
+    }
+
     async findSimilarNeighborhoods(data, similarity) {
+        const self = this;
         try {
             searching = true;
             let response = await fetch('/find_custom_neighborhood', {
@@ -414,7 +455,9 @@ class DataLayer {
                     })
             });
             let cells = await response.json();
-            store('neighborhoodQuery', cells['neighborhood_query'])
+            if (mode == 'multi') {
+                cells = await self.permAcrossResults(cells);
+            }
             return cells;
         } catch (e) {
             console.log("Error Getting Custom Neighborhood", e);
@@ -656,7 +699,8 @@ class DataLayer {
     async getAxisOrder() {
         try {
             let response = await fetch('/get_axis_order?' + new URLSearchParams({
-                datasource: datasource
+                datasource: datasource,
+                mode: mode
             }))
             let cells = await response.json();
             return cells;
@@ -666,9 +710,10 @@ class DataLayer {
     }
 
     async applyNeighborhoodQuery() {
+        const self = this;
         try {
             if (!store('neighborhoodQuery')) {
-                return true;
+                return null;
             }
             let response = await fetch('/apply_neighborhood_query', {
                 method: 'POST',
@@ -679,10 +724,14 @@ class DataLayer {
                 body: JSON.stringify(
                     {
                         datasource: datasource,
-                        neighborhoodQuery: store('neighborhoodQuery')
+                        neighborhoodQuery: store('neighborhoodQuery'),
+                        mode: mode
                     })
             });
             let cells = await response.json();
+            if (mode == 'multi') {
+                cells = await self.permAcrossResults(cells)
+            }
             return cells;
         } catch (e) {
             console.log("Error Applying Previous Query", e);

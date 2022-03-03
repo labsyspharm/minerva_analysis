@@ -463,7 +463,7 @@
 }
 
 #parallel_coordinates_display .parallel_axes text {
-    font-size: 1.5vh;
+    font-size: 0.8rem;
     font-weight: bold;
 }
 
@@ -472,6 +472,11 @@
 }
 
 #multi_image_wrapper .compare_row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+#multi_image_wrapper .row {
     margin-left: 0;
     margin-right: 0;
 }
