@@ -179,8 +179,23 @@
                     </div>
                 </div>
                 <div id="multi_image_wrapper" class="col-auto multi_image_wrapper_large viewer_col">
-                    <div class="row">
-                        <div class="col col-lg-2"></div>
+                    <div class="row mb-2">
+                        <div class="col col-lg-2 dropdown-col">
+                            <div id="multi_image_dropdown"class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button"
+                                        id="multi_sort_dropdown"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i id="multi_sort_icon" class="fas fa-sort"></i>
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="multi_sort_dropdown">
+                                    <span class="dropdown-item disabled">Sort By</span>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item">Significance</a>
+                                    <a class="dropdown-item">Number of Results</a>
+                                    <a class="dropdown-item">Alphabetical</a>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-8">
                             <h5 id="multi-image-title" class="plot-label text-center">Images</h5>
                         </div>

@@ -1,5 +1,5 @@
 class Comparison {
-    constructor(_config, _colorScheme, _dataLayer, _eventHandler, _containerId, _drawOnInit = false, _columns = null, _currentState = '') {
+    constructor(_config, _colorScheme, _dataLayer, _eventHandler, _containerId, _drawOnInit = false, suggestedColumns = null, _currentState = '', dropdownId = null) {
         this.config = _config;
         this.colorScheme = _colorScheme;
         this.dataLayer = _dataLayer;
@@ -11,7 +11,19 @@ class Comparison {
         this.container = null;
         this.hidden = true;
         this.drawOnInit = _drawOnInit;
-        this.columns = _columns;
+        this.columns = suggestedColumns;
+        this.order = []
+        if (this.columns) {
+            let totalContainerWidth = document.getElementById(this.containerId).offsetWidth;
+            while (totalContainerWidth / this.columns <= 200) {
+                this.columns--;
+            }
+        }
+        if (dropdownId) {
+            this.dropdownId = dropdownId;
+            this.initDropdown();
+        }
+
     }
 
     async init() {
@@ -28,6 +40,57 @@ class Comparison {
         if (self.drawOnInit) {
             self.draw();
         }
+
+    }
+
+    initDropdown() {
+        const self = this;
+        d3.select(`#${self.dropdownId}`).selectAll('a.dropdown-item')
+            .on('click', self.reorder.bind(self))
+    }
+
+    reorder(e) {
+        const self = this;
+        //Swap Two Elements
+        const swap = function (nodeA, nodeB) {
+            const parentA = nodeA.parentNode;
+            const siblingA = nodeA.nextSibling === nodeB ? nodeA : nodeA.nextSibling;
+            // Move `nodeA` to before the `nodeB`
+            nodeB.parentNode.insertBefore(nodeA, nodeB);
+            // Move `nodeB` to before the sibling of `nodeA`
+            parentA.insertBefore(nodeB, siblingA);
+        };
+        const sortBy = e.currentTarget.innerText;
+        let currentOrder = self.plots.map(e => {
+            return {
+                'dataset': e?.dataset,
+                'pValue': self.dataLayer.getCurrentRawSelection()[e?.dataset]['p_value'],
+                'numResults': self.dataLayer.getCurrentRawSelection()[e?.dataset]['num_results']
+            }
+        })
+        let newOrder = _.cloneDeep(currentOrder).sort(function (x, y) {
+            if (sortBy == 'Significance') {
+                return x.pValue - y.pValue || y.numResults - x.numResults;
+            } else if (sortBy == 'Number of Results') {
+                return y.numResults - x.numResults || x.pValue - y.pValue;
+            } else {
+                return x.dataset.localeCompare(y.dataset);
+            }
+        });
+        newOrder.forEach((a, indexA) => {
+            let indexB = currentOrder.findIndex(b => {
+                return a.dataset == b.dataset
+            })
+            if (indexA == indexB) {
+                return
+            }
+            [currentOrder[indexB], currentOrder[indexA]] = [currentOrder[indexA], currentOrder[indexB]];
+            [self.plots[indexB], self.plots[indexA]] = [self.plots[indexA], self.plots[indexB]];
+            let nodeA = d3.select(`#${self.containerId}_compare_col_${indexA} .grid-wrapper`).node()
+            let nodeB = d3.select(`#${self.containerId}_compare_col_${indexB} .grid-wrapper`).node()
+            swap(nodeA, nodeB);
+        })
+
 
     }
 
@@ -191,6 +254,10 @@ class Comparison {
                 col.className = "col compare_col";
                 col.id = `${self.containerId}_compare_col_${i}`;
                 row.appendChild(col);
+                let wrapper = document.createElement("div");
+                wrapper.className = "grid-wrapper";
+                col.appendChild(wrapper);
+
                 let compare_plot_title = document.createElement("div");
                 compare_plot_title.className = "row compare_plot_title justify-content-center";
                 let title = document.createElement("h5");
@@ -199,11 +266,11 @@ class Comparison {
                 //     title.classList.add('current_selection_comparison');
                 // }
                 compare_plot_title.appendChild(title);
-                col.appendChild(compare_plot_title);
+                wrapper.appendChild(compare_plot_title);
                 let compare_plot_body = document.createElement("div");
                 compare_plot_body.id = `${self.containerId}_compare_parallel_coordinates_${i}`
                 compare_plot_body.className = "row compare_plot_body";
-                col.appendChild(compare_plot_body);
+                wrapper.appendChild(compare_plot_body);
                 i++;
             })
             self.container.appendChild(row);
@@ -287,7 +354,9 @@ class Comparison {
         self.relatedImageData = await self.dataLayer.getRelatedImageData()
         self.createGrid(self.columns || 1, _.size(self.relatedImageData));
         let tempImageData = []
+        self.order = []
         self.plots = _.map(Object.entries(self.relatedImageData), ([k, v], i) => {
+            self.order.push(k);
             tempImageData.push([k, v]);
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
             let header = div.querySelector('h5')
@@ -350,6 +419,7 @@ class Comparison {
             }
         })
     }
+
 
 }
 

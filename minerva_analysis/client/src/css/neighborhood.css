@@ -481,6 +481,34 @@
     margin-right: 0;
 }
 
+#multi_sort_icon {
+    font-size: 20px;
+    color: white
+}
+
+#multi_sort_dropdown {
+    padding: 2px 4px;
+    background-color: rgba(53, 54, 58, 0.75);
+    border-style: none;
+}
+
+.dropdown-col {
+    position: relative;
+}
+
+.dropdown {
+    position: absolute !important;
+    padding: 2px 0px;
+    right: 0;
+}
+.grid-wrapper{
+    width:100%;
+    height:100%;
+    padding: 0;
+    margin: 0;
+}
+
+
 /*TODO: Remove*/
 /*#related_image_list_wrapper {*/
 /*    display: none !important;*/

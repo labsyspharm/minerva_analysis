@@ -76,7 +76,7 @@ async function init(conf) {
         document.getElementById('related_image_list_wrapper').style.visibility = "hidden";
 
         multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_wrapper',
-            true, columns = 4, 'image');
+            true, 4, 'image', 'multi_image_dropdown');
         let viewerColorToggle = new ColorToggle('recolor_multi_image', [multiImage], false);
 
 

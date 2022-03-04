@@ -10,6 +10,8 @@ class Scatterplot {
         this.colorScheme = colorScheme;
         this.neighborhoodTable = neighborhoodTable;
         this.lastLasso = null;
+        this.numResults = null
+        this.pValue = null;
         this.small = small;
         this.image = image;
     }
@@ -153,14 +155,17 @@ class Scatterplot {
             if (searching) {
                 self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
                 self.recolor(self.imageSelection[self.dataset].cells);
-                self.addImageResultInfo(self.imageSelection[self.dataset]['num_results'], self.imageSelection[self.dataset]['p_value'])
+                self.numResults = self.imageSelection[self.dataset]['num_results'];
+                self.pValue = self.imageSelection[self.dataset]['p_value'];
+                self.addImageResultInfo()
             }
             searching = false;
         }
     }
 
-    addImageResultInfo(numResults, pValue) {
+    addImageResultInfo() {
         const self = this;
+
         d3.select(`#${self.id}`).selectAll('.image_result_info').remove()
         let absoluteContainer = d3.select(`#${self.id}`).append('div')
             .classed('image_result_info', true)
@@ -174,7 +179,7 @@ class Scatterplot {
             .classed('col-6', true)
         row1col2.append('span')
             .classed('image_result_value', true)
-            .text(numResults)
+            .text(self.numResults)
 
         let row2 = absoluteContainer.append('div').classed('row', true)
         let row2col1 = row2.append('div')
@@ -186,7 +191,7 @@ class Scatterplot {
             .classed('col-6', true)
         row2col2.append('span')
             .classed('image_result_value', true)
-            .text(Number((pValue).toFixed(1)))
+            .text(Number((self.pValue).toFixed(1)))
 
 
     }
