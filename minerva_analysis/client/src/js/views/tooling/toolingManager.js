@@ -96,10 +96,12 @@ export class ToolingManager {
         // WRAPPERS & CONTAINS
         this.elements.toolingWrapperLD3 = this.elements.interfaceWrapperD3.select('#toolingWrapperL')
             .datum(this.settings.configs.elementWrappers.toolingWrapperL)
+            .style('visibility', 'visible');
         this.elements.viewerWrapperD3 = this.elements.interfaceWrapperD3.select('#viewerWrapper')
             .datum(this.settings.configs.elementWrappers.interfaceWrapper);
         this.elements.toolingWrapperRD3 = this.elements.interfaceWrapperD3.select('#toolingWrapperR')
-            .datum(this.settings.configs.elementWrappers.toolingWrapperR);
+            .datum(this.settings.configs.elementWrappers.toolingWrapperR)
+            .style('visibility', 'visible');
         const wrappersAll =
             [this.elements.toolingWrapperLD3, this.elements.viewerWrapperD3, this.elements.toolingWrapperRD3];
         wrappersAll.forEach(elD3 => {
@@ -141,6 +143,7 @@ export class ToolingManager {
             .style('color', 'white')
             .style('font-weight', 400)
             .style('display', 'flex')
+            .style('flex-flow', 'row wrap')
             .style('align-items', 'center')
             .select('span')
             .style('font-size', this.settings.configs.fontSizes.xs)
@@ -206,8 +209,6 @@ export class ToolingManager {
         // Buttons indicated, windows visible
         const activeHOnLeft = Math.floor(1 /
             this.datum.buttonsToWindows.filter(bw => bw.parent === 'toolingWrapperL' && bw.isActive).length * 100)
-        console.log(this.datum.buttonsToWindows)
-        console.log('activeWindowH', activeHOnLeft)
         this.datum.buttonsToWindows.forEach(bw => {
 
             d3.select(bw.buttonEl)
