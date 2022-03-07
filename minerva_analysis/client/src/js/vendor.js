@@ -26,6 +26,7 @@ import regl from 'regl';
 import 'viawebgl'
 import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
+import {ToolingManager} from './views/tooling/toolingManager'
 import concaveman from 'concaveman';
 window.d3 = Object.assign(d3base, {legendColor, sliderBottom, annotation});
 window.convert = convert;
@@ -40,6 +41,7 @@ window.Mark = Mark;
 window.viaWebGL = viaWebGL;
 window.createRegl = createRegl;
 window.OpenSeadragon = viaWebGL.OpenSeadragon;
+window.ToolingManager = ToolingManager;
 window.ViewerManager = ViewerManager;
 window.createScatterplot = createScatterplot;
 window.concaveman = concaveman;

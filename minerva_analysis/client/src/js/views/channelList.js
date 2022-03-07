@@ -28,7 +28,7 @@ class ChannelList {
                 })
                 .on('close', () => this.colorTransferHandle = null));
 
-        this.container = d3.select("#channel_list");
+        this.container = d3.select("#channelList");
     }
 
     removeChannel(name) {
@@ -62,12 +62,12 @@ class ChannelList {
         this.rainbow.hide();
         this.columns = await this.dataLayer.getChannelNames(true);
         // Hide the Loader
-        // document.getElementById('channel_list_loader').style.display = "none";
-        let channel_list = document.getElementById("channel_list");
+        // document.getElementById('channelList_loader').style.display = "none";
+        let channelList = document.getElementById("channelList");
         let list = document.createElement("ul");
         list.classList.add("list-group")
-        list.id = 'channel_list_list_group'
-        channel_list.appendChild(list)
+        list.id = 'channelList_list_group'
+        channelList.appendChild(list)
         // Will show the picker when you click on a color rect
         let showPicker = e => {
             this.colorTransferHandle = d3.select(e.target);
@@ -150,7 +150,7 @@ class ChannelList {
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
-            this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").clientWidth);
+            this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channelList").clientWidth);
             d3.select('div#channel-slider_' + column).style('display', "none");
         });
     }
@@ -282,7 +282,7 @@ window.addEventListener("resize", function () {
         channelList.sliders.forEach(function (slider, name) {
             d3.select('div#channel-slider_' + name).select('svg').remove();
             channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
-                document.getElementById("channel_list").clientWidth);
+                document.getElementById("channelList").clientWidth);
         });
     }
 });

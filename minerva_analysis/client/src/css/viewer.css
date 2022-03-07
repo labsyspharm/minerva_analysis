@@ -11,7 +11,9 @@ body {
 }
 
 #topBar {
+    align-items: center;
     background-color: rgba(0, 0, 0, 1) !important;
+    display: flex;
     height: 5vh;
     max-height: 5vh;
     left: 0;
@@ -33,7 +35,6 @@ body {
     color: rgba(255, 255, 255, 0.95);
     font-size: 13px;
     font-weight: 300;
-    margin-top: 4px;
 }
 
 #container {

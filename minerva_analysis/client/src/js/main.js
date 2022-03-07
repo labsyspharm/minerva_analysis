@@ -2,7 +2,7 @@
 
  */
 //EVENTHANDLER
-console.log("Here");
+// console.log("Here");
 const eventHandler = new SimpleEventHandler(d3.select('body').node());
 const datasource = flaskVariables.datasource;
 const applyPrevious = flaskVariables.applyPrevious;
@@ -37,14 +37,14 @@ d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
 
 // init all views (datatable, seadragon viewer,...)
 async function init(conf) {
-    console.log('Starting', new Date());
+    // console.log('Starting', new Date());
     config = conf;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;
     }
     //INIT DATA LAYER
-    console.log('Starting Init', new Date());
+    // console.log('Starting Init', new Date());
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
     colorScheme = new ColorScheme(dataLayer);
@@ -59,7 +59,7 @@ async function init(conf) {
         legend = new Legend(dataLayer, colorScheme, eventHandler);
         channelList = new ChannelList(config, dataLayer, eventHandler);
         seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null,'image');
+        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null, 'image');
         // init synchronus methods
         seaDragonViewer.init();
         await channelList.init()
@@ -71,16 +71,16 @@ async function init(conf) {
 
     }
     // legend.init();
-    console.log('Ending Multi', new Date());
-    console.log('PCP Init', new Date())
+    // console.log('Ending Multi', new Date());
+    // console.log('PCP Init', new Date())
     parallelCoordinates.init();
-    console.log('Scatter Init', new Date())
+    // console.log('Scatter Init', new Date())
     scatterplot.init();
-    console.log('Sync Init', new Date());
+    // console.log('Sync Init', new Date());
     //Async stuff
-    console.log('Starting Async', new Date());
+    // console.log('Starting Async', new Date());
     await Promise.all([neighborhoodTable.init(), scatterplot.wrangle(), comparison.init(), multiImage.init()]);
-    console.log('Ending Async', new Date());
+    // console.log('Ending Async', new Date());
     clusterData = dataLayer.getClusterCells();
     setupPageInteractivity();
     if (applyPrevious) {
@@ -207,6 +207,7 @@ eventHandler.bind(Scatterplot.events.selectFromEmbedding, displaySelection);
 
 // For channel select click event
 const channelSelect = async (sels) => {
+    console.log(sels)
     let channelCells = await dataLayer.getChannelCellIds(sels);
     dataLayer.addAllToCurrentSelection({'cells': channelCells});
     updateSeaDragonSelection(true, false);
@@ -244,7 +245,7 @@ const selectPhenotype = async (phenotype) => {
 eventHandler.bind(Legend.events.selectPhenotype, selectPhenotype);
 
 const selectPhenotypePair = async (d) => {
-    console.log(d);
+    // console.log(d);
     let phenotypes = [d.row, d.col];
     let selection = null;
     if (d.plotName != 'overall') {

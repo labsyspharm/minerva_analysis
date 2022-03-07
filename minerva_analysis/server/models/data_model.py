@@ -33,7 +33,7 @@ import tifffile as tf
 import re
 import zarr
 from scipy import spatial
-from line_profiler_pycharm import profile
+# from line_profiler_pycharm import profile
 
 ball_tree = None
 datasource = None

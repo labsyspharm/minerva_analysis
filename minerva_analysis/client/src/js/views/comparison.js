@@ -24,7 +24,7 @@ class Comparison {
             e.neighborhood_name = e.neighborhood_name || 'Cluster ' + i;
             return e
         })
-        console.log('Compare Ready');
+        // console.log('Compare Ready');
         if (self.drawOnInit) {
             self.draw();
         }
@@ -132,7 +132,7 @@ class Comparison {
         const self = this;
         let label = elem.labels[0];
         if (label?.classList.contains("btn-dark")) {
-            console.log("Already Checked")
+            // console.log("Already Checked")
             return false;
         } else {
             let otherButton = parent.querySelector('.btn-dark');
@@ -162,7 +162,7 @@ class Comparison {
         self.plots = _.map(self.neighborhoods, (d, i) => {
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`);
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
-            console.log(document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`).getBoundingClientRect());
+            // console.log(document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`).getBoundingClientRect());
             let pc = new ParallelCoordinates(`${self.containerId}_compare_parallel_coordinates_${i}`, self.dataLayer, self.eventHandler, self.colorScheme, true);
             pc.init();
             return pc;

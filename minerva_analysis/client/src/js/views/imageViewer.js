@@ -78,6 +78,9 @@ class ImageViewer {
         // Define this as that
         const that = this;
 
+        // Instantiate window manager
+        this.toolingManager = new ToolingManager();
+
         // Hide Loader
         that.hideLoader();
 

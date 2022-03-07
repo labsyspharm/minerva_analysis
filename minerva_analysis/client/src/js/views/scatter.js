@@ -100,7 +100,7 @@ class Scatterplot {
         if (!selection) {
             selection = _.map(this.dataLayer.getCurrentRawSelection().cells, e => e.id)
         }
-        console.log('Recolor Size', _.size(selection), selection.sort());
+        // console.log('Recolor Size', _.size(selection), selection.sort());
         self.selection = selection;
         self.plot.select(selection, {preventEvent: true});
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
@@ -108,7 +108,7 @@ class Scatterplot {
 
     select(args) {
         const self = this;
-        console.log('Selection Size', _.size(args.points), args.points.sort());
+        // console.log('Selection Size', _.size(args.points), args.points.sort());
         // TODO: remove any points that aren't in
         // self.plot.select(_.sampleSize(args.points, 100), {preventEvent: true});
         if (self.lassoActive && (!self.image || mode === 'multi')) {
@@ -139,7 +139,7 @@ class Scatterplot {
 
     lassoEnd(args) {
         const self = this;
-        console.log(args);
+        // console.log(args);
         self.lastLasso = args;
         self.lassoActive = false;
     }

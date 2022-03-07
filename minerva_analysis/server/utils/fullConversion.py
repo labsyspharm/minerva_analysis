@@ -2,7 +2,7 @@ from PIL import Image
 import timeit
 import os
 
-# set Libvips path for windows. If mac, please run `brew install vips`
+# set Libvips path for tooling. If mac, please run `brew install vips`
 if os.name == 'nt':
     vipshome = ''  # TODO: Insert path here
     os.environ['PATH'] = vipshome + ';' + os.environ['PATH']

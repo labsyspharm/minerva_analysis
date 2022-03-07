@@ -1,0 +1,200 @@
+
+
+#container {
+    box-sizing: border-box;
+    padding: 0 2.5vw;
+    position: relative;
+}
+
+/*
+interfaceWrapper
+ */
+#interfaceWrapper {
+    display: flex;
+    flex-flow: row nowrap;
+    height: 100%;
+    position: relative;
+    width: 100%;
+}
+
+.toolingWrapper {
+    height: 100%;
+}
+
+.toolingWrapperRel {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-top: 0.1vw solid white;
+    position: relative;
+    z-index: 1;
+}
+
+.toolingWrapperAbs {
+    border-right: 0.1vw solid white;
+    border-left: 0.1vw solid white;
+    position: absolute;
+    top: 0;
+    z-index: 2;
+}
+
+#toolingWrapperL {
+    left: 0;
+}
+
+#toolingWrapperR {
+    right: 0;
+}
+
+.toolingContainRel {
+    align-items: center;
+    display: flex;
+    flex-flow: column nowrap;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+
+.toolingContainAbs {
+    height: 100%;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+}
+
+#toolingWrapperL .toolingContainAbs {
+    left: 100%;
+}
+
+#toolingWrapperR .toolingContainAbs {
+    right: 100%;
+}
+
+.toolingTitle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    writing-mode: vertical-rl;
+    margin: 0 0 2.5vh 0;
+}
+
+#toolingWrapperL .toolingTitle {
+    transform: rotate(180deg);
+    padding: 0 0 1vh 0;
+}
+
+#toolingWrapperR .toolingTitle {
+    padding: 2vh 0 0 0;
+}
+
+.toolingButton {
+    margin: 5vh 0 0 0;
+    padding: 0.25vw;
+    width: 65%;
+}
+
+.toolingButton img {
+    width: 100%;
+}
+
+.toolingWindow {
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+}
+
+.toolingWindowFrame {
+    height: 100%;
+    padding: 3vh 0 3vh 1.5vw;
+    width: 100%;
+}
+
+.toolingWindowScroller {
+    height: 100%;
+    overflow-y: scroll;
+    width: 100%;
+}
+
+/*
+toolingWindowMarkerSelection
+ */
+#channelList * {
+    background-color: transparent;
+    color: white;
+    cursor: default;
+}
+
+.list-group {
+    border: 0;
+    margin: 0;
+    padding: 0 1.5vw 0 0.5vw !important;
+}
+
+.list-group-item {
+    border-bottom: 0.1vh solid white !important;
+    border-radius: 0 !important;
+    padding: 0.5vh 1vw !important;
+    width: 100%;
+}
+
+.list-group-item .channel-row {
+    align-items: center;
+    flex-flow: row nowrap;
+    flex-wrap: unset;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.list-group-item .channel-col {
+    flex: unset;
+    max-width: unset;
+    padding: 0;
+}
+
+.list-group-item .channel-col span {
+    font-size: 0.8vw;
+}
+
+/*
+toolingWindowSimilaritySearch
+ */
+#thresholdInput {
+    padding: 2.5vh 1.5vw 0 0;
+    width: 100%;
+}
+
+#thresholdInput input {
+    height: 0.25vh;
+    width: 100%;
+}
+
+#thresholdButton {
+    align-items: center;
+    display: flex;
+    flex-flow: row wrap;
+    padding: 1vh 0 0 0;
+    width: 100%;
+}
+
+#thresholdButton span {
+    font-size: 2.5vw;
+}
+
+#thresholdButton a {
+    border: 0.075vw solid white;
+    border-radius: 0.2vw;
+    font-size: 0.8vw;
+    font-weight: 300;
+    margin: 0.5vh 0 0 0.5vw;
+    padding: 0.25vh 0.5vw;
+    color: white;
+}
+
+/*
+viewerWrapper
+ */
+#openseadragon, .openseadragon-container {
+    height: 100%;
+    width: 100%;
+}
