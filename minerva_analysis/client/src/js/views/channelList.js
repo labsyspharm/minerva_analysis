@@ -150,7 +150,8 @@ class ChannelList {
             list.appendChild(listItemParentDiv);
 
             //add and hide channel sliders (will be visible when channel is active)
-            this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channelList").clientWidth);
+            this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column,
+                document.getElementById("channelList_list_group").clientWidth);
             d3.select('div#channel-slider_' + column).style('display', "none");
         });
     }
@@ -225,6 +226,10 @@ class ChannelList {
             // Trigger event
             this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
 
+        } else {
+            // FIXME - quick fix
+            let packet = {selections: this.selections, name, status};
+            this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, packet);
         }
     }
 
@@ -282,7 +287,7 @@ window.addEventListener("resize", function () {
         channelList.sliders.forEach(function (slider, name) {
             d3.select('div#channel-slider_' + name).select('svg').remove();
             channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
-                document.getElementById("channelList").clientWidth);
+                document.getElementById("channelList_list_group").clientWidth);
         });
     }
 });

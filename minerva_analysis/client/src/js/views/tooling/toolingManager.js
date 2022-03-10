@@ -31,7 +31,7 @@ export class ToolingManager {
                         left: 0,
                     },
                     styleWidthAsPercent: 3.75,
-                    styleWidthExpandedAsVW: 20,
+                    styleWidthExpandedAsVW: 18,
                     styleZIndex: 2,
                     visible: true,
                 },
@@ -129,7 +129,8 @@ export class ToolingManager {
             .on('click', this.onButtonClick.bind(this));
 
         // WINDOWS
-        this.elements.toolingWindows = this.elements.interfaceWrapperD3.selectAll('.toolingWindow')
+        this.elements.toolingWindows = this.elements.interfaceWrapperD3.selectAll('.toolingWindow');
+
         this.elements.toolingWindows.selectAll('h1')
             .style('margin', '0 0 3vh 0')
             .style('font-size', this.settings.configs.fontSizes.l)
