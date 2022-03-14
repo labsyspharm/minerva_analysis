@@ -69,10 +69,10 @@ async function init(conf) {
         seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
         // multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null, 'image',
         //     'related_images_dropdown');
-        let compareToggle = new ColorToggle('recolor_related_images', [multiImage]);
+        let compareToggle = new ColorToggle('recolor_related_images', [comparison]);
         // init synchronus methods
         seaDragonViewer.init();
-        let viewerColorToggle = new ColorToggle('recolor_image_viewer', [comparison], true);
+        let viewerColorToggle = new ColorToggle('recolor_image_viewer', [seaDragonViewer], true);
         await channelList.init()
 
     } else {
@@ -169,7 +169,7 @@ const displaySelection = async (d) => {
     console.log('Added to Par Cor', new Date().getTime() - now)
     if (d.selectionSource === "Multi Image") {
         console.log('Clearing', new Date().getTime() - now)
-        multiImage.clear(d.dataset)
+        multiImage?.clear(d.dataset)
         console.log('Recolor Embedding', new Date().getTime() - now)
         scatterplot.recolor(d.selection[d.dataset]["selection_ids"]);
     } else if (mode === 'multi') {
@@ -251,7 +251,7 @@ function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
         seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
         seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
     }
-    multiImage.rewrangle();
+    multiImage?.rewrangle();
     comparison.rewrangle();
     // searching = false;
     if (seaDragonViewer?.contourView) {
