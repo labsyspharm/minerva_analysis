@@ -15,7 +15,7 @@ class Legend {
 
         self.svg = d3.select(`#${this.parentSelector}`)
             .append("svg")
-            .attr("width", '160px')
+            .attr("width", '165px')
             .attr("height", docHeight + 'px')
             .attr("id", "legend-svg");
 

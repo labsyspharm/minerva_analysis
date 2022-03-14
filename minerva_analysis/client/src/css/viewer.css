@@ -15,12 +15,11 @@ body {
     height: 5vh;
     max-height: 5vh;
     left: 0;
-    padding: 0 16px;
-    position: relative;
+    position: absolute;
     margin: 0;
     top: 0;
-    width: 100vw;
     z-index: 101;
+    width: 49vw !important;
 }
 
 #title {
@@ -37,8 +36,8 @@ body {
 }
 
 #container {
-    height: 95vh;
-    max-height: 95vh;
+    height: 100vh;
+    max-height: 100vh;
     margin: 0;
     overflow: hidden;
     position: relative;
@@ -61,7 +60,6 @@ body {
     background-color: rgba(53, 54, 58, 0.75);
     border-radius: 17px;
     left: 1vw;
-    width: 15vw;
     z-index: 101;
     max-height: 40vh;
     padding: 5px;
@@ -255,4 +253,18 @@ body {
 
 .lowRow1 .col-auto {
     padding: 0 !important;
+}
+
+#comparison_options {
+    height: 30px;
+    width: 100%;
+}
+
+#comparison_options_wrapper {
+    height: 100%;
+    width: 100%;
+}
+
+#recolor_related_images {
+    height: 100%;
 }

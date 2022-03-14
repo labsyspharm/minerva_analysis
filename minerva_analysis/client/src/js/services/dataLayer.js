@@ -19,6 +19,7 @@ class DataLayer {
         this.phenotypes = [];
         this.defaultOrder = []
         this.neighborhoodStats = null;
+        this.maxResults = 100000
     }
 
     async init() {
@@ -401,12 +402,16 @@ class DataLayer {
 
     async permAcrossResults(cells) {
         const self = this;
+
         let images = Object.entries(cells).filter(ele => {
             return ele[0] != 'composition_summary' && ele[0] != 'neighborhood_query' && ele[0] != 'selection_ids'
         })
         await Promise.all(images.map(async (ele) => {
             let numResults = _.size(ele[1].cells);
             cells[ele[0]]['num_results'] = numResults
+            // if (numResults > self.maxResults) {
+            //     self.maxResults = numResults;
+            // }
             cells[ele[0]]['p_value'] = await self.computePValue(ele[0], numResults, cells['neighborhood_query'])
         }))
         return cells;
@@ -448,8 +453,8 @@ class DataLayer {
                 body: JSON.stringify(
                     {
                         datasource: datasource,
-                        // neighborhoodComposition: data,
-                        neighborhoodComposition: JSON.parse('{"Alveolar MAC":{"key":"Alveolar MAC","short":"Alveolar MAC","value":0.025225006551154755,"index":0},"B":{"key":"B","short":"B","value":0.04834738037493428,"index":1},"DC":{"key":"DC","short":"DC","value":0.08697262570216543,"index":2},"Epithelial":{"key":"Epithelial","short":"Epithelial","value":0.13859822901267488,"index":3},"Immune":{"key":"Immune","short":"Immune","value":0.16140646499499245,"index":4},"Lymphoid":{"key":"Lymphoid","short":"Lymphoid","value":0.0071996742745285185,"index":5},"Myeloid":{"key":"Myeloid","short":"Myeloid","value":0.011748071763574433,"index":6},"NK_L":{"key":"NK_L","short":"NK_L","value":0,"index":7},"NK_M":{"key":"NK_M","short":"NK_M","value":0.0016209938796884365,"index":8},"Neutrophil":{"key":"Neutrophil","short":"Neutrophil","value":0.010232367634344021,"index":9},"Other":{"key":"Other","short":"Other","value":0.19022244680884706,"index":10},"T":{"key":"T","short":"T","value":0.0010842082272883705,"index":11},"T cytotox":{"key":"T cytotox","short":"T cytotox","value":0.03445468430184308,"index":12},"T helper":{"key":"T helper","short":"T helper","value":0.13122538866665834,"index":13},"T reg":{"key":"T reg","short":"T reg","value":0.09822229630185476,"index":14},"TAM":{"key":"TAM","short":"TAM","value":0.037827708551590435,"index":15},"undefined":{"key":"undefined","short":"undefined","value":0.015612452953860797,"index":16}}'),
+                        neighborhoodComposition: data,
+                        // neighborhoodComposition: JSON.parse('{"Alveolar MAC":{"key":"Alveolar MAC","short":"Alveolar MAC","value":0.025225006551154755,"index":0},"B":{"key":"B","short":"B","value":0.04834738037493428,"index":1},"DC":{"key":"DC","short":"DC","value":0.08697262570216543,"index":2},"Epithelial":{"key":"Epithelial","short":"Epithelial","value":0.13859822901267488,"index":3},"Immune":{"key":"Immune","short":"Immune","value":0.16140646499499245,"index":4},"Lymphoid":{"key":"Lymphoid","short":"Lymphoid","value":0.0071996742745285185,"index":5},"Myeloid":{"key":"Myeloid","short":"Myeloid","value":0.011748071763574433,"index":6},"NK_L":{"key":"NK_L","short":"NK_L","value":0,"index":7},"NK_M":{"key":"NK_M","short":"NK_M","value":0.0016209938796884365,"index":8},"Neutrophil":{"key":"Neutrophil","short":"Neutrophil","value":0.010232367634344021,"index":9},"Other":{"key":"Other","short":"Other","value":0.19022244680884706,"index":10},"T":{"key":"T","short":"T","value":0.0010842082272883705,"index":11},"T cytotox":{"key":"T cytotox","short":"T cytotox","value":0.03445468430184308,"index":12},"T helper":{"key":"T helper","short":"T helper","value":0.13122538866665834,"index":13},"T reg":{"key":"T reg","short":"T reg","value":0.09822229630185476,"index":14},"TAM":{"key":"TAM","short":"TAM","value":0.037827708551590435,"index":15},"undefined":{"key":"undefined","short":"undefined","value":0.015612452953860797,"index":16}}'),
                         similarity: similarity,
                         mode: mode
                     })
@@ -683,6 +688,7 @@ class DataLayer {
     }
 
     async getImageSearchResults(dataset) {
+        const self = this;
         try {
             let response = await fetch('/get_image_search_results?' + new URLSearchParams({
                 linkedDatasource: dataset,
@@ -690,6 +696,9 @@ class DataLayer {
                 neighborhoodQuery: JSON.stringify(store('neighborhoodQuery'))
             }))
             let cells = await response.json();
+            // if (cells[dataset].num_results > self.maxResults) {
+            //     self.maxResults = cells[dataset].num_results;
+            // }
             return cells;
         } catch (e) {
             console.log("Error Getting Image Search Results", e);

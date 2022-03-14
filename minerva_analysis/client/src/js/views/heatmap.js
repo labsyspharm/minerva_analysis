@@ -29,12 +29,12 @@ class Heatmap {
     draw() {
         const self = this;
         // set the dimensions and margins of the graph
-        const margin = {top: 0, right: 0, bottom: 80, left: 80},
+        const margin = {top: 0, right: 70, bottom: 110, left: 110},
             width = document.getElementById(self.id).clientWidth - margin.left - margin.right,
             height = document.getElementById(self.id).clientHeight - margin.top - margin.bottom;
 
         // create a tooltip
-        self. tooltip = d3.select(`#${self.id}`)
+        self.tooltip = d3.select(`#${self.id}`)
             .append("div")
             .style("opacity", 0)
             .attr("class", "tooltip")
@@ -211,7 +211,13 @@ class Heatmap {
                 if (d.row === d.col) {
                     return 'none';
                 } else {
-                    return myColor(d.val)
+                    let val = d.val;
+                    if (val > 0) {
+                        val = Math.pow(val, 2 / 3)
+                    } else if (val < 0) {
+                        val = -1 * Math.sqrt(Math.pow(val * -1, 2 / 3));
+                    }
+                    return myColor(val)
                 }
             })
             .style("stroke-width", 1)

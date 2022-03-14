@@ -9,8 +9,7 @@
 
     {% if data.datasource %}
         <div id="container">
-
-            <div id="relative-col" class="row">
+            <div id="absolute-col" class="row">
                 <div id="related_image_wrapper" class="col-auto related_image_wrapper_small">
                     <div id="search-col-wrapper" class="row">
                         <div id="search-col" class="col-auto d-flex flex-column">
@@ -98,24 +97,7 @@
                                     </table>
                                 </div>
                             </div>
-                            <div id="related_image_list_wrapper" class="left-col-row d-flex flex-column flex-grow-1">
-                                <div class="row lowRow1 justify-content-between">
-                                    <div class="col-auto">
-                                        <h5 class="plot-label text-left"><a
-                                                href="/{{ data.datasource }}?applyPrevious=true&mode=multi">Related
-                                            Images</a></h5>
-                                    </div>
-                                    <div id="recolor_related_images" class="col-auto"></div>
-                                </div>
-                                <div id="related_image_container" class="left-col-row flex-grow-1"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="openseadragon_wrapper" class="col-auto openseadragon_wrapper_large viewer_col">
-                    <div id="left-col-wrapper" class="row">
-                        <div id="left-col" class="col-auto d-flex flex-column">
-                            <div id="channel_list_wrapper" class="left-col-row d-flex flex-column">
+                            <div id="channel_list_wrapper" class="left-col-row d-flex flex-column flex-grow-1">
                                 <div class="row lowRow1 justify-content-between">
                                     <div class="col-auto">
 
@@ -145,9 +127,13 @@
                                      id="channel_list"></div>
                                 {#                        flex-grow-1#}
                             </div>
-
                         </div>
                     </div>
+                </div>
+            </div>
+            <div id="relative-col" class="row">
+
+                <div id="openseadragon_wrapper" class="col-auto openseadragon_wrapper_large viewer_col">
                     <div id="openseadragon">
                         <div class="row">
                             <div class="col-auto">
@@ -181,7 +167,7 @@
                 <div id="multi_image_wrapper" class="col-auto multi_image_wrapper_large viewer_col">
                     <div class="row mb-2">
                         <div class="col col-lg-2 dropdown-col">
-                            <div id="multi_image_dropdown"class="dropdown">
+                            <div id="multi_image_dropdown" class="sort-dropdown">
                                 <button class="btn btn-secondary dropdown-toggle" type="button"
                                         id="multi_sort_dropdown"
                                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -202,7 +188,7 @@
                         <div id="recolor_multi_image" class="col col-lg-2"></div>
                     </div>
                 </div>
-                <div id="analysis_wrapper" class="col-auto analysis_wrapper_large viewer_col">
+                <div id="analysis_wrapper" class="col-auto analysis_wrapper_small viewer_col">
                     <div id="plots_display" class="col">
                         <div class="row">
                             <div class="col col-lg-2"></div>
@@ -234,32 +220,58 @@
 
                     </div>
                 </div>
-                <div id="neighborhood_wrapper" class="col-auto neighborhood_wrapper_small viewer_col">
+                <div id="neighborhood_wrapper" class="col-auto neighborhood_wrapper_large viewer_col">
                     <div id="comparison_title" class="row">
                         <div class="col-md-12">
                             <h5 class="plot-label text-center">Compare Neighborhood Patterns</h5>
                         </div>
                         <div class="col-md-12">
-
                             <div class="row justify-content-center">
                                 <div class="form-check" id="small-multiple-toggle">
                                     <input type="radio" class="btn-check" name="options-outlined"
-                                           id="barchart-button" checked
+                                           id="barchart-button"
                                            autocomplete="off">
                                     <label class="btn btn-light" for="barchart-button">Composition</label>
-                                    <input type="radio" class="btn-check" name="options-outlined"
-                                           id="heatmap-button"
-                                           autocomplete="off"
-                                    >
-                                    <label class="btn btn-light" for="heatmap-button">Pairwise</label>
+                                    {#                                    <input type="radio" class="btn-check" name="options-outlined"#}
+                                    {#                                           id="heatmap-button"#}
+                                    {#                                           autocomplete="off"#}
+                                    {#                                    >#}
+                                    {#                                    <label class="btn btn-light" for="heatmap-button">Pairwise</label>#}
                                     <input type="radio" class="btn-check" name="options-outlined"
                                            id="scatterplot-button"
                                            autocomplete="off">
-                                    <label class="btn btn-light" for="scatterplot-button">Spatial</label>
-                                    <input type="radio" class="btn-check" name="options-outlined"
+                                    <label class="btn btn-light" for="scatterplot-button">Specimen</label>
+                                    <input type="radio" class="btn-check" checked name="options-outlined"
                                            id="image-button"
                                            autocomplete="off">
-                                    <label class="btn btn-light" for="image-button">Image</label>
+                                    <label class="btn btn-light" for="image-button">Cohort</label>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="comparison_options" class="row">
+                        <div class="col-md-12">
+                            <div id="comparison_options_wrapper" class="row justify-content-end">
+                                <div class="col-auto">
+                                    <div id="related_images_dropdown" class="sort-dropdown">
+                                        <button class="btn btn-secondary dropdown-toggle" type="button"
+                                                id="related_sort_dropdown"
+                                                data-toggle="dropdown" aria-haspopup="true"
+                                                aria-expanded="false">
+                                            <i id="multi_sort_icon" class="fas fa-sort"></i>
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="related_sort_dropdown">
+                                            <span class="dropdown-item disabled">Sort By</span>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item">Significance</a>
+                                            <a class="dropdown-item">Number of Results</a>
+                                            <a class="dropdown-item">Alphabetical</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <div id="recolor_related_images"></div>
                                 </div>
                             </div>
                         </div>
@@ -271,15 +283,16 @@
                         <div id="legend" class="col-auto"></div>
                     </div>
                 </div>
+
             </div>
-            <div id="expand_wrapper" class="expand_wrapper_right">
-                <div class="row">
-                    <div class="col-7">
-                        <span id="comparison_views_label">Compare</span>
-                    </div>
-                    <div class="col-5">
-                        <span id="expand_icon" class="material-icons">keyboard_double_arrow_left</span>
-                    </div>
+        </div>
+        <div id="expand_wrapper" class="expand_wrapper_right">
+            <div class="row">
+                <div class="col-7">
+                    <span id="comparison_views_label">Compare</span>
+                </div>
+                <div class="col-5">
+                    <span id="expand_icon" class="material-icons">keyboard_double_arrow_left</span>
                 </div>
             </div>
         </div>

@@ -50,7 +50,8 @@ async function init(conf) {
     await dataLayer.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid', false, null, 'barchart');
+    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid',
+        true, null, 'image', 'related_images_dropdown');
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
@@ -58,16 +59,20 @@ async function init(conf) {
     scatterColorToggle = new ColorToggle('recolor_neighborhood_embedding_col', [scatterplot])
     //image viewer
     if (mode === 'single') {
-        document.getElementById('related_image_list_wrapper').style.visibility = "visible";
-        legend = new Legend(dataLayer, colorScheme, eventHandler);
+        // if (config?.linkedDatasets) {
+        //     document.getElementById('related_image_list_wrapper').style.visibility = "visible";
+        // } else {
+        //     document.getElementById('related_image_list_wrapper').style.visibility = "hidden";
+        // }
+        // legend = new Legend(dataLayer, colorScheme, eventHandler);
         channelList = new ChannelList(config, dataLayer, eventHandler);
         seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-        multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null, 'image');
-        let multiImageColorToggle = new ColorToggle('recolor_related_images', [multiImage]);
+        // multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null, 'image',
+        //     'related_images_dropdown');
+        let compareToggle = new ColorToggle('recolor_related_images', [multiImage]);
         // init synchronus methods
         seaDragonViewer.init();
-        let viewerColorToggle = new ColorToggle('recolor_image_viewer', [seaDragonViewer], true);
-        legend.init();
+        let viewerColorToggle = new ColorToggle('recolor_image_viewer', [comparison], true);
         await channelList.init()
 
     } else {
@@ -89,7 +94,7 @@ async function init(conf) {
     console.log('Sync Init', new Date());
     //Async stuff
     console.log('Starting Async', new Date());
-    await Promise.all([neighborhoodTable.init(), scatterplot.wrangle(), comparison.init(), multiImage.init()]);
+    await Promise.all([neighborhoodTable.init(), scatterplot.wrangle(), comparison.init()]);
     console.log('Ending Async', new Date());
     clusterData = dataLayer.getClusterCells();
     setupPageInteractivity();
@@ -248,6 +253,7 @@ function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     }
     multiImage.rewrangle();
     comparison.rewrangle();
+    // searching = false;
     if (seaDragonViewer?.contourView) {
         seaDragonViewer.drawContourLines();
     }

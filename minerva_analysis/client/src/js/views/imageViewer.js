@@ -478,8 +478,6 @@ class ImageViewer {
                         if (!seaDragonViewer.contourView) {
                             if (seaDragonViewer.colorByCellType) {
                                 color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
-                            } else {
-                                color = [255, 165, 0]
                             }
                         }
                         let index = i * 4;
@@ -766,20 +764,20 @@ class ImageViewer {
     drawContourLines() {
         const self = this;
         return dataLayer.getContourLines().then(pathResp => {
-            // let polygon = concaveman(pathResp);
-            // let pathsArray = polygon.map(point => {
-            //     return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
-            // });
-            // pathsArray = [[pathsArray]];
+            let polygon = concaveman(pathResp, 1);
+            let pathsArray = polygon.map(point => {
+                return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
+            });
+            pathsArray = [[pathsArray]];
 
 
-            let pathsArray = Object.values(pathResp).map(paths_el => {
-                return paths_el.map(path_el => {
-                    return path_el.map(point => {
-                        return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
-                    })
-                })
-            })
+            // let pathsArray = Object.values(pathResp).map(paths_el => {
+            //     return paths_el.map(path_el => {
+            //         return path_el.map(point => {
+            //             return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
+            //         })
+            //     })
+            // })
 
             const lineFunc = d3.line(d => {
                 return d.x

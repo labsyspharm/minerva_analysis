@@ -80,7 +80,7 @@ class ParallelCoordinates {
             this.margin = {top: 10, right: 55, bottom: 10, left: 100};
 
         } else {
-            this.margin = {top: 40, right: 55, bottom: 10, left: 100};
+            this.margin = {top: 40, right: 55, bottom: 10, left: 150};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -100,6 +100,8 @@ class ParallelCoordinates {
             .style("padding-right", `${this.margin.right}px`)
             .style("padding-top", `${this.margin.top}px`)
             .style("padding-bottom", `${this.margin.bottom}px`)
+            .style('position', 'absolute')
+
 
         canvasWrapper.append("canvas")
             .attr("class", 'parallel-canvas')
@@ -453,7 +455,7 @@ class ParallelCoordinates {
         self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
 
         if (!self.editMode && !self.hideOverall) {
-            let opacity = 0.002;
+            let opacity = 0.003;
             let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.full_neighborhoods', null);
             _.forEach(fullNeighborhood, row => {
                 const color = `hsla(0,0%,100%,${opacity})`;

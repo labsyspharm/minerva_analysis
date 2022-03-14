@@ -1,7 +1,7 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, colorScheme, small = false, image = false, dataset = '') {
+    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, colorScheme, small = false, image = false, dataset = '', infoSvgId = null, width= null, height=null) {
         this.id = id;
         this.canvasId = canvasId;
         this.dataset = dataset;
@@ -14,6 +14,9 @@ class Scatterplot {
         this.pValue = null;
         this.small = small;
         this.image = image;
+        this.infoSvgId = infoSvgId;
+        this.width = width;
+        this.height = height;
     }
 
     init() {
@@ -22,8 +25,8 @@ class Scatterplot {
         const canvas = document.querySelector(`#${self.canvasId}`);
         let {width, height} = canvas.getBoundingClientRect();
         let ratio = window.devicePixelRatio;
-        width = width / ratio;
-        height = height / ratio;
+        width = self.width;
+        height = self.height;
         self.lassoActive = false;
         self.editMode = false;
         self.customClusterDiv = document.getElementById('custom_cluster');
@@ -42,12 +45,12 @@ class Scatterplot {
         if (self.image) {
             self.plot = createScatterplot({
                 canvas,
-                // width,
-                // height,
+                width,
+                height,
                 pointColor: self.greyMap,
                 pointColorActive: self.orangeMap,
                 pointColorHover: self.orangeMap,
-                opacityBy: 'density',
+                // opacityBy: 'density',
                 colorBy: 'valueB',
                 // opacityBy: 'density',
                 // opacityBy: 'density',
@@ -66,6 +69,7 @@ class Scatterplot {
                 pointColor: self.greyMap,
                 pointColorActive: self.orangeMap,
                 pointColorHover: self.orangeMap,
+                // opacityBy: 'density',
                 colorBy: 'valueB',
                 // pointColorActive: hexToRGBA('#ffa500', 0.2),
                 backgroundColor: [0, 0, 0, 0],
@@ -154,44 +158,79 @@ class Scatterplot {
         if (self.image || mode === 'multi') {
             if (searching) {
                 self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
+                self.dataLayer.currentRawSelection[self.dataset] = {
+                    'num_results': self.imageSelection[self.dataset]['num_results'],
+                    'p_value': self.imageSelection[self.dataset]['p_value']
+                }
+                // self.numResults = ;
+                // self.pValue = ;
                 self.recolor(self.imageSelection[self.dataset].cells);
-                self.numResults = self.imageSelection[self.dataset]['num_results'];
-                self.pValue = self.imageSelection[self.dataset]['p_value'];
-                self.addImageResultInfo()
             }
-            searching = false;
         }
     }
 
     addImageResultInfo() {
         const self = this;
+        self.svg = d3.select(`#${self.infoSvgId}`)
+        self.svg.selectAll(`.info-svg-g`).remove()
 
-        d3.select(`#${self.id}`).selectAll('.image_result_info').remove()
-        let absoluteContainer = d3.select(`#${self.id}`).append('div')
-            .classed('image_result_info', true)
-        let row1 = absoluteContainer.append('div').classed('row', true)
-        let row1col1 = row1.append('div')
-            .classed('col-6', true)
-        row1col1.append('span')
-            .classed('image_result_info', true)
-            .text('Results')
-        let row1col2 = row1.append('div')
-            .classed('col-6', true)
-        row1col2.append('span')
-            .classed('image_result_value', true)
-            .text(self.numResults)
+        let width = self.svg.node().getBoundingClientRect().width;
+        let maxVal = self.dataLayer.maxResults * 1.5;
+        let g = self.svg.append('g')
+            .attr('class', 'info-svg-g')
 
-        let row2 = absoluteContainer.append('div').classed('row', true)
-        let row2col1 = row2.append('div')
-            .classed('col-6', true)
-        row2col1.append('span')
-            .classed('image_result_info', true)
-            .text('P Value')
-        let row2col2 = row2.append('div')
-            .classed('col-6', true)
-        row2col2.append('span')
-            .classed('image_result_value', true)
-            .text(Number((self.pValue).toFixed(1)))
+        g.append('rect')
+            .attr('class', 'num-results-rect')
+            .attr('x', 10)
+            .attr('y', 0)
+            .attr('width', (self.numResults / maxVal) * width)
+            .attr('height', 18)
+            .attr('stroke-width', 1)
+            .attr('stroke', 'white')
+            .attr('fill', 'orange')
+            .attr('fill-opacity', 1);
+
+        // self.svg.append('text')
+        //     .attr('x', (self.numResults / maxVal) * width + 40)
+        //     .attr('y', 16)
+        //     .attr('text-anchor', 'start')
+        //     .attr('class', 'result-info-text')
+        //     .text(`P = ${self.pValue}`);
+
+        g.append('text')
+            .attr('x', 13)
+            .attr('y', 14)
+            .attr('text-anchor', 'start')
+            .attr('class', 'result-info-text')
+            .text(`${self.numResults} results`);
+
+
+        // d3.select(`#${self.id}`).selectAll('.image_result_info').remove()
+        // let absoluteContainer = d3.select(`#${self.id}`).append('div')
+        //     .classed('image_result_info', true)
+        // let row1 = absoluteContainer.append('div').classed('row', true)
+        // let row1col1 = row1.append('div')
+        //     .classed('col-6', true)
+        // row1col1.append('span')
+        //     .classed('image_result_info', true)
+        //     .text('Results')
+        // let row1col2 = row1.append('div')
+        //     .classed('col-6', true)
+        // row1col2.append('span')
+        //     .classed('image_result_value', true)
+        //     .text(self.numResults)
+        //
+        // let row2 = absoluteContainer.append('div').classed('row', true)
+        // let row2col1 = row2.append('div')
+        //     .classed('col-6', true)
+        // row2col1.append('span')
+        //     .classed('image_result_info', true)
+        //     .text('P Value')
+        // let row2col2 = row2.append('div')
+        //     .classed('col-6', true)
+        // row2col2.append('span')
+        //     .classed('image_result_value', true)
+        //     .text(Number((self.pValue).toFixed(1)))
 
 
     }
@@ -205,6 +244,13 @@ class Scatterplot {
         }
         self.selection = selection;
         self.plot.select(selection, {preventEvent: true});
+        if (searching && self.image) {
+            self.numResults = self.dataLayer.getCurrentRawSelection()[self.dataset].num_results;
+            self.pValue = self.dataLayer.getCurrentRawSelection()[self.dataset].p_value;
+            self.addImageResultInfo();
+        } else if (self.infoSvgId) {
+            d3.select(`#${self.infoSvgId}`).selectAll(`.info-svg-g`).remove()
+        }
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
     }
 

@@ -6,14 +6,22 @@
 }
 
 #search-col {
+    padding-top: 5vh;
+    height: 95vh;
     padding-left: 0;
-    height: 100%;
 }
 
 #relative-col {
     height: 100%;
     width: 100%;
     margin: 0;
+}
+
+#absolute-col {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    position: absolute;
 }
 
 
@@ -39,15 +47,16 @@
 }
 
 .related_image_wrapper_small {
+    position: absolute;
     min-width: 20vw !important;
-    /*min-width: 14vw !important;*/
-    max-width: 20vw !important;
+    /*min-width: 14vw !important; TODO BIG SMALL SWITCH*/
+    /*max-width: 20vw !important;*/
 }
 
 .openseadragon_wrapper_small, .multi_image_wrapper_small {
-    width: 30vw !important;
-    min-width: 30vw !important;
-    max-width: 30vw !important;
+    width: 40vw !important;
+    /*min-width: 30vw !important;*/
+    /*max-width: 30vw !important;*/
 
 }
 
@@ -65,9 +74,9 @@
 }
 
 .analysis_wrapper_small {
-    width: 20vw !important;
-    min-width: 20vw !important;
-    max-width: 20vw !important;
+    width: 25vw !important;
+    min-width: 25vw !important;
+    max-width: 25vw !important;
 }
 
 
@@ -93,9 +102,10 @@
 
 .neighborhood_wrapper_large {
     display: block;
-    width: 30vw !important;
-    max-width: 30vw !important;
-    min-width: 30vw !important;
+    width: 26vw !important;
+    /*width: 30vw !important;*/
+    /*max-width: 30vw !important;*/
+    /*min-width: 30vw !important;*/
 }
 
 #openseadragon_wrapper, #neighborhood_wrapper, #analysis_wrapper {
@@ -174,7 +184,7 @@
 }
 
 .compare_plot_body {
-    height: 80%;
+    height: 90%;
     width: 100%;
 }
 
@@ -241,10 +251,10 @@
 }
 
 
-.scatter_canvas {
-    height: 100%;
-    width: 100%;
-}
+/*.scatter_canvas {*/
+/*    height: 100%;*/
+/*    width: 100%;*/
+/*}*/
 
 
 #neighborhood_similarity {
@@ -347,8 +357,8 @@
 #comparison_container {
     margin-right: 0;
     padding-right: 0;
-    height: 87vh;
-    max-height: 87vh;
+    height: 80vh;
+    max-height: 80vh;
 }
 
 #comparison_grid, #pinned_comparison_grid {
@@ -486,7 +496,7 @@
     color: white
 }
 
-#multi_sort_dropdown {
+#multi_sort_dropdown, #related_sort_dropdown {
     padding: 2px 4px;
     background-color: rgba(53, 54, 58, 0.75);
     border-style: none;
@@ -496,16 +506,41 @@
     position: relative;
 }
 
-.dropdown {
+.sort-dropdown {
     position: absolute !important;
     padding: 2px 0px;
     right: 0;
 }
-.grid-wrapper{
-    width:100%;
-    height:100%;
+
+.grid-wrapper {
+    width: 100%;
+    height: 100%;
     padding: 0;
     margin: 0;
+}
+
+#related_image_container .compare_plot_title {
+    padding-left: 10px;
+}
+
+.result-info-text {
+    font-size: 0.8rem;
+    fill: white;
+}
+
+
+/*#recolor_related_images_color_toggle {*/
+/*    display: none;*/
+/*}*/
+
+#related_expand_icon {
+    padding-bottom: 2px;
+    padding-left: 10px;
+    color: #3870ce !important;
+}
+
+.plot-label a {
+    color: white;
 }
 
 

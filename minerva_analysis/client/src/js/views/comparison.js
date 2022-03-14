@@ -259,7 +259,7 @@ class Comparison {
                 col.appendChild(wrapper);
 
                 let compare_plot_title = document.createElement("div");
-                compare_plot_title.className = "row compare_plot_title justify-content-center";
+                compare_plot_title.className = "row compare_plot_title justify-content-left";
                 let title = document.createElement("h5");
                 // HEATMAP
                 // if (i === 1) {
@@ -283,13 +283,16 @@ class Comparison {
         _.each(self.plots, (plot, i) => {
             let plotData;
             if (self.currentState == 'scatterplot') {
-                plotData = _.get(self.neighborhoods[i], 'cells', []);
+                plotData = _.get(self.neighborhoods[i], 'all_cells', []);
             } else if (self.currentState == 'image') {
                 plotData = self.relatedImageData[i][1];
             } else {
                 plotData = _.get(self.neighborhoods[i], 'composition_summary.weighted_contribution', []);
             }
             plot.wrangle(plotData, order);
+            if (self.currentState == 'scatterplot') {
+
+            }
         });
     }
 
@@ -312,24 +315,34 @@ class Comparison {
         self.plots = _.map(self.neighborhoods, (d, i) => {
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
+
             let canvas_div = document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`);
+            let width = canvas_div.offsetWidth;
+            let height = canvas_div.offsetHeight - 20;
+            // let infoSvg = document.createElement("svg");
+            d3.select(canvas_div).append('svg')
+                .attr("width", width)
+                .attr("height", 20)
+                .attr('id', `${self.containerId}_compare_col_info_svg_${i}`);
             let canvas = document.createElement("canvas");
             canvas.className = 'scatterplot scatter_canvas';
             canvas.id = `${self.containerId}_compare_col_canvas_${i}`;
             canvas.width = canvas_div.offsetWidth;
-            canvas.height = canvas_div.offsetHeight;
+            canvas.height = height - 20;
             canvas_div.appendChild(canvas);
             let spatialPlot = new Scatterplot(`${self.containerId}_compare_parallel_coordinates_${i}`, `${self.containerId}_compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
-                null, self.colorScheme, true, false, datasource);
+                null, self.colorScheme, true, true, k, `${self.containerId}_compare_col_info_svg_${i}`, width, height - 20);
             spatialPlot.init();
             return spatialPlot;
         });
+
         self.wrangleSmallMultiples();
     }
 
     initHeatmap() {
         const self = this;
         let plotNames = ['overall', 'selected'];
+        self.rowHeight = document.documentElement.clientHeight * 0.43;
         self.createGrid(1, 2);
         self.plots = _.map(plotNames, (d, i) => {
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
@@ -360,18 +373,25 @@ class Comparison {
             tempImageData.push([k, v]);
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
             let header = div.querySelector('h5')
-            header.innerHTML = `<a href='/${k}?applyPrevious=true&mode=single'>${k}</a>`
+            header.innerHTML = `<a href='/${k}?applyPrevious=true&mode=single'>${k}</a>`;
             let canvas_div = document.getElementById(`${self.containerId}_compare_parallel_coordinates_${i}`);
+            let width = canvas_div.offsetWidth;
+            let height = canvas_div.offsetHeight - 20;
+            // let infoSvg = document.createElement("svg");
+            d3.select(canvas_div).append('svg')
+                .attr("width", width)
+                .attr("height", 20)
+                .attr('id', `${self.containerId}_compare_col_info_svg_${i}`);
             let canvas = document.createElement("canvas");
             canvas.className = 'scatterplot scatter_canvas';
             canvas.id = `${self.containerId}_compare_col_canvas_${i}`;
             canvas.width = canvas_div.offsetWidth;
-            canvas.height = canvas_div.offsetHeight;
+            canvas.height = height - 20;
             canvas_div.appendChild(canvas);
 
 
             let imagePlot = new Scatterplot(`${self.containerId}_compare_parallel_coordinates_${i}`, `${self.containerId}_compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
-                null, self.colorScheme, true, true, k);
+                null, self.colorScheme, true, true, k, `${self.containerId}_compare_col_info_svg_${i}`, width, height - 20);
             imagePlot.init();
             return imagePlot;
         });

@@ -525,6 +525,7 @@ polygon:hover {
 
 
 #selection-options {
+    padding-top: 5vh;
     height: 100%;
     top: 0;
     position: absolute;
@@ -716,9 +717,6 @@ polygon:hover {
     font-size: 16px;
 }
 
-#topBar {
-    padding: 0 16px;
-}
 
 #title {
     font-size: 16px;

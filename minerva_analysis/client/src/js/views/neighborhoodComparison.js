@@ -130,7 +130,7 @@ function switchSmallMultipleType(elem, parent) {
 }
 
 function removeAllPlots() {
-    d3.selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas, #heatmap-svg, #summary_div_barchart_svg, .tooltip, #legend-svg').remove();
+    d3.selectAll('.barchart, .scatter_canvas, .parallel_coords, #heatmap-svg, #summary_div_barchart_svg, .tooltip, #legend-svg').remove();
     document.getElementById("summary_div").style.display = "none";
     document.getElementById("comparison_div_parent").style.display = "flex";
     plots = [];

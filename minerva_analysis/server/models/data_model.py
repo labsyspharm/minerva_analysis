@@ -218,6 +218,12 @@ def get_all_neighborhood_stats(datasource_name):
 
     neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
     obj = [get_stats(neighborhood) for neighborhood in neighborhoods]
+    phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+    # phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
+    # for i in range(phenotypes_array.shape[0]):
+    #     phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
+    # phenotypes_array = np.array(phenotypes_array, dtype='uint16')
+    # data = np.hstack((data, phenotypes_array))
     return obj
 
 
@@ -276,7 +282,8 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
     if isinstance(phenotype, list):
         cell_ids = datasource.loc[datasource['phenotype'].isin(phenotype)].index.values
     else:
-        cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
+        cell_ids = datasource.loc[datasource['phenotype'].isin([phenotype, 'CD4 T cells', 'CD 8 T cells'])].index.values
+        # cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
     if selection_ids is not None:
         cell_ids = np.intersect1d(np.array(selection_ids), cell_ids)
     obj = get_neighborhood_stats(datasource_name, cell_ids, np_datasource, fields=fields)
@@ -600,9 +607,12 @@ def get_color_scheme(datasource_name):
     # colors = palettable.colorbrewer.qualitative.Set3_12.hex_colors
     # colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
     #           '#e0bf04', '#ab9a95', '#258d6b', '#934270', '#48e26f']
-    colors = ["#5648d3", "#a7e831", "#df43b0", "#36e515", "#c047ff", "#789d23", "#b36ab0", "#02531d", "#fbacf6",
+    colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#fff070", "#040ee8", "#02531d", "#fbacf6",
               "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
               "#ead624"]
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#2626ff", "#040ee8", "#02531d", "#fbacf6",
+    #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #           "#ead624"]
     # # colors.remove('#FDB462')
     # colors.append('#db4ba8')
     # colors.append('#02b72e')
@@ -733,7 +743,7 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     query_vector = None
-    calc_p_value = True
+    calc_p_value = False
     if mode == 'multi' and 'linkedDatasets' in config[datasource_name]:
         combined_selection = None
         calc_p_value = False
@@ -843,9 +853,12 @@ def similarity_search(datasource_name, neighborhood_query, calc_p_value=True):
     if disabled:
         neighborhoods = np.delete(neighborhoods, disabled, axis=1)
         composition_summary = np.delete(query_vector, disabled, axis=0)
-
+    timer = time.time()
     scores = euclidian_distance_score(neighborhoods, np.array(query_vector))
+    print('Search Time', time.time() - timer)
+
     greater_than = np.argwhere(scores > threshold).flatten()
+    print('Fast Time', time.time() - timer)
 
     # test
     num_results = len(greater_than)
@@ -1020,7 +1033,7 @@ def get_pearsons_correlation(datasource_name, mode='single'):
     return heatmap
 
 
-def get_spearmans_correlation(datasource_name, selection_ids):
+def get_heatmap_pearson_correlation(datasource_name, selection_ids):
     global datasource
     global ball_tree
     global source
@@ -1137,10 +1150,10 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
     print('Loading Neighborhood Time', time.time() - time_neighborhood_stats)
 
     if neighborhoods.shape[0] == selection_neighborhoods.shape[0]:
-        sample_size = 10000
+        sample_size = 5000
     else:
         # TODO: Replace sample_size = selection_neighborhoods.shape[0]
-        sample_size = 10000
+        sample_size = 5000
 
     composition_summary = np.mean(selection_neighborhoods, axis=0)
     if selection_neighborhoods.shape[0] > 0:
@@ -1170,7 +1183,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         'phenotypes_list': phenotypes
     }
     print('Computing Stats Time', time.time() - time_neighborhood_stats)
-    compute_neighbors = False;
+    compute_neighbors = True;
     if compute_neighbors:
 
         points = cluster_cells[:, [3, 4]]
@@ -1200,35 +1213,37 @@ def get_contour_line_paths(datasource_name, selection_ids):
     x = cells[config[datasource_name]['featureData'][0]['xCoordinate']].to_numpy()
     y = cells[config[datasource_name]['featureData'][0]['yCoordinate']].to_numpy()
     cell_points = np.column_stack((x, y))
-    grid_points = 2 ** 7
-    num_levels = 10
-    kde = FFTKDE(kernel='gaussian')
-    grid, points = kde.fit(cell_points).evaluate(grid_points)
-    grid_x, grid_y = np.unique(grid[:, 0]), np.unique(grid[:, 1])
-    z = points.reshape(grid_points, grid_points).T
-    plt.ioff()
-    cs = plt.contour(grid_x, grid_y, z, num_levels)
-    levels = {}
-    i = 0
-    for collection in cs.collections:
-        levels[str(i)] = []
-        for path in collection.get_paths():
-            levels[str(i)].append(path.vertices)
-        i += 1
-    return levels
-    # return cell_points
+    # grid_points = 2 ** 7
+    # num_levels = 10
+    # kde = FFTKDE(kernel='gaussian')
+    # grid, points = kde.fit(cell_points).evaluate(grid_points)
+    # grid_x, grid_y = np.unique(grid[:, 0]), np.unique(grid[:, 1])
+    # z = points.reshape(grid_points, grid_points).T
+    # plt.ioff()
+    # cs = plt.contour(grid_x, grid_y, z, num_levels)
+    # levels = {}
+    # i = 0
+    # for collection in cs.collections:
+    #     levels[str(i)] = []
+    #     for path in collection.get_paths():
+    #         levels[str(i)].append(path.vertices)
+    #     i += 1
+    # return levels
+    return cell_points
 
 
 import gzip
 
 
 #
+#
+
 # @profile
-@numba.jit(nopython=True, parallel=True)
-def single_perm_test(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
+@numba.jit(nopython=True, parallel=True, cache=True)
+def create_perm_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
     chunk = 50
     __phenotypes_array = _phenotypes_array.flatten()
-    z = np.zeros((_phenotypes_array.shape[0], _len_phenos, chunk), dtype=np.float32)
+    z = np.zeros((chunk, _phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
     perm_matrix = np.zeros((_phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
     for j in prange(chunk):
         ___phenotypes_array = np.random.permutation(__phenotypes_array)
@@ -1241,24 +1256,24 @@ def single_perm_test(_phenotypes_array, _len_phenos, _neighbors, _distances, _le
             for ind in prange(len(pheno_weight_indices)):
                 result[pheno_weight_indices[ind]] += _distances[i][ind]
             perm_matrix[i] = result / result.sum()
-        z[:, :, j] = perm_matrix
+        z[j, :, :] = perm_matrix
     return z
 
 
-# @numba.jit(nopython=True, parallel=True)
 # @profile
-@numba.jit(nopython=True, parallel=True, cache=True)
-def test_with_saved_perm(_phenotypes_array, _perm_matrix, _vector, _lengths, _threshold=0.8):
-    chunk = 1
+def test_with_saved_perm(_perm_matrix, _vector, _threshold=0.8):
+    chunk = 50
     _vector = _vector.astype(np.float32)
-    __phenotypes_array = _phenotypes_array.flatten()
-    # LOAD
-    perm_matrix = _perm_matrix
+    subs = _perm_matrix - _vector
+    scores = 1 / (1 + np.sqrt(np.einsum('ijk,ijk->ij', subs, subs)))
+    return calculate_num_results(chunk, _vector, scores, _threshold)
 
+
+@numba.jit(nopython=True, parallel=True, cache=True)
+def calculate_num_results(chunk, _vector, scores, _threshold):
     results = np.zeros(chunk, dtype=np.int32)
     for j in prange(chunk):
-        scores = euclidian_distance_score(perm_matrix[:, :, j], _vector)
-        where = np.where(scores > _threshold)
+        where = np.where(scores[j, :] > _threshold)
         results[j] = len(where[0])
     return results
 
@@ -1347,24 +1362,28 @@ def get_permuted_results(datasource_name, neighborhood_query):
 
     if zarr_path.is_dir():
         test = time.time()
-        results = test_with_saved_perm(perm_data['phenotypes_array'], zarr.load(zarr_path), vector,
-                                       perm_data['lengths'],
-                                       neighborhood_query['threshold'])
+        zarr_data = zarr.load(zarr_path)
+        print('P Done Load Data,', time.time() - test)
+        test = time.time()
+        results = test_with_saved_perm(zarr_data, vector, neighborhood_query['threshold'])
+        print('P Perm Time,', time.time() - test)
+        test = time.time()
+
 
     else:
-        # print('P Done Load Data,', time.time() - test)
-        # test = time.time()
-        perms = single_perm_test(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
-                                 perm_data['distances'], perm_data['lengths'])
-        # print('P Create Perm Matrix,', time.time() - test)
-        # test = time.time()
-        zarr_perms = zarr.array(perms, chunks=(10000, perms.shape[1], None), compressor=Blosc(cname='zstd', clevel=3))
+        print('P Creating Data,', time.time() - test)
+        test = time.time()
+        perms = create_perm_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+                                   perm_data['distances'], perm_data['lengths'])
+        print('P Create Perm Matrix,', time.time() - test)
+        test = time.time()
+        zarr_perms = zarr.array(perms, compressor=Blosc(cname='zstd', clevel=3))
         zarr.save_array(zarr_path, zarr_perms)
-        results = test_with_saved_perm(perm_data['phenotypes_array'], perms, vector,
-                                       perm_data['lengths'],
-                                       neighborhood_query['threshold'])
-        # print('P Calc Results,', time.time() - test)
-        # test = time.time()
+        print('P Create Perm Matrix,', time.time() - test)
+        test = time.time()
+        results = test_with_saved_perm(perms, vector, neighborhood_query['threshold'])
+        print('P Calc Results,', time.time() - test)
+        test = time.time()
 
     # print('P Compute Perms,', time.time() - test)
 
@@ -1385,30 +1404,19 @@ def get_perm_data(datasource_name, matrix_paths):
     image_metadata = get_ome_metadata(datasource_name)
     print('P Metadata,', time.time() - test)
     test = time.time()
-    neighborhood_range = 50  # Default 30 microns
+    neighborhood_range = 30  # Default 30 microns
     r = neighborhood_range / image_metadata.physical_size_x
     neighbors, distances = image_ball_tree.query_radius(points, r=r, return_distance=True)
     print('P Query,', time.time() - test)
     test = time.time()
-
-    max_neighbors = 0
-    lengths = np.zeros((len(neighbors),))
-    for i in range(len(neighbors)):
-        lengths[i] = len(neighbors[i])
-        if max_neighbors < len(neighbors[i]):
-            max_neighbors = len(neighbors[i])
-    neighbors_matrix = np.zeros((len(neighbors), max_neighbors))
-    distances_matrix = np.zeros((len(neighbors), max_neighbors))
-
-    for i in range(len(neighbors)):
-        neighbors_matrix[i, 0:len(neighbors[i])] = neighbors[i]
-        distances_matrix[i, 0:len(distances[i])] = 1 - (distances[i] / r)
-
-    lengths = lengths.astype('uint16')
-    neighbors_matrix = neighbors_matrix.astype('uint32')
-    distances_matrix = distances_matrix.astype('float32')
-
-    print('P Building Matrices,', time.time() - test)
+    lengths = [len(l) for l in neighbors]
+    maxlen = max(lengths)
+    print('Max Time', time.time() - test)
+    neighbors_matrix = np.zeros((len(neighbors), maxlen), int)
+    distances_matrix = np.zeros((len(neighbors), maxlen), int)
+    mask = np.arange(maxlen) < np.array(lengths)[:, None]
+    neighbors_matrix[mask] = np.concatenate(neighbors)
+    distances_matrix[mask] = np.concatenate(distances)
     phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
     phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
     for i in range(phenotypes_array.shape[0]):

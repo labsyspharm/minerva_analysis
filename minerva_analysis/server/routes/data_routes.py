@@ -232,7 +232,7 @@ def get_heatmap_data():
     post_data = json.loads(request.data)
     selection_ids = post_data['selectionIds']
     datasource = post_data['datasource']
-    resp = data_model.get_spearmans_correlation(datasource, selection_ids)
+    resp = data_model.get_heatmap_pearson_correlation(datasource, selection_ids)
     return serialize_and_submit_json(resp)
 
 
@@ -325,7 +325,6 @@ def get_contour_lines():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     selection_ids = post_data['selectionIds']
-
     resp = data_model.get_contour_line_paths(datasource, selection_ids)
     return serialize_and_submit_json(resp)
 
