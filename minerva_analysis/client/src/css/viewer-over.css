@@ -98,10 +98,18 @@ interfaceWrapper
 }
 
 .toolingWindow {
+    height: 100%;
+    position: relative;
+    width: 100%;
+}
+
+.toolingWindowMask {
     background-color: rgba(0, 0, 0, 0.625);
     height: 100%;
     overflow: hidden;
+    position: relative;
     width: 100%;
+    z-index: 1;
 }
 
 .toolingWindowFrame {
@@ -114,6 +122,46 @@ interfaceWrapper
     height: 100%;
     overflow-y: scroll;
     width: 100%;
+}
+
+.toolingWindowGrabBar {
+    align-items: center;
+    bottom: 0;
+    cursor: grab;
+    display: flex;
+    left: 0;
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+}
+
+.toolingWindowGrabBarLine {
+    background-color: rgba(255, 255, 255, 0.75);
+    height: 0.15vh;
+    position: relative;
+    width: 100%;
+}
+
+.toolingWindowGrabBarTriangle {
+    color: rgba(255, 255, 255, 1);
+    position: absolute;
+    right: 0.4vw;
+}
+
+.submitButton {
+    align-items: center;
+    display: flex;
+    width: 100%;
+}
+
+.submitButton a {
+    border: 0.075vw solid white;
+    border-radius: 0.2vw;
+    color: white !important;
+    font-size: 0.8vw;
+    font-weight: 300;
+    margin: 0 0 0 0.5vw;
+    padding: 0.25vh 0.5vw;
 }
 
 /*
@@ -187,7 +235,7 @@ toolingWindowSimilaritySearch
     font-size: 2.5vw;
 }
 
-#thresholdButton a {
+.submitButton a {
     border: 0.075vw solid white;
     border-radius: 0.2vw;
     font-size: 0.8vw;
@@ -202,6 +250,13 @@ toolingWindowSimilaritySearch
  */
 #save_neighborhood_icon {
     float: unset !important;
+}
+
+/**
+toolingWindowCompareNbdPatterns
+ */
+#neighborhood_wrapper {
+    display: block !important;
 }
 
 /*

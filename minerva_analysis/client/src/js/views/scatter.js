@@ -170,13 +170,15 @@ class Scatterplot {
             return;
         }
         numberOfClusters = _.toInteger(numberOfClusters.value);
-        document.getElementById('custom_cluster_loading').innerHTML += '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+        // FIXME - could not find this element
+        // document.getElementById('custom_cluster_loading').innerHTML += '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
         try {
             let updatedNeighborhoods = await self.dataLayer.customCluster(numberOfClusters)
             self.neighborhoodTable.updateNeighborhoods(updatedNeighborhoods);
         } catch (e) {
         }
-        document.getElementById('custom_cluster_loading').innerHTML = '';
+        // FIXME - could not find this element
+        // document.getElementById('custom_cluster_loading').innerHTML = '';
     }
 
     rewrangle() {

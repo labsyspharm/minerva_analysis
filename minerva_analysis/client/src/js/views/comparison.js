@@ -33,7 +33,8 @@ class Comparison {
 
     draw() {
         const self = this;
-        this.hidden = !this.hidden;
+        // this.hidden = !this.hidden;
+        this.hidden = false;
         if (!this.hidden) {
             // let parentHeight = document.getElementById('comparison_container').clientHeight;
             // self.rowHeight = Math.round(parentHeight / 4);

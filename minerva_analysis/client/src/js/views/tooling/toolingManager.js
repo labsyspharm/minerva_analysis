@@ -55,7 +55,7 @@ export class ToolingManager {
                     name: 'toolingWrapperR',
                     display: 'Tooling Wrapper Right',
                     //
-                    isExpanded: false,
+                    isExpanded: true,
                     stylePosition: 'absolute',
                     stylePositioning: {
                         top: 0,
@@ -64,17 +64,17 @@ export class ToolingManager {
                         left: 'unset',
                     },
                     styleWidthAsPercent: 3.75,
-                    styleWidthExpandedAsVW: 20,
+                    styleWidthExpandedAsVW: 21,
                     styleZIndex: 2,
                     visible: true,
                 },
             },
             fontSizes: {
-                'xs': '0.8vw',
+                'xs': '0.7vw',
                 's': '0.9vw',
-                'm': '0.9vw',
-                'l': '1.1vw',
-                'xl': '1.2vw',
+                'm': '1.1vw',
+                'l': '1.3vw',
+                'xl': '1.5vw',
             }
         },
     };
@@ -131,47 +131,72 @@ export class ToolingManager {
         // WINDOWS
         this.elements.toolingWindows = this.elements.interfaceWrapperD3.selectAll('.toolingWindow');
 
-        this.elements.toolingWindows.selectAll('h1')
-            .style('margin', '0 0 3vh 0')
+        this.elements.toolingWindows.selectAll('.title')
+            .style('margin', '0 0 1vh 0')
             .style('font-size', this.settings.configs.fontSizes.l)
             .style('letter-spacing', '0.05vw')
+            .style('padding', '0 10% 0 0')
             .style('color', 'white');
-        this.elements.toolingWindows.selectAll('h2')
+        this.elements.toolingWindows.selectAll('.description')
             .style('width', '100%')
             .style('font-size', this.settings.configs.fontSizes.xs)
+            .style('color', 'rgba(255, 255, 255, 0.8')
+            .style('padding', '0 10% 0 0');
+
+        this.elements.toolingWindows.selectAll('.subtitle')
+            .style('width', '100%')
+            .style('font-size', this.settings.configs.fontSizes.s)
             .style('margin', '1vh 0')
             .style('letter-spacing', '0.1vw')
             .style('color', 'white')
-            .style('font-weight', 400)
+            .style('font-weight', 600)
             .style('display', 'flex')
             .style('flex-flow', 'row wrap')
             .style('align-items', 'center')
             .select('span')
-            .style('font-size', this.settings.configs.fontSizes.xs)
+            .style('font-size', this.settings.configs.fontSizes.s)
             .style('color', 'orange');
 
         // Connect buttons and windows
-        const buttons = Array.from(document.querySelectorAll('.toolingButton'));
-        const windows = Array.from(document.querySelectorAll('.toolingWindow'));
+        const buttonsL = Array.from(document.querySelectorAll('#toolingWrapperL .toolingButton'));
+        const windowsL = Array.from(document.querySelectorAll('#toolingWrapperL .toolingWindow'));
+        const buttonsR = Array.from(document.querySelectorAll('#toolingWrapperR .toolingButton'));
+        const windowsR = Array.from(document.querySelectorAll('#toolingWrapperR .toolingWindow'));
 
-        // Iterate and construct as data
-        buttons.forEach(b => {
+        // Add to buttons
+        function buildButtons(buttons, windows, group) {
 
-            const buttonMatchId = b.id.replace('toolingButton', '');
+            const buttonsArr = [];
 
-            const w = windows.find(w => w.id.includes(buttonMatchId));
-            if (w) {
-                this.datum.buttonsToWindows.push({
-                    name: buttonMatchId,
-                    parent: w.parentElement.parentElement.id,
-                    //
-                    buttonEl: b,
-                    windowEl: w,
-                    isActive: false,
-                });
-            }
+            // Iterate and construct as data
+            buttons.forEach(b => {
 
-        });
+                const buttonMatchId = b.id.replace('toolingButton', '');
+
+                const w = windows.find(w => w.id.includes(buttonMatchId));
+                if (w) {
+                    buttonsArr.push({
+                        name: buttonMatchId,
+                        parent: w.parentElement.parentElement.id,
+                        group,
+                        //
+                        buttonEl: b,
+                        windowEl: w,
+                        windowH: 0,
+                        isActive: false,
+                    });
+                }
+
+            });
+            return buttonsArr;
+        }
+
+        //
+        this.datum.buttonsToWindows = [];
+        this.datum.buttonsToWindows.push(...buildButtons(buttonsL, windowsL, 'l'));
+        this.datum.buttonsToWindows.push(...buildButtons(buttonsR, windowsR, 'r'));
+
+        // Also add
 
         // ... wrangle
         this.wrangle()
@@ -195,28 +220,59 @@ export class ToolingManager {
         this.elements.toolingWrapperLD3.select('.toolingContainAbs')
             .style('width', d => {
                 if (d.isExpanded) {
-                    return `${d.styleWidthExpandedAsVW}vw`
+                    return `${d.styleWidthExpandedAsVW}vw`;
                 }
                 return '0';
             });
         this.elements.toolingWrapperRD3.select('.toolingContainAbs')
             .style('width', d => {
                 if (d.isExpanded) {
-                    return `${d.styleWidthExpandedAsVW}`
+                    return `${d.styleWidthExpandedAsVW}vw`;
                 }
                 return '0';
             });
 
         // Buttons indicated, windows visible
-        const activeHOnLeft = Math.floor(1 /
-            this.datum.buttonsToWindows.filter(bw => bw.parent === 'toolingWrapperL' && bw.isActive).length * 100)
-        this.datum.buttonsToWindows.forEach(bw => {
+        const buttonsL = this.datum.buttonsToWindows.filter(bw => bw.group === 'l');
+        const buttonsR = this.datum.buttonsToWindows.filter(bw => bw.group === 'r');
 
-            d3.select(bw.buttonEl)
-                .style('border', bw.isActive ? '0.05vw solid white' : '0.05vw solid transparent');
-            d3.select(bw.windowEl)
-                .style('height', !bw.isActive ? 0 : `${activeHOnLeft}%`);
-        });
+        // Check buttons to manage windows
+        function evalButtonsToWindows(buttons) {
+
+            const buttonsInactive = buttons.filter(b => !b.isActive);
+            buttonsInactive.forEach(b => {
+
+                b.windowH = 0;
+                d3.select(b.buttonEl).style('border', '0.05vw solid transparent');
+                d3.select(b.windowEl).style('height', `${b.windowH}`);
+            });
+
+            const buttonsActive = buttons.filter(b => b.isActive);
+            const buttonsActiveH = buttonsActive.length > 0 ? Math.floor(1 / buttonsActive.length * 100) : 0;
+            buttonsActive.forEach((b, i) => {
+
+                b.windowH = buttonsActiveH;
+                d3.select(b.buttonEl).style('border', '0.05vw solid white');
+                d3.select(b.windowEl).style('height', `${b.windowH}%`);
+
+                if (i < buttonsActive.length - 1) {
+                    const grabBar = d3.select(b.windowEl)
+                        .append('div')
+                        .attr('class', 'toolingWindowGrabBar')
+                        .style('padding', '0 0.5vw 0 0');
+                    grabBar.append('div')
+                        .attr('class', 'toolingWindowGrabBarLine');
+                    grabBar.append('div')
+                        .attr('class', 'toolingWindowGrabBarTriangle')
+                        .html('&#9664;');
+                }
+            });
+
+        }
+
+        evalButtonsToWindows(buttonsL);
+        evalButtonsToWindows(buttonsR);
+
 
     }
 

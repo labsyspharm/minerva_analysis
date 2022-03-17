@@ -30,101 +30,105 @@
                         <div id="toolingButtonNeighborhoodPatterns" class="toolingButton">
                             <img src="../client/assets/aicon_nbd_pat.svg" alt="Neighborhood Patterns button">
                         </div>
-                        <div id="toolingButtonRelatedImages" class="toolingButton">
-                            <img src="../client/assets/aicon_rel_img.svg" alt="Related Images button">
-                        </div>
                     </div>
                     <div class="toolingContain toolingContainAbs">
 
                         <div id="toolingWindowMarkerSelection" class="toolingWindow">
-                            <div class="toolingWindowFrame">
-                                <div class="toolingWindowScroller">
-                                    <h1>Marker Selection</h1>
-                                    <h2>Combination</h2>
-                                    <h2>Individual</h2>
-                                    <div id="channelList"></div>
+                            <div class="toolingWindowMask">
+                                <div class="toolingWindowFrame">
+                                    <div class="toolingWindowScroller">
+                                        <h1 class="title">Marker Selection</h1>
+                                        <p class="description">Select 1-4 marker channels to configure and to
+                                            display.</p>
+                                        <h2 class="subtitle">Individual</h2>
+                                        <div id="channelList"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div id="toolingWindowSimilaritySearch" class="toolingWindow">
-                            <div class="toolingWindowFrame">
-                                <div class="toolingWindowScroller">
-                                    <h1>Similarity Search</h1>
-                                    <h2 class="neighborhood_similarity_label">Selection:&nbsp;
-                                        <span id="neighborhood_current_selection" class="neighborhood_similarity_label">None
+                            <div class="toolingWindowMask">
+                                <div class="toolingWindowFrame">
+                                    <div class="toolingWindowScroller">
+                                        <h1 class="title">Similarity Search</h1>
+                                        <p class="description">Discover neighborhoods by defining an exemplar ROI - hold
+                                            `shift` to draw.</p>
+                                        <h2 class="neighborhood_similarity_label subtitle">Selection:&nbsp;
+                                            <span id="neighborhood_current_selection"
+                                                  class="neighborhood_similarity_label">None</span>
+                                        </h2>
+                                        <h2 class="neighborhood_similarity_label subtitle">Threshold:&nbsp;
+                                            <span id="similarity_val" class="neighborhood_similarity_label">0.8
                                                                                                                 </span>
-                                    </h2>
-                                    <h2 class="neighborhood_similarity_label">Threshold:&nbsp;
-                                        <span id="similarity_val" class="neighborhood_similarity_label">0.8
-                                                                                                                </span>
-                                    </h2>
-                                    <div id="thresholdInput">
-                                        <input type="range" class="form-control-range" min="0" max="100"
-                                               value="80"
-                                               id="neighborhood_similarity">
-                                    </div>
-                                    <div id="thresholdButton">
-                                        <p class="material-icons"
-                                           id="neighborhood_icon"
-                                           title="Search for Similar Neighborhoods">search</p>
-                                        <a>Begin Search</a>
+                                        </h2>
+                                        <div id="thresholdInput">
+                                            <input type="range" class="form-control-range" min="0" max="100"
+                                                   value="80"
+                                                   id="neighborhood_similarity">
+                                        </div>
+                                        <div id="thresholdButton" class="submitButton">
+                                            <p class="material-icons"
+                                               id="neighborhood_icon"
+                                               title="Search for Similar Neighborhoods">search</p>
+                                            <a>Begin Search</a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div id="toolingWindowClusterNeighborhoods" class="toolingWindow">
-                            <div class="toolingWindowFrame">
-                                <div class="toolingWindowScroller">
-                                    <h1>Cluster Neighborhoods</h1>
-                                    <h2 id="cluster-number-input">
-                                        <label>Cluster Count</label>
-                                        <input type="number" id="custom_cluster_number"
-                                               placeholder="Define">
-                                    </h2>
-                                    <div>
-                                        <p class="material-icons" id="custom_cluster_submit"
-                                           title="Cluster Neighborhoods">bubble_chart</p>
+                            <div class="toolingWindowMask">
+                                <div class="toolingWindowFrame">
+                                    <div class="toolingWindowScroller">
+                                        <h1 class="title">Cluster Neighborhoods</h1>
+                                        <p class="description">Extract patterns using current selection (results in
+                                            Neighborhood Patterns).</p>
+                                        <h2 class="subtitle">Cluster Count</h2>
+                                        <div id="cluster-number-input">
+                                            <input type="number" id="custom_cluster_number"
+                                                   value="1">
+                                        </div>
+                                        <div class="submitButton">
+                                            <p class="material-icons" id="custom_cluster_submit"
+                                               title="Cluster Neighborhoods">bubble_chart</p>
+                                            <a>Begin Clustering</a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div id="toolingWindowNeighborhoodPatterns" class="toolingWindow">
-                            <div class="toolingWindowFrame">
-                                <div class="toolingWindowScroller">
-                                    <h1>Neighborhood Patterns</h1>
-                                    <div id="neighborhood_table_card">
-                                        <table id="neighborhood_table" class="table table-hover">
-                                            <thead id="neighborhood_table_header">
-                                            <tr>
-                                                <th scope="col"><span>Name</span></th>
-                                                <th scope="col"></th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            </tbody>
-                                        </table>
+                            <div class="toolingWindowMask">
+                                <div class="toolingWindowFrame">
+                                    <div class="toolingWindowScroller">
+                                        <h1 class="title">Neighborhood Patterns</h1>
+                                        <p class="description">Save clusters to local database.</p>
+                                        <div id="neighborhood_table_card">
+                                            <table id="neighborhood_table" class="table table-hover">
+                                                <thead id="neighborhood_table_header">
+                                                <tr>
+                                                    <th scope="col"><span>Name</span></th>
+                                                    <th scope="col"></th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="submitButton">
+                                            <p class="material-icons" id="save_neighborhood_icon"
+                                               title="Save Neighborhood">save</p>
+                                            <a>Save</a>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="material-icons" id="save_neighborhood_icon"
-                                           title="Save Neighborhood">save</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="toolingWindowRelatedImages" class="toolingWindow">
-                            <div class="toolingWindowFrame">
-                                <div class="toolingWindowScroller">
-                                    <h1>Related Images</h1>
                                 </div>
                             </div>
                         </div>
 
                     </div>
-
                 </div>
 
                 <div id="viewerWrapper" class="toolingWrapperRel toolingWrapper">
@@ -155,7 +159,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <div id="toolingWrapperR" class="toolingWrapperAbs toolingWrapper" style="visibility: hidden">
@@ -169,14 +172,105 @@
                         <div id="toolingButtonNeighborhoodEmbedding" class="toolingButton">
                             <img src="../client/assets/aicon_nbd_emb.svg" alt="Neighborhood Embedding button">
                         </div>
-                        <div id="toolingButtonCompareNeighborhoodPatterns" class="toolingButton">
-                            <img src="../client/assets/aicon_cmp_nbd_pat.svg" alt="Compare Neighborhood Patterns button">
+                        <div id="toolingButtonCompareNbdPatterns" class="toolingButton">
+                            <img src="../client/assets/aicon_cmp_nbd_pat.svg"
+                                 alt="Compare Neighborhood Patterns button">
+                        </div>
+                        <div id="toolingButtonRelatedImages" class="toolingButton">
+                            <img src="../client/assets/aicon_rel_img.svg" alt="Related Images button">
                         </div>
                     </div>
-                    <div class="toolingContain toolingContainAbs"></div>
-                </div>
 
+                    <div class="toolingContain toolingContainAbs">
+
+                        <div id="toolingWindowNeighborhoodComposition" class="toolingWindow">
+                            <div class="toolingWindowMask">
+                                <div class="toolingWindowFrame">
+                                    <div class="toolingWindowScroller">
+                                        <h1 class="title">Neighborhood Composition</h1>
+                                        <p class="description">Need to write a good 1-sentence description.</p>
+                                        <div id="parallel_coordinates_display"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="toolingWindowNeighborhoodEmbedding" class="toolingWindow">
+                            <div class="toolingWindowMask">
+                                <div class="toolingWindowFrame">
+                                    <div class="toolingWindowScroller">
+                                        <h1 class="title">Neighborhood Embedding</h1>
+                                        <p class="description">Need to write a good 1-sentence description.</p>
+                                        <div id="scatterplot_display">
+                                            <canvas class="scatter_canvas" id="viewer_scatter_canvas"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="toolingWindowCompareNbdPatterns" class="toolingWindow">
+                            <div class="toolingWindowMask">
+                                <div class="toolingWindowFrame">
+                                    <div class="toolingWindowScroller">
+                                        <h1 class="title">Compare Neighborhood Patterns</h1>
+                                        <p class="description">Need to write a good 1-sentence description.</p>
+                                        <div id="comparison_title">
+                                            <div class="form-check" id="small-multiple-toggle">
+                                                <input type="radio" class="btn-check"
+                                                       name="options-outlined"
+                                                       id="barchart-button" checked
+                                                       autocomplete="off">
+                                                <label class="btn btn-light"
+                                                       for="barchart-button">Composition</label>
+                                                <input type="radio" class="btn-check"
+                                                       name="options-outlined"
+                                                       id="heatmap-button"
+                                                       autocomplete="off"
+                                                >
+                                                <label class="btn btn-light"
+                                                       for="heatmap-button">Pairwise</label>
+                                                <input type="radio" class="btn-check"
+                                                       name="options-outlined"
+                                                       id="scatterplot-button"
+                                                       autocomplete="off">
+                                                <label class="btn btn-light"
+                                                       for="scatterplot-button">Spatial</label>
+                                                <input type="radio" class="btn-check"
+                                                       name="options-outlined"
+                                                       id="image-button"
+                                                       autocomplete="off">
+                                                <label class="btn btn-light"
+                                                       for="image-button">Image</label>
+                                            </div>
+                                        </div>
+                                        <div id="comparison_container">
+                                            {#                        <div id="pinned_comparison_grid"></div>#}
+                                            <div id="comparison_grid"></div>
+                                            <div id="summary_div"></div>
+                                            <div id="legend" class="col-auto"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="toolingWindowRelatedImages" class="toolingWindow">
+                        <div class="toolingWindowMask">
+                            <div class="toolingWindowFrame">
+                                <div class="toolingWindowScroller">
+                                    <h1 class="title">Related Images</h1>
+                                    <p class="description">Need to write a good 1-sentence description.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
+
+        </div>
         </div>
 
 
@@ -296,72 +390,72 @@
                         </div>
                         <div class="row justify-content-md-center">
                         </div>
-                        <div class="row align-items-center" id="parallel_coordinates_display"></div>
+                        {#                        <div class="row align-items-center" id="parallel_coordinates_display"></div>#}
                         <div class="row">
                             <div class="col-md-12">
                                 <h5 class="plot-label text-center">Neighborhood Embedding</h5>
                             </div>
 
                         </div>
-                        <div class="row align-items-center" id="scatterplot_display">
-                            <canvas class="scatter_canvas" id="viewer_scatter_canvas"></canvas>
-                        </div>
+                        {#                        <div class="row align-items-center" id="scatterplot_display">#}
+                        {#                            <canvas class="scatter_canvas" id="viewer_scatter_canvas"></canvas>#}
+                        {#                        </div>#}
 
                     </div>
                 </div>
 
                 <!-- Extract (JJ) TODO :: remove -->
-                <div id="neighborhood_wrapper" class="col-auto neighborhood_wrapper_small viewer_col"
-                     style="display: none">
-                    <div id="comparison_title" class="row">
-                        <div class="col-md-12">
-                            <h5 class="plot-label text-center">Compare Neighborhood Patterns</h5>
-                        </div>
-                        <div class="col-md-12">
-
-                            <div class="row justify-content-center">
-                                <div class="form-check" id="small-multiple-toggle">
-                                    <input type="radio" class="btn-check" name="options-outlined"
-                                           id="barchart-button" checked
-                                           autocomplete="off">
-                                    <label class="btn btn-light" for="barchart-button">Composition</label>
-                                    <input type="radio" class="btn-check" name="options-outlined"
-                                           id="heatmap-button"
-                                           autocomplete="off"
-                                    >
-                                    <label class="btn btn-light" for="heatmap-button">Pairwise</label>
-                                    <input type="radio" class="btn-check" name="options-outlined"
-                                           id="scatterplot-button"
-                                           autocomplete="off">
-                                    <label class="btn btn-light" for="scatterplot-button">Spatial</label>
-                                    <input type="radio" class="btn-check" name="options-outlined"
-                                           id="image-button"
-                                           autocomplete="off">
-                                    <label class="btn btn-light" for="image-button">Image</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="container row" id="comparison_container">
-                        {#                        <div id="pinned_comparison_grid"></div>#}
-                        <div id="comparison_grid"></div>
-                        <div id="summary_div"></div>
-                        <div id="legend" class="col-auto"></div>
-                    </div>
-                </div>
+                {#                <div id="neighborhood_wrapper" class="col-auto neighborhood_wrapper_small viewer_col"#}
+                {#                     style="display: none">#}
+                {#                    <div id="comparison_title" class="row">#}
+                {#                        <div class="col-md-12">#}
+                {#                            <h5 class="plot-label text-center">Compare Neighborhood Patterns</h5>#}
+                {#                        </div>#}
+                {#                        <div class="col-md-12">#}
+                {##}
+                {#                            <div class="row justify-content-center">#}
+                {#                                <div class="form-check" id="small-multiple-toggle">#}
+                {#                                    <input type="radio" class="btn-check" name="options-outlined"#}
+                {#                                           id="barchart-button" checked#}
+                {#                                           autocomplete="off">#}
+                {#                                    <label class="btn btn-light" for="barchart-button">Composition</label>#}
+                {#                                    <input type="radio" class="btn-check" name="options-outlined"#}
+                {#                                           id="heatmap-button"#}
+                {#                                           autocomplete="off"#}
+                {#                                    >#}
+                {#                                    <label class="btn btn-light" for="heatmap-button">Pairwise</label>#}
+                {#                                    <input type="radio" class="btn-check" name="options-outlined"#}
+                {#                                           id="scatterplot-button"#}
+                {#                                           autocomplete="off">#}
+                {#                                    <label class="btn btn-light" for="scatterplot-button">Spatial</label>#}
+                {#                                    <input type="radio" class="btn-check" name="options-outlined"#}
+                {#                                           id="image-button"#}
+                {#                                           autocomplete="off">#}
+                {#                                    <label class="btn btn-light" for="image-button">Image</label>#}
+                {#                                </div>#}
+                {#                            </div>#}
+                {#                        </div>#}
+                {#                    </div>#}
+                {#                    <div class="container row" id="comparison_container">#}
+                {#                        <div id="pinned_comparison_grid"></div>#}
+                {#                        <div id="comparison_grid"></div>#}
+                {#                        <div id="summary_div"></div>#}
+                {#                        <div id="legend" class="col-auto"></div>#}
+                {#                    </div>#}
+                {#                </div>#}
             </div>
 
             <!-- Extract (JJ) TODO :: remove -->
-            <div id="expand_wrapper" class="expand_wrapper_right" style="display: none">
-                <div class="row">
-                    <div class="col-7">
-                        <span id="comparison_views_label">Compare</span>
-                    </div>
-                    <div class="col-5">
-                        <span id="expand_icon" class="material-icons">keyboard_double_arrow_left</span>
-                    </div>
-                </div>
-            </div>
+            {#            <div id="expand_wrapper" class="expand_wrapper_right" style="display: none">#}
+            {#                <div class="row">#}
+            {#                    <div class="col-7">#}
+            {#                        <span id="comparison_views_label">Compare</span>#}
+            {#                    </div>#}
+            {#                    <div class="col-5">#}
+            {#                        <span id="expand_icon" class="material-icons">keyboard_double_arrow_left</span>#}
+            {#                    </div>#}
+            {#                </div>#}
+            {#            </div>#}
         </div>
         <script src="../client/src/js/main.js" defer></script>
     {% endif %}

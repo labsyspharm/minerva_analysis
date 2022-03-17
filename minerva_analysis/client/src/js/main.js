@@ -49,7 +49,7 @@ async function init(conf) {
     await dataLayer.init();
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
-    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid', false, null, 'barchart');
+    comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid', true, null, 'barchart');
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
