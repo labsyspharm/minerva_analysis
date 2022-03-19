@@ -41,10 +41,10 @@ class NeighborhoodTable {
             self.neighborhoods = newRows;
         }
         let rows = d3.select(self.table).selectAll(".neighborhood-row")
-            .data(self.neighborhoods)
+            .data(self.neighborhoods, d=>d[0])
         rows.enter()
             .append("tr")
-            .attr('class', 'neighborhood-row row justify-content-between')
+            .attr('class', 'neighborhood-row justify-content-between')
             .on('click', (e, d) => {
                 return self.selectRow(e, d);
             });

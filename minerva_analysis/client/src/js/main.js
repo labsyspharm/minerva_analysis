@@ -262,6 +262,8 @@ function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     // searching = false;
     if (seaDragonViewer?.contourView) {
         seaDragonViewer.drawContourLines();
+    } else {
+        seaDragonViewer.clearContourLines();
     }
 
 }
@@ -277,7 +279,7 @@ const selectPhenotype = async (phenotype) => {
     let cells = await dataLayer.getNeighborhoodByPhenotype(phenotype);
     await displayNeighborhoodSelection(cells);
 }
-eventHandler.bind(Legend.events.selectPhenotype, selectPhenotype);
+eventHandler.bind(ParallelCoordinates.events.selectPhenotype, selectPhenotype);
 
 const selectPhenotypePair = async (d) => {
     console.log(d);

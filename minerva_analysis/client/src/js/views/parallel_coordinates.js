@@ -19,55 +19,64 @@ class ParallelCoordinates {
         this.dataLayer.defaultOrder.forEach((d, i) => {
             this.order[d] = i;
         })
+        this.reorder = false;
         // this.order = this.dataLayer.defaultOrder;
         this.sliders = new Map();
         this.dragHandler = d3.drag()
             .on('drag', (e, d) => {
-                // let current =
-                let swap = (index1, index2) => {
-                    console.log('swap', index1, index2);
-                    d3.select(self.visData[index2].ele)
-                        .attr('y', d => {
-                            return self.labelPositions[index1];
-                        });
-                    [[self.visData[index1], self.visData[index2]]] = [[self.visData[index2], self.visData[index1]]];
+                if (self.reorder) {
+                    // let current =
+                    let swap = (index1, index2) => {
+                        console.log('swap', index1, index2);
+                        d3.select(self.visData[index2].ele)
+                            .attr('y', d => {
+                                return self.labelPositions[index1];
+                            });
+                        [[self.visData[index1], self.visData[index2]]] = [[self.visData[index2], self.visData[index1]]];
 
-
-                }
-                let y = e.y + 3;
-                d3.select(d.ele)
-                    .attr('y', y);
-                let buffer = 5; // 10 px buffer above and below to switch
-                if ((d.index !== 0 && y - buffer < self.labelPositions[d.index - 1])) {
-                    swap(d.index, d.index - 1);
-                    d.index = d.index - 1;
-                }
-                if ((d.index !== self.visData.length - 1 && y + buffer > self.labelPositions[d.index + 1])) {
-                    swap(d.index, d.index + 1);
-                    d.index = d.index + 1;
+                    }
+                    let y = e.y + 3;
+                    d3.select(d.ele)
+                        .attr('y', y);
+                    let buffer = 5; // 10 px buffer above and below to switch
+                    if ((d.index !== 0 && y - buffer < self.labelPositions[d.index - 1])) {
+                        swap(d.index, d.index - 1);
+                        d.index = d.index - 1;
+                    }
+                    if ((d.index !== self.visData.length - 1 && y + buffer > self.labelPositions[d.index + 1])) {
+                        swap(d.index, d.index + 1);
+                        d.index = d.index + 1;
+                    }
                 }
             })
             .on('start', (e, d) => {
-                console.log('dragstart', d.key, 'true')
-                d3.select(self.svgGroup.selectAll('.par_cor_label').nodes().forEach((d, i) => {
-                    self.visData[i].ele = d;
-                }));
-                d.ele = e.sourceEvent.target;
+                if (self.reorder) {
+                    console.log('dragstart', d.key, 'true')
+                    d3.select(self.svgGroup.selectAll('.par_cor_label').nodes().forEach((d, i) => {
+                        self.visData[i].ele = d;
+                    }));
+                    d.ele = e.sourceEvent.target;
+                } else {
+                    self.eventHandler.trigger(ParallelCoordinates.events.selectPhenotype, d.key);
+                }
             })
             .on('end', (e, d) => {
-                console.log('dragend', d.key, 'false')
-                self.visData.forEach((d, i, arr) => {
-                    self.visData[i].index = i;
-                    self.order[d.key] = i;
-                    delete self.visData[i].ele;
-                })
-                self.y.domain(this.visData.map(function (d) {
-                    return d.key;
-                }));
-                self.drawAxisLabels();
-                // self.drawDots();
-                self.drawPaths();
+                if (self.reorder) {
+                    console.log('dragend', d.key, 'false')
+                    self.visData.forEach((d, i, arr) => {
+                        self.visData[i].index = i;
+                        self.order[d.key] = i;
+                        delete self.visData[i].ele;
+                    })
+                    self.y.domain(this.visData.map(function (d) {
+                        return d.key;
+                    }));
+                    self.drawAxisLabels();
+                    // self.drawDots();
+                    self.drawPaths();
+                }
             })
+
 
     }
 
@@ -263,7 +272,7 @@ class ParallelCoordinates {
             // })
 
             // And I build the axis with the call function
-            .each(function (d,i) {
+            .each(function (d, i) {
                 d3.select(this).call(d3.axisBottom()
                     .scale(self.x)
                     .tickSize(0)
@@ -271,8 +280,38 @@ class ParallelCoordinates {
                     .tickFormat(d3.format(".0%")));
             })
 
+
         // const legendTextSize = '1.4vh'
         const legendTextSize = '0.7rem'
+
+
+        let reorderButton = self.svgGroup.selectAll('.reorder_button')
+            .data([0])
+        reorderButton.enter()
+            .append('text')
+            .classed('reorder_button', true)
+            .attr('x', self.x(-0.50))
+            .attr('y', -9)
+            .attr('font-size', legendTextSize)
+            .attr('fill', 'white')
+            .attr('fill-opacity', 0.5)
+            .attr('text-anchor', 'end')
+            .style('cursor', 'pointer')
+            .text('Reorder')
+            .on("click", (event, d) => {
+                if (self.reorder) {
+                    d3.select(event.currentTarget).attr('fill-opacity', 0.5)
+                    d3.selectAll('.par_cor_label').style('cursor', 'pointer');
+
+                } else {
+                    d3.select(event.currentTarget).attr('fill-opacity', 1)
+                    d3.selectAll('.par_cor_label').style('cursor', 'move');
+
+                }
+                self.reorder = !self.reorder;
+            })
+
+
         let overallLineLegend = self.svgGroup.selectAll('.overall_line')
             .data([0])
         overallLineLegend.enter()
@@ -566,6 +605,7 @@ class ParallelCoordinates {
             .append("text")
             .merge(labels)
             .style("text-anchor", "end")
+            .style('cursor', 'pointer')
             .attr("y", (d, index) => {
                 let position = self.y(d.key) + 3;
                 self.labelPositions[d.index] = position;
@@ -682,6 +722,10 @@ class ParallelCoordinates {
     }
 
 }
+
+ParallelCoordinates.events = {
+    selectPhenotype: 'selectPhenotype'
+};
 
 function path(d, ctx) {
 

@@ -764,12 +764,11 @@ class ImageViewer {
     drawContourLines() {
         const self = this;
         return dataLayer.getContourLines().then((pathResp, i) => {
-            let removeNoise = pathResp.filter(e=>{
+            let removeNoise = pathResp.filter(e => {
                 return e[0][2] != -1
             })
-            d3.selectAll('.contourPathGroups').remove();
-            removeNoise.forEach(path => {
-                let polygon = concaveman(path, 1);
+            removeNoise.forEach((path, i) => {
+                let polygon = concaveman(path, 2);
                 let pathsArray = polygon.map(point => {
                     return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
                 });
@@ -783,8 +782,9 @@ class ImageViewer {
                 const groups = self.overlay
                     .selectAll(`g.contourPathGroups${i}`)
                     .data(pathsArray)
-                    .attr('class', `contourPathGroups contourPathGroups${i}`)
                     .join("g");
+
+                groups.attr('class', `contourPathGroups contourPathGroups${i}`)
 
                 groups.selectAll('path')
                     .data(d => d)
@@ -806,6 +806,12 @@ class ImageViewer {
 
         })
     }
+
+    clearContourLines() {
+        const self = this;
+        d3.selectAll('.contourPathGroups').remove();
+    }
+
 
     changeColoring(colorByCellType) {
         const that = this;
