@@ -1,15 +1,16 @@
 // Via https://www.d3-graph-gallery.com/graph/heatmap_style.html
 class Heatmap {
-    constructor(id, dataLayer, plotName) {
+    constructor(id, dataLayer) {
         this.id = id;
         this.dataLayer = dataLayer;
-        this.plotName = plotName;
         this.eventHandler = eventHandler;
+        this.showOverall = true;
+        this.showSelection = true;
     }
 
     init() {
         const self = this;
-        return self.dataLayer.getHeatmapData(self.plotName)
+        return self.dataLayer.getHeatmapData()
             .then(data => {
                 self.visData = []
                 _.each(data, (els, i) => {
@@ -115,7 +116,7 @@ class Heatmap {
             .style("font-size", "14px")
             .style("fill", "grey")
             .style("max-width", 400)
-            .text("Spearman rank correlation coefficient of each pair of cell-types");
+            .text("Pearson correlation coefficient of each pair of cell-types");
 
 
         // let color_scale = d3.axisTop(myColor);
@@ -125,14 +126,14 @@ class Heatmap {
         let color_axis = d3.axisRight(self.color_scale)
             .tickValues([-1, 0, 1])
         svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 15},${0.3 * height})`)
+            .attr("transform", `translate(${2 * width / 3 + 15},${0.5 * height})`)
             .attr('class', 'heatmap_legend')
             .call(color_axis)
             .selectAll('text')
             .style("stroke", "white");
 
         let colorLegend = svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 5},${0.3 * height})`)
+            .attr("transform", `translate(${2 * width / 3 + 5},${0.5 * height})`)
         colorLegend.selectAll('rect')
             .data(_.range(-30, 31))
             .enter()
@@ -162,8 +163,88 @@ class Heatmap {
             .style('fill', 'white')
             .text('Interaction')
 
+        let referenceTriangle = svg.append("g")
+            .attr("transform", `translate(${2 * width / 3 + 5},${0.1 * height})`)
+        referenceTriangle
+            .append('polygon')
+            .attr('points', `-10,20, 20,20 20,50`)
+            .attr('id', 'overall-reference-triangle')
+        referenceTriangle
+            .append('polygon')
+            .attr('points', `-10,20, 20,50 -10,50`)
+            .attr('id', 'selected-reference-triangle')
+
+        referenceTriangle
+            .append('text')
+            .attr('id', 'heatmap-overall-label')
+            .attr('x', 20)
+            .attr('y', 17)
+            .attr('fill', 'grey')
+            .attr('font-size', '0.7rem')
+            .attr('text-anchor', 'middle')
+            .text('Overall')
+            .on('click', self.showHideOverall.bind(self))
+        referenceTriangle
+            .append('text')
+            .attr('id', 'heatmap-selection-label')
+            .attr('x', -10)
+            .attr('y', 61)
+            .attr('fill', 'orange')
+            .attr('font-size', '0.7rem')
+            .attr('text-anchor', 'middle')
+            .text('Selected')
+            .on('click', self.showHideSelected.bind(self))
+
         self.wrangle()
     }
+
+    showHideSelected() {
+        const self = this;
+        self.showSelection = !self.showSelection;
+        d3.select('#heatmap-selection-label')
+            .attr('fill-opacity', () => {
+                if (self.showSelection) {
+                    return 1
+                } else {
+                    return 0.5
+                }
+            })
+        d3.select('#selected-reference-triangle')
+            .attr('fill-opacity', () => {
+                if (self.showSelection) {
+                    return 1
+                } else {
+                    return 0
+                }
+            })
+        d3.selectAll('.heatmapTriangleOverall, .heatmapTriangleSelected, .heatmapHoverRect').remove();
+        self.wrangle()
+    }
+
+    showHideOverall() {
+        const self = this;
+        self.showOverall = !self.showOverall;
+        d3.select('#heatmap-overall-label')
+            .attr('fill-opacity', () => {
+                if (self.showOverall) {
+                    return 1
+                } else {
+                    return 0.5
+                }
+            })
+
+        d3.select('#overall-reference-triangle')
+            .attr('fill-opacity', () => {
+                if (self.showOverall) {
+                    return 1
+                } else {
+                    return 0
+                }
+            })
+        d3.selectAll('.heatmapTriangleOverall, .heatmapTriangleSelected, .heatmapHoverRect').remove();
+        self.wrangle()
+    }
+
 
     wrangle() {
         const self = this
@@ -171,11 +252,91 @@ class Heatmap {
         let y = self.y;
         let myColor = self.myColor;
         let svg = self.svg;
-        let rects = svg.selectAll('.heatmapRect')
+        let heatmapTriangleOverall = svg.selectAll('.heatmapTriangleOverall')
             .data(self.visData)
-        rects.enter()
+        heatmapTriangleOverall.enter()
+            .append("polygon")
+            .attr('class', 'heatmapTriangleOverall')
+            .attr('points', (d) => {
+                let trianglePoints = `${x(d.row)}, ${y(d.col)} ${x(d.row) + x.bandwidth()}, ${y(d.col)} 
+                        ${x(d.row) + x.bandwidth()}, ${y(d.col) + y.bandwidth()}`
+                if (self.showOverall && !self.showSelection) {
+                    trianglePoints += ` ${x(d.row)}, ${y(d.col) + y.bandwidth()}`
+                } else if (!self.showOverall) {
+                    trianglePoints = ''
+                }
+                return trianglePoints
+            })
+            .merge(heatmapTriangleOverall)
+            .style("fill", function (d) {
+                let val = d.val;
+                if (d.row === d.col || val?.overall == null) {
+                    return 'none';
+                } else {
+                    // if (val > 0) {
+                    //     val = Math.pow(val, 2 / 3)
+                    // } else if (val < 0) {
+                    //     val = -1 * Math.sqrt(Math.pow(val * -1, 2 / 3));
+                    // }
+                    return myColor(val?.overall)
+                }
+            })
+            .style("stroke-width", 1)
+            .style("stroke", d => {
+                if (d.row === d.col) {
+                    return 'white';
+                } else {
+                    return 'none';
+                }
+            })
+            .style("opacity", 1)
+
+
+        let heatmapTriangleSelected = svg.selectAll('.heatmapTriangleSelected')
+            .data(self.visData)
+        heatmapTriangleSelected.enter()
+            .append("polygon")
+            .attr('class', 'heatmapTriangleSelected')
+            .attr('points', (d) => {
+                let trianglePoints = `${x(d.row)}, ${y(d.col)} ${x(d.row)}, ${y(d.col) + y.bandwidth()}
+                ${x(d.row) + x.bandwidth()}, ${y(d.col) + y.bandwidth()}`;
+
+                if (self.showSelection && !self.showOverall) {
+                    trianglePoints += ` ${x(d.row) + x.bandwidth()}, ${y(d.col)}`
+                } else if (!self.showSelection) {
+                    trianglePoints = ''
+                }
+                return trianglePoints
+            })
+            .merge(heatmapTriangleSelected)
+            .style("fill", function (d) {
+                let val = d.val;
+                if (d.row === d.col || val?.selected == null) {
+                    return 'none';
+                } else {
+                    // if (val > 0) {
+                    //     val = Math.pow(val, 2 / 3)
+                    // } else if (val < 0) {
+                    //     val = -1 * Math.sqrt(Math.pow(val * -1, 2 / 3));
+                    // }
+                    return myColor(val?.selected)
+                }
+            })
+            .style("stroke-width", 1)
+            .style("stroke", d => {
+                if (d.row === d.col) {
+                    return 'white';
+                } else {
+                    return 'none';
+                }
+            })
+            .style("opacity", 1)
+
+        let hoverRects = svg.selectAll('.heatmapHoverRect')
+            .data(self.visData)
+        hoverRects.enter()
             .append("rect")
-            .attr('class', 'heatmapRect')
+            .attr('class', 'heatmapHoverRect')
             .attr("x", function (d) {
                 if (d.row === d.col) {
                     return x(d.row) + 0.5;
@@ -192,54 +353,23 @@ class Heatmap {
             })
             .attr("rx", 1)
             .attr("ry", 1)
-            .attr("width", d => {
-                if (d.row === d.col) {
-                    return x.bandwidth() - 1
-                } else {
-                    return x.bandwidth()
-                }
-            })
-            .attr("height", d => {
-                if (d.row === d.col) {
-                    return y.bandwidth() - 1;
-                } else {
-                    return y.bandwidth()
-                }
-            })
-            .merge(rects)
-            .style("fill", function (d) {
-                if (d.row === d.col) {
-                    return 'none';
-                } else {
-                    let val = d.val;
-                    if (val > 0) {
-                        val = Math.pow(val, 2 / 3)
-                    } else if (val < 0) {
-                        val = -1 * Math.sqrt(Math.pow(val * -1, 2 / 3));
-                    }
-                    return myColor(val)
-                }
-            })
+            .attr("width", x.bandwidth())
+            .attr("height", y.bandwidth())
+            .merge(hoverRects)
+            .style("fill", "white")
+            .style("fill-opacity", "0.001")
             .style("stroke-width", 1)
-            .style("stroke", d => {
-                if (d.row === d.col) {
-                    return 'white';
-                } else {
-                    return 'none';
-                }
-            })
-            .style("opacity", 1)
-            .on("mouseover", (e, d) => {
-
-            })
+            .style("stroke", 'none')
             .on("mousemove", (e, d) => {
                 self.tooltip
-                    .html(`<span>${d.row} - ${d.col}</span>
-                        <br>
-                        <span>Spearman Correlation coefficient: <b>${_.round(d.val, 2)}</b></span>`)
-                    .style("left", (d3.pointer(e)[0]) + "px")
-                    .style("top", (d3.pointer(e)[1] - 50) + "px")
                     .style("opacity", 1)
+                    .style("left", (d3.pointer(e)[0]) + "px")
+                    .style("top", (d3.pointer(e)[1] - 110) + "px")
+                    .html(`<span>${d.row} - ${d.col}</span><br/>
+                        <span>Pearson correlation coefficients: <br/> 
+                        <b>Selected: ${_.round(d.val.selected, 2)}</b><br/>
+                        <b>Overall: ${_.round(d.val?.overall, 2)}</b>
+                        </span>`)
             })
             .on("mouseleave", (e, d) => {
                 self.tooltip
@@ -252,7 +382,7 @@ class Heatmap {
 
     rewrangle() {
         const self = this;
-        return self.dataLayer.getHeatmapData(self.plotName)
+        return self.dataLayer.getHeatmapData()
             .then(data => {
                 self.visData = []
                 _.each(data, (els, i) => {

@@ -171,12 +171,13 @@ def get_scatterplot_data():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_cells_in_polygon', methods=['GET'])
+@app.route('/get_cells_in_polygon', methods=['POST'])
 def get_cells_in_polygon():
-    datasource = request.args.get('datasource')
-    points = json.loads(request.args.get('points'))
-    similar = request.args.get('similar_neighborhood') == 'true'
-    embedding = request.args.get('embedding') == 'true'
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    points = post_data['points']
+    similar = post_data['similar_neighborhood'] == 'true'
+    embedding = post_data['embedding'] == 'true'
     resp = data_model.get_cells_in_polygon(datasource, points, similar, embedding)
     return serialize_and_submit_json(resp)
 
@@ -201,6 +202,7 @@ def get_similar_neighborhood_to_selection():
     mode = post_data['mode']
     resp = data_model.get_similar_neighborhood_to_selection(datasource, selection_ids, similarity, mode)
     return serialize_and_submit_json(resp)
+
 
 @app.route('/compute_p_value', methods=['POST'])
 def compute_p_value():
@@ -354,6 +356,7 @@ def apply_neighborhood_query():
     mode = post_data['mode']
     resp = data_model.apply_neighborhood_query(datasource, neighborhood_query, mode)
     return serialize_and_submit_json(resp)
+
 
 @app.route('/get_axis_order', methods=['GET'])
 def get_axis_order():

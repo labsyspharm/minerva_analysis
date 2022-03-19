@@ -763,12 +763,36 @@ class ImageViewer {
 
     drawContourLines() {
         const self = this;
-        return dataLayer.getContourLines().then(pathResp => {
-            let polygon = concaveman(pathResp, 1);
-            let pathsArray = polygon.map(point => {
-                return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
-            });
-            pathsArray = [[pathsArray]];
+        return dataLayer.getContourLines().then((pathResp, i) => {
+            let removeNoise = pathResp.filter(e=>{
+                return e[0][2] != -1
+            })
+            d3.selectAll('.contourPathGroups').remove();
+            removeNoise.forEach(path => {
+                let polygon = concaveman(path, 1);
+                let pathsArray = polygon.map(point => {
+                    return self.viewer.world.getItemAt(0).imageToViewportCoordinates(point[0], point[1]);
+                });
+                pathsArray = [[pathsArray]];
+                const lineFunc = d3.line(d => {
+                    return d.x
+                }, d => {
+                    return d.y
+                })
+
+                const groups = self.overlay
+                    .selectAll(`g.contourPathGroups${i}`)
+                    .data(pathsArray)
+                    .attr('class', `contourPathGroups contourPathGroups${i}`)
+                    .join("g");
+
+                groups.selectAll('path')
+                    .data(d => d)
+                    .join('path')
+                    .classed('contourPath', true)
+                    .attr("d", lineFunc)
+
+            })
 
 
             // let pathsArray = Object.values(pathResp).map(paths_el => {
@@ -778,23 +802,6 @@ class ImageViewer {
             //         })
             //     })
             // })
-
-            const lineFunc = d3.line(d => {
-                return d.x
-            }, d => {
-                return d.y
-            })
-
-            const groups = self.overlay
-                .selectAll("g")
-                .data(pathsArray)
-                .join("g");
-
-            groups.selectAll('path')
-                .data(d => d)
-                .join('path')
-                .classed('contourPath', true)
-                .attr("d", lineFunc)
 
 
         })

@@ -136,12 +136,9 @@ class DataLayer {
         }
     }
 
-    async getHeatmapData(plotName) {
+    async getHeatmapData() {
         try {
-            let selection = null;
-            if (plotName != "overall") {
-                selection = [...this.getCurrentSelection().keys()]
-            }
+
             let response = await fetch('/get_heatmap_data', {
                 method: 'POST',
                 headers: {
@@ -151,7 +148,7 @@ class DataLayer {
                 body: JSON.stringify(
                     {
                         datasource: datasource,
-                        selectionIds: selection
+                        selectionIds: [...this.getCurrentSelection().keys()]
                     })
             });
             let heatmapData = await response.json();
@@ -347,12 +344,22 @@ class DataLayer {
 
     async getCellsInPolygon(points, similar = false, embedding = false) {
         try {
-            let response = await fetch('/get_cells_in_polygon?' + new URLSearchParams({
-                datasource: datasource,
-                points: JSON.stringify(points),
-                similar_neighborhood: similar,
-                embedding: embedding
-            }))
+
+            let response = await fetch('/get_cells_in_polygon', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        points: points,
+                        similar_neighborhood: similar,
+                        embedding: embedding
+                    }
+                )
+            });
             let cells = await response.json();
             return cells;
         } catch (e) {

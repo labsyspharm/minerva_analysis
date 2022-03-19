@@ -7,7 +7,8 @@ from numba import prange
 import dask.dataframe as dd
 import dask.array as da
 import math
-
+import hdbscan
+import numpy_indexed as npi
 from sklearn.decomposition import IncrementalPCA
 from sklearn.decomposition import PCA
 from sqlalchemy import or_
@@ -142,7 +143,7 @@ def init_clusters(datasource_name):
 
         # Similarly, if the stats are not initialized, let's store them in the DB as well
         if neighborhood_stats is None:
-            obj = get_neighborhood_stats(datasource_name, indices, np_datasource, cluster_cells)
+            obj = get_neighborhood_stats(datasource_name, indices, np_datasource)
             f = io.BytesIO()
             pickle.dump(obj, f)
             neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
@@ -302,13 +303,11 @@ def create_custom_clusters(datasource_name, num_clusters):
     # TODO REMOVE CLUSTER HARDCODE
     coords = data[:, 0:2]
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    tes = np.hstack((coords, neighborhoods))
-    tes = np.hstack((coords, tes))
-    tes = np.hstack((coords, tes))
-    tes = np.hstack((coords, tes))
-    pcaed_tes = PCA(n_components=3).fit_transform(tes);
-    g_mixtures.fit(pcaed_tes)
-    clusters = g_mixtures.predict(pcaed_tes)
+    # tes = np.hstack((coords, neighborhoods))
+
+    # pcaed_tes = PCA(n_components=3).fit_transform(tes);
+    # g_mixtures.fit(pcaed_tes)
+    clusters = g_mixtures.predict(neighborhoods)
     # randomly_sampled = np.random.choice(data.shape[0], size=100000, replace=False)
     # g_mixtures.fit(data[randomly_sampled, :-1])
     # clusters = np.zeros((data.shape[0],))
@@ -654,6 +653,7 @@ def get_scatterplot_data(datasource_name, mode):
             if embedding.shape[1] < 3:
                 embedding = np.hstack((embedding, np.zeros((embedding.shape[0], 1))))
             embedding = np.hstack((embedding, phenotypes_array))
+
             if combined_embedding is None:
                 combined_embedding = embedding
             else:
@@ -662,6 +662,8 @@ def get_scatterplot_data(datasource_name, mode):
         print('Combine Embedding Time', time.time() - this_time, 'and shape', data.shape)
     else:
         data = np.load(Path(config[datasource_name]['embedding']))
+        # data[:, 0:2] = normalize_scatterplot_data(data[:, 0:2])
+        # np.save(Path(config[datasource_name]['embedding']), data)
         np_df = load_csv(datasource_name, numpy=True)
         phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
         phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
@@ -1043,17 +1045,24 @@ def get_heatmap_pearson_correlation(datasource_name, selection_ids):
     if datasource_name != source:
         load_datasource(datasource_name)
     test = time.time()
-    if selection_ids is not None:
-        neighborhoods = neighborhoods[sorted(selection_ids), :]
+    obj = {}
+    # Selection Data
+    selected_neighborhoods = neighborhoods[sorted(selection_ids), :]
     coeffecients = pd.DataFrame(neighborhoods).corr('pearson').to_numpy()
-    # coeffecients = pearsonr(neighborhoods)[0]
+    selected_coeffecients = pd.DataFrame(selected_neighborhoods).corr('pearson').to_numpy()
+
     coeffecients[np.isnan(coeffecients)] = 0
+    selected_coeffecients[np.isnan(selected_coeffecients)] = 0
+    if len(selected_neighborhoods) == 0:
+        selected_coeffecients[:] = None
     heatmap = []
     for i in range(0, coeffecients.shape[0]):
         coeff_list = coeffecients[i, 0:i].tolist()
+        selected_coeff_list = selected_coeffecients[i, 0:i].tolist()
+        combined = [{'overall': a[0], 'selected': a[1]} for a in zip(coeff_list, selected_coeff_list)]
         coeff_list.append(None)
-        heatmap.append(coeff_list)
-    print('Spear Time', time.time() - test)
+        heatmap.append(combined)
+    # print('Heatmap', time.time() - test)
     return heatmap
 
 
@@ -1182,7 +1191,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         'composition_summary': summary_stats,
         'phenotypes_list': phenotypes
     }
-    print('Computing Stats Time', time.time() - time_neighborhood_stats)
+    # print('Computing Stats Time', time.time() - time_neighborhood_stats)
     compute_neighbors = True;
     if compute_neighbors:
 
@@ -1202,6 +1211,10 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         obj['neighbors'] = unique_neighbors
         obj['neighbor_phenotypes'] = neighbor_phenotypes
     print('Neighbors Time', time.time() - time_neighborhood_stats)
+    points = np.load(Path(config[datasource_name]['embedding']))[indices, 0:2]
+    centroid = points.mean(axis=0)
+
+    obj['centroid'] = centroid;
     return obj
 
 
@@ -1213,6 +1226,12 @@ def get_contour_line_paths(datasource_name, selection_ids):
     x = cells[config[datasource_name]['featureData'][0]['xCoordinate']].to_numpy()
     y = cells[config[datasource_name]['featureData'][0]['yCoordinate']].to_numpy()
     cell_points = np.column_stack((x, y))
+    clusterer = hdbscan.HDBSCAN(allow_single_cluster=True, min_samples=1)
+    clusterer.fit(cell_points)
+    cell_points = np.column_stack((cell_points, clusterer.labels_))
+    grouping = npi.group_by(cell_points[:, 2])
+    return grouping.split_array_as_list(cell_points)
+
     # grid_points = 2 ** 7
     # num_levels = 10
     # kde = FFTKDE(kernel='gaussian')
@@ -1229,7 +1248,7 @@ def get_contour_line_paths(datasource_name, selection_ids):
     #         levels[str(i)].append(path.vertices)
     #     i += 1
     # return levels
-    return cell_points
+    # return cell_points
 
 
 import gzip
@@ -1508,10 +1527,10 @@ def calculate_axis_order(datasource_name, mode):
 
 
 # Via https://stackoverflow.com/questions/67050899/why-pandas-dataframe-to-dictrecords-performance-is-bad-compared-to-another-n
-def fast_to_dict_records(np_df, columns=None):
+def fast_to_dict_records(np_df_obj, columns=None):
     global datasource
     # data = df.values.tolist()
-    data = np_df.tolist()
+    data = np_df_obj.tolist()
     return [
         dict(zip(columns, datum))
         for datum in data

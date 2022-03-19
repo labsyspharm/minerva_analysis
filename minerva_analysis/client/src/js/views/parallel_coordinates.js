@@ -80,7 +80,7 @@ class ParallelCoordinates {
             this.margin = {top: 10, right: 55, bottom: 10, left: 100};
 
         } else {
-            this.margin = {top: 40, right: 55, bottom: 10, left: 150};
+            this.margin = {top: 30, right: 55, bottom: 10, left: 150};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -119,7 +119,7 @@ class ParallelCoordinates {
             .range([0, self.width])
             .domain([0, 1])
 
-        this.x.clamp(true);
+        this.x.clamp(false);
 
         this.lineX = d3.scaleLinear()
             .range([0, self.width])
@@ -278,10 +278,10 @@ class ParallelCoordinates {
         overallLineLegend.enter()
             .append('line')
             .classed('overall_line', true)
-            .attr('x1', self.x(0.02))
-            .attr('y1', -9)
-            .attr('x2', self.x(0.08))
-            .attr('y2', -9)
+            .attr('x1', self.x(0.00))
+            .attr('y1', -25)
+            .attr('x2', self.x(-0.1))
+            .attr('y2', -25)
             .attr("stroke-width", 4)
             .attr('stroke', 'grey')
             .attr('stroke-opacity', () => {
@@ -299,7 +299,7 @@ class ParallelCoordinates {
             .append('text')
             .classed('overall_line_label', true)
             .attr('x', self.x(0.00))
-            .attr('y', -4)
+            .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', 'grey')
             .attr('text-anchor', 'end')
@@ -314,10 +314,10 @@ class ParallelCoordinates {
         avgLineLegend.enter()
             .append('line')
             .classed('average_line', true)
-            .attr('x1', self.x(0.02))
-            .attr('y1', -35)
-            .attr('x2', self.x(0.08))
-            .attr('y2', -35)
+            .attr('x1', self.x(0.7))
+            .attr('y1', -25)
+            .attr('x2', self.x(0.6))
+            .attr('y2', -25)
             .attr("stroke-width", 4)
             .attr('stroke', 'white')
 
@@ -327,8 +327,8 @@ class ParallelCoordinates {
         avgLineLabel.enter()
             .append('text')
             .classed('average_line_label', true)
-            .attr('x', self.x(0.00))
-            .attr('y', -30)
+            .attr('x', self.x(0.7))
+            .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', 'white')
             .attr('text-anchor', 'end')
@@ -339,10 +339,10 @@ class ParallelCoordinates {
         selectionLineLegend.enter()
             .append('line')
             .classed('selection_line', true)
-            .attr('x1', self.x(0.02))
-            .attr('y1', -22)
-            .attr('x2', self.x(0.08))
-            .attr('y2', -22)
+            .attr('x1', self.x(1.2))
+            .attr('y1', -25)
+            .attr('x2', self.x(1.1))
+            .attr('y2', -25)
             .attr("stroke-width", 4)
             .attr('stroke', 'orange')
 
@@ -351,8 +351,8 @@ class ParallelCoordinates {
         selectionLineLabel.enter()
             .append('text')
             .classed('selection_line_label', true)
-            .attr('x', self.x(0.00))
-            .attr('y', -17)
+            .attr('x', self.x(1.2))
+            .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', 'orange')
             .attr('text-anchor', 'end')

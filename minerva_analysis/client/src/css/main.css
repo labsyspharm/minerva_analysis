@@ -88,14 +88,16 @@ body {
 }
 
 #scatterplot_display {
-    height: 38vh;
+    /*height: 25vh; TODO SIMON*/
+    height: 35vh;
     position: relative;
     width: 100%;
 }
 
 
 #parallel_coordinates_display {
-    height: 45vh;
+    /*height: 35vh; TODO SIMON*/
+    height: 15vh;
     width: 100%;
     position: relative;
     margin: 0;
@@ -507,6 +509,7 @@ label {
 
 .tooltip {
     fill: #333333;
+    z-index: 1070 !important;
 }
 
 polygon {

@@ -1,7 +1,7 @@
 class Scatterplot {
     clusters;
 
-    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, colorScheme, small = false, image = false, dataset = '', infoSvgId = null, width= null, height=null) {
+    constructor(id, canvasId, eventHandler, dataLayer, neighborhoodTable, colorScheme, small = false, image = false, dataset = '', infoSvgId = null, width = null, height = null) {
         this.id = id;
         this.canvasId = canvasId;
         this.dataset = dataset;
@@ -17,6 +17,8 @@ class Scatterplot {
         this.infoSvgId = infoSvgId;
         this.width = width;
         this.height = height;
+        this.labels = []
+        this.patternNames = []
     }
 
     init() {
@@ -50,6 +52,8 @@ class Scatterplot {
                 pointColor: self.greyMap,
                 pointColorActive: self.orangeMap,
                 pointColorHover: self.orangeMap,
+                xScale: d3.scaleLinear().domain([-1, 1]),
+                yScale: d3.scaleLinear().domain([-1, 1]),
                 // opacityBy: 'density',
                 colorBy: 'valueB',
                 // opacityBy: 'density',
@@ -69,6 +73,8 @@ class Scatterplot {
                 pointColor: self.greyMap,
                 pointColorActive: self.orangeMap,
                 pointColorHover: self.orangeMap,
+                xScale: d3.scaleLinear().domain([-1, 1]),
+                yScale: d3.scaleLinear().domain([-1, 1]),
                 // opacityBy: 'density',
                 colorBy: 'valueB',
                 // pointColorActive: hexToRGBA('#ffa500', 0.2),
@@ -79,6 +85,9 @@ class Scatterplot {
                 pointSizeSelected: 0
             });
         }
+        scatterplot.plot.subscribe('view', ({xScale, yScale}) => {
+            self.displayLabels(xScale, yScale);
+        });
         // if (self.image) {
         //
         //
@@ -108,6 +117,32 @@ class Scatterplot {
         if (self.saveLassoButton) {
             self.saveLassoButton.addEventListener('click', self.saveLasso.bind(self));
         }
+
+
+        //   Add overlay canvas
+        self.textOverlayEl = document.createElement('canvas');
+        self.textOverlayEl.style.position = 'absolute';
+        self.textOverlayEl.style.top = 0;
+        self.textOverlayEl.style.right = 0;
+        self.textOverlayEl.style.bottom = 0;
+        self.textOverlayEl.style.left = 0;
+        self.textOverlayEl.style.pointerEvents = 'none';
+        document.getElementById(self.id).appendChild(self.textOverlayEl);
+        self.resizeTextOverlay = () => {
+            self.textOverlayEl.width = self.width * window.devicePixelRatio;
+            self.textOverlayEl.height = self.height * window.devicePixelRatio;
+            self.textOverlayEl.style.width = `${self.width}px`;
+            self.textOverlayEl.style.height = `${self.height}px`;
+        };
+        self.resizeTextOverlay();
+        window.addEventListener('resize', self.resizeTextOverlay);
+        self.overlayFontSize = 48;
+        self.textOverlayCtx = self.textOverlayEl.getContext('2d');
+        self.textOverlayCtx.font = `${
+            self.overlayFontSize * window.devicePixelRatio
+        }px sans-serif`;
+        self.textOverlayCtx.textAlign = 'center';
+
     }
 
     saveLasso() {
@@ -235,7 +270,7 @@ class Scatterplot {
 
     }
 
-    recolor(selection = null) {
+    recolor(selection = null, showCentroid = false) {
         const self = this;
         console.log('recoloring', self.id)
         if (!selection) {
@@ -250,6 +285,14 @@ class Scatterplot {
             self.addImageResultInfo();
         } else if (self.infoSvgId) {
             d3.select(`#${self.infoSvgId}`).selectAll(`.info-svg-g`).remove()
+        }
+        let selectedPoints = _.at(self.plot.get('points'), selection);
+        if (showCentroid) {
+            self.showCentroid = true;
+            self.labels.push(self.dataLayer.getCurrentRawSelection()['centroid']);
+            self.patternNames.push(self.dataLayer.getCurrentRawSelection()['patternName']);
+        } else {
+            self.showCentroid = false;
         }
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
     }
@@ -268,6 +311,25 @@ class Scatterplot {
             })
         }
 
+
+    }
+
+    displayLabels(xScale, yScale) {
+        const self = this;
+        if (self.showCentroid) {
+            self.textOverlayCtx.fillStyle = 'rgb(16,255,0)';
+            self.labels.forEach((e, i) => {
+                self.textOverlayCtx.fillText(
+                    self.patternNames[i],
+                    xScale(e[0]) * window.devicePixelRatio,
+                    yScale(e[1]) * window.devicePixelRatio -
+                    self.overlayFontSize * 1.2 * window.devicePixelRatio
+                );
+            })
+        } else {
+            self.textOverlayCtx.clearRect(0, 0, self.width, self.height);
+
+        }
 
     }
 

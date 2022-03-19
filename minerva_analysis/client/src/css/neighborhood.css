@@ -126,7 +126,7 @@
 }
 
 .plot-label {
-    font-size: 1.2rem;
+    font-size: 1rem;
     /*TODO: Figures*/
     /*color: rgba(0, 0, 0, 0.95);*/
     color: rgba(255, 255, 255, 0.95);
@@ -226,6 +226,7 @@
 
 .tooltip, .tooltip * {
     font-size: 0.6rem;
+
 }
 
 #comparison_div, #summary_div {
@@ -543,6 +544,19 @@
     color: white;
 }
 
+#heatmap_display {
+    height: 28vh;
+    position: relative;
+}
+
+#overall-reference-triangle, #selected-reference-triangle {
+    stroke: white;
+    fill: lightgrey;
+}
+
+#heatmap-selection-label, #heatmap-overall-label {
+    cursor: pointer;
+}
 
 /*TODO: Remove*/
 /*#related_image_list_wrapper {*/

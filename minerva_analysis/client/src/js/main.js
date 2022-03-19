@@ -12,7 +12,8 @@ let colorByCellType = true;
 
 
 //VIEWS
-let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable, comparison, multiImage;
+let seaDragonViewer, channelList, parallelCoordinates, scatterplot, legend, neighborhoodTable, comparison, multiImage,
+    heatmap;
 let scatterColorToggle;
 //SERVICES
 let dataLayer, colorScheme;
@@ -57,6 +58,9 @@ async function init(conf) {
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
         neighborhoodTable, colorScheme, false, false, datasource);
     scatterColorToggle = new ColorToggle('recolor_neighborhood_embedding_col', [scatterplot])
+
+    heatmap = new Heatmap(`heatmap_display`, dataLayer, eventHandler);
+    heatmap.init();
     //image viewer
     if (mode === 'single') {
         // if (config?.linkedDatasets) {
@@ -167,6 +171,7 @@ const displaySelection = async (d) => {
     console.log('Added to Selection', new Date().getTime() - now)
     parallelCoordinates.wrangle(selection);
     console.log('Added to Par Cor', new Date().getTime() - now)
+    heatmap.rewrangle();
     if (d.selectionSource === "Multi Image") {
         console.log('Clearing', new Date().getTime() - now)
         multiImage?.clear(d.dataset)
@@ -204,11 +209,12 @@ const selectNeighborhood = async (d) => {
     if (d[3] === "Lasso") {
         selection = await scatterplot.applyLasso(selection);
     }
+    selection['patternName'] = d[2];
     document.getElementById('neighborhood_current_selection').textContent = 'Cluster';
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
     parallelCoordinates.wrangle(selection);
-    scatterplot.recolor();
+    scatterplot.recolor(null, true);
     updateSeaDragonSelection(false, false);
 
 }
