@@ -674,21 +674,29 @@ def get_channel_gmm(channel_name, datasource_name):
     gmm.fit(img_log.reshape((-1, 1)))
 
     means = gmm.means_[:, 0]
-    covars = gmm.covariances_[:, 0, 0]
-    weights = gmm.weights_
     i0, i1, i2 = np.argsort(means)
+    mean1, mean2 = means[[i1, i2]]
+    std1, std2 = gmm.covariances_[[i1, i2], 0, 0] ** 0.5
 
-    vmin, vmax = means[[i1, i2]] + covars[[i1, i2]] ** 0.5 * 2
-    if vmin >= means[i2]:
-        vmin = means[i2] + covars[i2] ** 0.5 * -1
-    vmin = max(vmin, img_log.min(), 0)
-    vmax = min(vmax, img_log.max())
-    packet_gmm['vmin'] = np.rint(np.exp(vmin))
-    packet_gmm['vmax'] = np.rint(np.exp(vmax))
+    x = np.linspace(mean1, mean2, 50)
+    y1 = norm(mean1, std1).pdf(x) * gmm.weights_[i1]
+    y2 = norm(mean2, std2).pdf(x) * gmm.weights_[i2]
+
+    lmax = mean2 + 2 * std2
+    lmin = x[np.argmin(np.abs(y1 - y2))]
+    if lmin >= mean2:
+        lmin = mean2 - 2 * std2
+    vmin = max(np.exp(lmin), image_data.min(), 0)
+    vmax = min(np.exp(lmax), image_data.max())
+
+    packet_gmm['vmin'] = np.rint(vmin)
+    packet_gmm['vmax'] = np.rint(vmax)
 
     [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
     midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
 
+    covars = gmm.covariances_[:, 0, 0]
+    weights = gmm.weights_
     pdf_gmm1 = weights[i0] * norm.pdf(midpoints, means[i0], np.sqrt(covars[i0]))
     pdf_gmm2 = weights[i1] * norm.pdf(midpoints, means[i1], np.sqrt(covars[i1]))
     pdf_gmm3 = weights[i2] * norm.pdf(midpoints, means[i2], np.sqrt(covars[i2]))
