@@ -23,7 +23,6 @@ let config;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
 let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
-let clusterData;
 
 //Disable right clicking on element
 document.getElementById("openseadragon").addEventListener('contextmenu', event => event.preventDefault());
@@ -52,11 +51,11 @@ async function init(conf) {
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
     comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid',
-        true, null, 'image', 'related_images_dropdown');
+        false, null, 'image', 'related_images_dropdown');
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,
-        neighborhoodTable, colorScheme, false, false, datasource);
+        neighborhoodTable, colorScheme, false, false, datasource, 'search-info-svg');
     scatterColorToggle = new ColorToggle('recolor_neighborhood_embedding_col', [scatterplot])
 
     heatmap = new Heatmap(`heatmap_display`, dataLayer, eventHandler);
@@ -82,7 +81,7 @@ async function init(conf) {
     } else {
         document.getElementById('openseadragon_wrapper').style.display = "none"
         document.getElementById('multi_image_wrapper').style.display = "block"
-        document.getElementById('related_image_list_wrapper').style.visibility = "hidden";
+        document.getElementById('channel_list_wrapper').style.visibility = "hidden";
 
         multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_wrapper',
             true, 4, 'image', 'multi_image_dropdown');
@@ -98,11 +97,10 @@ async function init(conf) {
     console.log('Sync Init', new Date());
     //Async stuff
     console.log('Starting Async', new Date());
-    await Promise.all([neighborhoodTable.init(), scatterplot.wrangle(), comparison.init()]);
+    await Promise.all([neighborhoodTable.init(), scatterplot.wrangle(), comparison.init(), multiImage?.init()]);
     console.log('Ending Async', new Date());
-    clusterData = dataLayer.getClusterCells();
     setupPageInteractivity();
-    if (applyPrevious) {
+    if (applyPrevious && applyPrevious != 'false') {
         searching = true;
         return dataLayer.applyNeighborhoodQuery()
             .then(cells => {
@@ -214,7 +212,12 @@ const selectNeighborhood = async (d) => {
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
     parallelCoordinates.wrangle(selection);
-    scatterplot.recolor(null, true);
+    if (mode=='multi'){
+        scatterplot.recolor(selection['selection_ids']);
+    } else {
+        scatterplot.recolor(null, true);
+    }
+    heatmap.rewrangle();
     updateSeaDragonSelection(false, false);
 
 }
@@ -228,6 +231,12 @@ eventHandler.bind(ImageViewer.events.changeSelectionMode, changeSelectionMode);
 
 
 eventHandler.bind(Scatterplot.events.selectFromScatterplot, displaySelection);
+
+const updateSavedNeighborhoods = (d) => {
+    multiImage?.rewrangle();
+    comparison.rewrangle(true);
+}
+eventHandler.bind(NeighborhoodTable.events.updateSavedNeighborhoods, updateSavedNeighborhoods);
 
 // const computeCellNeighborhood = async ({distance, selectedCell}) => {
 //     let neighborhood = await dataLayer.getIndividualNeighborhood(distance, selectedCell);
@@ -259,13 +268,12 @@ function updateSeaDragonSelection(showCellInfoPanel = false, repaint = true) {
     }
     multiImage?.rewrangle();
     comparison.rewrangle();
-    // searching = false;
-    if (seaDragonViewer?.contourView) {
-        seaDragonViewer.drawContourLines();
-    } else {
-        seaDragonViewer.clearContourLines();
-    }
 
+    if (seaDragonViewer?.contourView) {
+        seaDragonViewer?.drawContourLines();
+    } else {
+        seaDragonViewer?.clearContourLines();
+    }
 }
 
 //feature range selection changed in ridge plot
@@ -305,9 +313,12 @@ function showHideRHS() {
     let neighborhood_wrapper = document.getElementById('neighborhood_wrapper');
     let expand_wrapper = document.getElementById('expand_wrapper');
     let expand_icon = document.getElementById('expand_icon');
+    let navbarWrapper = document.getElementById('topBar');
     if (osd_wrapper.classList.contains("openseadragon_wrapper_large")) {
         osd_wrapper.classList.remove("openseadragon_wrapper_large");
         osd_wrapper.classList.add("openseadragon_wrapper_small");
+        navbarWrapper.classList.remove("topBarLarge");
+        navbarWrapper.classList.add("topBarSmall");
         neighborhood_wrapper.classList.remove("neighborhood_wrapper_small");
         neighborhood_wrapper.classList.add("neighborhood_wrapper_large");
         expand_wrapper.classList.remove('expand_wrapper_right');
@@ -322,6 +333,8 @@ function showHideRHS() {
         expand_wrapper.classList.remove('expand_wrapper_left');
         expand_wrapper.classList.add('expand_wrapper_right');
         expand_icon.innerText = 'keyboard_double_arrow_left';
+        navbarWrapper.classList.remove("topBarSmall");
+        navbarWrapper.classList.add("topBarLarge");
         resizeAnalysisWrapper(true)
     }
 

@@ -45,6 +45,12 @@
                                     </div>
 
                                 </div>
+                                <div class="row" id="results-bar-row">
+                                    <div class="col-md-12 col">
+                                        <svg id="search-info-svg"></svg>
+                                    </div>
+
+                                </div>
                             </div>
                             <div id="cluster_wrapper" class="left-col-row">
                                 <div class="row" id="cluster-row">
@@ -229,7 +235,7 @@
 
                     </div>
                 </div>
-                <div id="neighborhood_wrapper" class="col-auto neighborhood_wrapper_large viewer_col">
+                <div id="neighborhood_wrapper" class="col-auto neighborhood_wrapper_small viewer_col">
                     <div id="comparison_title" class="row">
                         <div class="col-md-12">
                             <h5 class="plot-label text-center">Compare Neighborhood Patterns</h5>
@@ -250,10 +256,12 @@
                                            id="scatterplot-button"
                                            autocomplete="off">
                                     <label class="btn btn-light" for="scatterplot-button">Specimen</label>
-                                    <input type="radio" class="btn-check" checked name="options-outlined"
-                                           id="image-button"
-                                           autocomplete="off">
-                                    <label class="btn btn-light" for="image-button">Cohort</label>
+                                    {% if data.config.linkedDatasets %}
+                                        <input type="radio" class="btn-check" name="options-outlined"
+                                               id="image-button" checked
+                                               autocomplete="off">
+                                        <label class="btn btn-light" for="image-button">Cohort</label>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -262,6 +270,10 @@
                     <div id="comparison_options" class="row">
                         <div class="col-md-12">
                             <div id="comparison_options_wrapper" class="row justify-content-end">
+                                <div class="col-auto align-self-start">
+                                    <a href="/{{ data.datasource }}?applyPrevious=true&mode=multi"><i
+                                            class="fas fa-layer-group"></i></a>
+                                </div>
                                 <div class="col-auto">
                                     <div id="related_images_dropdown" class="sort-dropdown">
                                         <button class="btn btn-secondary dropdown-toggle" type="button"

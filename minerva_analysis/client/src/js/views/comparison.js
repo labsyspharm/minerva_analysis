@@ -30,7 +30,6 @@ class Comparison {
         const self = this;
         self.container = document.getElementById(self.containerId);
         self.neighborhoods = await self.dataLayer.getAllNeighborhoodStats();
-        let t = self.neighborhoods;
         // self.neighborhoods = [t[6], t[7], t[8], t[9], t[0], t[1]]
         self.neighborhoods = self.neighborhoods.map((e, i) => {
             e.neighborhood_name = e.neighborhood_name || 'Cluster ' + i;
@@ -123,8 +122,8 @@ class Comparison {
         const self = this;
         let smallMultipleToggles = document.getElementById("comparison_title");
         _.each(smallMultipleToggles.querySelectorAll(".btn-check"), (elem) => {
-            elem.onclick = () => {
-                self.switchSmallMultipleType(elem, smallMultipleToggles);
+            elem.onclick = async () => {
+                await self.switchSmallMultipleType(elem, smallMultipleToggles);
             }
         });
     }
@@ -142,38 +141,38 @@ class Comparison {
         }
     }
 
-    switchSmallMultipleType(elem, parent) {
+    async switchSmallMultipleType(elem, parent) {
         const self = this;
         if (elem.id == "parallel-coordinates-button") {
             if (self.selectAndUnselect(elem, parent)) {
                 //Remove Bars
-                self.removeAllPlots();
+                await self.removeAllPlots();
                 self.currentState = 'parallelCoordinates';
                 self.initSmallMultipleParallelCoordinates();
             }
         } else if (elem.id == "barchart-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.removeAllPlots();
+                await self.removeAllPlots();
                 self.currentState = 'barchart';
                 self.initSmallMultipleBarcharts();
             }
 
         } else if (elem.id == "scatterplot-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.removeAllPlots();
+                await self.removeAllPlots();
                 self.currentState = 'scatterplot';
                 self.initSmallMultipleScatterplots();
             }
 
         } else if (elem.id == "heatmap-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.removeAllPlots();
+                await self.removeAllPlots();
                 self.currentState = 'heatmap';
                 self.initHeatmap();
             }
         } else if (elem.id == "stacked-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.removeAllPlots();
+                await self.removeAllPlots();
                 self.currentState = 'stacked';
 
                 document.getElementById("summary_div").style.display = "block";
@@ -182,7 +181,7 @@ class Comparison {
             }
         } else if (elem.id == "image-button") {
             if (self.selectAndUnselect(elem, parent)) {
-                self.removeAllPlots();
+                await self.removeAllPlots();
                 self.currentState = 'image';
                 self.rowHeight = document.documentElement.clientHeight * 0.4;
                 self.createGrid(1);
@@ -207,13 +206,11 @@ class Comparison {
         }
     }
 
-    removeAllPlots() {
+    async removeAllPlots() {
         const self = this;
-        if (self.currentState == 'image' || self.currentState == 'scatterplot') {
-            self.plots.forEach(plot => {
-                plot.destroy();
-            })
-        }
+        self.plots.forEach(plot => {
+            plot?.destroy?.();
+        })
         d3.select(`#${self.containerId}`).selectAll('.barchart, .scatter_canvas, .parallel_coords, .parallel-canvas, #heatmap-svg, #summary_div_barchart_svg, .tooltip, #legend-svg').remove();
         document.getElementById("summary_div").style.display = "none";
         document.getElementById("comparison_grid").style.display = null;
@@ -244,53 +241,69 @@ class Comparison {
         let i = 0;
         // self.container.style.height = rows * self.rowHeight;
         _.each(_.range(rows), r => {
-            let row = document.createElement("div");
-            row.className = "row compare_row";
-            row.id = `compare_row_${r}`;
-            row.style.height = `${self.rowHeight}px`;
+            let row = document.getElementById(`compare_row_${r}`)
+            if (!row) {
+                row = document.createElement("div");
+                row.className = "row compare_row";
+                row.id = `compare_row_${r}`;
+                row.style.height = `${self.rowHeight}px`;
+                self.container.appendChild(row);
+                row = document.getElementById(`compare_row_${r}`)
+            }
             // row.style.width = `${width}px`;
             _.each(_.range(cols), c => {
-                let col = document.createElement("div");
-                col.className = "col compare_col";
-                col.id = `${self.containerId}_compare_col_${i}`;
-                row.appendChild(col);
-                let wrapper = document.createElement("div");
-                wrapper.className = "grid-wrapper";
-                col.appendChild(wrapper);
+                let col = document.getElementById(`${self.containerId}_compare_col_${i}`)
+                if (!col) {
+                    col = document.createElement("div");
+                    col.className = "col compare_col";
+                    col.id = `${self.containerId}_compare_col_${i}`;
+                    row.appendChild(col);
+                    let wrapper = document.createElement("div");
+                    wrapper.className = "grid-wrapper";
+                    col.appendChild(wrapper);
 
-                let compare_plot_title = document.createElement("div");
-                compare_plot_title.className = "row compare_plot_title justify-content-left";
-                let title = document.createElement("h5");
-                // HEATMAP
-                // if (i === 1) {
-                //     title.classList.add('current_selection_comparison');
-                // }
-                compare_plot_title.appendChild(title);
-                wrapper.appendChild(compare_plot_title);
-                let compare_plot_body = document.createElement("div");
-                compare_plot_body.id = `${self.containerId}_compare_parallel_coordinates_${i}`
-                compare_plot_body.className = "row compare_plot_body";
-                wrapper.appendChild(compare_plot_body);
+                    let compare_plot_title = document.createElement("div");
+                    compare_plot_title.className = "row compare_plot_title justify-content-left";
+                    let title = document.createElement("h5");
+                    // HEATMAP
+                    // if (i === 1) {
+                    //     title.classList.add('current_selection_comparison');
+                    // }
+                    compare_plot_title.appendChild(title);
+                    wrapper.appendChild(compare_plot_title);
+                    let compare_plot_body = document.createElement("div");
+                    compare_plot_body.id = `${self.containerId}_compare_parallel_coordinates_${i}`
+                    compare_plot_body.className = "row compare_plot_body";
+                    wrapper.appendChild(compare_plot_body);
+                }
                 i++;
             })
-            self.container.appendChild(row);
+
 
         })
     }
 
-    wrangleSmallMultiples(order = null, scatterplot = false, rewrangle = false) {
+    async wrangleSmallMultiples(order = null, scatterplot = false, rewrangle = false) {
         const self = this;
         _.each(self.plots, (plot, i) => {
             let plotData;
             if (self.currentState == 'scatterplot') {
-                plotData = _.get(self.neighborhoods[i], 'all_cells', []);
+                plotData = _.get(self.neighborhoods[i], 'all_cells', null) || self.dataLayer.allCells.scatter;
+                let selectionData = self.neighborhoods[i]
+                plot.wrangle(plotData, {
+                    'cells': selectionData.cells.map(e => e[2]),
+                    'pValue': selectionData['p_value'],
+                    numResults: selectionData['num_results']
+                });
             } else if (self.currentState == 'image') {
                 plotData = self.relatedImageData[i][1];
+                plot.wrangle(plotData);
             } else {
                 plotData = _.get(self.neighborhoods[i], 'composition_summary.weighted_contribution', []);
+                plot.wrangle(plotData);
             }
-            plot.wrangle(plotData, order);
-            if (self.currentState == 'scatterplot') {
+
+            if (self.currentState == 'scatterplot' && mode == 'single') {
 
             }
         });
@@ -321,7 +334,7 @@ class Comparison {
             let height = canvas_div.offsetHeight - 20;
             // let infoSvg = document.createElement("svg");
             d3.select(canvas_div).append('svg')
-                .attr("width", width)
+                .attr("width", 200)
                 .attr("height", 20)
                 .attr('id', `${self.containerId}_compare_col_info_svg_${i}`);
             let canvas = document.createElement("canvas");
@@ -331,7 +344,7 @@ class Comparison {
             canvas.height = height - 20;
             canvas_div.appendChild(canvas);
             let spatialPlot = new Scatterplot(`${self.containerId}_compare_parallel_coordinates_${i}`, `${self.containerId}_compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
-                null, self.colorScheme, true, true, k, `${self.containerId}_compare_col_info_svg_${i}`, width, height - 20);
+                null, self.colorScheme, true, false, k, `${self.containerId}_compare_col_info_svg_${i}`, width, height - 20);
             spatialPlot.init();
             return spatialPlot;
         });
@@ -400,13 +413,18 @@ class Comparison {
     }
 
 
-    rewrangle() {
+    async rewrangle(refresh = false) {
         const self = this;
         let now = new Date().getTime();
         console.log('Rewrangling Multi')
         if (!self.hidden) {
             if (mode == 'single' || self.currentState != 'image') {
-                self.wrangleSmallMultiples();
+                if (refresh) {
+                    self.neighborhoods = await self.dataLayer.getAllNeighborhoodStats();
+                    await self.removeAllPlots();
+                    self.initByType();
+                }
+                await self.wrangleSmallMultiples();
             } else {
                 _.each(self.plots, (plot, i) => {
                     console.log('plot', new Date().getTime() - now);
@@ -420,7 +438,6 @@ class Comparison {
                 })
             }
         }
-
     }
 
 

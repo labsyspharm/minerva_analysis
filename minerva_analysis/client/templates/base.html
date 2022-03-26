@@ -17,6 +17,7 @@
     <script type="text/javascript">
         //<!--@formatter:off-->
         window.flaskVariables = passVariablesToFrontend({{data|tojson}});
+        console.log('Flask Variables', window.flaskVariables);
         //<!--@formatter:on-->
     </script>
 
@@ -50,7 +51,7 @@
 
 </head>
 <body>
-<nav id="topBar" class="navbar navbar-expand-sm navbar-dark bg-dark">
+<nav id="topBar" class="navbar navbar-expand-sm navbar-dark bg-dark topBarLarge">
     <span id="title" class="navbar-brand mb-0 h1">Visinity</span>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav">

@@ -41,7 +41,7 @@ class NeighborhoodTable {
             self.neighborhoods = newRows;
         }
         let rows = d3.select(self.table).selectAll(".neighborhood-row")
-            .data(self.neighborhoods, d=>d[0])
+            .data(self.neighborhoods, d => d[0])
         rows.enter()
             .append("tr")
             .attr('class', 'neighborhood-row justify-content-between')
@@ -102,11 +102,11 @@ class NeighborhoodTable {
         //         return `compare_parallel_coordinates_${d[4]}`
         //     })
         //     .attr('class', 'row compare_plot_body')
-            // .append('canvas')
-            // .attr('id', d => {
-            //     return `compare_col_canvas_${d[4]}`;
-            // })
-            // .attr('class', 'scatterplot scatter_canvas')
+        // .append('canvas')
+        // .attr('id', d => {
+        //     return `compare_col_canvas_${d[4]}`;
+        // })
+        // .attr('class', 'scatterplot scatter_canvas')
 
 
         nameCol.exit().remove();
@@ -178,7 +178,7 @@ class NeighborhoodTable {
             .attr('class', 'fas fa-trash delete_neighborhood neighborhood-table-icon');
 
         trashIcon.exit().remove();
-
+        self.eventHandler.trigger(NeighborhoodTable.events.updateSavedNeighborhoods, null);
     }
 
     async editNeighborhood(d, newName) {
@@ -247,7 +247,8 @@ class NeighborhoodTable {
 }
 
 NeighborhoodTable.events = {
-    selectNeighborhood: 'selectNeighborhood'
+    selectNeighborhood: 'selectNeighborhood',
+    updateSavedNeighborhoods: 'updateSavedNeighborhoods'
 };
 
 function

@@ -30,7 +30,7 @@ class Heatmap {
     draw() {
         const self = this;
         // set the dimensions and margins of the graph
-        const margin = {top: 0, right: 70, bottom: 110, left: 110},
+        const margin = {top: 0, right: 70, bottom: 140, left: 140},
             width = document.getElementById(self.id).clientWidth - margin.left - margin.right,
             height = document.getElementById(self.id).clientHeight - margin.top - margin.bottom;
 
@@ -71,7 +71,7 @@ class Heatmap {
             .style("text-anchor", "end")
             .attr("dx", "-.8em")
             .attr("dy", ".15em")
-            .attr("font-size", "0.6rem")
+            .attr("font-size", "0.7rem")
             .attr("fill", "white")
             .attr("transform", "rotate(-90)");
 
@@ -84,10 +84,10 @@ class Heatmap {
         self.y = y;
 
         svg.append("g")
-            .style("font-size", "0.6rem")
+            .style("font-size", "0.7rem")
             .call(d3.axisLeft(y).tickSize(0))
             .selectAll("text")
-            .attr("font-size", "0.6rem")
+            .attr("font-size", "0.7rem")
             .attr("fill", "white");
 
         //Remove Axis Lines
@@ -128,6 +128,7 @@ class Heatmap {
         svg.append("g")
             .attr("transform", `translate(${2 * width / 3 + 15},${0.5 * height})`)
             .attr('class', 'heatmap_legend')
+            .attr('id', 'heatmap_color_legend')
             .call(color_axis)
             .selectAll('text')
             .style("stroke", "white");
@@ -164,7 +165,7 @@ class Heatmap {
             .text('Interaction')
 
         let referenceTriangle = svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 5},${0.1 * height})`)
+            .attr("transform", `translate(325,${0.1 * height})`)
         referenceTriangle
             .append('polygon')
             .attr('points', `-10,20, 20,20 20,50`)

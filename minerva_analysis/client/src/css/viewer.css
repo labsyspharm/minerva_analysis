@@ -19,7 +19,13 @@ body {
     margin: 0;
     top: 0;
     z-index: 101;
-    width: 49vw !important;
+}
+
+.topBarLarge{
+        width: 70vw !important;
+}
+.topBarSmall{
+        width: 50vw !important;
 }
 
 #title {
@@ -71,7 +77,7 @@ body {
     padding: 5px;
     left: 1vw;
     z-index: 101;
-    max-height: 8vh;
+    /*max-height: 8vh;*/
 }
 
 #cluster_wrapper {
@@ -94,7 +100,7 @@ body {
     /*width: 13vw;*/
     z-index: 101;
     /*min-height: 10vh;*/
-    max-height: 25vh;
+    max-height: 38vh;
     padding: 5px;
 }
 

@@ -182,9 +182,9 @@ class ParallelCoordinates {
 
     wrangle(rawData, order = null) {
         const self = this;
-        let chartData = _.get(rawData, 'composition_summary.weighted_contribution', null);
+        let chartData =rawData[datasource]?.['composition_summary']?.['weighted_contribution'] ||_.get(rawData, 'composition_summary.weighted_contribution', null);
         if (chartData) {
-            self.selection_neighborhoods = _.get(rawData, 'composition_summary.selection_neighborhoods', null);
+            self.selection_neighborhoods = rawData[datasource]?.['composition_summary']?.['selection_neighborhoods'] ||_.get(rawData, 'composition_summary.selection_neighborhoods', null);
         } else {
             chartData = rawData;
         }
@@ -282,7 +282,7 @@ class ParallelCoordinates {
 
 
         // const legendTextSize = '1.4vh'
-        const legendTextSize = '0.7rem'
+        const legendTextSize = '0.9rem'
 
 
         let reorderButton = self.svgGroup.selectAll('.reorder_button')
@@ -290,21 +290,20 @@ class ParallelCoordinates {
         reorderButton.enter()
             .append('text')
             .classed('reorder_button', true)
-            .attr('x', self.x(-0.50))
+            .attr('x', self.x(-0.20))
             .attr('y', -9)
             .attr('font-size', legendTextSize)
-            .attr('fill', 'white')
-            .attr('fill-opacity', 0.5)
+            .attr('fill', '#3870ce')
             .attr('text-anchor', 'end')
             .style('cursor', 'pointer')
             .text('Reorder')
             .on("click", (event, d) => {
                 if (self.reorder) {
-                    d3.select(event.currentTarget).attr('fill-opacity', 0.5)
+                    d3.select(event.currentTarget).attr('fill', '#3870ce')
                     d3.selectAll('.par_cor_label').style('cursor', 'pointer');
 
                 } else {
-                    d3.select(event.currentTarget).attr('fill-opacity', 1)
+                    d3.select(event.currentTarget).attr('fill', 'white')
                     d3.selectAll('.par_cor_label').style('cursor', 'move');
 
                 }
@@ -319,7 +318,7 @@ class ParallelCoordinates {
             .classed('overall_line', true)
             .attr('x1', self.x(0.00))
             .attr('y1', -25)
-            .attr('x2', self.x(-0.1))
+            .attr('x2', self.x(-0.05))
             .attr('y2', -25)
             .attr("stroke-width", 4)
             .attr('stroke', 'grey')
@@ -353,9 +352,9 @@ class ParallelCoordinates {
         avgLineLegend.enter()
             .append('line')
             .classed('average_line', true)
-            .attr('x1', self.x(0.7))
+            .attr('x1', self.x(0.5))
             .attr('y1', -25)
-            .attr('x2', self.x(0.6))
+            .attr('x2', self.x(0.45))
             .attr('y2', -25)
             .attr("stroke-width", 4)
             .attr('stroke', 'white')
@@ -366,7 +365,7 @@ class ParallelCoordinates {
         avgLineLabel.enter()
             .append('text')
             .classed('average_line_label', true)
-            .attr('x', self.x(0.7))
+            .attr('x', self.x(0.5))
             .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', 'white')
@@ -378,9 +377,9 @@ class ParallelCoordinates {
         selectionLineLegend.enter()
             .append('line')
             .classed('selection_line', true)
-            .attr('x1', self.x(1.2))
+            .attr('x1', self.x(0.95))
             .attr('y1', -25)
-            .attr('x2', self.x(1.1))
+            .attr('x2', self.x(1.0))
             .attr('y2', -25)
             .attr("stroke-width", 4)
             .attr('stroke', 'orange')
@@ -390,7 +389,7 @@ class ParallelCoordinates {
         selectionLineLabel.enter()
             .append('text')
             .classed('selection_line_label', true)
-            .attr('x', self.x(1.2))
+            .attr('x', self.x(1))
             .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', 'orange')
@@ -421,8 +420,8 @@ class ParallelCoordinates {
                     // pointSizeSelected: 0
                 });
             }
-            let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.full_neighborhoods', null);
-            let indices = _.get(dataLayer, 'fullNeighborhoods.selection_ids', null);
+            let fullNeighborhood = _.get(dataLayer, 'allCells.full_neighborhoods', null);
+            let indices = _.get(dataLayer, 'allCells.selection_ids', null);
             let points = [];
             _.forEach(fullNeighborhood, (row, rowIndex) => {
                 let orderedRow = _.cloneDeep(row);
@@ -495,7 +494,7 @@ class ParallelCoordinates {
 
         if (!self.editMode && !self.hideOverall) {
             let opacity = 0.003;
-            let fullNeighborhood = _.get(dataLayer, 'fullNeighborhoods.full_neighborhoods', null);
+            let fullNeighborhood = _.get(dataLayer, 'allCells.full_neighborhoods', null);
             _.forEach(fullNeighborhood, row => {
                 const color = `hsla(0,0%,100%,${opacity})`;
                 self.canvas.getContext('2d').strokeStyle = color;

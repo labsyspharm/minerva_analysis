@@ -109,9 +109,11 @@ class Scatterplot {
         }
 
         // Custom Cluster Submit
-        let button = document.getElementById("custom_cluster_submit");
-        if (button) {
-            button.addEventListener('click', self.customCluster.bind(self));
+        if (self.id == "scatterplot_display") {
+            let button = document.getElementById("custom_cluster_submit");
+            if (button) {
+                button.addEventListener('click', self.customCluster.bind(self));
+            }
         }
 
         if (self.saveLassoButton) {
@@ -156,7 +158,7 @@ class Scatterplot {
     }
 
 
-    async wrangle(data) {
+    async wrangle(data, initialSelection = null) {
         const self = this;
         if (data) {
             self.visData = data;
@@ -186,13 +188,14 @@ class Scatterplot {
         //     });
         // }
         if (!self.image) {
-            self.plot.draw(self.visData);
+            await self.plot.draw(self.visData);
         } else {
-            self.plot.draw(self.visData);
+            await self.plot.draw(self.visData);
         }
         if (self.image || mode === 'multi') {
             if (searching) {
-                self.imageSelection = await self.dataLayer.getImageSearchResults(self.dataset);
+                let datasetName = self.dataset;
+                self.imageSelection = await self.dataLayer.getImageSearchResults(datasetName);
                 self.dataLayer.currentRawSelection[self.dataset] = {
                     'num_results': self.imageSelection[self.dataset]['num_results'],
                     'p_value': self.imageSelection[self.dataset]['p_value']
@@ -200,7 +203,20 @@ class Scatterplot {
                 // self.numResults = ;
                 // self.pValue = ;
                 self.recolor(self.imageSelection[self.dataset].cells);
+            } else {
+                self.dataLayer.currentRawSelection[self.dataset] = {
+                    'num_results': null,
+                    'p_value': null
+                }
+                self.recolor([])
             }
+        } else if (initialSelection) {
+            self.imageSelection = initialSelection;
+
+            self.numResults = self.imageSelection.numResults;
+            self.pValue = self.imageSelection.pValue;
+            self.recolor(self.imageSelection.cells);
+            self.addImageResultInfo()
         }
     }
 
@@ -208,7 +224,9 @@ class Scatterplot {
         const self = this;
         self.svg = d3.select(`#${self.infoSvgId}`)
         self.svg.selectAll(`.info-svg-g`).remove()
-
+        if (!self.pValue || !self.numResults) {
+            return;
+        }
         let width = self.svg.node().getBoundingClientRect().width;
         let maxVal = self.dataLayer.maxResults * 1.5;
         let g = self.svg.append('g')
@@ -223,7 +241,7 @@ class Scatterplot {
             .attr('stroke-width', 1)
             .attr('stroke', 'white')
             .attr('fill', 'orange')
-            .attr('fill-opacity', 1);
+            .attr('fill-opacity', 1 - self.pValue);
 
         // self.svg.append('text')
         //     .attr('x', (self.numResults / maxVal) * width + 40)
@@ -274,26 +292,31 @@ class Scatterplot {
         const self = this;
         console.log('recoloring', self.id)
         if (!selection) {
-            selection = _.map(this.dataLayer.getCurrentRawSelection().cells, e => e.id)
+            let cells = this.dataLayer.getCurrentRawSelection().cells || this.dataLayer.getCurrentRawSelection()?.[datasource]?.cells
+            selection = _.map(cells, e => e.id)
             console.log('Finding Selection Because Not Specified', selection)
+        } else {
+            console.log('set selection', selection);
         }
         self.selection = selection;
+
         self.plot.select(selection, {preventEvent: true});
-        if (searching && self.image) {
-            self.numResults = self.dataLayer.getCurrentRawSelection()[self.dataset].num_results;
-            self.pValue = self.dataLayer.getCurrentRawSelection()[self.dataset].p_value;
+        if (searching && (self.image || self.infoSvgId == 'search-info-svg')) {
+            self.numResults = self.dataLayer.getCurrentRawSelection()[self.dataset]?.num_results ||
+                self.dataLayer.getCurrentRawSelection()?.num_results;
+            self.pValue = self.dataLayer.getCurrentRawSelection()[self.dataset]?.p_value || self.dataLayer.getCurrentRawSelection()?.p_value;
             self.addImageResultInfo();
         } else if (self.infoSvgId) {
             d3.select(`#${self.infoSvgId}`).selectAll(`.info-svg-g`).remove()
         }
-        let selectedPoints = _.at(self.plot.get('points'), selection);
-        if (showCentroid) {
-            self.showCentroid = true;
-            self.labels.push(self.dataLayer.getCurrentRawSelection()['centroid']);
-            self.patternNames.push(self.dataLayer.getCurrentRawSelection()['patternName']);
-        } else {
-            self.showCentroid = false;
-        }
+        // let selectedPoints = _.at(self.plot.get('points'), selection);
+        // if (showCentroid) {
+        //     self.showCentroid = true;
+        //     self.labels.push(self.dataLayer.getCurrentRawSelection()['centroid']);
+        //     self.patternNames.push(self.dataLayer.getCurrentRawSelection()['patternName']);
+        // } else {
+        //     self.showCentroid = false;
+        // }
         // self.plot.select([...this.dataLayer.getCurrentSelection().keys()]);
     }
 
@@ -420,9 +443,9 @@ class Scatterplot {
         self.plot.reset();
     }
 
-    destroy() {
+    async destroy() {
         const self = this;
-        self.plot.destroy();
+        await self.plot.destroy();
     }
 }
 

@@ -29,7 +29,7 @@ class DataLayer {
             }))
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();
-            this.fullNeighborhoods = await this.getAllCells();
+            this.allCells = await this.getAllCells();
             this.defaultOrder = await this.getAxisOrder();
 
 
@@ -40,6 +40,7 @@ class DataLayer {
 
     async getCells(ids, linkedDataset = null, isImage = false) {
         try {
+            searching = false;
             let response = await fetch('/get_cells', {
                 method: 'POST',
                 headers: {
@@ -138,6 +139,7 @@ class DataLayer {
 
     async getHeatmapData() {
         try {
+            let cells = this.getCurrentRawSelection().cells || this.getCurrentRawSelection()?.[datasource]?.['cells'];
 
             let response = await fetch('/get_heatmap_data', {
                 method: 'POST',
@@ -148,7 +150,8 @@ class DataLayer {
                 body: JSON.stringify(
                     {
                         datasource: datasource,
-                        selectionIds: [...this.getCurrentSelection().keys()]
+                        selectionIds: _.map(cells, e => e.id),
+                        mode: mode
                     })
             });
             let heatmapData = await response.json();
@@ -243,7 +246,8 @@ class DataLayer {
                         datasource: datasource,
                         elem: {
                             'id': id
-                        }
+                        },
+                        mode: mode
                     })
             });
             let response_data = await response.json();
@@ -266,7 +270,8 @@ class DataLayer {
                     {
                         datasource: datasource,
                         selection: self.getCurrentRawSelection(),
-                        source: "User Generated"
+                        source: "User Generated",
+                        mode: mode
                     }
                 )
             });
@@ -344,7 +349,7 @@ class DataLayer {
 
     async getCellsInPolygon(points, similar = false, embedding = false) {
         try {
-
+            searching = false;
             let response = await fetch('/get_cells_in_polygon', {
                 method: 'POST',
                 headers: {
@@ -493,7 +498,8 @@ class DataLayer {
         try {
             let response = await fetch('/custom_cluster?' + new URLSearchParams({
                 datasource: datasource,
-                numClusters: numClusters
+                numClusters: numClusters,
+                mode: mode
 
             }))
             let customClusters = await response.json();
@@ -564,7 +570,11 @@ class DataLayer {
         // console.log("update current selection")
         var that = this;
         if (mode == 'single') {
-            that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
+            try {
+                that.currentSelection = new Map(_.get(items, 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
+            } catch (error) {
+                that.currentSelection = new Map(_.get(items[datasource], 'cells', items).map(i => [i.CellID - 1 || i.id, i]));
+            }
         } else {
             let multiImageSelection = {}
             Object.entries(items).forEach(([key, value], index) => {
@@ -624,6 +634,7 @@ class DataLayer {
     async getNeighborhoodByPhenotype(phenotype, selection = null) {
 
         try {
+            searching = false;
             let selectionIds = null;
             if (selection) {
                 selectionIds = [...this.getCurrentSelection().keys()]
@@ -698,7 +709,7 @@ class DataLayer {
         const self = this;
         try {
             let response = await fetch('/get_image_search_results?' + new URLSearchParams({
-                linkedDatasource: dataset,
+                linkedDatasource: dataset || datasource,
                 datasource: datasource,
                 neighborhoodQuery: JSON.stringify(store('neighborhoodQuery'))
             }))

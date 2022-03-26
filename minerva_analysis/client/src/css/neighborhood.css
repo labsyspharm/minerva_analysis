@@ -34,6 +34,8 @@
 }
 
 #multi_image_wrapper {
+    padding-left: 15vw;
+    padding-top: 5vh;
     display: none;
     overflow-y: scroll;
 }
@@ -54,16 +56,16 @@
 }
 
 .openseadragon_wrapper_small, .multi_image_wrapper_small {
-    width: 40vw !important;
+    width: 50vw !important;
     /*min-width: 30vw !important;*/
     /*max-width: 30vw !important;*/
 
 }
 
 .openseadragon_wrapper_large, .multi_image_wrapper_large {
-    width: 49vw !important;
-    min-width: 49vw !important;
-    max-width: 49vw !important;
+    width: 70vw !important;
+    min-width: 70vw !important;
+    max-width: 70vw !important;
 }
 
 
@@ -102,7 +104,7 @@
 
 .neighborhood_wrapper_large {
     display: block;
-    width: 26vw !important;
+    width: 25vw !important;
     /*width: 30vw !important;*/
     /*max-width: 30vw !important;*/
     /*min-width: 30vw !important;*/
@@ -268,7 +270,7 @@
     font-size: 8pt;
 }
 
-#search-row, #cluster-row {
+#search-row, #cluster-row, #results-bar-row {
     padding-left: 10px;
     padding-right: 15px;
     margin: 0;
@@ -545,7 +547,7 @@
 }
 
 #heatmap_display {
-    height: 28vh;
+    height: 34vh;
     position: relative;
 }
 
@@ -556,6 +558,10 @@
 
 #heatmap-selection-label, #heatmap-overall-label {
     cursor: pointer;
+}
+
+#heatmap_color_legend .tick text {
+    font-size: 0.6rem;
 }
 
 /*TODO: Remove*/

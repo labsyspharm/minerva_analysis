@@ -50,6 +50,7 @@ seg = None
 channels = None
 metadata = None
 np_datasource = None
+zarr_perm_matrix = None
 
 
 def init(datasource_name):
@@ -63,6 +64,7 @@ def load_datasource(datasource_name, reload=False):
     global seg
     global channels
     global metadata
+    global zarr_perm_matrix
     global np_datasource
     if source == datasource_name and datasource is not None and reload is False:
         return
@@ -79,7 +81,12 @@ def load_datasource(datasource_name, reload=False):
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
     metadata = get_ome_metadata(datasource_name)
     channels = zarr.open(channel_io.series[0].aszarr())
-    init_clusters(datasource_name)
+    # init_clusters(datasource_name)
+    if 'linkedDatasets' not in config[datasource_name] or len(config[datasource_name]['linkedDatasets']) == 1:
+        zarr_file_name = datasource_name + "_perm.zarr"
+        zarr_path = Path(
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / zarr_file_name
+        zarr_perm_matrix = zarr.load(zarr_path)
 
 
 # @profile
@@ -98,7 +105,6 @@ def load_csv(datasource_name, numpy=False):
     df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
     df['id'] = df.index
     # df['Cluster'] = embedding[:, -1].astype('int32').tolist()
-    df['Cluster'] = 0
 
     if 'CellType' in df.columns:
         df = df.rename(columns={'CellType': 'phenotype'})
@@ -118,6 +124,7 @@ def init_clusters(datasource_name):
     # Select Cluster Stats
     # clusters = np.sort(datasource['Cluster'].unique().compute().tolist())
     clusters = np.sort(datasource['Cluster'].unique().tolist())
+
     for cluster in clusters:
         # Check if the Cluster is in the DB
         neighborhood = database_model.get(database_model.Neighborhood, datasource=datasource_name, source="Cluster",
@@ -170,24 +177,48 @@ def get_cluster_cells(datasource_name):
 def get_neighborhood_list(datasource_name):
     filtered_neighborhoods = database_model.filter_all(database_model.Neighborhood,
                                                        or_(database_model.Neighborhood.datasource == datasource_name,
-                                                           database_model.Neighborhood.source == "Lasso"))
+                                                           database_model.Neighborhood.datasource == "Multi"))
     return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.source) for neighborhood in
             filtered_neighborhoods]
 
 
 def edit_neighborhood(elem, datasource_name):
     database_model.edit(database_model.Neighborhood, elem['id'], elem['editField'], elem['editValue'])
-    new_neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
-    return [(neighborhood.id, neighborhood.cluster_id, neighborhood.name, neighborhood.source) for neighborhood in
-            new_neighborhoods]
+    return get_neighborhood_list(datasource_name)
 
 
-def get_neighborhood(elem, datasource_name):
-    neighborhood = database_model.get(database_model.Neighborhood, id=elem['id'], datasource=datasource_name)
-    neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood,
-                                            datasource=datasource_name)
+def get_neighborhood(elem, datasource_name, mode='single'):
+    global config
+    neighborhood = database_model.get(database_model.Neighborhood, id=elem['id'])
+    neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood)
     if neighborhood_stats:
-        return pickle.load(io.BytesIO(neighborhood_stats.stats))
+        obj = pickle.load(io.BytesIO(neighborhood_stats.stats))
+        if mode != 'multi':
+            return obj
+        else:
+            if neighborhood.datasource != 'Multi':
+                wrapper_obj = {}
+                wrapper_obj['composition_summary'] = obj['composition_summary']
+                wrapper_obj[neighborhood.datasource] = obj
+                selection_ids = None
+                index_sum = 0
+                for dataset in config[datasource_name]['linkedDatasets']:
+                    np_df = load_csv(dataset, numpy=True)
+                    if neighborhood.datasource == dataset:
+                        selection_ids = np.array([elem['id'] for elem in obj['cells']]) + index_sum
+                    index_sum = index_sum + len(np_df)
+                wrapper_obj['selection_ids'] = selection_ids.tolist()
+                return wrapper_obj
+            else:
+                obj['composition_summary'] = weight_multi_image_neighborhood(obj, datasource_name, len(obj['selection_ids']))
+                # Deleting redundant data
+                for dataset in config[datasource_name]['linkedDatasets']:
+                    if 'dataset' in obj and dataset != datasource_name:
+                        del obj[dataset]['composition_summary']['selection_neighborhoods']
+                        del obj[dataset]['composition_summary']['selection_ids']
+                return obj
+
+
     else:
         return []
 
@@ -246,21 +277,68 @@ def save_lasso(polygon, datasource_name):
     return get_neighborhood_list(datasource_name)
 
 
-def save_neighborhood(selection, datasource_name, source="Cluster"):
+def save_neighborhood(selection, datasource_name, source="Cluster", mode='single'):
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
-    indices = np.array([e['id'] for e in selection['cells']])
-    f = io.BytesIO()
-    np.save(f, indices)
-    neighborhood = database_model.create(database_model.Neighborhood, cluster_id=max_cluster_id + 1,
-                                         datasource=datasource_name,
-                                         source=source,
-                                         name="", cells=f.getvalue())
-    f = io.BytesIO()
-    pickle.dump(selection, f)
-    database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
-                          source=source,
-                          name="", stats=f.getvalue(),
-                          neighborhood=neighborhood)
+    if max_cluster_id is None:
+        max_cluster_id = -1
+    if mode == 'single':
+
+        indices = np.array([e['id'] for e in selection['cells']])
+        f = io.BytesIO()
+        np.save(f, indices)
+        neighborhood = database_model.create(database_model.Neighborhood, cluster_id=max_cluster_id + 1,
+                                             datasource=datasource_name,
+                                             source=source,
+                                             name="", cells=f.getvalue())
+        f = io.BytesIO()
+        if 'p_value' not in selection:
+            query_vector = []
+            for i, phenotype in enumerate(sorted(datasource.phenotype.unique().tolist())):
+                query_vector.append(selection['composition_summary']['weighted_contribution'][i][1])
+
+            neighborhood_query = {'query_vector': query_vector, 'disabled': [], 'threshold': 0.8}
+            _, p_value = similarity_search(datasource_name, neighborhood_query, calc_p_value=True)
+            selection['p_value'] = p_value
+            selection['num_results'] = len(selection['cells'])
+        pickle.dump(selection, f)
+        database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
+                              source=source,
+                              name="", stats=f.getvalue(),
+                              neighborhood=neighborhood)
+
+    else:
+        sorted_ids = np.array(sorted(selection['selection_ids']))
+        index_sum = 0
+        obj = {}
+        for dataset in config[datasource_name]['linkedDatasets']:
+            np_df = load_csv(dataset, numpy=True)
+            next_sum = index_sum + len(np_df)
+            relevant_ids = sorted_ids[np.where((sorted_ids >= index_sum) & (sorted_ids < next_sum))]
+            relevant_ids = relevant_ids - index_sum
+            obj[dataset] = get_neighborhood_stats(dataset, relevant_ids, np_df,
+                                                  compute_neighbors=False)
+            obj[dataset]['selection_ids'] = np.array(relevant_ids).astype(int).flatten().tolist()
+            index_sum += len(np_df)
+        # Simon
+        indices_obj = {}
+        f = io.BytesIO()
+        pickle.dump(sorted_ids, f)
+
+        neighborhood = database_model.create(database_model.Neighborhood,
+                                             datasource='Multi', source=source, custom=True,
+                                             cluster_id=max_cluster_id + 1,
+                                             name="",
+                                             cells=f.getvalue())
+
+        obj['selection_ids'] = sorted_ids.astype(int).tolist()
+        f = io.BytesIO()
+        pickle.dump(obj, f)
+
+        neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource='Multi',
+                                                   source="Cluster",
+                                                   custom=True,
+                                                   name="", stats=f.getvalue(),
+                                                   neighborhood=neighborhood)
     return get_neighborhood_list(datasource_name)
 
 
@@ -283,58 +361,124 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
     if isinstance(phenotype, list):
         cell_ids = datasource.loc[datasource['phenotype'].isin(phenotype)].index.values
     else:
-        cell_ids = datasource.loc[datasource['phenotype'].isin([phenotype, 'CD4 T cells', 'CD 8 T cells'])].index.values
-        # cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
+        # cell_ids = datasource.loc[datasource['phenotype'].isin([phenotype, 'CD4 T cells', 'CD 8 T cells'])].index.values
+        cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
     if selection_ids is not None:
         cell_ids = np.intersect1d(np.array(selection_ids), cell_ids)
     obj = get_neighborhood_stats(datasource_name, cell_ids, np_datasource, fields=fields)
     return obj
 
 
-def create_custom_clusters(datasource_name, num_clusters):
+def create_custom_clusters(datasource_name, num_clusters, mode='single'):
     global config
     global datasource
     database_model.delete(database_model.Neighborhood, custom=True)
     database_model.delete(database_model.NeighborhoodStats, custom=True)
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
 
-    g_mixtures = GaussianMixture(n_components=num_clusters)
-    data = np.load(Path(config[datasource_name]['embedding']))
-    # TODO REMOVE CLUSTER HARDCODE
-    coords = data[:, 0:2]
-    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    # tes = np.hstack((coords, neighborhoods))
+    if mode == 'single':
 
-    # pcaed_tes = PCA(n_components=3).fit_transform(tes);
-    # g_mixtures.fit(pcaed_tes)
-    clusters = g_mixtures.predict(neighborhoods)
-    # randomly_sampled = np.random.choice(data.shape[0], size=100000, replace=False)
-    # g_mixtures.fit(data[randomly_sampled, :-1])
-    # clusters = np.zeros((data.shape[0],))
-    # for i in range(np.ceil(data.shape[0] / 100000).astype(int)):
-    #     bottom = i * 100000
-    #     top = min(data.shape[0], (i + 1) * 100000)
-    #     clusters[bottom:top] = g_mixtures.predict(data[bottom:top, :2])
+        g_mixtures = GaussianMixture(n_components=num_clusters)
+        data = np.load(Path(config[datasource_name]['embedding']))
+        # TODO REMOVE CLUSTER HARDCODE
+        coords = data[:, 0:2]
+        neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+        pcaed = PCA(n_components=2).fit_transform(neighborhoods)
+        data = np.hstack((data, pcaed))
+        g_mixtures.fit(data)
+        clusters = g_mixtures.predict(data)
+        for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
+            indices = np.argwhere(clusters == cluster).flatten()
+            f = io.BytesIO()
+            np.save(f, indices)
+            neighborhood = database_model.create(database_model.Neighborhood,
+                                                 datasource=datasource_name, source="Cluster", custom=True,
+                                                 cluster_id=max_cluster_id + 1,
+                                                 name="Custom Cluster " + str(cluster) + " / " + str(num_clusters),
+                                                 cells=f.getvalue())
 
-    for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
-        indices = np.argwhere(clusters == cluster).flatten()
-        f = io.BytesIO()
-        np.save(f, indices)
-        neighborhood = database_model.create(database_model.Neighborhood,
-                                             datasource=datasource_name, source="Cluster", custom=True,
-                                             cluster_id=max_cluster_id + 1, name="Custom Cluster " + str(cluster),
-                                             cells=f.getvalue())
+            obj = get_neighborhood_stats(datasource_name, indices, np_datasource)
+            query_vector = []
+            for i, phenotype in enumerate(sorted(datasource.phenotype.unique().tolist())):
+                query_vector.append(obj['composition_summary']['weighted_contribution'][i][1])
 
-        obj = get_neighborhood_stats(datasource_name, indices, np_datasource)
-        f = io.BytesIO()
-        pickle.dump(obj, f)
+            neighborhood_query = {'query_vector': query_vector, 'disabled': [], 'threshold': 0.8}
+            # _, p_value = similarity_search(datasource_name, neighborhood_query, calc_p_value=True)
+            obj['p_value'] = 0.0
+            obj['num_results'] = len(obj['cells'])
+            f = io.BytesIO()
+            pickle.dump(obj, f)
 
-        neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
-                                                   source="Cluster",
-                                                   custom=True,
-                                                   name="ClusterStats " + str(cluster), stats=f.getvalue(),
-                                                   neighborhood=neighborhood)
-        max_cluster_id += 1
+            neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource=datasource_name,
+                                                       source="Cluster",
+                                                       custom=True,
+                                                       name="ClusterStats " + str(cluster), stats=f.getvalue(),
+                                                       neighborhood=neighborhood)
+            max_cluster_id += 1
+    else:
+        combined_neighborhoods = get_all_cells(datasource_name, mode, sample_size=10000)
+        combined_embedding = None
+        for dataset in config[datasource_name]['linkedDatasets']:
+            embedding = np.load(Path(config[dataset]['embedding']))
+            if combined_embedding is None:
+                combined_embedding = embedding
+            else:
+                combined_embedding = np.vstack((combined_embedding, embedding))
+
+        max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
+        if max_cluster_id is None:
+            max_cluster_id = 0
+
+        g_mixtures = GaussianMixture(n_components=num_clusters)
+
+        pca = PCA(n_components=2).fit(combined_neighborhoods['full_neighborhoods'])
+        pcaed = pca.transform(combined_neighborhoods['full_neighborhoods'])
+        combined_embedding = combined_embedding[
+                             np.random.choice(combined_embedding.shape[0], pcaed.shape[0], replace=True), :]
+        data = np.hstack((combined_embedding, pcaed))
+        g_mixtures.fit(data)
+        obj = {}
+
+        for dataset in config[datasource_name]['linkedDatasets']:
+            embedding = np.load(Path(config[dataset]['embedding']))
+            neighborhoods = pca.transform(np.load(Path(config[dataset]['neighborhoods'])))
+            data = np.hstack((embedding, neighborhoods))
+            obj[dataset] = g_mixtures.predict(data)
+        cluster_obj = {}
+        for i in range(num_clusters):
+            indices_obj = {}
+            for dataset in config[datasource_name]['linkedDatasets']:
+                indices_obj[dataset] = np.argwhere(obj[dataset] == i).flatten()
+
+            f = io.BytesIO()
+            pickle.dump(obj, f)
+
+            neighborhood = database_model.create(database_model.Neighborhood,
+                                                 datasource='Multi', source="Cluster", custom=True,
+                                                 cluster_id=max_cluster_id + 1,
+                                                 name="Custom Cluster " + str(i) + " / " + str(num_clusters),
+                                                 cells=f.getvalue())
+            selection_ids = np.array([])
+            index_sum = 0
+            for dataset in config[datasource_name]['linkedDatasets']:
+                np_df = load_csv(dataset, numpy=True)
+                cluster_obj[dataset] = get_neighborhood_stats(dataset, indices_obj[dataset], np_df, compute_neighbors=False)
+                cluster_obj[dataset]['selection_ids'] = np.array(indices_obj[dataset]).astype(int).flatten().tolist()
+                selection_ids = np.concatenate([selection_ids, indices_obj[dataset] + index_sum])
+                cluster_obj[dataset]['p_value'] = 0.0
+                cluster_obj[dataset]['num_results'] = len(cluster_obj[dataset]['cells'])
+                index_sum += len(np_df)
+            cluster_obj['selection_ids'] = selection_ids.astype(int).tolist()
+            f = io.BytesIO()
+            pickle.dump(cluster_obj, f)
+
+            neighborhood_stats = database_model.create(database_model.NeighborhoodStats, datasource='Multi',
+                                                       source="Cluster",
+                                                       custom=True,
+                                                       name="ClusterStats " + str(i), stats=f.getvalue(),
+                                                       neighborhood=neighborhood)
+            max_cluster_id += 1
+
 
     return get_neighborhood_list(datasource_name)
 
@@ -465,7 +609,7 @@ def weight_multi_image_neighborhood(neighborhood_obj, datasource_name, selection
     return obj
 
 
-def get_all_cells(datasource_name, mode):
+def get_all_cells(datasource_name, mode, sample_size=400):
     global datasource
     global source
     global config
@@ -482,7 +626,7 @@ def get_all_cells(datasource_name, mode):
                                   np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True),
                                   :]
         return {'full_neighborhoods': selection_neighborhoods,
-                'selection_ids': indices}
+                'selection_ids': indices, 'scatter': get_image_scatter(datasource_name, mode, False)}
         # obj = get_neighborhood_stats(datasource_name, np.arange(datasource.shape[0]), fields=fields)
     else:
         if 'linkedDatasets' in config[datasource_name]:
@@ -493,7 +637,7 @@ def get_all_cells(datasource_name, mode):
                 neighborhoods = neighborhoods / row_sums[:, np.newaxis]
                 indices = np.arange(neighborhoods.shape[0])
                 selection_neighborhoods = neighborhoods[indices, :]
-                sample_size = 400
+                sample_size = sample_size
                 selection_neighborhoods = selection_neighborhoods[
                                           np.random.choice(selection_neighborhoods.shape[0], sample_size, replace=True),
                                           :]
@@ -677,8 +821,7 @@ def get_scatterplot_data(datasource_name, mode):
     # data[:, :2] = normalized_data
     list_of_obs = [[elem[0], elem[1], id, int(elem[3])] for id, elem in enumerate(data)]
     visData = {
-        'data': list_of_obs,
-        'clusters': np.unique(data[:, -1]).astype('int32').tolist()
+        'data': list_of_obs
     }
     print('Total Embedding Time', time.time() - this_time)
     return visData
@@ -745,7 +888,7 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     query_vector = None
-    calc_p_value = False
+    calc_p_value = True
     if mode == 'multi' and 'linkedDatasets' in config[datasource_name]:
         combined_selection = None
         calc_p_value = False
@@ -1035,7 +1178,7 @@ def get_pearsons_correlation(datasource_name, mode='single'):
     return heatmap
 
 
-def get_heatmap_pearson_correlation(datasource_name, selection_ids):
+def get_heatmap_pearson_correlation(datasource_name, selection_ids, mode='single'):
     global datasource
     global ball_tree
     global source
@@ -1135,7 +1278,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
     global config
     global metadata
     global datasource
-    default_fields = ['id', 'Cluster', 'phenotype', config[datasource_name]['featureData'][0]['xCoordinate'],
+    default_fields = ['id', 'phenotype', config[datasource_name]['featureData'][0]['xCoordinate'],
                       config[datasource_name]['featureData'][0]['yCoordinate']]
     for field in fields:
         if field not in default_fields:
@@ -1192,10 +1335,9 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         'phenotypes_list': phenotypes
     }
     # print('Computing Stats Time', time.time() - time_neighborhood_stats)
-    compute_neighbors = True;
     if compute_neighbors:
 
-        points = cluster_cells[:, [3, 4]]
+        points = cluster_cells[:, [2, 3]]
         # Hardcoded to 30 um
         if 'neighborhood_range' in config[datasource_name]:
             neighborhood_range = config[datasource_name]['neighborhood_range']
@@ -1215,6 +1357,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
     centroid = points.mean(axis=0)
 
     obj['centroid'] = centroid;
+
     return obj
 
 
@@ -1226,9 +1369,14 @@ def get_contour_line_paths(datasource_name, selection_ids):
     x = cells[config[datasource_name]['featureData'][0]['xCoordinate']].to_numpy()
     y = cells[config[datasource_name]['featureData'][0]['yCoordinate']].to_numpy()
     cell_points = np.column_stack((x, y))
-    clusterer = hdbscan.HDBSCAN(allow_single_cluster=True, min_samples=1)
+    if len(selection_ids) < 25:
+        clusterer = hdbscan.HDBSCAN(allow_single_cluster=True, min_samples=1)
+    else:
+        clusterer = hdbscan.HDBSCAN(allow_single_cluster=True, min_samples=1, min_cluster_size=25)
+
     clusterer.fit(cell_points)
     cell_points = np.column_stack((cell_points, clusterer.labels_))
+
     grouping = npi.group_by(cell_points[:, 2])
     return grouping.split_array_as_list(cell_points)
 
@@ -1309,9 +1457,9 @@ def p_val(val, perm_vals):
 
 
 # @profile
-def get_multi_image_scatter_results(datasource_name, mode):
+def get_image_scatter(datasource_name, mode, all_results=True):
     results = {}
-    if 'linkedDatasets' in config[datasource_name]:
+    if 'linkedDatasets' in config[datasource_name] and all_results:
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset != datasource_name or mode == 'multi' or mode == 'single':  # TODO:Remove
                 np_df = load_csv(dataset, numpy=True)
@@ -1332,6 +1480,25 @@ def get_multi_image_scatter_results(datasource_name, mode):
                 normalized_data[:, 1] = normalized_data[:, 1] * -1.0  # Flip image
                 data = np.column_stack((normalized_data, data[:, 2:4]))
                 results[dataset] = np.ascontiguousarray(data)
+    else:
+        np_df = load_csv(datasource_name, numpy=True)
+        x_field = config[datasource_name]['featureData'][0]['xCoordinate']
+        y_field = config[datasource_name]['featureData'][0]['yCoordinate']
+        column_indices = get_column_indices([x_field, y_field, 'id'])
+        data = np_df[:, column_indices].astype(int)
+        # Get Cell Types
+        phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+        phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
+        for i in range(phenotypes_array.shape[0]):
+            phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
+        phenotypes_array = np.array(phenotypes_array, dtype='uint16')
+        data = np.hstack((data, phenotypes_array))
+
+        # data = df[[x_field, y_field, 'id']].to_numpy()
+        normalized_data = normalize_scatterplot_data(data[:, 0:2])
+        normalized_data[:, 1] = normalized_data[:, 1] * -1.0  # Flip image
+        data = np.column_stack((normalized_data, data[:, 2:4]))
+        results = np.ascontiguousarray(data)
 
     return results
 
@@ -1353,6 +1520,9 @@ def search_across_images(datasource_name, linked_datasource, neighborhood_query=
                 results[dataset]['cells'] = cells
                 results[dataset]['p_value'] = p_value
                 results[dataset]['num_results'] = len(cells)
+
+    else:
+        test = ''
     return results
 
 
@@ -1360,6 +1530,7 @@ def search_across_images(datasource_name, linked_datasource, neighborhood_query=
 def get_permuted_results(datasource_name, neighborhood_query):
     global config
     global datasource
+    global perm_data
 
     vector = np.array(neighborhood_query['query_vector'], dtype='float32')
 
@@ -1378,16 +1549,17 @@ def get_permuted_results(datasource_name, neighborhood_query):
     zarr_file_name = datasource_name + "_perm.zarr"
     zarr_path = Path(
         os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / zarr_file_name
-
+    test = time.time()
     if zarr_path.is_dir():
-        test = time.time()
-        zarr_data = zarr.load(zarr_path)
+        if zarr_perm_matrix is not None:
+            zarr_data = zarr_perm_matrix
+        else:
+            zarr_data = zarr.load(zarr_path)
         print('P Done Load Data,', time.time() - test)
         test = time.time()
         results = test_with_saved_perm(zarr_data, vector, neighborhood_query['threshold'])
         print('P Perm Time,', time.time() - test)
         test = time.time()
-
 
     else:
         print('P Creating Data,', time.time() - test)

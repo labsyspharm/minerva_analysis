@@ -105,7 +105,8 @@ def get_neighborhood():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     elem = post_data['elem']
-    resp = data_model.get_neighborhood(elem, datasource)
+    mode = post_data['mode']
+    resp = data_model.get_neighborhood(elem, datasource, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -123,8 +124,9 @@ def save_neighborhood():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     selection = post_data['selection']
+    mode = post_data['mode']
     source = post_data['source']
-    resp = data_model.save_neighborhood(selection, datasource, source)
+    resp = data_model.save_neighborhood(selection, datasource, source, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -234,7 +236,8 @@ def get_heatmap_data():
     post_data = json.loads(request.data)
     selection_ids = post_data['selectionIds']
     datasource = post_data['datasource']
-    resp = data_model.get_heatmap_pearson_correlation(datasource, selection_ids)
+    mode = post_data['mode']
+    resp = data_model.get_heatmap_pearson_correlation(datasource, selection_ids, mode)
     return serialize_and_submit_json(resp)
 
 
@@ -282,7 +285,8 @@ def get_custom_clusters():
     # Parse (rect - [x, y, r], channels [string])
     datasource = request.args.get('datasource')
     num_clusters = int(request.args.get('numClusters'))
-    data_model.create_custom_clusters(datasource, num_clusters)
+    mode = request.args.get('mode')
+    data_model.create_custom_clusters(datasource, num_clusters, mode)
     resp = data_model.get_neighborhood_list(datasource)
     return serialize_and_submit_json(resp)
 
@@ -335,7 +339,7 @@ def get_contour_lines():
 def get_related_image_data():
     datasource = request.args.get('datasource')
     mode = request.args.get('mode')
-    resp = data_model.get_multi_image_scatter_results(datasource, mode)
+    resp = data_model.get_image_scatter(datasource, mode)
     return serialize_and_submit_json(resp)
 
 
