@@ -166,8 +166,11 @@ class ImageViewer {
 
         seaGL.addHandler('gl-drawing', function () {
             // Send color and range to shader
+            const size_2fv = [gl.canvas.height, gl.canvas.width];
+            this.gl.uniform2fv(this.u_tile_size, new Float32Array(size_2fv));
             this.gl.uniform3fv(this.u_tile_color, this.color_3fv);
             this.gl.uniform2fv(this.u_tile_range, this.range_2fv);
+            this.gl.uniform1i(this.u_draw_mode, this.modeInteger);
             this.gl.uniform1i(this.u_tile_fmt, this.fmt_1i);
 
             // Clear before each draw call
@@ -183,6 +186,7 @@ class ImageViewer {
             // Uniform variable for coloring
             this.u_tile_color = this.gl.getUniformLocation(program, 'u_tile_color');
             this.u_tile_range = this.gl.getUniformLocation(program, 'u_tile_range');
+            this.u_tile_size = this.gl.getUniformLocation(program, 'u_tile_size');
             this.u_tile_fmt = this.gl.getUniformLocation(program, 'u_tile_fmt');
         });
 
@@ -298,6 +302,25 @@ class ImageViewer {
     }
 
     /**
+     * Mode Integer for webGL rendering.
+     *
+     * @type {number}
+     */
+
+    get modeInteger() {
+      const mode_string = [
+        this.viewerManagerVMain.sel_outlines ? 'T' : 'F'
+      ].join('');
+      const mode_options = {
+        'T': 1
+      };
+      if (mode_string in mode_options) {
+        return mode_options[mode_string];
+      }
+      return 0;
+    }
+
+    /**
      * @function drawLabelTile - cell-based rendering using the segmentation mask
      * @param tile - the tile to draw
      * @param width - width of the tile
@@ -332,32 +355,11 @@ class ImageViewer {
                             index < width * 4 * (height - 1)
                         ];
 
-                        // If outline
-                        if (this.viewerManagerVMain.sel_outlines) {
-                            // Iterate grid
-                            for (let j = 0; j < grid.length; j++) {
-                                // if pass test (not on tile border)
-                                if (test[j]) {
-                                    // Neighbor label value
-                                    const altLabelValue = tile._array[grid[j] / 4] + valInc;
-                                    // Color
-                                    if (altLabelValue !== labelValue) {
-                                        tile._tileImageData.data[index] = color[0];
-                                        tile._tileImageData.data[index + 1] = color[1];
-                                        tile._tileImageData.data[index + 2] = color[2];
-                                        tile._tileImageData.data[index + 3] = 255;
-                                        tile.containsLabel = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        } else {
-                            tile._tileImageData.data[index] = color[0];
-                            tile._tileImageData.data[index + 1] = color[1];
-                            tile._tileImageData.data[index + 2] = color[2];
-                            tile._tileImageData.data[index + 3] = 255;
-                            tile.containsLabel = true;
-                        }
+                        tile._tileImageData.data[index] = color[0];
+                        tile._tileImageData.data[index + 1] = color[1];
+                        tile._tileImageData.data[index + 2] = color[2];
+                        tile._tileImageData.data[index + 3] = 255;
+                        tile.containsLabel = true;
                         /************************ newend */
 
                     }
