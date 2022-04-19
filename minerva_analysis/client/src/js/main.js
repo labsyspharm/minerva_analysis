@@ -88,7 +88,6 @@ const actionColorTransferChange = (d) => {
     // d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
     // d3.select('body').style('cursor', 'default');
-    seaDragonViewer.csvGatingOverlay.draw();
 }
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
@@ -152,7 +151,6 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
  */
 function updateSeaDragonSelection(repaint = true) {
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
-    seaDragonViewer.csvGatingOverlay.evaluate();
 }
 
 /**

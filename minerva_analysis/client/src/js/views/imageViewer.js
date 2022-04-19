@@ -27,6 +27,9 @@ class ImageViewer {
         this.dataLayer = dataLayer;
         this.colorScheme = colorScheme;
         this.channelList = channelList;
+        this.resetCacheProps();
+        const clearCache = this.clearCacheState.bind(this);
+        this.eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, clearCache);
 
         // Viewer
         this.viewer = {};
@@ -88,11 +91,12 @@ class ImageViewer {
             id: "openseadragon",
             prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
             maxZoomPixelRatio: 15,
+            compositeOperation: 'lighten',
             loadTilesWithAjax: true,
             immediateRender: false,
             maxImageCacheCount: 100,
             timeout: 90000,
-            compositeOperation: 'lighter',
+            collectionMode: false,
             preload: false,
             homeFillsViewer: true,
             visibilityRatio: 1.0
@@ -113,114 +117,202 @@ class ImageViewer {
 
         // Define interface to shaders
         const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
+        this.viaGL = seaGL.viaGL;
+
+        // Override loadArray to add more complex drawing
+        seaGL.viaGL.loadArray = function(width, height, pixels, format='u16') {
+
+          // Allow for custom drawing in webGL
+          var gl = this.gl;
+
+          // Clear before starting all the draw calls
+          gl.clearColor(0, 0, 0, 0);
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+          // Reset texture for GLSL
+          that.selectTexture(gl, this.texture, 0);
+
+          // Send the tile into the texture.
+          if (format == 'u16') {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8UI, width, height, 0,
+                          gl.RG_INTEGER, gl.UNSIGNED_BYTE, pixels);
+          }
+          else if (format == 'u32') {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, width, height, 0,
+                          gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
+          }
+
+          this.all_gl_arguments.forEach((gl_arguments) => {
+            // Call gl-drawing after loading TEXTURE0
+            this['gl-drawing'].call(this, gl_arguments);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          });
+          return gl.canvas;
+        };
+
         seaGL.vShader = '/client/src/shaders/vert.glsl';
         seaGL.fShader = '/client/src/shaders/frag.glsl';
-        //
+
+        // Draw handler for viaWebGL
         seaGL.addHandler('tile-drawing', async function (callback, e) {
 
             // Read parameters from each tile
             const tile = e.tile;
             const group = e.tile.url.split("/");
             const sub_url = group[group.length - 3];
+            const sub_regex = new RegExp(sub_url + '/?$');
+            const centerProps = that.selectCenterProps(e.tile);
 
-            let channel = _.find(that.channelList.currentChannels, e => {
-                return e.sub_url == sub_url;
-            })
-            if (channel) {
+            // Turn on additive blending
+            const via = this.viaGL;
+            via.gl.enable(via.gl.BLEND);
+
+            if (!isMaskTile(e.tile, sub_url, that.channelList)) {
+
+                via.gl.blendEquationSeparate(via.gl.FUNC_ADD, via.gl.FUNC_ADD);
+                via.gl.blendFunc(via.gl.ONE, via.gl.ONE);
+
+                let channel = _.find(that.channelList.currentChannels, e => {
+                    return e.sub_url == sub_url;
+                })
                 const color = _.get(channel, 'color', d3.color("white"));
-                const floatColor = [color.r / 255., color.g / 255., color.b / 255.];
+                const floatColor = toFloatColor(color);
                 const range = _.get(channel, 'range', that.dataLayer.getImageBitRange(true));
-                const via = this.viaGL;
                 // Store channel color and range to send to shader
-                via.color_3fv = new Float32Array(floatColor);
-                via.range_2fv = new Float32Array(range);
-                let fmt = 0;
-                if (tile._format == 'u16') {
-                    fmt = 16;
-                } else if (tile._format == 'u32') {
-                    fmt = 32;
-                }
-                via.fmt_1i = fmt;
+                via.all_gl_arguments = [{
+                  ...centerProps,
+                  centers: [],
+                  id_end_1i: 0,
+                  color_3fv: new Float32Array(floatColor),
+                  range_2fv: new Float32Array(range),
+                  degree_key_1i: 0,
+                  fmt_1i: 16
+                }];
                 // Start webGL rendering
                 callback(e);
-                // After the callback, call the labels
-                // await that.drawLabels(e);
             } else {
-                if (e.tile._redrawLabel) {
-                    if (!e.tile._array || !e.tile._tileImageData) {
-                        console.log('Missing Array', e.tile.url);
-                        // this.refreshSegmentationMask();
-                    }
-                    that.drawLabelTile(e.tile, e.tile._tileImageData.width, e.tile._tileImageData.height);
+
+                via.gl.blendEquationSeparate(via.gl.FUNC_ADD, via.gl.FUNC_MAX);
+                via.gl.blendFunc(via.gl.ONE, via.gl.ONE);
+
+                if (!e.tile._array) {
+                    console.log('Missing Array', e.tile.url);
+                    // this.refreshSegmentationMask();
                 }
-                if (e.tile.containsLabel) {
-                    try {
-                        e.rendered.putImageData(e.tile._tileImageData, 0, 0);
-                    } catch (err) {
-                        console.log('Another issue', err, e.tile.url);
-                        // this.refreshSegmentationMask();
-                    }
-                }
+                const or_mode = csv_gatingList.eval_mode == "or";
+                const cachedProps = that.getCachedProps(e.tile, or_mode);
+
+                // Update buffers as needed
+                const sources = cachedProps.sources;
+                via.all_gl_arguments = sources.map((channel) => {
+                  const color = that.selectMaskColor(channel, or_mode);
+                  const markerIndex = cachedProps.keys.indexOf(channel);
+                  const degreeKey = Math.max(0, markerIndex);
+                  const floatColor = toFloatColor(color)
+                  return {
+                    ...centerProps,
+                    id_end_1i: cachedProps.id_end_1i,
+                    color_3fv: new Float32Array(floatColor),
+                    range_2fv: cachedProps.range_2fv,
+                    degree_key_1i: degreeKey,
+                    fmt_1i: 32,
+                  };
+                });
+
             }
+
+            // Clear the rendered tile
+            var w = e.rendered.canvas.width;
+            var h = e.rendered.canvas.height;
+            e.rendered.fillStyle = 'black';
+            e.rendered.fillRect(0, 0, w, h);
+
+            // Start webGL rendering
+            callback(e);
+
         });
 
-        seaGL.addHandler('gl-drawing', function () {
-            // Send color and range to shader
-            const size_2fv = [gl.canvas.height, gl.canvas.width];
-            this.gl.uniform2fv(this.u_tile_size, new Float32Array(size_2fv));
-            this.gl.uniform3fv(this.u_tile_color, this.color_3fv);
-            this.gl.uniform2fv(this.u_tile_range, this.range_2fv);
-            this.gl.uniform1i(this.u_draw_mode, this.modeInteger);
-            this.gl.uniform1i(this.u_tile_fmt, this.fmt_1i);
+        seaGL.addHandler('gl-drawing', function (gl_arguments) {
 
-            // Clear before each draw call
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            const corrections_2fv = gl_arguments.corrections_2fv;
+            const scale_level_1i = gl_arguments.scale_level_1i;
+            const real_height_1i = gl_arguments.real_height_1i;
+            const degree_key_1i = gl_arguments.degree_key_1i;
+            const origin_2fv = gl_arguments.origin_2fv;
+            const range_2fv = gl_arguments.range_2fv;
+            const fmt_1i = gl_arguments.fmt_1i;
+            const color_3fv = gl_arguments.color_3fv;
+            const id_end_1i = gl_arguments.id_end_1i;
+
+            // Send color and range to shader
+            const size_2fv = [this.gl.canvas.height, this.gl.canvas.width];
+            this.gl.uniform2fv(this.u_tile_size, new Float32Array(size_2fv));
+            this.gl.uniform1i(this.u_degree_key, degree_key_1i);
+            this.gl.uniform3fv(this.u_tile_color, color_3fv);
+            this.gl.uniform2fv(this.u_tile_range, range_2fv);
+            this.gl.uniform2fv(this.u_tile_origin, origin_2fv);
+            this.gl.uniform2fv(this.u_corrections, corrections_2fv);
+            this.gl.uniform1i(this.u_scale_level, scale_level_1i);
+            this.gl.uniform1i(this.u_real_height, real_height_1i);
+            this.gl.uniform1i(this.u_draw_mode, that.modeInteger);
+            this.gl.uniform1i(this.u_id_end, id_end_1i);
+            this.gl.uniform1i(this.u_tile_fmt, fmt_1i);
         });
 
         seaGL.addHandler('gl-loaded', function (program) {
-            // Turn on additive blending
-            this.gl.enable(this.gl.BLEND);
-            this.gl.blendEquation(this.gl.FUNC_ADD);
-            this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
 
-            // Uniform variable for coloring
+            // Uniform variables for coloring
+            this.u_ids_shape = this.gl.getUniformLocation(program, 'u_ids_shape');
+            this.u_degree_shape = this.gl.getUniformLocation(program, 'u_degree_shape');
+            this.u_center_shape = this.gl.getUniformLocation(program, 'u_center_shape');
+            this.u_degree_key = this.gl.getUniformLocation(program, 'u_degree_key');
+            this.u_draw_mode = this.gl.getUniformLocation(program, 'u_draw_mode');
             this.u_tile_color = this.gl.getUniformLocation(program, 'u_tile_color');
             this.u_tile_range = this.gl.getUniformLocation(program, 'u_tile_range');
+            this.u_tile_origin = this.gl.getUniformLocation(program, 'u_tile_origin');
+            this.u_corrections = this.gl.getUniformLocation(program, 'u_corrections');
+            this.u_scale_level = this.gl.getUniformLocation(program, 'u_scale_level');
+            this.u_real_height = this.gl.getUniformLocation(program, 'u_real_height');
             this.u_tile_size = this.gl.getUniformLocation(program, 'u_tile_size');
             this.u_tile_fmt = this.gl.getUniformLocation(program, 'u_tile_fmt');
+            this.u_id_end = this.gl.getUniformLocation(program, 'u_id_end');
+
+            // Texture for colormap
+            const u_ids = this.gl.getUniformLocation(program, 'u_ids');
+            const u_degrees = this.gl.getUniformLocation(program, 'u_degrees');
+            const u_centers = this.gl.getUniformLocation(program, 'u_centers');
+            this.texture_ids = this.gl.createTexture();
+            this.texture_degrees = this.gl.createTexture();
+            this.texture_centers = this.gl.createTexture();
+            this.gl.uniform1i(u_ids, 1);
+            this.gl.uniform1i(u_degrees, 2);
+            this.gl.uniform1i(u_centers, 3);
         });
 
 
         seaGL.addHandler('tile-loaded', (callback, e) => {
-            var decoder = new Promise(function (resolve, reject) {
-                try {
-                    const group = e.tile.url.split("/");
-                    let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
-                    e.tile._blobUrl = e.image?.src;
-                    if (isLabel) {
-                        e.tile._isLabel = true;
-                        if (!e.tile._array) {
-                            e.tile._array = new Int32Array(PNG.sync.read(new Buffer(e.tileRequest?.response ||
-                                e.image._array), {colortype: 0}).data.buffer);
-                        }
-                        that.drawLabelTile(e.tile, e.image?.width || e.tile?._tileImageData?.width, e.image?.height
-                            || e.tile?._tileImageData?.height);
+            try {
+                const group = e.tile.url.split("/");
+                let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
+                e.tile._blobUrl = e.image?.src;
 
-                        // We're hence skipping that OpenseadragonGL callback since we only care about the vales
-                        return resolve();
-                    } else {
-                        return callback(e)
-                        // This goes to OpenseadragonGL which does the necessary bit stuff.
+                if (isLabel) {
+                    e.tile._isLabel = true;
+                    if (!e.tile._array) {
+                        const responseArray = e.tileRequest?.response || e.image._array;
+                        const pngBuffer = new Buffer(responseArray);
+                        const pngArray = PNG.sync.read(pngBuffer, {colortype: 0});
+                        e.tile._array = new Int32Array(pngArray.data.buffer);
                     }
-                } catch (err) {
-                    console.log('Load Error, Refreshing', err, e.tile.url);
-                    that.forceRepaint();
-
-                    // return callback(e);
                 }
-                // Notify openseadragon when decoded
-                decoder.then(e.getCompletionCallback())
-            });
+                // Trigger WebGL
+                return callback(e)
+            } catch (err) {
+                console.log('Load Error, Refreshing', err, e.tile.url);
+                that.forceRepaint();
+
+                // return callback(e);
+            }
         });
 
 
@@ -234,7 +326,6 @@ class ImageViewer {
                 (window.URL || window.webkitURL).revokeObjectURL(e.tile._blobUrl);
             }
             delete e.tile._array;
-            delete e.tile._tileImageData;
         })
 
 
@@ -297,8 +388,46 @@ class ImageViewer {
                     })
             }
         });
+    }
 
+    /**
+     * Cached flag for webGL rendering.
+     *
+     * @type {boolean}
+     */
 
+    get hasCachedAllBuffers() {
+      return this.hasCachedIds && this.hasCachedCenters && this.hasCachedDegrees;
+    }
+
+    /**
+     * Cached ID flag for webGL rendering.
+     *
+     * @type {boolean}
+     */
+
+    get hasCachedIds() {
+      return this._cachedIds;
+    }
+
+    /**
+     * Cached centers flag for webGL rendering.
+     *
+     * @type {boolean}
+     */
+
+    get hasCachedCenters() {
+      return this._cachedCenters;
+    }
+
+    /**
+     * Cached centers flag for webGL rendering.
+     *
+     * @type {boolean}
+     */
+
+    get hasCachedDegrees() {
+      return this._cachedDegrees;
     }
 
     /**
@@ -309,10 +438,14 @@ class ImageViewer {
 
     get modeInteger() {
       const mode_string = [
-        this.viewerManagerVMain.sel_outlines ? 'T' : 'F'
-      ].join('');
+        csv_gatingList.eval_mode == "or" ? 'T': 'F',
+        this.viewerManagerVMain.sel_outlines ? 'T' : 'F',
+      ].join('-');
       const mode_options = {
-        'T': 1
+        'T-T': 11,
+        'T-F': 10,
+        'F-T': 1,
+        'F-F': 0,
       };
       if (mode_string in mode_options) {
         return mode_options[mode_string];
@@ -321,53 +454,377 @@ class ImageViewer {
     }
 
     /**
-     * @function drawLabelTile - cell-based rendering using the segmentation mask
-     * @param tile - the tile to draw
-     * @param width - width of the tile
-     * @param height - height of the tile
+     * @function getCachedProps -- generate cache of gl properties
+     * @param tile - OpenSeadragon tile
+     * @param or_mode - render pie charts
+     *
+     * @returns {{
+     *  sources: Array,
+     *  ids: Array,
+     *  keys: Array,
+     *  id_end_1i: Number,
+     *  range_2fv: Array,
+     * }}
      */
-    drawLabelTile(tile, width, height) {
-        const self = this;
-        let imageData = new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
-        tile._tileImageData = imageData;
-        const valInc = 0;
-        if (self.show_selection && self.selection.size > 0) {
-            tile._array.forEach((val, i) => {
-                    if (val !== 0 && self.selection.has(val + valInc)) {
-                        let labelValue = val + valInc;
-                        let phenotype = _.get(seaDragonViewer.selection.get(labelValue), 'phenotype');
-                        //set color to white but when phenotype column in passed selection, use that for coloring
-                        let color = [255, 255, 255];
-                        // if (phenotype !== undefined) {
-                        //     color = seaDragonViewer.colorScheme.colorMap[phenotype].rgb;
-                        // }
-                        let index = i * 4;
-                        const grid = [
-                            index - 4,
-                            index + 4,
-                            index - width * 4,
-                            index + width * 4
-                        ];
-                        const test = [
-                            index % (width * 4) !== 0,
-                            index % (width * 4) !== (width - 1) * 4,
-                            index >= width * 4,
-                            index < width * 4 * (height - 1)
-                        ];
+    getCachedProps(tile, or_mode) {
+      const minFull = this.csvGatingOverlay.channel_scale(0);
+      const maxFull = this.csvGatingOverlay.channel_scale(1);
+      const defaultRange = [minFull, maxFull];
 
-                        tile._tileImageData.data[index] = color[0];
-                        tile._tileImageData.data[index + 1] = color[1];
-                        tile._tileImageData.data[index + 2] = color[2];
-                        tile._tileImageData.data[index + 3] = 255;
-                        tile.containsLabel = true;
-                        /************************ newend */
+      const keys = Object.keys(csv_gatingList.selections);
+      const sources = or_mode ? keys : [""];
 
-                    }
-                }
-            )
+      const cacheKey = sources.join('-');
+      const _cached = this._cachedProps.get(cacheKey);
+      if (_cached) {
+        if (or_mode && this.hasCachedAllBuffer) {
+          return _cached;
         }
+        else if (!or_mode && this.hasCachedIds) {
+          return _cached;
+        }
+      }
+      let ids = _cached?.ids || [];
+      if (!this.hasCachedIds) {
+        ids = this.selectLabels();
+      }
+      if (or_mode) {
+        if (!this.hasCachedDegrees) {
+          this.selectCellDegrees(ids, keys, or_mode);
+        }
+        if (!this.hasCachedCenters) {
+          this.selectCenters(or_mode);
+        }
+      }
+      const cached = {
+        sources,
+        keys,
+        ids,
+        id_end_1i: Math.max(ids.length - 1, 0),
+        range_2fv: new Float32Array(defaultRange),
+      }
+      this._cachedProps.set(cacheKey, cached);
+      return cached;
     }
 
+    /**
+     * @function clearCacheState -- clear cached state
+     *
+     * @returns void
+     */
+    clearCacheState() {
+      this._cachedIds = false;
+      this._cachedCenters = false;
+      this._cachedDegrees = false;
+    }
+
+    /**
+     * @function resetCacheProps -- clear cached props 
+     *
+     * @returns void
+     */
+    resetCacheProps() {
+      this.clearCacheState();
+      this._cachedProps = new Map();
+    }
+
+    /**
+     * @function selectLabels -- return cell labels
+     *
+     * @returns {Array}
+     */
+    selectLabels() {
+
+      if (!this.show_selection) {
+        return [];
+      }
+      
+      const ids = [...this.selection.keys()];
+      if (!this.hasCachedIds && ids.length > 0) {
+        this.bindLabels(this.viaGL, ids);
+        this._cachedIds = true;
+      }
+
+      return ids;
+    }
+
+    /**
+     * @function selectCenters -- return cell centers
+     * @param or_mode - render pie charts
+     *
+     * @returns {Array}
+     */
+    selectCenters(or_mode) {
+
+      const xKey = 'X_centroid';
+      const yKey = 'Y_centroid';
+
+      if (!this.show_selection || !or_mode) {
+        return [];
+      }
+      let centers = [];
+      try {
+        [...this.selection.values()].forEach((values) => {
+          if (xKey in values && yKey in values) {
+            const center = [values.X_centroid, values.Y_centroid];
+            centers = centers.concat(center);
+          }
+          else {
+            throw new TypeError(`Missing "${xKey}" "${yKey}" in selection.`);
+          }
+        });
+      }
+      catch (e) {
+        if (e instanceof TypeError) {
+          console.warn(e);
+          return [];
+        }
+        throw e;
+      }
+
+      if (!this.hasCachedCenters) {
+        this.bindCenters(this.viaGL, centers);
+        this._cachedCenters = true;
+      }
+      return centers;
+    }
+
+    /**
+     * @function selectCenterProps -- return cell centers properties
+     * @param tile - openseadragon tile
+     *
+     * @returns {{
+     *   real_height_1i: Number,
+     *   scale_level_1i: Number,
+     *   corrections_2fv: Array,
+     *   origin_2fv: Array,
+     * }}
+     */
+    selectCenterProps(tile) {
+
+      const tileWidth = this.config.tileWidth;
+      const tileHeight = this.config.tileHeight;
+      const tW = tile.sourceBounds.width;
+      const tH = tile.sourceBounds.height;
+      const corrections = [
+        tileWidth / tW,
+        tileHeight / tH,
+      ];
+
+      const maxLevel = this.config.maxLevel - 1;
+      const realLevel = (maxLevel - tile.level);
+      const scale_factor = (2 ** realLevel);
+      const origin = [tile.x, tile.y];
+
+      return {
+        real_height_1i: tH,
+        scale_level_1i: scale_factor,
+        corrections_2fv: new Float32Array(corrections),
+        origin_2fv: new Float32Array(origin),
+      };
+    }
+
+    /**
+     * @function selectCellDegrees -- select degree ranges
+     * @param ids - active cell ids
+     * @param keys - active marker channels
+     * @param or_mode - render pie charts
+     *
+     * @returns {Array}
+     */
+    selectCellDegrees(ids, keys, or_mode) {
+
+      if (!or_mode) {
+        return [];
+      }
+      let degrees = [];
+
+      try {
+        degrees = ids.reduce((out, key) => {
+          const o = this.csvGatingOverlay.toGatingRanges(key);
+          return out.concat(o);
+        }, []);
+      }
+      catch (e) {
+        if (e instanceof TypeError) {
+          console.warn(e);
+          return [];
+        }
+        throw e;
+      }
+
+      const keyCount = Math.max(keys.length, 1);
+      if (!this.hasCachedDegrees && degrees.length > 0) {
+        this.bindDegrees(this.viaGL, degrees, keyCount);
+        this._cachedDegrees = true;
+      }
+
+      return degrees;
+    }
+
+    /**
+     * @function selectMaskColor -- select color for mask 
+     * @param channel - the channel label
+     * @param or_mode - render pie charts
+     *
+     * @returns {{r: Number, g: Number, b: Number}}
+     */
+    selectMaskColor(channel, or_mode) {
+
+      const white = {
+        r: 255,
+        g: 255,
+        b: 255
+      };
+      if (!or_mode) {
+        return white;
+      }
+      const idx = this.csvGatingOverlay.channel_list.columns.indexOf(channel);
+      const channels = this.csvGatingOverlay.channel_list.currentChannels;
+      const idxString = (idx + 1).toString();
+      if (idx < 0 || !Object.keys(channels).includes(idxString)) {
+        return white;
+      }
+      const data = channels[idxString];
+      return data.color;
+    }
+
+    /**
+     * @function selectTexture - activate a WebGL texture
+     * @param gl - the WebGL2 context
+     * @param texture - the WebGL2 texture
+     * @param idx - the WebGL2 texture index
+     */
+    selectTexture(gl, texture, idx) {
+      // Set texture for GLSL
+      gl.activeTexture(gl['TEXTURE'+idx]);
+      gl.bindTexture(gl.TEXTURE_2D, texture),
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+
+      // Assign texture parameters
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    }
+
+    /**
+     * @function measureLabelValues - return segmentation mask shape
+     * @param gl - the WebGL2 context
+     * @param values - the texture data as an array 
+     *
+     * @returns {[width: Number, height: Number]}
+     */
+    measureLabelValues(gl, values) {
+      const width = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+      const height = Math.ceil(values.length / width);
+      return [width, height];
+    }
+
+    /**
+     * @function packLabelValues - return segmentation mask values
+     * @param gl - the WebGL2 context
+     * @param a - the texture data as an array 
+     *
+     * @returns {{pixels: Uint8Array, width: Number, height: Number}}
+     */
+    packLabelValues(gl, a) {
+      const [width, height] = this.measureLabelValues(gl, a);
+      // Create 2D array of pixels
+      const full_size = width * height;
+      const arr = new ArrayBuffer(4 * full_size);
+      const view = new DataView(arr);
+      a.forEach((v, i)=> {
+        view.setUint32(4 * i, v, true);
+      })
+      const pixels = new Uint8Array(arr);
+      return {pixels, width, height};
+    }
+
+    /**
+     * @function setLabelMap - set the segmentation mask ids 
+     * @param gl - the WebGL2 context
+     * @param texture - the WebGL2 texture
+     * @param values - the texture data as 2d array 
+     */
+    setLabelMap(gl, texture, values) {
+      const packed = this.packLabelValues(gl, values);
+      // Set texture for GLSL
+      this.selectTexture(gl, texture, 1);
+      // Send an empty array to the texture
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0,
+                    gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
+    }
+
+    /**
+     * @function setDegreeMap - set the segmentation mask degrees
+     * @param gl - the WebGL2 context
+     * @param texture - the WebGL2 texture
+     * @param values - the texture data as 2d array 
+     */
+    setDegreeMap(gl, texture, values) {
+      const packed = this.packLabelValues(gl, values);
+      // Set texture for GLSL
+      this.selectTexture(gl, texture, 2);
+      // Send an empty array to the texture
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0,
+                    gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
+    }
+
+    /**
+     * @function setCenterMap - set the segmentation mask centers 
+     * @param gl - the WebGL2 context
+     * @param texture - the WebGL2 texture
+     * @param values - the texture data as 2d array 
+     */
+    setCenterMap(gl, texture, values) {
+      const packed = this.packLabelValues(gl, values);
+      // Set texture for GLSL
+      this.selectTexture(gl, texture, 3);
+      // Send an empty array to the texture
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0,
+                    gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
+    }
+
+    /**
+     * @function bindLabels - bind segmentation mask ids
+     * @param via - the viaGL context
+     * @param values - the texture data as 2d array 
+     */
+    bindLabels(via, values) {
+      // Add id mask map
+      const ids_2iv = this.measureLabelValues(via.gl, values);
+      via.gl.uniform2iv(via.u_ids_shape, ids_2iv);
+      this.setLabelMap(via.gl, via.texture_ids, values);
+    }
+
+    /**
+     * @function bindDegrees - bind segmentation mask degrees
+     * @param via - the viaGL context
+     * @param values - the texture data as 2d array 
+     * @param depth - number of items at each texel 
+     */
+    bindDegrees(via, values, depth) {
+      // Add a mask degree map
+      const degree_2iv = this.measureLabelValues(via.gl, values);
+      const degree_3iv = degree_2iv.concat(depth);
+      via.gl.uniform3iv(via.u_degree_shape, degree_3iv);
+      this.setDegreeMap(via.gl, via.texture_degrees, values);
+    }
+
+    /**
+     * @function bindCenters - bind segmentation mask centers 
+     * @param via - the viaGL context
+     * @param values - the texture data as 2d array 
+     */
+    bindCenters(via, values) {
+      // Add a mask center map
+      const center_2iv = this.measureLabelValues(via.gl, values);
+      const center_3iv = center_2iv.concat([2]);
+      via.gl.uniform3iv(via.u_center_shape, center_3iv);
+      this.setCenterMap(via.gl, via.texture_centers, values);
+    }
     // =================================================================================================================
     // Tile cache management
     // =================================================================================================================
@@ -500,9 +957,9 @@ class ImageViewer {
      * @returns void
      */
     forceRepaint() {
+        this.clearCacheState();
         // Refilter, redraw
         this.viewerManagers.forEach(vM => {
-            vM.viewer.forceRefilter();
             vM.viewer.forceRedraw();
         });
     }
@@ -675,6 +1132,16 @@ ImageViewer
     renderingMode: 'renderingMode',
     addScaleBar: 'addScaleBar'
 };
+
+function isMaskTile(tile, sub_url, channelList) {
+  let channel = _.find(channelList.currentChannels, e => {
+      return e.sub_url == sub_url;
+  })
+  return !channel;
+}
+function toFloatColor(color) {
+  return [color.r / 255., color.g / 255., color.b / 255.];
+}
 
 async function addTile(path) {
     const addJob = new Promise((resolve, reject) => {

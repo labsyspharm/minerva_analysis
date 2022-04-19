@@ -74,6 +74,7 @@ export class ViewerManager {
                 height: this.imageViewer.config['height'],
                 width: this.imageViewer.config['width'],
                 maxLevel: maxLevel,
+                compositeOperation: 'lighten',
                 tileWidth: this.imageViewer.config['tileWidth'],
                 tileHeight: this.imageViewer.config['tileHeight'],
                 getTileUrl: function (level, x, y) {
@@ -183,6 +184,7 @@ export class ViewerManager {
                     width: this.imageViewer.config['width'],
                     maxLevel: maxLevel,
                     maxImageCacheCount: 50,
+                    compositeOperation: 'source-over',
                     tileWidth: this.imageViewer.config['tileWidth'],
                     tileHeight: this.imageViewer.config['tileHeight'],
                     getTileUrl: function (level, x, y) {
