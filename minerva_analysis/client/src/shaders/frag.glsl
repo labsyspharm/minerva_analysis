@@ -131,6 +131,10 @@ uvec4 offset(usampler2D sam, vec2 pos, vec2 off) {
   return texture(sam, vec2(x_pos, y_pos));
 }
 
+int pow2(int v) {
+  return v * v;
+}
+
 bool pieSlicer(int idx_1d) {
   uint minDegree = uint(u_tile_range[0]);
   if (u_degree_key > 0) {
@@ -153,6 +157,9 @@ bool pieSlicer(int idx_1d) {
   float radians = atan(float(delta_y), max(float(delta_x), dx)) + pi;
   uint degrees = uint(floor(180. * radians / pi));
 
+  if (pow2(delta_y) + pow2(delta_x) > 15) {
+    return false;
+  }
   if (degrees > maxDegree) {
     return false;
   }
@@ -193,12 +200,17 @@ vec4 border_mask(usampler2D sam, vec2 pos, vec4 empty_pixel, int mode) {
 
   // If not border, return empty pixel
   if (!left && !right && !down && !top) {
-    return empty_pixel;
+    uint id = unpack(offset(sam, uv, vec2(0., 0.)));
+    bool usePie = mode == 10 || mode == 11;
+    if (!usePie) {
+      return empty_pixel;
+    }
+    return colorize(id, empty_pixel, mode);
   }
 
   // Return image color at borders
   uint id = unpack(pixel);
-  return colorize(id, empty_pixel, mode);
+  return vec4(1., 1., 1., 1.);
 }
 
 vec4 whole_mask(usampler2D sam, vec2 pos, vec4 empty_pixel, int mode) {
