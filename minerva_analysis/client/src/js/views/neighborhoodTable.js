@@ -201,8 +201,7 @@ class NeighborhoodTable {
             document.getElementById('neighborhood_dropdown_button').click();
         }
         self.drawRows();
-        let lastRow = self.table.querySelector('.neighborhood-row:last-child');
-        lastRow.scrollIntoView();
+
     }
 
     async saveNeighborhood(e) {
@@ -218,7 +217,7 @@ class NeighborhoodTable {
             self.drawRows();
 
             let lastRow = self.table.querySelector('.neighborhood-row:last-child');
-            lastRow.scrollIntoView();
+            // lastRow.scrollIntoView();
             lastRow.click();
             lastRow.querySelector('.neighborhood_icon_col').click();
         }

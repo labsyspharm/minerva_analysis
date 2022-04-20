@@ -51,7 +51,7 @@ async function init(conf) {
     colorScheme = new ColorScheme(dataLayer);
     await colorScheme.init();
     comparison = new Comparison(config, colorScheme, dataLayer, eventHandler, 'comparison_grid',
-        false, null, 'image', 'related_images_dropdown');
+        false, null, 'scatterplot', 'related_images_dropdown');
     neighborhoodTable = new NeighborhoodTable(dataLayer, eventHandler);
     parallelCoordinates = new ParallelCoordinates('parallel_coordinates_display', dataLayer, eventHandler, colorScheme);
     scatterplot = new Scatterplot('scatterplot_display', 'viewer_scatter_canvas', eventHandler, dataLayer,

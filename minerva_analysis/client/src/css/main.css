@@ -84,12 +84,14 @@ body {
 }
 
 #plots_display {
-    height: 100%;
+    margin-top: 5vh;
+    height: 95vh;
+    /*height: 100%;*/
 }
 
 #scatterplot_display {
     /*height: 25vh; TODO SIMON*/
-    height: 25vh;
+    height: 20vh;
     position: relative;
     width: 100%;
 }
@@ -97,7 +99,7 @@ body {
 
 #parallel_coordinates_display {
     /*height: 35vh; TODO SIMON*/
-    height: 35vh;
+    height: 30vh;
     width: 100%;
     position: relative;
     margin: 0;
@@ -188,7 +190,7 @@ body {
 
 #search_header, #cluster_header {
     color: rgba(255, 255, 255, 0.95);
-    font-size: 1.2rem;
+    font-size: 1.4rem;
 }
 
 #search_wrapper .col, #cluster_wrapper .col {
@@ -833,7 +835,7 @@ polygon:hover {
 }
 
 .par_cor_label {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: bold;
     /*cursor: move;*/
 }
@@ -889,7 +891,7 @@ polygon:hover {
     display: block;
 }
 
-#search-info-svg{
-    width:200px;
+#search-info-svg {
+    width: 200px;
     height: 20px
 }

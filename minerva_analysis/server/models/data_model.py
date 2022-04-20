@@ -210,7 +210,8 @@ def get_neighborhood(elem, datasource_name, mode='single'):
                 wrapper_obj['selection_ids'] = selection_ids.tolist()
                 return wrapper_obj
             else:
-                obj['composition_summary'] = weight_multi_image_neighborhood(obj, datasource_name, len(obj['selection_ids']))
+                obj['composition_summary'] = weight_multi_image_neighborhood(obj, datasource_name,
+                                                                             len(obj['selection_ids']))
                 # Deleting redundant data
                 for dataset in config[datasource_name]['linkedDatasets']:
                     if 'dataset' in obj and dataset != datasource_name:
@@ -375,6 +376,8 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
     database_model.delete(database_model.Neighborhood, custom=True)
     database_model.delete(database_model.NeighborhoodStats, custom=True)
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
+    if max_cluster_id is None:
+        max_cluster_id = 0
 
     if mode == 'single':
 
@@ -394,7 +397,7 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
             neighborhood = database_model.create(database_model.Neighborhood,
                                                  datasource=datasource_name, source="Cluster", custom=True,
                                                  cluster_id=max_cluster_id + 1,
-                                                 name="Custom Cluster " + str(cluster) + " / " + str(num_clusters),
+                                                 name="Cluster " + str(cluster + 1) + " / " + str(num_clusters),
                                                  cells=f.getvalue())
 
             obj = get_neighborhood_stats(datasource_name, indices, np_datasource)
@@ -435,7 +438,7 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
         pcaed = pca.transform(combined_neighborhoods['full_neighborhoods'])
         combined_embedding = combined_embedding[
                              np.random.choice(combined_embedding.shape[0], pcaed.shape[0], replace=True), :]
-        data = np.hstack((combined_embedding, pcaed))
+        data = np.hstack((combined_embedding,combined_embedding,combined_embedding, pcaed))
         g_mixtures.fit(data)
         obj = {}
 
@@ -462,7 +465,8 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
             index_sum = 0
             for dataset in config[datasource_name]['linkedDatasets']:
                 np_df = load_csv(dataset, numpy=True)
-                cluster_obj[dataset] = get_neighborhood_stats(dataset, indices_obj[dataset], np_df, compute_neighbors=False)
+                cluster_obj[dataset] = get_neighborhood_stats(dataset, indices_obj[dataset], np_df,
+                                                              compute_neighbors=False)
                 cluster_obj[dataset]['selection_ids'] = np.array(indices_obj[dataset]).astype(int).flatten().tolist()
                 selection_ids = np.concatenate([selection_ids, indices_obj[dataset] + index_sum])
                 cluster_obj[dataset]['p_value'] = 0.0
@@ -478,7 +482,6 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
                                                        name="ClusterStats " + str(i), stats=f.getvalue(),
                                                        neighborhood=neighborhood)
             max_cluster_id += 1
-
 
     return get_neighborhood_list(datasource_name)
 
@@ -750,9 +753,22 @@ def get_color_scheme(datasource_name):
     # colors = palettable.colorbrewer.qualitative.Set3_12.hex_colors
     # colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
     #           '#e0bf04', '#ab9a95', '#258d6b', '#934270', '#48e26f']
-    colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#fff070", "#040ee8", "#02531d", "#fbacf6",
-              "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
-              "#ead624"]
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#fff070", "#040ee8", "#02531d", "#fbacf6",
+    #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #           "#ead624"] FINAL DAY
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#bc3f3b", "#44ea17", "#fff070", "#040ee8", "#02531d", "#fbacf6",
+    #  "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #  "#ead624"]  #Tonsil
+    # Purlpe 563cd3 563cd3
+    # Green 44ea17 44ea17
+    #  RED bc3f3b
+    # Yellow fff070 fff070
+    # Blue 040ee8 040ee8
+
+
+    colors = ["#44ea17", "#FF0000", "#dc31b0", "#bc3f3b", "#563cd3", "#040ee8", "#fff070", "#02531d", "#fbacf6",
+     "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+     "#ead624"] #Tonsil
     # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#2626ff", "#040ee8", "#02531d", "#fbacf6",
     #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
     #           "#ead624"]
@@ -819,7 +835,11 @@ def get_scatterplot_data(datasource_name, mode):
     data[:, 0:2] = normalize_scatterplot_data(data[:, 0:2])
     # normalized_data = MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, :-1])
     # data[:, :2] = normalized_data
-    list_of_obs = [[elem[0], elem[1], id, int(elem[3])] for id, elem in enumerate(data)]
+    if data.shape[1] == 3:
+        list_of_obs = [[elem[0], elem[1], id, int(elem[2])] for id, elem in enumerate(data)]
+    else:
+        list_of_obs = [[elem[0], elem[1], id, int(elem[3])] for id, elem in enumerate(data)]
+
     visData = {
         'data': list_of_obs
     }
@@ -1007,6 +1027,7 @@ def similarity_search(datasource_name, neighborhood_query, calc_p_value=True):
 
     # test
     num_results = len(greater_than)
+    calc_p_value = False;
     if calc_p_value:
         permuted_results = get_permuted_results(datasource_name, neighborhood_query)
         p_value = p_val(num_results, permuted_results)

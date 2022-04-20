@@ -764,9 +764,10 @@ class ImageViewer {
     drawContourLines() {
         const self = this;
         return dataLayer.getContourLines().then((pathResp, i) => {
-            let removeNoise = pathResp.filter(e => {
-                return e[0][2] != -1
-            })
+            var removeNoise = [[].concat.apply([], pathResp)]
+            // let removeNoise = pathResp.filter(e => {
+            //     return e[0][2] != -1
+            // })
             removeNoise.forEach((path, i) => {
                 let polygon = concaveman(path, 2);
                 let pathsArray = polygon.map(point => {

@@ -41,7 +41,11 @@ class Scatterplot {
             return hexToRGBA('#ffa500', 0.1)
         });
         self.greyMap = _.map(_.range(_.size(self.colorScheme.colorMap) / 2), i => {
-            return hexToRGBA('#fffff', 0.01)
+            if (flaskVariables.mode == 'single') {
+                return hexToRGBA('#fffff', 0.025)
+            } else {
+                return hexToRGBA('#fffff', 0.008)
+            }
         });
 
         if (self.image) {
@@ -54,7 +58,7 @@ class Scatterplot {
                 pointColorHover: self.orangeMap,
                 xScale: d3.scaleLinear().domain([-1, 1]),
                 yScale: d3.scaleLinear().domain([-1, 1]),
-                // opacityBy: 'density',
+                opacityBy: 'density',
                 colorBy: 'valueB',
                 // opacityBy: 'density',
                 // opacityBy: 'density',
@@ -75,8 +79,10 @@ class Scatterplot {
                 pointColorHover: self.orangeMap,
                 xScale: d3.scaleLinear().domain([-1, 1]),
                 yScale: d3.scaleLinear().domain([-1, 1]),
-                // opacityBy: 'density',
+                opacityBy: 'density',
                 colorBy: 'valueB',
+                // cameraView: new Float32Array([1.9322417974472046, 0, 0, 0, 0, 1.9322417974472046, 0, 0, 0, 0, 1, 0, -0.4586012661457062, -0.6524205207824707, 0, 1]),
+                cameraView: new Float32Array([1.5264194011688232, 0, 0, 0, 0, 1.5264194011688232, 0, 0, 0, 0, 1, 0, -0.5449246764183044, 0.040881987661123276, 0, 1]),
                 // pointColorActive: hexToRGBA('#ffa500', 0.2),
                 backgroundColor: [0, 0, 0, 0],
                 pointSize: 1,
@@ -224,11 +230,11 @@ class Scatterplot {
         const self = this;
         self.svg = d3.select(`#${self.infoSvgId}`)
         self.svg.selectAll(`.info-svg-g`).remove()
-        if (!self.pValue || !self.numResults) {
+        if (!self.numResults) {
             return;
         }
         let width = self.svg.node().getBoundingClientRect().width;
-        let maxVal = self.dataLayer.maxResults * 1.5;
+        let maxVal = 500000
         let g = self.svg.append('g')
             .attr('class', 'info-svg-g')
 
@@ -240,8 +246,9 @@ class Scatterplot {
             .attr('height', 18)
             .attr('stroke-width', 1)
             .attr('stroke', 'white')
-            .attr('fill', 'orange')
-            .attr('fill-opacity', 1 - self.pValue);
+            .attr('fill', '#ff8a00')
+            .attr('fill-opacity', 1);
+        // .attr('fill-opacity', 1 - self.pValue); //TODO REPLACE
 
         // self.svg.append('text')
         //     .attr('x', (self.numResults / maxVal) * width + 40)

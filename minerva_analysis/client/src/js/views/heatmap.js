@@ -6,6 +6,7 @@ class Heatmap {
         this.eventHandler = eventHandler;
         this.showOverall = true;
         this.showSelection = true;
+        this.fontSize = "0.8rem"
     }
 
     init() {
@@ -30,7 +31,7 @@ class Heatmap {
     draw() {
         const self = this;
         // set the dimensions and margins of the graph
-        const margin = {top: 0, right: 70, bottom: 140, left: 140},
+        const margin = {top: 0, right: 100, bottom: 180, left: 180},
             width = document.getElementById(self.id).clientWidth - margin.left - margin.right,
             height = document.getElementById(self.id).clientHeight - margin.top - margin.bottom;
 
@@ -71,7 +72,7 @@ class Heatmap {
             .style("text-anchor", "end")
             .attr("dx", "-.8em")
             .attr("dy", ".15em")
-            .attr("font-size", "0.7rem")
+            .attr("font-size", self.fontSize)
             .attr("fill", "white")
             .attr("transform", "rotate(-90)");
 
@@ -84,10 +85,10 @@ class Heatmap {
         self.y = y;
 
         svg.append("g")
-            .style("font-size", "0.7rem")
+            .style("font-size", self.fontSize)
             .call(d3.axisLeft(y).tickSize(0))
             .selectAll("text")
-            .attr("font-size", "0.7rem")
+            .attr("font-size", self.fontSize)
             .attr("fill", "white");
 
         //Remove Axis Lines
@@ -150,22 +151,22 @@ class Heatmap {
 
         colorLegend.append('text')
             .attr('x', 0)
-            .attr('y', 42)
-            .attr('font-size', "0.7rem")
+            .attr('y', 44)
+            .attr('font-size', self.fontSize)
             .attr('dominant-baseline', 'middle')
             .style('fill', 'white')
             .text('Avoidance')
 
         colorLegend.append('text')
             .attr('x', 0)
-            .attr('y', -40)
-            .attr('font-size', "0.7rem")
+            .attr('y', -42)
+            .attr('font-size', self.fontSize)
             .attr('dominant-baseline', 'middle')
             .style('fill', 'white')
             .text('Interaction')
 
         let referenceTriangle = svg.append("g")
-            .attr("transform", `translate(325,${0.1 * height})`)
+            .attr("transform", `translate(330,${0.07 * height})`)
         referenceTriangle
             .append('polygon')
             .attr('points', `-10,20, 20,20 20,50`)
@@ -178,20 +179,20 @@ class Heatmap {
         referenceTriangle
             .append('text')
             .attr('id', 'heatmap-overall-label')
-            .attr('x', 20)
-            .attr('y', 17)
+            .attr('x', 0)
+            .attr('y', 16)
             .attr('fill', 'grey')
-            .attr('font-size', '0.7rem')
+            .attr('font-size', 'self.fontSize')
             .attr('text-anchor', 'middle')
             .text('Overall')
             .on('click', self.showHideOverall.bind(self))
         referenceTriangle
             .append('text')
             .attr('id', 'heatmap-selection-label')
-            .attr('x', -10)
-            .attr('y', 61)
+            .attr('x', 0)
+            .attr('y', 63)
             .attr('fill', 'orange')
-            .attr('font-size', '0.7rem')
+            .attr('font-size', 'self.fontSize')
             .attr('text-anchor', 'middle')
             .text('Selected')
             .on('click', self.showHideSelected.bind(self))
@@ -261,25 +262,25 @@ class Heatmap {
             .attr('points', (d) => {
                 let trianglePoints = `${x(d.row)}, ${y(d.col)} ${x(d.row) + x.bandwidth()}, ${y(d.col)} 
                         ${x(d.row) + x.bandwidth()}, ${y(d.col) + y.bandwidth()}`
-                if (self.showOverall && !self.showSelection) {
-                    trianglePoints += ` ${x(d.row)}, ${y(d.col) + y.bandwidth()}`
-                } else if (!self.showOverall) {
-                    trianglePoints = ''
-                }
+                // if (self.showOverall && !self.showSelection) {
+                //     trianglePoints += ` ${x(d.row)}, ${y(d.col) + y.bandwidth()}`
+                // } else if (!self.showOverall) {
+                //     trianglePoints = ''
+                // }
                 return trianglePoints
             })
             .merge(heatmapTriangleOverall)
             .style("fill", function (d) {
-                let val = d.val;
-                if (d.row === d.col || val?.overall == null) {
+                let val = d.val?.overall
+                if (d.row === d.col || val == null || !self.showOverall) {
                     return 'none';
                 } else {
-                    // if (val > 0) {
-                    //     val = Math.pow(val, 2 / 3)
-                    // } else if (val < 0) {
-                    //     val = -1 * Math.sqrt(Math.pow(val * -1, 2 / 3));
-                    // }
-                    return myColor(val?.overall)
+                    if (val > 0) {
+                        val = Math.pow(val, 2 / 3)
+                    } else if (val < 0) {
+                        val = -1 * Math.sqrt(Math.pow(val * -1, 2 / 3));
+                    }
+                    return myColor(val)
                 }
             })
             .style("stroke-width", 1)
@@ -302,25 +303,25 @@ class Heatmap {
                 let trianglePoints = `${x(d.row)}, ${y(d.col)} ${x(d.row)}, ${y(d.col) + y.bandwidth()}
                 ${x(d.row) + x.bandwidth()}, ${y(d.col) + y.bandwidth()}`;
 
-                if (self.showSelection && !self.showOverall) {
-                    trianglePoints += ` ${x(d.row) + x.bandwidth()}, ${y(d.col)}`
-                } else if (!self.showSelection) {
-                    trianglePoints = ''
-                }
+                // if (self.showSelection && !self.showOverall) {
+                //     trianglePoints += ` ${x(d.row) + x.bandwidth()}, ${y(d.col)}`
+                // } else if (!self.showSelection) {
+                //     trianglePoints = ''
+                // }
                 return trianglePoints
             })
             .merge(heatmapTriangleSelected)
             .style("fill", function (d) {
-                let val = d.val;
-                if (d.row === d.col || val?.selected == null) {
+                let val = d.val?.selected
+                if (d.row === d.col || val == null || !self.showSelection) {
                     return 'none';
                 } else {
-                    // if (val > 0) {
-                    //     val = Math.pow(val, 2 / 3)
-                    // } else if (val < 0) {
-                    //     val = -1 * Math.sqrt(Math.pow(val * -1, 2 / 3));
-                    // }
-                    return myColor(val?.selected)
+                    if (val > 0) {
+                        val = Math.pow(val, 2 / 3)
+                    } else if (val < 0) {
+                        val = -1 * Math.sqrt(Math.pow(val * -1, 2 / 3));
+                    }
+                    return myColor(val)
                 }
             })
             .style("stroke-width", 1)

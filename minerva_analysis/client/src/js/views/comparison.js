@@ -104,7 +104,8 @@ class Comparison {
             self.initToggles();
             //HEATMAP
             self.removeAllPlots();
-            self.rowHeight = document.documentElement.clientHeight * 0.3;
+            // self.rowHeight = document.documentElement.clientHeight * 0.3;
+            self.rowHeight = 300;
             self.initByType()
             // self.initImages();
         } else {
@@ -183,7 +184,8 @@ class Comparison {
             if (self.selectAndUnselect(elem, parent)) {
                 await self.removeAllPlots();
                 self.currentState = 'image';
-                self.rowHeight = document.documentElement.clientHeight * 0.4;
+                // self.rowHeight = document.documentElement.clientHeight * 0.4;
+                // self.rowHeight = 300;
                 self.createGrid(1);
                 self.initImages();
             }
@@ -341,7 +343,7 @@ class Comparison {
             canvas.className = 'scatterplot scatter_canvas';
             canvas.id = `${self.containerId}_compare_col_canvas_${i}`;
             canvas.width = canvas_div.offsetWidth;
-            canvas.height = height - 20;
+            canvas.height = height - 50;
             canvas_div.appendChild(canvas);
             let spatialPlot = new Scatterplot(`${self.containerId}_compare_parallel_coordinates_${i}`, `${self.containerId}_compare_col_canvas_${i}`, self.eventHandler, self.dataLayer,
                 null, self.colorScheme, true, false, k, `${self.containerId}_compare_col_info_svg_${i}`, width, height - 20);
@@ -355,7 +357,8 @@ class Comparison {
     initHeatmap() {
         const self = this;
         let plotNames = ['overall', 'selected'];
-        self.rowHeight = document.documentElement.clientHeight * 0.43;
+        // self.rowHeight = document.documentElement.clientHeight * 0.43;
+        // self.rowHeight = 300;
         self.createGrid(1, 2);
         self.plots = _.map(plotNames, (d, i) => {
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`)

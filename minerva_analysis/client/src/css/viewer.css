@@ -63,11 +63,12 @@ body {
 }
 
 #channel_list_wrapper {
+    overflow-y: hidden;
     background-color: rgba(53, 54, 58, 0.75);
     border-radius: 17px;
     left: 1vw;
     z-index: 101;
-    max-height: 40vh;
+    max-height: 70vh;
     padding: 5px;
 }
 
@@ -115,7 +116,7 @@ body {
     padding: 5px;
     position: absolute;
     bottom: 1vh;
-    width: 8vw;
+    /*width: 8vw;*/
     z-index: 101;
 }
 

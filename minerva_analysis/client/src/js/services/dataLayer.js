@@ -19,7 +19,7 @@ class DataLayer {
         this.phenotypes = [];
         this.defaultOrder = []
         this.neighborhoodStats = null;
-        this.maxResults = 100000
+        this.maxResults = 20000
     }
 
     async init() {

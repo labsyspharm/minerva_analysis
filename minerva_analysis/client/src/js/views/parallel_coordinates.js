@@ -172,7 +172,7 @@ class ParallelCoordinates {
             this.wrangle(emptyData);
         }
         self.svgGroup.selectAll(".average_path")
-            .attr("stroke-width", 0)
+            .attr("stroke-width", 2)
 
 
         // _.sortBy(Object.entries(self.order), d => d[1]).forEach(d => {
@@ -492,28 +492,28 @@ class ParallelCoordinates {
 
         self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
 
-        if (!self.editMode && !self.hideOverall) {
-            let opacity = 0.003;
-            let fullNeighborhood = _.get(dataLayer, 'allCells.full_neighborhoods', null);
-            _.forEach(fullNeighborhood, row => {
-                const color = `hsla(0,0%,100%,${opacity})`;
-                self.canvas.getContext('2d').strokeStyle = color;
-                self.canvas.getContext('2d').beginPath();
-                let orderedRow = _.cloneDeep(row);
-                self.phenotypes.map((d, i) => {
-                    orderedRow[self.order[d]] = row[i]
-                })
-
-                orderedRow.map(function (p, i) {
-                    if (i == 0) {
-                        self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
-                    } else {
-                        self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
-                    }
-                });
-                self.canvas.getContext('2d').stroke();
-            })
-        }
+        // if (!self.editMode && !self.hideOverall) {
+        //     let opacity = 0.003;
+        //     let fullNeighborhood = _.get(dataLayer, 'allCells.full_neighborhoods', null);
+        //     _.forEach(fullNeighborhood, row => {
+        //         const color = `hsla(0,0%,100%,${opacity})`;
+        //         self.canvas.getContext('2d').strokeStyle = color;
+        //         self.canvas.getContext('2d').beginPath();
+        //         let orderedRow = _.cloneDeep(row);
+        //         self.phenotypes.map((d, i) => {
+        //             orderedRow[self.order[d]] = row[i]
+        //         })
+        //
+        //         orderedRow.map(function (p, i) {
+        //             if (i == 0) {
+        //                 self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
+        //             } else {
+        //                 self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
+        //             }
+        //         });
+        //         self.canvas.getContext('2d').stroke();
+        //     })
+        // }
 
         // if (self.selection_neighborhoods && !self.editMode) {
         if (self.selection_neighborhoods) {
@@ -544,7 +544,7 @@ class ParallelCoordinates {
             })
         } else {
             self.svgGroup.selectAll(".average_path")
-                .attr("stroke-width", 0)
+                .attr("stroke-width", 2)
         }
     }
 
@@ -642,6 +642,8 @@ class ParallelCoordinates {
         if (self.editMode) {
             // self.svgGroup.selectAll(".average_path")
             //     .attr("stroke-width", 0)
+            self.svgGroup.selectAll(".average_path")
+                .attr("stroke-width", 2)
             document.getElementById('neighborhood_current_selection').innerText = "Composition";
         }
         _.each(document.querySelectorAll('.handler'), elem => {
