@@ -89,7 +89,7 @@ float modulo(uint ai, uint bi) {
 // Lookup 2D sampler indices
 vec2 lookup_2d(ivec2 shape, float idx_x, float idx_y) {
   vec2 s = vec2(shape);
-  return vec2(idx_x / s.x, 1.0 - idx_y / s.y);
+  return vec2(idx_x / s.x, 1.0 - (idx_y + 0.5) / s.y);
 }
 
 // Lookup 3D sampler indices
@@ -98,7 +98,7 @@ vec2 lookup_3d(ivec3 shape, int idx_1d, int d) {
   uint idx = uint(idx_1d * shape.z + d);
   uvec2 idx_max = uvec2(shape.x, shape.y);
   float idx_x = modulo(idx, idx_max.x);
-  float idx_y = (0.5 + floor(division(idx, idx_max.x)));
+  float idx_y = floor(division(idx, idx_max.x));
   return lookup_2d(ivec2(idx_max), idx_x, idx_y);
 }
 
@@ -260,7 +260,7 @@ vec4 to_chart_color(vec4 empty_pixel, int idx_1d) {
     if (check_range(scale, range)) {
       gated_count = gated_count + 1;
       if (gated_total == 2 && gated_count == 2) {
-        vec3 color = sample_gating_color(k); // TODO.. this returns the wrong color!
+        vec3 color = sample_gating_color(k);
         return vec4(color, 1.0);
       }
       if (match_angle(gated_count, gated_total, rad)) {

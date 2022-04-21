@@ -868,7 +868,7 @@ class ImageViewer {
      * @param height - the texture height
      */
     setGatingMap(gl, texture, values, width, height) {
-      const pixels = new Float32Array(values);
+      const pixels = this.packFloat32(values, width, height);
       // Set texture for GLSL
       this.selectTexture(gl, texture, 4);
       // Send an empty array to the texture
