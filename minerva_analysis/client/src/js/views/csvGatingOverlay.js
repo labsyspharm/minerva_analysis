@@ -65,45 +65,29 @@ export class CsvGatingOverlay {
     }
 
     /**
-     * @function toGatingRanges
+     * @function toMagnitude
      * @param k - the cell selection
      *
      * @returns {Array}
      */
-    toGatingRanges(k) {
+    toMagnitude(k) {
 
       // Match to channel color
-      const gatingChannels = [];
       const values = this.image_viewer.selection.get(k);
       const selections = this.gating_list.selections;
       const keys = Object.keys(selections);
-      const columns = this.channel_list.columns;
 
-      let total = 0;
-      const keyValues = keys.map((key) => {
-        let val = 0;
-        const channel = this.gating_list.selections[key];
+      return keys.map((key) => {
         if (!(key in values)) {
           throw new TypeError(`Missing "${key}" in selection "${k}".`);
         }
+        return values[key];
+        /*
         if (values[key] >= channel[0] && values[key] <= channel[1]) {
-          val = values[key];
+          return values[key];
         }
-        total += val;
-        return val;
+        */
       });
-
-      let cumulative = 0;
-      let ranges = [];
-
-      keyValues.forEach((val) => {
-        const probability = val / total;
-        cumulative += probability;
-        const newRange = this.channel_scale(cumulative);
-        ranges = ranges.concat([newRange].map(d => Math.round(d)));
-      });
-
-      return ranges;
     }
 
     /**

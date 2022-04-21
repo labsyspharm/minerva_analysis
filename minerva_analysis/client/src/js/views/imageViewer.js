@@ -185,7 +185,6 @@ class ImageViewer {
                   id_end_1i: 0,
                   color_3fv: new Float32Array(floatColor),
                   range_2fv: new Float32Array(range),
-                  degree_key_1i: 0,
                   fmt_1i: 16
                 }];
                 // Start webGL rendering
@@ -200,25 +199,17 @@ class ImageViewer {
                     // this.refreshSegmentationMask();
                 }
                 const or_mode = csv_gatingList.eval_mode == "or";
-                const cachedProps = that.getCachedProps(e.tile, or_mode);
+                const { ids, keys } = that.getCachedProps(e.tile, or_mode);
+                const id_end_1i = Math.max(ids.length - 1, 0);
 
-                // Update buffers as needed
-                const sources = cachedProps.sources;
-                via.all_gl_arguments = sources.map((channel) => {
-                  const color = that.selectMaskColor(channel, or_mode);
-                  const markerIndex = cachedProps.keys.indexOf(channel);
-                  const degreeKey = Math.max(0, markerIndex);
-                  const floatColor = toFloatColor(color)
-                  return {
-                    ...centerProps,
-                    id_end_1i: cachedProps.id_end_1i,
-                    color_3fv: new Float32Array(floatColor),
-                    range_2fv: cachedProps.range_2fv,
-                    degree_key_1i: degreeKey,
-                    fmt_1i: 32,
-                  };
-                });
-
+                // Use new parameters for this tile
+                via.all_gl_arguments = [{
+                  ...centerProps,
+                  id_end_1i: id_end_1i,
+                  color_3fv: new Float32Array([1, 1, 1]),
+                  range_2fv: new Float32Array([0, 1]),
+                  fmt_1i: 32,
+                }];
             }
 
             // Clear the rendered tile
@@ -237,19 +228,18 @@ class ImageViewer {
             const corrections_2fv = gl_arguments.corrections_2fv;
             const scale_level_1i = gl_arguments.scale_level_1i;
             const real_height_1i = gl_arguments.real_height_1i;
-            const degree_key_1i = gl_arguments.degree_key_1i;
             const origin_2fv = gl_arguments.origin_2fv;
             const range_2fv = gl_arguments.range_2fv;
             const fmt_1i = gl_arguments.fmt_1i;
             const color_3fv = gl_arguments.color_3fv;
             const id_end_1i = gl_arguments.id_end_1i;
+            const key_end_1i = gl_arguments.key_end_1i;
             const modes = that.modeFlags;
 
             // Send color and range to shader
             const size_2fv = [this.gl.canvas.height, this.gl.canvas.width];
             this.gl.uniform2i(this.u_draw_mode, modes.edge, modes.or);
             this.gl.uniform2fv(this.u_tile_size, new Float32Array(size_2fv));
-            this.gl.uniform1i(this.u_degree_key, degree_key_1i);
             this.gl.uniform3fv(this.u_tile_color, color_3fv);
             this.gl.uniform2fv(this.u_tile_range, range_2fv);
             this.gl.uniform2fv(this.u_tile_origin, origin_2fv);
@@ -264,9 +254,9 @@ class ImageViewer {
 
             // Uniform variables for coloring
             this.u_ids_shape = this.gl.getUniformLocation(program, 'u_ids_shape');
-            this.u_degree_shape = this.gl.getUniformLocation(program, 'u_degree_shape');
+            this.u_magnitude_shape = this.gl.getUniformLocation(program, 'u_magnitude_shape');
             this.u_center_shape = this.gl.getUniformLocation(program, 'u_center_shape');
-            this.u_degree_key = this.gl.getUniformLocation(program, 'u_degree_key');
+            this.u_gating_shape = this.gl.getUniformLocation(program, 'u_gating_shape');
             this.u_draw_mode = this.gl.getUniformLocation(program, 'u_draw_mode');
             this.u_tile_color = this.gl.getUniformLocation(program, 'u_tile_color');
             this.u_tile_range = this.gl.getUniformLocation(program, 'u_tile_range');
@@ -280,14 +270,17 @@ class ImageViewer {
 
             // Texture for colormap
             const u_ids = this.gl.getUniformLocation(program, 'u_ids');
-            const u_degrees = this.gl.getUniformLocation(program, 'u_degrees');
+            const u_magnitudes = this.gl.getUniformLocation(program, 'u_magnitudes');
             const u_centers = this.gl.getUniformLocation(program, 'u_centers');
+            const u_gatings = this.gl.getUniformLocation(program, 'u_gatings');
             this.texture_ids = this.gl.createTexture();
-            this.texture_degrees = this.gl.createTexture();
+            this.texture_magnitudes = this.gl.createTexture();
             this.texture_centers = this.gl.createTexture();
+            this.texture_gatings = this.gl.createTexture();
             this.gl.uniform1i(u_ids, 1);
-            this.gl.uniform1i(u_degrees, 2);
+            this.gl.uniform1i(u_magnitudes, 2);
             this.gl.uniform1i(u_centers, 3);
+            this.gl.uniform1i(u_gatings, 4);
         });
 
 
@@ -404,7 +397,12 @@ class ImageViewer {
      */
 
     get hasCachedAllBuffers() {
-      return this.hasCachedIds && this.hasCachedCenters && this.hasCachedDegrees;
+       return [
+         this.hasCachedIds,
+         this.hasCachedCenters,
+         this.hasCachedMagnitudes,
+         this.hasCachedGatings
+       ].every(_ => _);
     }
 
     /**
@@ -428,13 +426,23 @@ class ImageViewer {
     }
 
     /**
-     * Cached centers flag for webGL rendering.
+     * Cached magnitudes flag for webGL rendering.
      *
      * @type {boolean}
      */
 
-    get hasCachedDegrees() {
-      return this._cachedDegrees;
+    get hasCachedMagnitudes() {
+      return this._cachedMagnitudes;
+    }
+
+    /**
+     * Cached magnitudes flag for webGL rendering.
+     *
+     * @type {boolean}
+     */
+
+    get hasCachedGatings() {
+      return this._cachedGatings;
     }
 
     /**
@@ -455,11 +463,8 @@ class ImageViewer {
      * @param or_mode - render pie charts
      *
      * @returns {{
-     *  sources: Array,
      *  ids: Array,
      *  keys: Array,
-     *  id_end_1i: Number,
-     *  range_2fv: Array,
      * }}
      */
     getCachedProps(tile, or_mode) {
@@ -468,9 +473,9 @@ class ImageViewer {
       const defaultRange = [minFull, maxFull];
 
       const keys = Object.keys(csv_gatingList.selections);
-      const sources = or_mode ? keys : [""];
+      const channels = or_mode ? keys : [""];
 
-      const cacheKey = sources.join('-');
+      const cacheKey = channels.join('-');
       const _cached = this._cachedProps.get(cacheKey);
       if (_cached) {
         if (or_mode && this.hasCachedAllBuffer) {
@@ -484,21 +489,19 @@ class ImageViewer {
       if (!this.hasCachedIds) {
         ids = this.selectLabels();
       }
+      // Really use source during OR mode
       if (or_mode) {
-        if (!this.hasCachedDegrees) {
-          this.selectCellDegrees(ids, keys, or_mode);
+        if (!this.hasCachedMagnitudes) {
+          this.selectCellMagnitudes(ids, keys, or_mode);
         }
         if (!this.hasCachedCenters) {
           this.selectCenters(or_mode);
         }
+        if (!this.hasCachedGatings) {
+          this.selectGatings(or_mode, keys);
+        }
       }
-      const cached = {
-        sources,
-        keys,
-        ids,
-        id_end_1i: Math.max(ids.length - 1, 0),
-        range_2fv: new Float32Array(defaultRange),
-      }
+      const cached = { ids, keys };
       this._cachedProps.set(cacheKey, cached);
       return cached;
     }
@@ -511,7 +514,8 @@ class ImageViewer {
     clearCacheState() {
       this._cachedIds = false;
       this._cachedCenters = false;
-      this._cachedDegrees = false;
+      this._cachedMagnitudes = false;
+      this._cachedGatings = false;
     }
 
     /**
@@ -621,25 +625,24 @@ class ImageViewer {
     }
 
     /**
-     * @function selectCellDegrees -- select degree ranges
+     * @function selectCellMagnitudes -- select magnitude ranges
      * @param ids - active cell ids
      * @param keys - active marker channels
      * @param or_mode - render pie charts
      *
      * @returns {Array}
      */
-    selectCellDegrees(ids, keys, or_mode) {
+    selectCellMagnitudes(ids, keys, or_mode) {
 
       if (!or_mode) {
         return [];
       }
-      let degrees = [];
+      let magnitudes = [];
 
       try {
-        degrees = ids.reduce((out, key) => {
-          const o = this.csvGatingOverlay.toGatingRanges(key);
-          return out.concat(o);
-        }, []);
+        magnitudes = [].concat(...ids.map((key) => {
+          return this.csvGatingOverlay.toMagnitude(key);
+        }));
       }
       catch (e) {
         if (e instanceof TypeError) {
@@ -650,29 +653,58 @@ class ImageViewer {
       }
 
       const keyCount = Math.max(keys.length, 1);
-      if (!this.hasCachedDegrees && degrees.length > 0) {
-        this.bindDegrees(this.viaGL, degrees, keyCount);
-        this._cachedDegrees = true;
+      if (!this.hasCachedMagnitudes && magnitudes.length > 0) {
+        this.bindMagnitudes(this.viaGL, magnitudes, keyCount);
+        this._cachedMagnitudes = true;
       }
 
-      return degrees;
+      return magnitudes;
+    }
+
+    /**
+     * @function selectGatings -- select gating ranges
+     * @param or_mode - render pie charts
+     * @param keys - active marker channels
+     *
+     * @returns {Array}
+     */
+    selectGatings(or_mode, keys) {
+
+      if (!or_mode) {
+        return [];
+      }
+      const nColor = 3;
+      const nMinMax = 2;
+      const width = nMinMax + nColor;
+      const gatingRangeMap = csv_gatingList.selections;
+      const gatingRanges = [].concat(...keys.map((key) => {
+        const range = gatingRangeMap[key].map(x => parseFloat(x));
+        const color = this.selectMaskColor(key);
+        const floatColor = toFloatColor(color);
+        return range.concat(floatColor);
+      }))
+      if (!this.hasCachedGatings && gatingRanges.length > 0) {
+        this.bindGatings(this.viaGL, gatingRanges, width);
+        this._cachedGatings = true;
+      }
+
+      return gatingRanges;
     }
 
     /**
      * @function selectMaskColor -- select color for mask 
      * @param channel - the channel label
-     * @param or_mode - render pie charts
      *
      * @returns {{r: Number, g: Number, b: Number}}
      */
-    selectMaskColor(channel, or_mode) {
+    selectMaskColor(channel) {
 
       const white = {
         r: 255,
         g: 255,
         b: 255
       };
-      if (!or_mode) {
+      if (!channel) {
         return white;
       }
       const idx = this.csvGatingOverlay.channel_list.columns.indexOf(channel);
@@ -719,14 +751,59 @@ class ImageViewer {
     }
 
     /**
-     * @function packLabelValues - return segmentation mask values
+     * @function packFloat - pack 1D float texture as 2D
      * @param gl - the WebGL2 context
      * @param a - the texture data as an array 
      *
      * @returns {{pixels: Uint8Array, width: Number, height: Number}}
      */
-    packLabelValues(gl, a) {
+    packFloat(gl, a) {
       const [width, height] = this.measureLabelValues(gl, a);
+      const pixels = this.packFloat32(a, width, height);
+      return { width, height, pixels };
+    }
+
+    /**
+     * @function packInteger - pack 1D float texture as 2D
+     * @param gl - the WebGL2 context
+     * @param a - the texture data as an array 
+     *
+     * @returns {{pixels: Uint8Array, width: Number, height: Number}}
+     */
+    packInteger(gl, a) {
+      const [width, height] = this.measureLabelValues(gl, a);
+      const pixels = this.packUint8(a, width, height);
+      return { width, height, pixels };
+    }
+
+    /**
+     * @function packFloat32 - pack Float32 Texture
+     * @param a - the texture data as an array 
+     * @param width - the texture width
+     * @param height - the texture height
+     *
+     * @returns {Uint8Array}
+     */
+    packFloat32(a, width, height) {
+      // Create 2D array of pixels
+      const full_size = width * height;
+      const arr = new ArrayBuffer(4 * full_size);
+      const view = new DataView(arr);
+      a.forEach((v, i)=> {
+        view.setFloat32(4 * i, v, true);
+      })
+      return new Float32Array(arr);
+    }
+
+    /**
+     * @function packUint8 - pack Uint8 Texture
+     * @param a - the texture data as an array 
+     * @param width - the texture width
+     * @param height - the texture height
+     *
+     * @returns {Uint8Array}
+     */
+    packUint8(a, width, height) {
       // Create 2D array of pixels
       const full_size = width * height;
       const arr = new ArrayBuffer(4 * full_size);
@@ -734,8 +811,7 @@ class ImageViewer {
       a.forEach((v, i)=> {
         view.setUint32(4 * i, v, true);
       })
-      const pixels = new Uint8Array(arr);
-      return {pixels, width, height};
+      return new Uint8Array(arr);
     }
 
     /**
@@ -745,7 +821,7 @@ class ImageViewer {
      * @param values - the texture data as 2d array 
      */
     setLabelMap(gl, texture, values) {
-      const packed = this.packLabelValues(gl, values);
+      const packed = this.packInteger(gl, values);
       // Set texture for GLSL
       this.selectTexture(gl, texture, 1);
       // Send an empty array to the texture
@@ -754,18 +830,18 @@ class ImageViewer {
     }
 
     /**
-     * @function setDegreeMap - set the segmentation mask degrees
+     * @function setMagnitudeMap - set the segmentation mask magnitudes
      * @param gl - the WebGL2 context
      * @param texture - the WebGL2 texture
      * @param values - the texture data as 2d array 
      */
-    setDegreeMap(gl, texture, values) {
-      const packed = this.packLabelValues(gl, values);
+    setMagnitudeMap(gl, texture, values) {
+      const packed = this.packFloat(gl, values);
       // Set texture for GLSL
       this.selectTexture(gl, texture, 2);
       // Send an empty array to the texture
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0,
-                    gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, packed.width, packed.height, 0,
+                    gl.RED, gl.FLOAT, packed.pixels);
     }
 
     /**
@@ -775,13 +851,31 @@ class ImageViewer {
      * @param values - the texture data as 2d array 
      */
     setCenterMap(gl, texture, values) {
-      const packed = this.packLabelValues(gl, values);
+      const packed = this.packInteger(gl, values);
       // Set texture for GLSL
       this.selectTexture(gl, texture, 3);
       // Send an empty array to the texture
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0,
                     gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
     }
+
+    /**
+     * @function setGatingMap - set the segmentation mask gatings 
+     * @param gl - the WebGL2 context
+     * @param texture - the WebGL2 texture
+     * @param values - the texture data as 2d array 
+     * @param width - the texture width
+     * @param height - the texture height
+     */
+    setGatingMap(gl, texture, values, width, height) {
+      const pixels = new Float32Array(values);
+      // Set texture for GLSL
+      this.selectTexture(gl, texture, 4);
+      // Send an empty array to the texture
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, width, height, 0,
+                    gl.RED, gl.FLOAT, pixels);
+    }
+
 
     /**
      * @function bindLabels - bind segmentation mask ids
@@ -796,17 +890,17 @@ class ImageViewer {
     }
 
     /**
-     * @function bindDegrees - bind segmentation mask degrees
+     * @function bindMagnitudes - bind segmentation mask magnitudes
      * @param via - the viaGL context
      * @param values - the texture data as 2d array 
      * @param depth - number of items at each texel 
      */
-    bindDegrees(via, values, depth) {
-      // Add a mask degree map
-      const degree_2iv = this.measureLabelValues(via.gl, values);
-      const degree_3iv = degree_2iv.concat(depth);
-      via.gl.uniform3iv(via.u_degree_shape, degree_3iv);
-      this.setDegreeMap(via.gl, via.texture_degrees, values);
+    bindMagnitudes(via, values, depth) {
+      // Add a mask magnitude map
+      const magnitude_2iv = this.measureLabelValues(via.gl, values);
+      const magnitude_3iv = magnitude_2iv.concat(depth);
+      via.gl.uniform3iv(via.u_magnitude_shape, magnitude_3iv);
+      this.setMagnitudeMap(via.gl, via.texture_magnitudes, values);
     }
 
     /**
@@ -821,6 +915,22 @@ class ImageViewer {
       via.gl.uniform3iv(via.u_center_shape, center_3iv);
       this.setCenterMap(via.gl, via.texture_centers, values);
     }
+
+   /**
+     * @function bindGatings - bind segmentation mask gating
+     * @param via - the viaGL context
+     * @param values - the texture data as 2d array 
+     * @param width - the texture width
+     */
+    bindGatings(via, values, width) {
+      // Add a mask gating map
+      const height = Math.floor(values.length / width);
+      const gating_2iv = [width, height];
+      console.log(values);
+      via.gl.uniform2iv(via.u_gating_shape, gating_2iv);
+      this.setGatingMap(via.gl, via.texture_gatings, values, width, height);
+    }
+
     // =================================================================================================================
     // Tile cache management
     // =================================================================================================================
