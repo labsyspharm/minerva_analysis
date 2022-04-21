@@ -182,9 +182,9 @@ class ParallelCoordinates {
 
     wrangle(rawData, order = null) {
         const self = this;
-        let chartData =rawData[datasource]?.['composition_summary']?.['weighted_contribution'] ||_.get(rawData, 'composition_summary.weighted_contribution', null);
+        let chartData = rawData[datasource]?.['composition_summary']?.['weighted_contribution'] || _.get(rawData, 'composition_summary.weighted_contribution', null);
         if (chartData) {
-            self.selection_neighborhoods = rawData[datasource]?.['composition_summary']?.['selection_neighborhoods'] ||_.get(rawData, 'composition_summary.selection_neighborhoods', null);
+            self.selection_neighborhoods = rawData[datasource]?.['composition_summary']?.['selection_neighborhoods'] || _.get(rawData, 'composition_summary.selection_neighborhoods', null);
         } else {
             chartData = rawData;
         }
@@ -290,11 +290,11 @@ class ParallelCoordinates {
         reorderButton.enter()
             .append('text')
             .classed('reorder_button', true)
-            .attr('x', self.x(-0.20))
+            .attr('x', -self.margin.left + 10)
             .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', '#3870ce')
-            .attr('text-anchor', 'end')
+            .attr('text-anchor', 'start')
             .style('cursor', 'pointer')
             .text('Reorder')
             .on("click", (event, d) => {

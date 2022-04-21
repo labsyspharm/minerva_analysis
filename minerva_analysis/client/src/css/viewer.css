@@ -11,7 +11,7 @@ body {
 }
 
 #topBar {
-    background-color: rgba(0, 0, 0, 1) !important;
+    background-color: rgba(0, 0, 0, 0) !important;
     height: 5vh;
     max-height: 5vh;
     left: 0;
@@ -21,12 +21,6 @@ body {
     z-index: 101;
 }
 
-.topBarLarge{
-        width: 70vw !important;
-}
-.topBarSmall{
-        width: 50vw !important;
-}
 
 #title {
     color: white;
@@ -150,11 +144,6 @@ body {
     margin-right: 10px;
 
 }
-
-#neighborhood_icon, #custom_cluster_submit {
-    margin-top: 10px;
-}
-
 
 .list {
     font-size: 0.9rem;

@@ -13,6 +13,7 @@
     max-height: 95vh !important;
     min-height: 95vh !important;
     margin-left: 0;
+    padding-left:0 !important;
 }
 
 #search-col-wrapper, #related_image_wrapper {
@@ -139,7 +140,7 @@
 }
 
 .plot-label {
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     /*TODO: Figures*/
     /*color: rgba(0, 0, 0, 0.95);*/
     color: rgba(255, 255, 255, 0.95);
@@ -589,4 +590,8 @@
 
 .barchart .xaxis text {
     font-size: 0.8rem;
+}
+
+#search-row .row{
+    margin-left: 5px !important;
 }

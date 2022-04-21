@@ -84,8 +84,8 @@ body {
 }
 
 #plots_display {
-    margin-top: 5vh;
-    height: 95vh;
+    margin-top: 1vh;
+    height: 99vh;
     /*height: 100%;*/
 }
 
@@ -190,7 +190,7 @@ body {
 
 #search_header, #cluster_header {
     color: rgba(255, 255, 255, 0.95);
-    font-size: 1.4rem;
+    font-size: 1.1rem;
 }
 
 #search_wrapper .col, #cluster_wrapper .col {
@@ -530,7 +530,7 @@ polygon:hover {
 
 
 #selection-options {
-    padding-top: 5vh;
+    padding-top: 0vh;
     height: 100%;
     top: 0;
     position: absolute;
