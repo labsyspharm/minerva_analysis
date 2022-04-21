@@ -260,7 +260,8 @@ vec4 to_chart_color(vec4 empty_pixel, int idx_1d) {
     if (check_range(scale, range)) {
       gated_count = gated_count + 1;
       if (gated_total == 2 && gated_count == 2) {
-        return vec4(0., 1., 0., 1.);
+        vec3 color = sample_gating_color(k); // TODO.. this returns the wrong color!
+        return vec4(color, 1.0);
       }
       if (match_angle(gated_count, gated_total, rad)) {
         vec3 color = sample_gating_color(k);
@@ -271,34 +272,51 @@ vec4 to_chart_color(vec4 empty_pixel, int idx_1d) {
   return empty_pixel;
 }
 
+int index_of_cell(usampler2D sam, vec2 off) {
+  uint id = unpack(offset(sam, uv, off));
+  return is_in_ids(id);
+}
+
+bool in_bg(usampler2D sam, vec2 pos) {
+  bool left_black = index_of_cell(sam, vec2(-1., 0.)) < 0;
+  bool right_black = index_of_cell(sam, vec2(1., 0.)) < 0;
+  bool is_black = index_of_cell(sam, vec2(0., 0.)) < 0;
+  bool down_black = index_of_cell(sam, vec2(0., -1.)) < 0;
+  bool top_black = index_of_cell(sam, vec2(0., 1.)) < 0;
+
+  if (is_black || left_black || right_black || down_black || top_black) {
+    return true;
+  }
+  return false;
+}
+
+bool in_diff(usampler2D sam, vec2 pos) {
+  int cell_idx = index_of_cell(sam, vec2(0., 0.));
+  bool left_black = index_of_cell(sam, vec2(-1., 0.)) != cell_idx;
+  bool right_black = index_of_cell(sam, vec2(1., 0.)) != cell_idx;
+  bool down_black = index_of_cell(sam, vec2(0., -1.)) != cell_idx;
+  bool top_black = index_of_cell(sam, vec2(0., 1.)) != cell_idx;
+
+  if (left_black || right_black || down_black || top_black) {
+    return true;
+  }
+  return false;
+}
+
 // Check whether pixels are on cell border
 bool in_edge(usampler2D sam, vec2 pos) {
   uvec4 empty_val = uvec4(0., 0., 0., 0.);
   uvec4 pixel = offset(sam, pos, vec2(0., 0.));
   bool background = equals4(empty_val, pixel);
 
-  // If background
-  if (background) {
-    return false;
-  }
-
-  bool left = equals4(empty_val, offset(sam, pos, vec2(-1., 0.)));
-  bool right = equals4(empty_val, offset(sam, pos, vec2(1., 0.)));
-  bool down = equals4(empty_val, offset(sam, pos, vec2(0., -1.)));
-  bool top = equals4(empty_val, offset(sam, pos, vec2(0., 1.)));
-
   // If not border
-  if (!left && !right && !down && !top) {
-    return false;
+  if (background && !in_bg(sam, uv)) {
+    return true;
   }
-
-  // Allow borders
-  return true; 
-}
-
-int index_of_cell(usampler2D sam, vec2 pos) {
-  uint id = unpack(offset(sam, uv, vec2(0., 0.)));
-  return is_in_ids(id);
+  if (in_diff(sam, uv)) {
+    return true;
+  }
+  return false; 
 }
 
 float range_clamp(float value) {
@@ -314,21 +332,25 @@ vec4 u32_rgba_map(usampler2D sam, bvec2 mode) {
   vec4 white_pixel = vec4(1., 1., 1., 1.);
   bool use_edge = mode.x;
   bool use_chart = mode.y;
-  int idx_1d = index_of_cell(sam, uv);
+  int idx_1d = index_of_cell(sam, vec2(0., 0.));
 
+  // Charts
+  if (use_chart) {
+    vec4 chart_color = to_chart_color(empty_pixel, idx_1d);
+    if (chart_color.a > 0.001) {
+      return chart_color;
+    }
+  }
+  // Borders
+  if (use_edge && in_edge(sam, uv)) {
+    return white_pixel;
+  }
   // Background
   if (idx_1d < 0) {
     return empty_pixel;
   }
   if (!use_edge && !use_chart) {
     return white_pixel;
-  }
-  bool is_edge = in_edge(sam, uv);
-  if (use_edge && is_edge) {
-    return white_pixel;
-  }
-  if (use_chart) {
-    return to_chart_color(empty_pixel, idx_1d);
   }
   return empty_pixel;
 }
