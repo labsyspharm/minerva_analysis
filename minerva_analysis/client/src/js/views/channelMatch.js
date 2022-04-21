@@ -1,8 +1,11 @@
 let channelData;
+let combinedChannelData;
 let sortable;
 let elem1, elem2;
 
-function channelMatch(data) {
+function channelMatch(combined) {
+    combinedChannelData = combined;
+    let data = combined[0]
     channelData = data;
     const leftList = document.getElementById('left-list');
     const middleList = document.getElementById('middle-list');
@@ -70,16 +73,7 @@ function channelMatch(data) {
             headers = _.concat(val, headers)
         }
 
-        // Area Position
-        let areaIndex = _.findIndex(headers, e => {
-            let str = _.get(e, 'fullName') || e;
-            return str == 'NucleusArea' || str == 'Area'
-        });
-        if (areaIndex != -1) {
-            val = headers[areaIndex]
-            _.pullAt(headers, [areaIndex])
-            headers = _.concat(val, headers)
-        }
+
 
         // CellId Position
         let cellIdIndex = _.findIndex(headers, e => {
@@ -253,7 +247,7 @@ function submitForm() {
     document.getElementById('save').innerHTML += '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
 
     let postData = {
-        originalData: channelData,
+        originalData: combinedChannelData,
         headerList: headerList,
         normalizeCsv: $('#normalize-csv').is(':checked'),
         normalizeCsvName: _.get(channelData, 'normCsvName')

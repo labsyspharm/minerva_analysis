@@ -10,15 +10,15 @@ d3.select('#add-dataset-button')
         addRow('#file-div', 'channel_file');
         addRow('#seg-div', 'label_file');
         addRow('#csv-file-div', 'csv_file', 'file');
-        addRow('#cell-type-file-div', 'celltype_file', 'file');
     });
 
 d3.select('#remove-dataset-button')
     .on('click', () => {
-        numRows--;
         removeRow('#name-div');
         removeRow('#file-div');
         removeRow('#seg-div');
+        removeRow('#csv-file-div');
+        numRows--;
     });
 
 function addRow(parentSelector, rowId, type = 'text') {
@@ -38,7 +38,6 @@ function addRow(parentSelector, rowId, type = 'text') {
 
 function removeRow(parentSelector) {
     if (numRows > 1) {
-        numRows--;
         d3.select(`${parentSelector} .row:last-child`).remove()
     }
 

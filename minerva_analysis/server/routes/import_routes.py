@@ -122,9 +122,9 @@ def edit_config_with_config_name(config_name):
 
         # Start with the required channels
         if 'celltypeData' in config_data['featureData'][0]:
-            channelFileNames.extend(['Area', 'X Position', 'Y Position', 'Cell Type'])
+            channelFileNames.extend(['X Position', 'Y Position', 'Cell Type'])
         else:
-            channelFileNames.extend(['Area', 'X Position', 'Y Position'])
+            channelFileNames.extend(['X Position', 'Y Position'])
 
         for i in range(len(config_data['imageData'])):
             elem = config_data['imageData'][i]
@@ -158,127 +158,124 @@ def upload_file_page():
     global current_task
     total_tasks = 1
     completed_task = 0
-    current_task = "Uploading"
-    datasetName = None
-    csvName = ''
-    celltypeName = ''
-    channelFileNames = ['ID', 'Area', 'X Position', 'Y Position']
-    labelName = ''
     csvHeader = None
     if request.method == 'POST':
         try:
             if request.form['action'] == 'Upload':
-                if request.form.get('name') is None or not request.form.get('name'):
+                if request.form.get('name-1') is None or not request.form.get('name-1'):
                     raise Exception("Please Name Dataset")
                 else:
-                    datasetName = request.form['name']
+                    combined_config_data = []
+                    for i in range(1, int((len(request.form) - 2) / 3) + 1):
+                        current_task = "Uploading"
+                        datasetName = None
+                        csvName = ''
+                        celltypeName = ''
+                        channelFileNames = ['ID', 'X Position', 'Y Position']
+                        labelName = ''
+                        datasetName = request.form['name' + '-' + str(i)]
+                        file_path = str(PurePath(Path.cwd(), data_path, datasetName))
+                        if not Path(file_path).exists():
+                            Path(file_path).mkdir()
 
-                    # old os.path way:
-                    # file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-                    # if not os.path.exists(file_path):
-                    #     os.makedirs(file_path)
+                        csvFile = request.files.getlist("csv_file" + '-' + str(i))
+                        if len(csvFile) > 1:
+                            raise Exception("Please only Upload Only 1 CSV")
+                        elif len(csvFile) == 0:
+                            raise Exception("Please Upload a CSV")
+                        celltypeFile = request.files.getlist("celltype_file")
+                        if len(celltypeFile) > 1:
+                            raise Exception("Please only Upload Only 1 Cell Type File")
+                        elif len(celltypeFile) == 1:
+                            channelFileNames.extend(['Phenotype'])
 
+                        # labelFile = request.files.getlist("label_file")
+                        labelFile = request.form.get('label_file' + '-' + str(i))
+                        if labelFile.startswith('"'):
+                            labelFile = labelFile[1:]
+                        if labelFile.endswith('"'):
+                            labelFile = labelFile[:-1]
+                        labelFile = Path(labelFile)
 
-                    file_path = str(PurePath(Path.cwd(), data_path, datasetName))
-                    if not Path(file_path).exists():
-                        Path(file_path).mkdir()
+                        labelName = os.path.splitext(labelFile.name)[0]
+                        # labelName = labelFile.name.split('.')[0]
+                        neighborhoodRadius = int(request.form.get('neighborhood_radius'))
 
-                    csvFile = request.files.getlist("csv_file")
-                    if len(csvFile) > 1:
-                        raise Exception("Please only Upload Only 1 CSV")
-                    elif len(csvFile) == 0:
-                        raise Exception("Please Upload a CSV")
+                        channelFile = request.form.get('channel_file' + '-' + str(i))
+                        if channelFile.startswith('"'):
+                            channelFile = channelFile[1:]
+                        if channelFile.endswith('"'):
+                            channelFile = channelFile[:-1]
+                        channelFile = Path(channelFile)
 
-                    celltypeFile = request.files.getlist("celltype_file")
-                    if len(celltypeFile) > 1:
-                        raise Exception("Please only Upload Only 1 Cell Type File")
-                    elif len(celltypeFile) == 1:
-                        channelFileNames.extend(['Cell Type'])
+                        total_tasks = 2
+                        # Process CSV
+                        for file in csvFile:
+                            # Upload CSV
+                            csvName = file.filename
+                            csvPath = str(Path(file_path) / csvName)
+                            file.save(csvPath)
+                            with open(csvPath, 'r') as infile:
+                                reader = csv.DictReader(infile)
+                                csvHeader = reader.fieldnames
 
-                    # labelFile = request.files.getlist("label_file")
-                    labelFile = request.form.get('label_file')
-                    if labelFile.startswith('"'):
-                        labelFile = labelFile[1:]
-                    if labelFile.endswith('"'):
-                        labelFile = labelFile[:-1]
-                    labelFile = Path(labelFile)
+                        # # Process Cell Type File
+                        if len(celltypeFile) == 1:
+                            for file in celltypeFile:
+                                # Upload Cell Type File
+                                celltypeName = file.filename
+                                celltypePath = str(Path(file_path) / celltypeName)
+                                file.save(celltypePath)
 
-                    labelName = os.path.splitext(labelFile.name)[0]
-                    #labelName = labelFile.name.split('.')[0]
+                        # Process Channel File
 
-                    channelFile = request.form.get('channel_file')
-                    if channelFile.startswith('"'):
-                        channelFile = channelFile[1:]
-                    if channelFile.endswith('"'):
-                        channelFile = channelFile[:-1]
-                    channelFile = Path(channelFile)
+                        current_task = "Converting OME-TIFF Channels (This Will Take a While)"
+                        channel_info = data_model.convertOmeTiff(channelFile, isLabelImg=False)
+                        channelFileNames.extend(channel_info['channel_names'])
+                        completed_task += 1
 
-                    total_tasks = 2
-                    # Process CSV
-                    for file in csvFile:
-                        # Upload CSV
-                        csvName = file.filename
-                        csvPath = str(Path(file_path) / csvName)
-                        file.save(csvPath)
-                        with open(csvPath, 'r') as infile:
-                            reader = csv.DictReader(infile)
-                            csvHeader = reader.fieldnames
+                        current_task = "Converting Segmentation Mask"
+                        label_info = data_model.convertOmeTiff(labelFile, channelFilePath=channelFile,
+                                                               dataDirectory=file_path,
+                                                               isLabelImg=True)
+                        completed_task += 1
 
-                    # # Process Cell Type File
-                    if len(celltypeFile) == 1:
-                        for file in celltypeFile:
-                            # Upload Cell Type File
-                            celltypeName = file.filename
-                            celltypePath = str(Path(file_path) / celltypeName)
-                            file.save(celltypePath)
+                        current_task = total_tasks
+                        current_task = 'Complete'
+                        config_data = {}
+                        full_csv_header = []
+                        for header in csvHeader:
+                            elem = {}
+                            elem['fullName'] = header
+                            full_csv_header.append(elem)
 
-                    # Process Channel File
+                        config_data['csvHeader'] = full_csv_header
+                        header_full_names = [elem['fullName'] for elem in full_csv_header]
+                        config_data['substring'] = mostFrequentLongestSubstring.find_substring(header_full_names)
+                        config_data['datasetName'] = datasetName
 
-                    current_task = "Converting OME-TIFF Channels (This Will Take a While)"
-                    channel_info = data_model.convertOmeTiff(channelFile, isLabelImg=False)
-                    channelFileNames.extend(channel_info['channel_names'])
-                    completed_task += 1
+                        config_data['maxLevel'] = channel_info['maxLevel']
+                        config_data['height'] = channel_info['height']
+                        config_data['width'] = channel_info['width']
+                        config_data['segmentation'] = label_info['segmentation']
 
-                    current_task = "Converting Segmentation Mask"
-                    label_info = data_model.convertOmeTiff(labelFile, channelFilePath=channelFile,
-                                                           dataDirectory=file_path,
-                                                           isLabelImg=True)
-                    completed_task += 1
+                        config_data['num_channels'] = channel_info['num_channels']
+                        config_data['tileHeight'] = channel_info['tileHeight']
+                        config_data['tileWidth'] = channel_info['tileWidth']
+                        config_data['neighborhoodRadius'] = neighborhoodRadius
+                        config_data['datasetName'] = datasetName
+                        config_data['channelFileNames'] = channelFileNames
+                        config_data['csvName'] = csvName
+                        if len(celltypeFile) == 1:
+                            config_data['celltypeData'] = celltypeName
+                        config_data['channelFile'] = str(channelFile)
+                        config_data['new'] = True
+                        config_data['labelName'] = labelName
+                        config_data['datasources'] = get_config_names()
+                        config_data['datasources'].append(datasetName)
+                        combined_config_data.append(config_data)
 
-                    current_task = total_tasks
-                    current_task = 'Complete'
-                    config_data = {}
-                    full_csv_header = []
-                    for header in csvHeader:
-                        elem = {}
-                        elem['fullName'] = header
-                        full_csv_header.append(elem)
-
-                    config_data['csvHeader'] = full_csv_header
-                    header_full_names = [elem['fullName'] for elem in full_csv_header]
-                    config_data['substring'] = mostFrequentLongestSubstring.find_substring(header_full_names)
-                    config_data['datasetName'] = datasetName
-
-                    config_data['maxLevel'] = channel_info['maxLevel']
-                    config_data['height'] = channel_info['height']
-                    config_data['width'] = channel_info['width']
-                    config_data['segmentation'] = label_info['segmentation']
-
-                    config_data['num_channels'] = channel_info['num_channels']
-                    config_data['tileHeight'] = channel_info['tileHeight']
-                    config_data['tileWidth'] = channel_info['tileWidth']
-
-                    config_data['datasetName'] = datasetName
-                    config_data['channelFileNames'] = channelFileNames
-                    config_data['csvName'] = csvName
-                    if len(celltypeFile) == 1:
-                        config_data['celltypeData'] = celltypeName
-                    config_data['channelFile'] = str(channelFile)
-                    config_data['new'] = True
-                    config_data['labelName'] = labelName
-                    config_data['datasources'] = get_config_names()
-                    config_data['datasources'].append(datasetName)
-                    return render_template('channel_match.html', data=config_data)
+                return render_template('channel_match.html', data=combined_config_data)
         except Exception as e:
             completed_task = -1
             current_task = str(e)
@@ -330,7 +327,7 @@ def channel():
                               'NucleusArea', 'CellPosition_X', 'CellPosition_Y']
     test_data['datasetName'] = 'channelConfigs'
     test_data['substring'] = mostFrequentLongestSubstring.find_substring(test_data['csvHeader'])
-    test_data['channelFileNames'] = ['ID', 'Area', 'X Position', 'Y Position', 'channel_01', 'channel_02']
+    test_data['channelFileNames'] = ['ID', 'X Position', 'Y Position', 'channel_01', 'channel_02']
     test_data['normCsvName'] = 'segResultsRF_norm.csv'
     test_data['csvName'] = 'segResultsRF.csv'
     test_data['labelName'] = 'nucleiLabelRF'
@@ -344,124 +341,125 @@ def channel():
 def save_config():
     global config_json_path
     try:
-        originalData = request.json['originalData']
-        datasetName = originalData['datasetName']
-        csvName = originalData['csvName']
-        if 'celltypeData' in originalData:
-            celltypeName = originalData['celltypeData']
-        headerList = request.json['headerList']
-        normalizeCsv = request.json['normalizeCsv']
-        if normalizeCsv:
-            print("Normalizing CSV")
-            skip_columns = []
-            for i in range(int(len(headerList) / 3)):
-                column_name = headerList[i * 3]['value']
-                normalize_column = headerList[i * 3 + 2]['value']
-                if normalize_column != 'on':
-                    skip_columns.append(column_name)
-            name, ext = os.path.splitext(csvName)
-            normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
-            #old: file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-            file_path = str(Path(Path.cwd(), data_path, datasetName))
-            csvPath = str(Path(file_path) / csvName)
-            normPath = str(Path(file_path) / normCsvName)
-            pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
-            print("Finished Normalizing CSV")
-        elif 'normalizeCsvName' in request.json:
-            normCsvName = request.json['normalizeCsvName']
-        else:
-            normCsvName = None
-
-        headerList = [x for x in zip(headerList[1::3], headerList[0::3])]
-        channelList = originalData['channelFileNames']
-        with open(config_json_path, "r+") as configJson:
-            configData = json.load(configJson)
-            configData[datasetName] = {}
-            configData[datasetName]['shapes'] = ''
-            if normCsvName:
-                configData[datasetName]['clusterData'] = normCsvName
-            configData[datasetName]['activeChannel'] = ''
-            configData[datasetName]['featureData'] = [{}]
-            configData[datasetName]['featureData'][0]['normalization'] = 'none'
+        combinedOriginalData = request.json['originalData']
+        for originalData in combinedOriginalData:
+            datasetName = originalData['datasetName']
+            csvName = originalData['csvName']
             if 'celltypeData' in originalData:
-                configData[datasetName]['featureData'][0]['celltypeData'] = str(data_path / datasetName / celltypeName)
-                configData[datasetName]['featureData'][0]['celltype'] = headerList[3][1]['value']
-            configData[datasetName]['featureData'][0]['xCoordinate'] = headerList[1][1]['value']
-            configData[datasetName]['featureData'][0]['yCoordinate'] = headerList[2][1]['value']
-
-            # If optional id field
-            if 'idField' in request.json:
-                channelList.pop(0)
-                configData[datasetName]['featureData'][0]['idField'] = request.json['idField'][1]['value']
-
-            if 'shapes' in originalData:
-                configData[datasetName]['shapes'] = originalData['shapes']
-
-            if 'height' in originalData:
-                configData[datasetName]['height'] = originalData['height']
-
-            if 'width' in originalData:
-                configData[datasetName]['width'] = originalData['width']
-
-            if 'maxLevel' in originalData:
-                configData[datasetName]['maxLevel'] = originalData['maxLevel']
-
-            if 'num_channels' in originalData:
-                configData[datasetName]['num_channels'] = originalData['num_channels']
-
-            if 'tileWidth' in originalData:
-                configData[datasetName]['tileWidth'] = originalData['tileWidth']
-
-            if 'tileHeight' in originalData:
-                configData[datasetName]['tileHeight'] = originalData['tileHeight']
-
-            if 'segmentation' in originalData:
-                configData[datasetName]['segmentation'] = originalData['segmentation']
-
-            if 'channelFile' in originalData:
-                configData[datasetName]['channelFile'] = originalData['channelFile']
-
-            if 'activeChannel' in originalData:
-                configData[datasetName]['activeChannel'] = originalData['activeChannel']
-
-            if 'normalization' in originalData:
-                configData[datasetName]['featureData'][0]['normalization'] = originalData['normalization']
-
-            configData[datasetName]['featureData'][0][
-                'src'] = str(data_path / datasetName / csvName)
-            # Adding the Label Channel as the First Label
-            configData[datasetName]['imageData'] = [{}]
-            #
-            configData[datasetName]['imageData'][0]['name'] = headerList[0][1]['value']
-            configData[datasetName]['imageData'][0]['fullname'] = 'Area'
-            if 'labelName' in originalData and originalData['labelName'] != '':
-                configData[datasetName]['imageData'][0]['src'] = "/generated/data/" + datasetName + "/" + originalData[
-                    'labelName'] + "/"
+                celltypeName = originalData['celltypeData']
+            headerList = request.json['headerList']
+            normalizeCsv = request.json['normalizeCsv']
+            if normalizeCsv:
+                print("Normalizing CSV")
+                skip_columns = []
+                for i in range(int(len(headerList) / 3)):
+                    column_name = headerList[i * 3]['value']
+                    normalize_column = headerList[i * 3 + 2]['value']
+                    if normalize_column != 'on':
+                        skip_columns.append(column_name)
+                name, ext = os.path.splitext(csvName)
+                normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
+                # old: file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
+                file_path = str(Path(Path.cwd(), data_path, datasetName))
+                csvPath = str(Path(file_path) / csvName)
+                normPath = str(Path(file_path) / normCsvName)
+                pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
+                print("Finished Normalizing CSV")
+            elif 'normalizeCsvName' in request.json:
+                normCsvName = request.json['normalizeCsvName']
             else:
-                configData[datasetName]['imageData'][0]['src'] = ''
+                normCsvName = None
 
-            if 'celltypeData' in originalData:
-                channelList = channelList[4:]
-            else:
-                channelList = channelList[3:]
+            headerList = [x for x in zip(headerList[1::3], headerList[0::3])]
+            channelList = originalData['channelFileNames']
+            with open(config_json_path, "r+") as configJson:
+                configData = json.load(configJson)
+                configData[datasetName] = {}
+                configData[datasetName]['shapes'] = ''
+                if normCsvName:
+                    configData[datasetName]['clusterData'] = normCsvName
+                configData[datasetName]['activeChannel'] = ''
+                configData[datasetName]['featureData'] = [{}]
+                configData[datasetName]['featureData'][0]['normalization'] = 'none'
+                if 'celltypeData' in originalData:
+                    configData[datasetName]['featureData'][0]['celltypeData'] = str(data_path / datasetName / celltypeName)
+                    configData[datasetName]['featureData'][0]['celltype'] = headerList[3][1]['value']
+                configData[datasetName]['featureData'][0]['xCoordinate'] = headerList[1][1]['value']
+                configData[datasetName]['featureData'][0]['yCoordinate'] = headerList[2][1]['value']
 
-            if 'celltypeData' in originalData:
-                channelStart = 4
-            else:
-                channelStart = 3
-            for i in range(len(channelList)):
-                channel = channelList[i]
-                channelData = {}
-                channelData['src'] = "/generated/data/" + datasetName + "/" + channel + "/"
-                channelData['name'] = headerList[i + channelStart][0]['value']
-                channelData['fullname'] = headerList[i + channelStart][1]['value']
-                configData[datasetName]['imageData'].append(channelData)
-            configJson.seek(0)  # <--- should reset file position to the beginning.
-            json.dump(configData, configJson, indent=4)
-            configJson.truncate()
-            data_model.load_datasource(datasetName, reload=True)
-            resp = jsonify(success=True)
-            return resp
+                # If optional id field
+                if 'idField' in request.json:
+                    channelList.pop(0)
+                    configData[datasetName]['featureData'][0]['idField'] = request.json['idField'][1]['value']
+
+                if 'shapes' in originalData:
+                    configData[datasetName]['shapes'] = originalData['shapes']
+
+                if 'height' in originalData:
+                    configData[datasetName]['height'] = originalData['height']
+
+                if 'width' in originalData:
+                    configData[datasetName]['width'] = originalData['width']
+
+                if 'maxLevel' in originalData:
+                    configData[datasetName]['maxLevel'] = originalData['maxLevel']
+
+                if 'num_channels' in originalData:
+                    configData[datasetName]['num_channels'] = originalData['num_channels']
+
+                if 'tileWidth' in originalData:
+                    configData[datasetName]['tileWidth'] = originalData['tileWidth']
+
+                if 'tileHeight' in originalData:
+                    configData[datasetName]['tileHeight'] = originalData['tileHeight']
+
+                if 'segmentation' in originalData:
+                    configData[datasetName]['segmentation'] = originalData['segmentation']
+
+                if 'channelFile' in originalData:
+                    configData[datasetName]['channelFile'] = originalData['channelFile']
+
+                if 'activeChannel' in originalData:
+                    configData[datasetName]['activeChannel'] = originalData['activeChannel']
+
+                if 'normalization' in originalData:
+                    configData[datasetName]['featureData'][0]['normalization'] = originalData['normalization']
+
+                configData[datasetName]['featureData'][0][
+                    'src'] = str(data_path / datasetName / csvName)
+                # Adding the Label Channel as the First Label
+                configData[datasetName]['imageData'] = [{}]
+                #
+                configData[datasetName]['imageData'][0]['name'] = 'Segmentation'
+                configData[datasetName]['imageData'][0]['fullname'] = 'Segmentation'
+                if 'labelName' in originalData and originalData['labelName'] != '':
+                    configData[datasetName]['imageData'][0]['src'] = "/generated/data/" + datasetName + "/" + originalData[
+                        'labelName'] + "/"
+                else:
+                    configData[datasetName]['imageData'][0]['src'] = ''
+
+                if 'celltypeData' in originalData:
+                    channelList = channelList[4:]
+                else:
+                    channelList = channelList[3:]
+
+                if 'celltypeData' in originalData:
+                    channelStart = 4
+                else:
+                    channelStart = 3
+                for i in range(len(channelList)):
+                    channel = channelList[i]
+                    channelData = {}
+                    channelData['src'] = "/generated/data/" + datasetName + "/" + channel + "/"
+                    channelData['name'] = headerList[i + channelStart][0]['value']
+                    channelData['fullname'] = headerList[i + channelStart][1]['value']
+                    configData[datasetName]['imageData'].append(channelData)
+                configJson.seek(0)  # <--- should reset file position to the beginning.
+                json.dump(configData, configJson, indent=4)
+                configJson.truncate()
+        data_model.load_datasource(datasetName, reload=True)
+        resp = jsonify(success=True)
+        return resp
 
     except Exception as e:
         resp = jsonify(success=False)

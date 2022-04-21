@@ -10,10 +10,10 @@
                         <div id="name-div">
                             <div class="row">
                                 <div class="col-3">
-                                    <label for="name">Dataset Name:</label>
+                                    <label for="name-1">Dataset Name:</label>
                                 </div>
                                 <div class="col-auto">
-                                    <input type="text" id="name" name="name">
+                                    <input type="text" id="name-1" name="name-1">
                                 </div>
                                 <div class="col-auto">
                                     <label>Linked Datasets</label>
@@ -24,40 +24,50 @@
 
                             </div>
                         </div>
+                        <div id="radius-div">
+                            <div class="row">
+                                <div class="col-3">
+                                    <label for="neighborhood_radius">Neighborhood Radius (microns)</label>
+                                </div>
+                                <div class="col-auto">
+                                    <input type="number" id="neighborhood_radius" name="neighborhood_radius">
+                                </div>
+                            </div>
+                        </div>
                         <div id="file-div">
                             <div class="row">
                                 <div class="col-3">
-                                    <label for="channel_file">Channel File Path:</label>
+                                    <label for="channel_file-1">Channel File Path:</label>
                                 </div>
                                 <div class="col-auto">
-                                    <input type="text" id="channel_file" name="channel_file">
+                                    <input type="text" id="channel_file-1" name="channel_file-1">
                                 </div>
                             </div>
                         </div>
                         <div id="seg-div">
                             <div class="row">
                                 <div class="col-3">
-                                    <label for="label_file">Segmentation File Path:</label>
+                                    <label for="label_file-1">Segmentation File Path:</label>
                                 </div>
                                 <div class="col-auto">
-                                    <input type="text" id="label_file" name="label_file">
+                                    <input type="text" id="label_file-1" name="label_file-1">
                                 </div>
                             </div>
                         </div>
                         <div id="csv-file-div">
                             <div class="row">
                                 <div class="col-3">
-                                    <label id="csv_file_label" for="csv_file">CSV File(s):</label>
+                                    <label id="csv_file_label" for="csv_file-1">CSV File:</label>
                                 </div>
                                 <div class="col-auto">
-                                    <input type="file" id="csv_file" name="csv_file"><br><br>
+                                    <input type="file" id="csv_file-1" name="csv_file-1"><br><br>
                                 </div>
                             </div>
                         </div>
                         <div id="cell-type-file-div">
                             <div class="row">
                                 <div class="col-3">
-                                    <label id="cell_type_file_label" for="celltype_file">Cell Type File(s):</label>
+                                    <label id="cell_type_file_label" for="celltype_file">Cell Type File:</label>
                                 </div>
                                 <div class="col-auto">
                                     <input type="file" id="celltype_file" name="celltype_file"><br><br>
