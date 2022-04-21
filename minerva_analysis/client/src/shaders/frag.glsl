@@ -259,6 +259,9 @@ vec4 to_chart_color(vec4 empty_pixel, int idx_1d) {
     vec2 range = sample_gating_range(k);
     if (check_range(scale, range)) {
       gated_count = gated_count + 1;
+      if (gated_total == 2 && gated_count == 2) {
+        return vec4(0., 1., 0., 1.);
+      }
       if (match_angle(gated_count, gated_total, rad)) {
         vec3 color = sample_gating_color(k);
         return vec4(color, 1.0);
