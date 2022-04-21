@@ -81,22 +81,14 @@ export class CsvGatingOverlay {
 
       let total = 0;
       const keyValues = keys.map((key) => {
-        const val = columns.reduce((out, c, i) => {
-            if (this.dataLayer.getShortChannelName(key) === c) {
-
-                // Define current channel
-                const channel = this.gating_list.selections[key];
-
-                if (!(key in values)) {
-                  throw new TypeError(`Missing "${key}" in selection "${k}".`);
-                }
-                if (values[key] >= channel[0] && values[key] <= channel[1]) {
-                  return out + values[key];
-                }
-
-            }
-            return out;
-        }, 0);
+        let val = 0;
+        const channel = this.gating_list.selections[key];
+        if (!(key in values)) {
+          throw new TypeError(`Missing "${key}" in selection "${k}".`);
+        }
+        if (values[key] >= channel[0] && values[key] <= channel[1]) {
+          val = values[key];
+        }
         total += val;
         return val;
       });
