@@ -12,13 +12,13 @@ uniform vec3 u_tile_color;
 uniform vec2 u_tile_range;
 uniform vec2 u_tile_origin;
 uniform vec2 u_corrections;
+uniform bvec2 u_draw_mode;
 uniform ivec3 u_center_shape;
 uniform ivec3 u_degree_shape;
 uniform ivec2 u_ids_shape;
 uniform int u_scale_level;
 uniform int u_real_height;
 uniform int u_degree_key;
-uniform int u_draw_mode;
 uniform int u_tile_fmt;
 uniform int u_id_end;
 
@@ -97,6 +97,11 @@ int is_in_ids(uint ikey) {
   uint first = uint(0);
   uint last = uint(u_id_end);
 
+  // No ID == 0
+  if (ikey == uint(0)) {
+    return -1;
+  }
+
   // Search within log(n) runtime
   for (uint i = uint(0); i <= bMAX; i++) {
     // Evaluate the midpoint
@@ -135,7 +140,7 @@ int pow2(int v) {
   return v * v;
 }
 
-bool pieSlicer(int idx_1d) {
+bool in_chart(int idx_1d) {
   uint minDegree = uint(u_tile_range[0]);
   if (u_degree_key > 0) {
     minDegree = lookup_3d_idx(u_degrees, u_degree_shape, idx_1d, u_degree_key - 1);
@@ -169,28 +174,15 @@ bool pieSlicer(int idx_1d) {
   return true;
 }
 
-// Return correct color for cell id
-vec4 colorize(uint id, vec4 empty_pixel, int mode) {
-  int idx_1d = is_in_ids(id);
-  if (idx_1d > 0) {
-    bool usePie = mode == 10 || mode == 11;
-    if (usePie && !pieSlicer(idx_1d)) {
-      return empty_pixel;
-    }
-    return vec4(u_tile_color, 1.0);
-  }
-  return empty_pixel;
-}
-
 // Check whether pixels are on cell border
-vec4 border_mask(usampler2D sam, vec2 pos, vec4 empty_pixel, int mode) {
+bool in_edge(usampler2D sam, vec2 pos) {
   uvec4 empty_val = uvec4(0., 0., 0., 0.);
   uvec4 pixel = offset(sam, pos, vec2(0., 0.));
   bool background = equals4(empty_val, pixel);
 
-  // If background, return empty pixel
+  // If background
   if (background) {
-    return empty_pixel;
+    return false;
   }
 
   bool left = equals4(empty_val, offset(sam, pos, vec2(-1., 0.)));
@@ -198,27 +190,18 @@ vec4 border_mask(usampler2D sam, vec2 pos, vec4 empty_pixel, int mode) {
   bool down = equals4(empty_val, offset(sam, pos, vec2(0., -1.)));
   bool top = equals4(empty_val, offset(sam, pos, vec2(0., 1.)));
 
-  // If not border, return empty pixel
+  // If not border
   if (!left && !right && !down && !top) {
-    uint id = unpack(offset(sam, uv, vec2(0., 0.)));
-    bool usePie = mode == 10 || mode == 11;
-    if (!usePie) {
-      return empty_pixel;
-    }
-    return colorize(id, empty_pixel, mode);
+    return false;
   }
 
-  // Return image color at borders
-  uint id = unpack(pixel);
-  return vec4(1., 1., 1., 1.);
+  // Allow borders
+  return true; 
 }
 
-vec4 whole_mask(usampler2D sam, vec2 pos, vec4 empty_pixel, int mode) {
+int index_of_cell(usampler2D sam, vec2 pos) {
   uint id = unpack(offset(sam, uv, vec2(0., 0.)));
-  if (id > uint(0)) {
-    return colorize(id, empty_pixel, mode);
-  }
-  return empty_pixel;
+  return is_in_ids(id);
 }
 
 float range_clamp(float value) {
@@ -229,12 +212,29 @@ float range_clamp(float value) {
   return clamp((value - min_) / (max_ - min_), 0.0, 1.0);
 }
 
-vec4 u32_rgba_map(usampler2D sam, int mode) {
+vec4 u32_rgba_map(usampler2D sam, bvec2 mode) {
   vec4 empty_pixel = vec4(0., 0., 0., 0.);
-  if (mode == 1 || mode == 11) {
-    return border_mask(sam, uv, empty_pixel, mode);
+  vec4 white_pixel = vec4(1., 1., 1., 1.);
+  bool use_edge = mode.x;
+  bool use_chart = mode.y;
+  int idx_1d = index_of_cell(sam, uv);
+
+  // Background
+  if (idx_1d < 0) {
+    return empty_pixel;
   }
-  return whole_mask(sam, uv, empty_pixel, mode);
+  if (!use_edge && !use_chart) {
+    return white_pixel;
+  }
+  bool is_edge = in_edge(sam, uv);
+  if (use_edge && is_edge) {
+    return white_pixel;
+  }
+  bool is_chart = in_chart(idx_1d);
+  if (use_chart && is_chart) {
+    return vec4(u_tile_color, 1.0);
+  }
+  return empty_pixel;
 }
 
 vec4 u16_rg_range(usampler2D sam) {

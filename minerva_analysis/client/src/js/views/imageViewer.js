@@ -192,7 +192,7 @@ class ImageViewer {
                 callback(e);
             } else {
 
-                via.gl.blendEquationSeparate(via.gl.FUNC_ADD, via.gl.FUNC_MAX);
+                via.gl.blendEquationSeparate(via.gl.FUNC_ADD, via.gl.MAX);
                 via.gl.blendFunc(via.gl.ONE, via.gl.ONE);
 
                 if (!e.tile._array) {
@@ -243,9 +243,11 @@ class ImageViewer {
             const fmt_1i = gl_arguments.fmt_1i;
             const color_3fv = gl_arguments.color_3fv;
             const id_end_1i = gl_arguments.id_end_1i;
+            const modes = that.modeFlags;
 
             // Send color and range to shader
             const size_2fv = [this.gl.canvas.height, this.gl.canvas.width];
+            this.gl.uniform2i(this.u_draw_mode, modes.edge, modes.or);
             this.gl.uniform2fv(this.u_tile_size, new Float32Array(size_2fv));
             this.gl.uniform1i(this.u_degree_key, degree_key_1i);
             this.gl.uniform3fv(this.u_tile_color, color_3fv);
@@ -254,7 +256,6 @@ class ImageViewer {
             this.gl.uniform2fv(this.u_corrections, corrections_2fv);
             this.gl.uniform1i(this.u_scale_level, scale_level_1i);
             this.gl.uniform1i(this.u_real_height, real_height_1i);
-            this.gl.uniform1i(this.u_draw_mode, that.modeInteger);
             this.gl.uniform1i(this.u_id_end, id_end_1i);
             this.gl.uniform1i(this.u_tile_fmt, fmt_1i);
         });
@@ -319,6 +320,12 @@ class ImageViewer {
         this.viewer.addHandler('tile-drawn', (e) => {
             let count = _.size(e.tiledImage._tileCache._tilesLoaded);
             e.tiledImage._tileCache._imagesLoadedCount = count;
+            const canvas = e.eventSource.drawer.canvas;
+            const context = canvas.getContext("2d");
+            context.mozImageSmoothingEnabled = false;
+            context.webkitImageSmoothingEnabled = false;
+            context.msImageSmoothingEnabled = false;
+            context.imageSmoothingEnabled = false;
         })
 
         this.viewer.addHandler('tile-unloaded', (e) => {
@@ -431,26 +438,15 @@ class ImageViewer {
     }
 
     /**
-     * Mode Integer for webGL rendering.
+     * Mode flags for webGL rendering.
      *
-     * @type {number}
+     * @type {{edge: boolaen, or: boolean}}
      */
 
-    get modeInteger() {
-      const mode_string = [
-        csv_gatingList.eval_mode == "or" ? 'T': 'F',
-        this.viewerManagerVMain.sel_outlines ? 'T' : 'F',
-      ].join('-');
-      const mode_options = {
-        'T-T': 11,
-        'T-F': 10,
-        'F-T': 1,
-        'F-F': 0,
-      };
-      if (mode_string in mode_options) {
-        return mode_options[mode_string];
-      }
-      return 0;
+    get modeFlags() {
+      const edge = this.viewerManagerVMain.sel_outlines;
+      const or = csv_gatingList.eval_mode == "or";
+      return { edge, or };
     }
 
     /**
