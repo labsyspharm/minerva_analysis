@@ -5,32 +5,35 @@ let numRows = 1;
 
 d3.select('#add-dataset-button')
     .on('click', () => {
+        numRows++;
         addRow('#name-div', 'name');
         addRow('#file-div', 'channel_file');
         addRow('#seg-div', 'label_file');
+        addRow('#csv-file-div', 'csv_file', 'file');
+        addRow('#cell-type-file-div', 'celltype_file', 'file');
     });
 
 d3.select('#remove-dataset-button')
     .on('click', () => {
+        numRows--;
         removeRow('#name-div');
         removeRow('#file-div');
         removeRow('#seg-div');
     });
 
-function addRow(parentSelector, rowType) {
-    numRows++;
+function addRow(parentSelector, rowId, type = 'text') {
+
     let row = d3.select(parentSelector)
         .append('div')
         .classed('row', true)
     row.append('div')
         .classed('col-3', true)
-
     row.append('div')
         .classed('col-auto', true)
         .append('input')
-        .attr('type', 'text')
-        .attr('id', `${rowType}-${numRows}`)
-        .attr('name', `${rowType}-${numRows}`)
+        .attr('type', type)
+        .attr('id', `${rowId}-${numRows}`)
+        .attr('name', `${rowId}-${numRows}`)
 }
 
 function removeRow(parentSelector) {

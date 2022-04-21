@@ -868,13 +868,13 @@ polygon:hover {
     padding: 1px 2px;
 }
 
-#name-div, #file-div, #seg-div {
+#name-div, #file-div, #seg-div, #csv-file-div, #cell-type-file-div {
     margin-top: 1rem;
     margin-bottom: 1rem;
 
 }
 
-#name-div .row, #file-div .row, #seg-div .row {
+#name-div .row, #file-div .row, #seg-div .row, #csv-file-div .row, #cell-type-file-div .row {
     height: 4vh;
 }
 
