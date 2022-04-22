@@ -71,6 +71,27 @@ def load_datasource(datasource_name, reload=False):
     load_config()
     source = datasource_name
     datasource = load_csv(datasource_name)
+
+    # Cell Types
+    if 'neighborhood' not in config[datasource_name]:
+        matrix_file_name = datasource_name + "_matrix.pk"
+        matrix_paths = Path(
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / matrix_file_name
+        perm_data = get_perm_data(datasource_name, matrix_paths)
+        print('Creating Matrix', datasource_name)
+        matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+                               perm_data['distances'], perm_data['lengths'])
+
+        matrix[np.isnan(matrix)] = 0
+
+        print('Created Matrix', datasource_name)
+        neighborhood_path = Path(
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / 'neighborhood.npy'
+
+        np.save(neighborhood_path, matrix)
+        config[datasource_name]['neighborhoods'] = str(neighborhood_path)
+        save_config()
+
     np_datasource = load_csv(datasource_name, numpy=True)
     load_ball_tree(datasource_name, reload=reload)
     if config[datasource_name]['segmentation'].endswith('.zarr'):
@@ -100,6 +121,7 @@ def load_csv(datasource_name, numpy=False):
             return np.load(numpy_path, allow_pickle=True)
 
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
+
     df = pd.read_csv(csvPath, index_col=None)
     # df = dd.read_csv(csvPath, assume_missing=True).set_index('id')
     df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
@@ -108,6 +130,14 @@ def load_csv(datasource_name, numpy=False):
 
     if 'CellType' in df.columns:
         df = df.rename(columns={'CellType': 'phenotype'})
+
+    if 'celltypeData' in config[datasource_name]['featureData'][0]:
+        cellTypePath = Path(config[datasource_name]['featureData'][0]['celltypeData'])
+        type_list = pd.read_csv(cellTypePath).to_numpy().tolist()
+        type_ids = [e[0] for e in type_list]
+        type_string = [e[1] for e in type_list]
+        df['phenotype'] = df['phenotype'].replace(type_ids, type_string)
+
     df = df.replace(-np.Inf, 0)
     if numpy:
         # np_df = df.compute().to_numpy()
@@ -438,7 +468,7 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
         pcaed = pca.transform(combined_neighborhoods['full_neighborhoods'])
         combined_embedding = combined_embedding[
                              np.random.choice(combined_embedding.shape[0], pcaed.shape[0], replace=True), :]
-        data = np.hstack((combined_embedding,combined_embedding,combined_embedding, pcaed))
+        data = np.hstack((combined_embedding, combined_embedding, combined_embedding, pcaed))
         g_mixtures.fit(data)
         obj = {}
 
@@ -490,6 +520,12 @@ def load_config():
     global config
     with open(config_json_path, "r+") as configJson:
         config = json.load(configJson)
+
+
+def save_config():
+    global config
+    with open(config_json_path, "r+") as configJson:
+        json.dump(config, configJson, indent=4)
 
 
 def load_ball_tree(datasource_name, reload=False):
@@ -765,10 +801,9 @@ def get_color_scheme(datasource_name):
     # Yellow fff070 fff070
     # Blue 040ee8 040ee8
 
-
     colors = ["#44ea17", "#FF0000", "#dc31b0", "#bc3f3b", "#563cd3", "#040ee8", "#fff070", "#02531d", "#fbacf6",
-     "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
-     "#ead624"] #Tonsil
+              "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+              "#ead624"]  # Tonsil
     # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#2626ff", "#040ee8", "#02531d", "#fbacf6",
     #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
     #           "#ead624"]
@@ -1448,6 +1483,22 @@ def create_perm_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _
     return z
 
 
+@numba.jit(nopython=True, parallel=True)
+def create_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
+    __phenotypes_array = _phenotypes_array.flatten()
+    matrix = np.zeros((_phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
+    for i in prange(len(_lengths)):
+        this_length = _lengths[i]
+        rows = _neighbors[i, 0:this_length]
+        phenos = __phenotypes_array[rows].flatten()
+        pheno_weight_indices = (phenos)
+        result = np.zeros((_len_phenos), dtype=np.float32)
+        for ind in prange(len(pheno_weight_indices)):
+            result[pheno_weight_indices[ind]] += _distances[i][ind]
+        matrix[i] = result / result.sum()
+    return matrix
+
+
 # @profile
 def test_with_saved_perm(_perm_matrix, _vector, _threshold=0.8):
     chunk = 50
@@ -1603,20 +1654,24 @@ def get_permuted_results(datasource_name, neighborhood_query):
 
 
 def get_perm_data(datasource_name, matrix_paths):
+    global config
     test = time.time()
     column_indices = get_column_indices([config[datasource_name]['featureData'][0]['xCoordinate'],
                                          config[datasource_name]['featureData'][0]['yCoordinate']])
     np_df = load_csv(datasource_name, numpy=True)
     print('P Done Data Loading,', time.time() - test)
     test = time.time()
-    points = np_df[:, column_indices].astype(int)
+    points = np_df[:, column_indices].astype('float32')
     image_ball_tree = BallTree(points, metric='euclidean')
     print('P Ball Tree,', time.time() - test)
     test = time.time()
     image_metadata = get_ome_metadata(datasource_name)
     print('P Metadata,', time.time() - test)
     test = time.time()
-    neighborhood_range = 30  # Default 30 microns
+    if 'neighborhood_radius' in config[datasource_name]:
+        neighborhood_range = int(config[datasource_name]['neighborhood_radius'])
+    else:
+        neighborhood_range = 30  # Default 30 microns
     r = neighborhood_range / image_metadata.physical_size_x
     neighbors, distances = image_ball_tree.query_radius(points, r=r, return_distance=True)
     print('P Query,', time.time() - test)

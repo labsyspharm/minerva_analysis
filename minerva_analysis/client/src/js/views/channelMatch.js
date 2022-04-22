@@ -54,7 +54,7 @@ function channelMatch(combined) {
         // Y Position
         let yIndex = _.findIndex(headers, e => {
             let str = _.get(e, 'fullName') || e;
-            return str == 'CellPosition_Y' || str == 'Y_centroid'
+            return str == 'CellPosition_Y' || str == 'Y_centroid' ||  str == 'Y_position'||  str == 'Y'
         });
         if (yIndex != -1) {
             val = headers[yIndex]
@@ -65,7 +65,7 @@ function channelMatch(combined) {
         // X Position
         let xIndex = _.findIndex(headers, e => {
             let str = _.get(e, 'fullName') || e;
-            return str == 'CellPosition_X' || str == 'X_centroid'
+            return str == 'CellPosition_X' || str == 'X_centroid' ||  str == 'X_position'||  str == 'X'
         });
         if (xIndex != -1) {
             val = headers[xIndex]
@@ -78,7 +78,7 @@ function channelMatch(combined) {
         // CellId Position
         let cellIdIndex = _.findIndex(headers, e => {
             let str = _.get(e, 'fullName') || e;
-            return str == 'CellID';
+            return str == 'CellID' || str == 'CellIndex';
         });
         if (cellIdIndex != -1) {
             val = headers[cellIdIndex]

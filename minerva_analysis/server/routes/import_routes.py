@@ -114,17 +114,14 @@ def edit_config_with_config_name(config_name):
         elem['displayName'] = config_data['featureData'][0]['yCoordinate']
         csvHeaders.append(elem)
         # add cell type
-        if 'celltypeData' in config_data['featureData'][0]:
-            elem = {}
-            elem['fullName'] = config_data['featureData'][0]['celltype']
-            elem['displayName'] = config_data['featureData'][0]['celltype']
-            csvHeaders.append(elem)
+        elem = {}
+        elem['fullName'] = config_data['featureData'][0]['celltype']
+        elem['displayName'] = config_data['featureData'][0]['celltype']
+        csvHeaders.append(elem)
 
-        # Start with the required channels
-        if 'celltypeData' in config_data['featureData'][0]:
-            channelFileNames.extend(['X Position', 'Y Position', 'Cell Type'])
-        else:
-            channelFileNames.extend(['X Position', 'Y Position'])
+
+        channelFileNames.extend(['X Position', 'Y Position', 'Cell Type'])
+        channelFileNames.extend(['X Position', 'Y Position'])
 
         for i in range(len(config_data['imageData'])):
             elem = config_data['imageData'][i]
@@ -199,7 +196,7 @@ def upload_file_page():
 
                         labelName = os.path.splitext(labelFile.name)[0]
                         # labelName = labelFile.name.split('.')[0]
-                        neighborhoodRadius = int(request.form.get('neighborhood_radius'))
+                        neighborhood_radius = int(request.form.get('neighborhood_radius'))
 
                         channelFile = request.form.get('channel_file' + '-' + str(i))
                         if channelFile.startswith('"'):
@@ -262,7 +259,7 @@ def upload_file_page():
                         config_data['num_channels'] = channel_info['num_channels']
                         config_data['tileHeight'] = channel_info['tileHeight']
                         config_data['tileWidth'] = channel_info['tileWidth']
-                        config_data['neighborhoodRadius'] = neighborhoodRadius
+                        config_data['neighborhood_radius'] = neighborhood_radius
                         config_data['datasetName'] = datasetName
                         config_data['channelFileNames'] = channelFileNames
                         config_data['csvName'] = csvName
@@ -342,38 +339,38 @@ def save_config():
     global config_json_path
     try:
         combinedOriginalData = request.json['originalData']
-        for originalData in combinedOriginalData:
-            datasetName = originalData['datasetName']
-            csvName = originalData['csvName']
-            if 'celltypeData' in originalData:
-                celltypeName = originalData['celltypeData']
-            headerList = request.json['headerList']
-            normalizeCsv = request.json['normalizeCsv']
-            if normalizeCsv:
-                print("Normalizing CSV")
-                skip_columns = []
-                for i in range(int(len(headerList) / 3)):
-                    column_name = headerList[i * 3]['value']
-                    normalize_column = headerList[i * 3 + 2]['value']
-                    if normalize_column != 'on':
-                        skip_columns.append(column_name)
-                name, ext = os.path.splitext(csvName)
-                normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
-                # old: file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-                file_path = str(Path(Path.cwd(), data_path, datasetName))
-                csvPath = str(Path(file_path) / csvName)
-                normPath = str(Path(file_path) / normCsvName)
-                pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
-                print("Finished Normalizing CSV")
-            elif 'normalizeCsvName' in request.json:
-                normCsvName = request.json['normalizeCsvName']
-            else:
-                normCsvName = None
+        with open(config_json_path, "r+") as configJson:
+            configData = json.load(configJson)
+            for originalData in combinedOriginalData:
+                datasetName = originalData['datasetName']
+                csvName = originalData['csvName']
+                if 'celltypeData' in originalData:
+                    celltypeName = originalData['celltypeData']
+                headerList = request.json['headerList']
+                normalizeCsv = request.json['normalizeCsv']
+                if normalizeCsv:
+                    print("Normalizing CSV")
+                    skip_columns = []
+                    for i in range(int(len(headerList) / 3)):
+                        column_name = headerList[i * 3]['value']
+                        normalize_column = headerList[i * 3 + 2]['value']
+                        if normalize_column != 'on':
+                            skip_columns.append(column_name)
+                    name, ext = os.path.splitext(csvName)
+                    normCsvName = "{name}_norm{ext}".format(name=name, ext=ext)
+                    # old: file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
+                    file_path = str(Path(Path.cwd(), data_path, datasetName))
+                    csvPath = str(Path(file_path) / csvName)
+                    normPath = str(Path(file_path) / normCsvName)
+                    pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
+                    print("Finished Normalizing CSV")
+                elif 'normalizeCsvName' in request.json:
+                    normCsvName = request.json['normalizeCsvName']
+                else:
+                    normCsvName = None
 
-            headerList = [x for x in zip(headerList[1::3], headerList[0::3])]
-            channelList = originalData['channelFileNames']
-            with open(config_json_path, "r+") as configJson:
-                configData = json.load(configJson)
+                headerList = [x for x in zip(headerList[1::3], headerList[0::3])]
+                channelList = originalData['channelFileNames']
                 configData[datasetName] = {}
                 configData[datasetName]['shapes'] = ''
                 if normCsvName:
@@ -383,9 +380,9 @@ def save_config():
                 configData[datasetName]['featureData'][0]['normalization'] = 'none'
                 if 'celltypeData' in originalData:
                     configData[datasetName]['featureData'][0]['celltypeData'] = str(data_path / datasetName / celltypeName)
-                    configData[datasetName]['featureData'][0]['celltype'] = headerList[3][1]['value']
-                configData[datasetName]['featureData'][0]['xCoordinate'] = headerList[1][1]['value']
-                configData[datasetName]['featureData'][0]['yCoordinate'] = headerList[2][1]['value']
+                    configData[datasetName]['featureData'][0]['celltype'] = headerList[2][1]['value']
+                configData[datasetName]['featureData'][0]['xCoordinate'] = headerList[0][1]['value']
+                configData[datasetName]['featureData'][0]['yCoordinate'] = headerList[1][1]['value']
 
                 # If optional id field
                 if 'idField' in request.json:
@@ -406,6 +403,8 @@ def save_config():
 
                 if 'num_channels' in originalData:
                     configData[datasetName]['num_channels'] = originalData['num_channels']
+                if 'neighborhood_radius' in originalData:
+                    configData[datasetName]['neighborhood_radius'] = originalData['neighborhood_radius']
 
                 if 'tileWidth' in originalData:
                     configData[datasetName]['tileWidth'] = originalData['tileWidth']
@@ -439,14 +438,14 @@ def save_config():
                     configData[datasetName]['imageData'][0]['src'] = ''
 
                 if 'celltypeData' in originalData:
-                    channelList = channelList[4:]
-                else:
                     channelList = channelList[3:]
+                else:
+                    channelList = channelList[2:]
 
                 if 'celltypeData' in originalData:
-                    channelStart = 4
-                else:
                     channelStart = 3
+                else:
+                    channelStart = 2
                 for i in range(len(channelList)):
                     channel = channelList[i]
                     channelData = {}
@@ -454,10 +453,9 @@ def save_config():
                     channelData['name'] = headerList[i + channelStart][0]['value']
                     channelData['fullname'] = headerList[i + channelStart][1]['value']
                     configData[datasetName]['imageData'].append(channelData)
-                configJson.seek(0)  # <--- should reset file position to the beginning.
-                json.dump(configData, configJson, indent=4)
-                configJson.truncate()
-        data_model.load_datasource(datasetName, reload=True)
+            configJson.seek(0)  # <--- should reset file position to the beginning.
+            json.dump(configData, configJson, indent=4)
+            configJson.truncate()
         resp = jsonify(success=True)
         return resp
 

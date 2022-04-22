@@ -104,7 +104,7 @@ class ChannelList {
             let sliderCol = document.createElement("div");
             sliderCol.classList.add("col-md-12");
             sliderCol.classList.add("channel-slider");
-            sliderCol.setAttribute('id', "channel-slider_" + column)
+            sliderCol.setAttribute('id', "channel-slider_" + column.replace(/ /g,"_"))
             row2.appendChild(sliderCol);
 
             // column within row that contains svg for color pickers
@@ -151,7 +151,7 @@ class ChannelList {
 
             //add and hide channel sliders (will be visible when channel is active)
             this.addSlider(self.dataLayer.getImageBitRange(), self.dataLayer.getImageBitRange(), column, document.getElementById("channel_list").clientWidth);
-            d3.select('div#channel-slider_' + column).style('display', "none");
+            d3.select('div#channel-slider_' + column.replace(/ /g,"_")).style('display', "none");
         });
     }
 
@@ -188,7 +188,7 @@ class ChannelList {
             // Update properties and add slider
             d3.select(parent).classed("active", true);
             svgCol.style.display = "block";
-            d3.select('div#channel-slider_' + name).style('display', "block")
+            d3.select('div#channel-slider_' + name.replace(/ /g,"_")).style('display', "block")
 
             // Add channel
             this.selectChannel(name);
@@ -204,7 +204,7 @@ class ChannelList {
             // Hide
             d3.select(parent).classed("active", false);
             svgCol.style.display = "none";
-            d3.select('div#channel-slider_' + name).style('display', "none")
+            d3.select('div#channel-slider_' + name.replace(/ /g,"_")).style('display', "none")
 
             // Trigger viewer cleanse
             // this.eventHandler.trigger(ChannelList.events.CHANNELS_CHANGE, this.selections);
@@ -259,7 +259,7 @@ class ChannelList {
 
         //create the slider svg and call the slider
         var gSimple = d3
-            .select('#channel-slider_' + name)
+            .select('#channel-slider_' + name.replace(/ /g,"_"))
             .append('svg')
             .attr('class', 'svgslider')
             .attr('width', swidth)
@@ -280,7 +280,7 @@ window.addEventListener("resize", function () {
     //reinitialize slider on window change..(had some bug updating with via d3 update)
     if (typeof channelList != "undefined" && channelList) {
         channelList.sliders.forEach(function (slider, name) {
-            d3.select('div#channel-slider_' + name).select('svg').remove();
+            d3.select('div#channel-slider_' + name.replace(/ /g,"_")).select('svg').remove();
             channelList.addSlider(dataLayer.getImageBitRange(), slider.value(), name,
                 document.getElementById("channel_list").clientWidth);
         });
