@@ -149,11 +149,10 @@ bool match_angle(int count, int total, float rad) {
 // ID Lookup
 uint lookup_ids_idx(uint idx) {
   // 2D indices for given index
-  uvec2 ids_max = uvec2(u_ids_shape);
-  float ids_idx_x = modulo(idx, ids_max.x) / float(ids_max.x);
-  float ids_idx_y = (0.5 + floor(division(idx, ids_max.x))) / float(ids_max.y);
-  // Value for given index
-  vec2 ids_idx = vec2(ids_idx_x, 1.0 - ids_idx_y);
+  ivec2 ids_max = ivec2(u_ids_shape);
+  float idx_x = modulo(idx, uint(ids_max.x));
+  float idx_y = floor(division(idx, uint(ids_max.x)));
+  vec2 ids_idx = lookup_2d(ids_max, idx_x, idx_y);
   uvec4 m_value = texture(u_ids, ids_idx);
   return unpack(m_value);
 }
@@ -223,8 +222,8 @@ int count_gated_keys(int idx_1d) {
     if (catch_key(k)) {
       break;
     }
-    vec2 range = sample_gating_range(k);
     float scale = sample_magnitude(idx_1d, k);
+    vec2 range = sample_gating_range(k);
     if (check_range(scale, range)) {
       gated_total = gated_total + 1;
     }
@@ -244,8 +243,8 @@ vec4 to_chart_color(vec4 empty_pixel, int idx_1d) {
   if (pow2(delta_y) + pow2(delta_x) > max_r2) {
     return empty_pixel;
   }
-  float dx = 0.000001;
-  float rad = atan(float(delta_y), max(float(delta_x), dx));
+  float dx = float(delta_x) + 0.0001;
+  float rad = atan(float(delta_y), dx);
 
   int gated_count = 0;
   int gated_total = count_gated_keys(idx_1d);
@@ -259,10 +258,6 @@ vec4 to_chart_color(vec4 empty_pixel, int idx_1d) {
     vec2 range = sample_gating_range(k);
     if (check_range(scale, range)) {
       gated_count = gated_count + 1;
-      if (gated_total == 2 && gated_count == 2) {
-        vec3 color = sample_gating_color(k);
-        return vec4(color, 1.0);
-      }
       if (match_angle(gated_count, gated_total, rad)) {
         vec3 color = sample_gating_color(k);
         return vec4(color, 1.0);

@@ -66,20 +66,20 @@ export class CsvGatingOverlay {
 
     /**
      * @function toMagnitude
-     * @param k - the cell selection
+     * @param id - the cell id
      *
      * @returns {Array}
      */
-    toMagnitude(k) {
+    toMagnitude(id) {
 
       // Match to channel color
-      const values = this.image_viewer.selection.get(k);
+      const values = this.image_viewer.selection.get(id);
       const selections = this.gating_list.selections;
       const keys = Object.keys(selections);
 
       return keys.map((key) => {
         if (!(key in values)) {
-          throw new TypeError(`Missing "${key}" in selection "${k}".`);
+          throw new TypeError(`Missing "${key}" in selection "${id}".`);
         }
         return values[key];
         /*

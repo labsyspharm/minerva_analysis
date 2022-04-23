@@ -640,8 +640,8 @@ class ImageViewer {
       let magnitudes = [];
 
       try {
-        magnitudes = [].concat(...ids.map((key) => {
-          return this.csvGatingOverlay.toMagnitude(key);
+        magnitudes = [].concat(...ids.map((id) => {
+          return this.csvGatingOverlay.toMagnitude(id);
         }));
       }
       catch (e) {
@@ -926,7 +926,6 @@ class ImageViewer {
       // Add a mask gating map
       const height = Math.floor(values.length / width);
       const gating_2iv = [width, height];
-      console.log(values);
       via.gl.uniform2iv(via.u_gating_shape, gating_2iv);
       this.setGatingMap(via.gl, via.texture_gatings, values, width, height);
     }
