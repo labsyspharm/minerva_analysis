@@ -506,6 +506,7 @@ class CSVGatingList {
         // Toggle outlined / filled cell selections
         gating_controls_outlines.addEventListener('change', e => {
             seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
+            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         })
 
         // Toggle outlined / filled cell selections
@@ -521,8 +522,7 @@ class CSVGatingList {
                 this.eval_mode = 'and';
             }
 
-            // Update overlay centroid (will also trigger event)
-            seaDragonViewer.csvGatingOverlay.control(e.target.checked);
+            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         })
 
     }

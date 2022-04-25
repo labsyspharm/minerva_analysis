@@ -27,9 +27,9 @@ class ImageViewer {
         this.dataLayer = dataLayer;
         this.colorScheme = colorScheme;
         this.channelList = channelList;
-        this.resetCacheProps();
-        const clearCache = this.clearCacheState.bind(this);
-        this.eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, clearCache);
+        this.clearCache();
+        const clearFullCache = () => this.fullCacheKey = null;
+        this.eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, clearFullCache);
 
         // Viewer
         this.viewer = {};
@@ -198,14 +198,12 @@ class ImageViewer {
                     console.log('Missing Array', e.tile.url);
                     // this.refreshSegmentationMask();
                 }
-                const or_mode = csv_gatingList.eval_mode == "or";
-                const { ids, keys } = that.getCachedProps(e.tile, or_mode);
-                const id_end_1i = Math.max(ids.length - 1, 0);
+                const cacheProps = that.getCacheProps(e.tile);
 
                 // Use new parameters for this tile
                 via.all_gl_arguments = [{
+                  ...cacheProps,
                   ...centerProps,
-                  id_end_1i: id_end_1i,
                   color_3fv: new Float32Array([1, 1, 1]),
                   range_2fv: new Float32Array([0, 1]),
                   fmt_1i: 32,
@@ -337,11 +335,6 @@ class ImageViewer {
 
         seaGL.init();
 
-        /************************************************************************************************** Add layer */
-
-        // Add overlay
-        this.csvGatingOverlay = new CsvGatingOverlay(this.viewer, this);
-
         this.viewer.scalebar({
                 location: 3,
                 minWidth: '100px',
@@ -390,67 +383,6 @@ class ImageViewer {
         });
     }
 
-    /**
-     * Cached flag for webGL rendering.
-     *
-     * @type {boolean}
-     */
-
-    get hasCachedAllBuffers() {
-       return [
-         this.hasCachedIds,
-         this.hasCachedCenters,
-         this.hasCachedMagnitudes,
-         this.hasCachedGatings
-       ].every(_ => _);
-    }
-
-    /**
-     * Cached ID flag for webGL rendering.
-     *
-     * @type {boolean}
-     */
-
-    get hasCachedIds() {
-      return this._cachedIds;
-    }
-
-    /**
-     * Cached centers flag for webGL rendering.
-     *
-     * @type {boolean}
-     */
-
-    get hasCachedCenters() {
-      return this._cachedCenters;
-    }
-
-    /**
-     * Cached magnitudes flag for webGL rendering.
-     *
-     * @type {boolean}
-     */
-
-    get hasCachedMagnitudes() {
-      return this._cachedMagnitudes;
-    }
-
-    /**
-     * Cached magnitudes flag for webGL rendering.
-     *
-     * @type {boolean}
-     */
-
-    get hasCachedGatings() {
-      return this._cachedGatings;
-    }
-
-    /**
-     * Mode flags for webGL rendering.
-     *
-     * @type {{edge: boolaen, or: boolean}}
-     */
-
     get modeFlags() {
       const edge = this.viewerManagerVMain.sel_outlines;
       const or = csv_gatingList.eval_mode == "or";
@@ -458,74 +390,118 @@ class ImageViewer {
     }
 
     /**
-     * @function getCachedProps -- generate cache of gl properties
+     * Gating Keys for webGL rendering.
+     *
+     * @type {Array}
+     */
+
+    get gatingKeys() {
+      const keys = Object.keys(csv_gatingList.selections);
+      return keys.sort();
+    }
+
+    /**
+     * @function toCacheKey -- generate cache keys of gl properties
+     * @param ids - active cell ids
+     * @param keys - active marker channels
+     * @param markerLists - data for each marker
+     *
+     * @returns {string}
+     */
+    toCacheKey(ids, keys, markerLists) {
+      const tuples = keys.map((channel, i) => {
+        const idx = 1 + this.selectMaskIndex(channel);
+        const hashes = markerLists[i].map(r => {
+          return parseInt(r * 2**53).toString(36);
+        });
+        return [idx, ...hashes].join('-');
+      });
+      return [ids.length, ...tuples].join('-');
+    }
+
+    /**
+     * Cache key for gating webGL buffer.
+     *
+     * @type {string}
+     */
+
+    get fullCacheKey() {
+      return this._cacheKeys.full;
+    }
+
+    set fullCacheKey(key) {
+      this._cacheKeys.full = key;
+    }
+
+    /**
+     * Cache key for magnitude/center webGL buffers.
+     *
+     * @type {string}
+     */
+
+    get orCacheKey() {
+      return this._cacheKeys.or;
+    }
+
+    set orCacheKey(key) {
+      this._cacheKeys.or = key;
+    }
+
+    /**
+     * Cache key for most webGL buffers.
+     *
+     * @type {string}
+     */
+
+    get mainCacheKey() {
+      return this._cacheKeys.main;
+    }
+
+    set mainCacheKey(key) {
+      this._cacheKeys.main = key;
+    }
+
+    /**
+     * @function getCacheProps -- generate cache of gl properties
      * @param tile - OpenSeadragon tile
-     * @param or_mode - render pie charts
      *
      * @returns {{
-     *  ids: Array,
-     *  keys: Array,
+     *  id_end_1i: Number
      * }}
      */
-    getCachedProps(tile, or_mode) {
-      const minFull = this.csvGatingOverlay.channel_scale(0);
-      const maxFull = this.csvGatingOverlay.channel_scale(1);
-      const defaultRange = [minFull, maxFull];
+    getCacheProps(tile) {
+      const keys = this.gatingKeys;
+      const ids = this.selectLabels();
+      const { gatings, ranges } = this.selectGatings(keys);
+      const changes = this.updateCache(ids, keys, gatings, ranges);
+      const { mainChange, orChange, fullChange } = changes;
 
-      const keys = Object.keys(csv_gatingList.selections);
-      const channels = or_mode ? keys : [""];
-
-      const cacheKey = channels.join('-');
-      const _cached = this._cachedProps.get(cacheKey);
-      if (_cached) {
-        if (or_mode && this.hasCachedAllBuffer) {
-          return _cached;
-        }
-        else if (!or_mode && this.hasCachedIds) {
-          return _cached;
-        }
+      // Bind main id buffer per-cell
+      if (mainChange && ids.length) {
+        this.bindLabels(this.viaGL, ids);
       }
-      let ids = _cached?.ids || [];
-      if (!this.hasCachedIds) {
-        ids = this.selectLabels();
+      // Bind extra buffers per-cell
+      if (orChange && ids.length && this.modeFlags.or) {
+        this.selectCellMagnitudes(ids, keys);
+        this.selectCenters(ids);
       }
-      // Really use source during OR mode
-      if (or_mode) {
-        if (!this.hasCachedMagnitudes) {
-          this.selectCellMagnitudes(ids, keys, or_mode);
-        }
-        if (!this.hasCachedCenters) {
-          this.selectCenters(or_mode);
-        }
-        if (!this.hasCachedGatings) {
-          this.selectGatings(or_mode, keys);
-        }
+      // Bind extra buffers per-channel 
+      if (fullChange) {
+        const allGatings = [].concat(...gatings);
+        this.bindGatings(this.viaGL, allGatings, 5);
       }
-      const cached = { ids, keys };
-      this._cachedProps.set(cacheKey, cached);
-      return cached;
+      return {
+        id_end_1i: Math.max(ids.length - 1, 0)
+      }
     }
 
     /**
-     * @function clearCacheState -- clear cached state
+     * @function clearCache -- clear cached props 
      *
      * @returns void
      */
-    clearCacheState() {
-      this._cachedIds = false;
-      this._cachedCenters = false;
-      this._cachedMagnitudes = false;
-      this._cachedGatings = false;
-    }
-
-    /**
-     * @function resetCacheProps -- clear cached props 
-     *
-     * @returns void
-     */
-    resetCacheProps() {
-      this.clearCacheState();
-      this._cachedProps = new Map();
+    clearCache() {
+      this._cacheKeys = {};
     }
 
     /**
@@ -539,32 +515,27 @@ class ImageViewer {
         return [];
       }
       
-      const ids = [...this.selection.keys()];
-      if (!this.hasCachedIds && ids.length > 0) {
-        this.bindLabels(this.viaGL, ids);
-        this._cachedIds = true;
-      }
-
-      return ids;
+      return [...this.selection.keys()];
     }
 
     /**
      * @function selectCenters -- return cell centers
-     * @param or_mode - render pie charts
+     * @param ids - active cell ids
      *
      * @returns {Array}
      */
-    selectCenters(or_mode) {
+    selectCenters(ids) {
 
       const xKey = 'X_centroid';
       const yKey = 'Y_centroid';
 
-      if (!this.show_selection || !or_mode) {
+      if (!this.show_selection) {
         return [];
       }
       let centers = [];
       try {
-        [...this.selection.values()].forEach((values) => {
+        ids.forEach((id) => {
+          const values = this.selection.get(id);
           if (xKey in values && yKey in values) {
             const center = [values.X_centroid, values.Y_centroid];
             centers = centers.concat(center);
@@ -582,9 +553,8 @@ class ImageViewer {
         throw e;
       }
 
-      if (!this.hasCachedCenters) {
+      if (centers.length) {
         this.bindCenters(this.viaGL, centers);
-        this._cachedCenters = true;
       }
       return centers;
     }
@@ -628,20 +598,22 @@ class ImageViewer {
      * @function selectCellMagnitudes -- select magnitude ranges
      * @param ids - active cell ids
      * @param keys - active marker channels
-     * @param or_mode - render pie charts
      *
      * @returns {Array}
      */
-    selectCellMagnitudes(ids, keys, or_mode) {
+    selectCellMagnitudes(ids, keys) {
 
-      if (!or_mode) {
-        return [];
-      }
       let magnitudes = [];
 
       try {
         magnitudes = [].concat(...ids.map((id) => {
-          return this.csvGatingOverlay.toMagnitude(id);
+          const values = this.selection.get(id);
+          return keys.map((key) => {
+            if (!(key in values)) {
+              throw new TypeError(`Missing "${key}" in selection "${id}".`);
+            }
+            return values[key];
+          });
         }));
       }
       catch (e) {
@@ -653,9 +625,8 @@ class ImageViewer {
       }
 
       const keyCount = Math.max(keys.length, 1);
-      if (!this.hasCachedMagnitudes && magnitudes.length > 0) {
+      if (magnitudes.length) {
         this.bindMagnitudes(this.viaGL, magnitudes, keyCount);
-        this._cachedMagnitudes = true;
       }
 
       return magnitudes;
@@ -663,32 +634,69 @@ class ImageViewer {
 
     /**
      * @function selectGatings -- select gating ranges
-     * @param or_mode - render pie charts
      * @param keys - active marker channels
      *
-     * @returns {Array}
+     * @returns {{ranges: Array, gatings: Array}}
      */
-    selectGatings(or_mode, keys) {
+    selectGatings(keys) {
 
-      if (!or_mode) {
-        return [];
-      }
-      const nColor = 3;
-      const nMinMax = 2;
-      const width = nMinMax + nColor;
+      const ranges = [];
+      const gatings = [];
       const gatingRangeMap = csv_gatingList.selections;
-      const gatingRanges = [].concat(...keys.map((key) => {
+      keys.forEach((key) => {
         const range = gatingRangeMap[key].map(x => parseFloat(x));
         const color = this.selectMaskColor(key);
         const floatColor = toFloatColor(color);
-        return range.concat(floatColor);
-      }))
-      if (!this.hasCachedGatings && gatingRanges.length > 0) {
-        this.bindGatings(this.viaGL, gatingRanges, width);
-        this._cachedGatings = true;
+        const gating = range.concat(floatColor);
+        gatings.push(gating);
+        ranges.push(range);
+      });
+
+      return {
+        ranges,
+        gatings
+      }
+    }
+
+    /**
+     * @function updateCache -- update cache keys
+     * @param ids - active cell ids
+     * @param keys - active marker channels
+     * @param gatings - cell ranges + colors array
+     * @param ranges - cell ranges array
+     *
+     *
+     * @returns {{
+     *   orChange: boolean,
+     *   mainChange: boolean,
+     *   fullChange: boolean
+     * }}
+     */
+
+    updateCache(ids, keys, gatings, ranges) {
+      const mainCacheKey = this.toCacheKey(ids, keys, ranges);
+      const mainChange = this.mainCacheKey !== mainCacheKey;
+      if (mainChange) {
+        this.mainCacheKey = mainCacheKey;
       }
 
-      return gatingRanges;
+      const orCacheKey = this.modeFlags.or ? mainCacheKey : null;
+      const orChange = this.orCacheKey !== orCacheKey;
+      if (orChange) {
+        this.orCacheKey = orCacheKey;
+      }
+
+      const fullCacheKey = this.toCacheKey(ids, keys, gatings);
+      const fullChange = this.fullCacheKey !== fullCacheKey;
+      if (fullChange) {
+        this.fullCacheKey = fullCacheKey;
+      }
+
+      return {
+        mainChange,
+        fullChange,
+        orChange
+      };
     }
 
     /**
@@ -707,14 +715,23 @@ class ImageViewer {
       if (!channel) {
         return white;
       }
-      const idx = this.csvGatingOverlay.channel_list.columns.indexOf(channel);
-      const channels = this.csvGatingOverlay.channel_list.currentChannels;
-      const idxString = (idx + 1).toString();
-      if (idx < 0 || !Object.keys(channels).includes(idxString)) {
+      const channels = channelList.currentChannels;
+      const idxString = (this.selectMaskIndex(channel) + 1).toString();
+      if (idxString == "0" || !Object.keys(channels).includes(idxString)) {
         return white;
       }
       const data = channels[idxString];
       return data.color;
+    }
+
+    /**
+     * @function selectMaskIndex -- select index for mask 
+     * @param channel - the channel label
+     *
+     * @returns {Number}
+     */
+    selectMaskIndex(channel) {
+      return channelList.columns.indexOf(channel);
     }
 
     /**
@@ -1062,7 +1079,8 @@ class ImageViewer {
      * @returns void
      */
     forceRepaint() {
-        this.clearCacheState();
+        // Trigger change of full cache
+        this.fullCacheKey = null;
         // Refilter, redraw
         this.viewerManagers.forEach(vM => {
             vM.viewer.forceRedraw();
@@ -1176,7 +1194,6 @@ class ImageViewer {
         }
 
         this.forceRepaint();
-
     }
 
     /**
@@ -1201,7 +1218,6 @@ class ImageViewer {
         }
         this.viewer.forceRedraw();
         if (repaint) this.forceRepaint();
-
     }
 
     addScaleBar(){
