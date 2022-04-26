@@ -288,23 +288,27 @@ vec4 u32_rgba_map(bvec2 mode) {
   bool use_chart = mode.y;
   bool use_edge = mode.x;
 
-  // Charts (top layer)
-  if (use_chart) {
-    vec4 chart_color = to_chart_color(empty_pixel, cell_index);
-    if (!all(equal(chart_color, empty_pixel))) {
-      return chart_color;
+  if(any(mode)) {
+    // Charts (top layer)
+    if (use_chart) {
+      vec4 chart_color = to_chart_color(empty_pixel, cell_index);
+      if (!all(equal(chart_color, empty_pixel))) {
+        return chart_color;
+      }
+    }
+    // Borders (bottom layer)
+    if (use_edge) {
+      if (near_cell_edge()) {
+        return white_pixel;
+      }
+      return empty_pixel;
     }
   }
-  // Borders (bottom layer)
-  if (use_edge) {
-    if (near_cell_edge()) {
+  else {
+    // Fill (bottom layer)
+    if (cell_index > -1) {
       return white_pixel;
     }
-    return empty_pixel;
-  }
-  // Fill (bottom layer)
-  else if (cell_index > -1) {
-    return white_pixel;
   }
   // Background
   return empty_pixel;
