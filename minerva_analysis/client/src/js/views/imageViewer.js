@@ -402,21 +402,24 @@ class ImageViewer {
 
     /**
      * @function toCacheKey -- generate cache keys of gl properties
-     * @param ids - active cell ids
+     * @param idCount - number of active cell ids
      * @param keys - active marker channels
      * @param markerLists - data for each marker
      *
      * @returns {string}
      */
-    toCacheKey(ids, keys, markerLists) {
+    toCacheKey(idCount, keys, markerLists) {
+      const precisions = [ 2**25, 2**25, 255, 255, 255 ];
       const tuples = keys.map((channel, i) => {
         const idx = 1 + this.selectMaskIndex(channel);
-        const hashes = markerLists[i].map(r => {
-          return parseInt(r * 2**53).toString(36);
+        const hashes = markerLists[i].map((r, j) => {
+          // use precision for each item 
+          const integral = r * precisions[j];
+          return parseInt(integral).toString(36);
         });
         return [idx, ...hashes].join('-');
       });
-      return [ids.length, ...tuples].join('-');
+      return [idCount, ...tuples].join('-');
     }
 
     /**
@@ -471,28 +474,31 @@ class ImageViewer {
      */
     getCacheProps(tile) {
       const keys = this.gatingKeys;
-      const ids = this.selectLabels();
+      const idCount = this.selection.size;
       const { gatings, ranges } = this.selectGatings(keys);
-      const changes = this.updateCache(ids, keys, gatings, ranges);
+      const changes = this.updateCache(idCount, keys, gatings, ranges);
       const { mainChange, orChange, fullChange } = changes;
 
-      // Bind main id buffer per-cell
-      if (mainChange && ids.length) {
-        this.bindLabels(this.viaGL, ids);
-      }
-      // Bind extra buffers per-cell
-      if (orChange && ids.length && this.modeFlags.or) {
-        this.selectCellMagnitudes(ids, keys);
-        this.selectCenters(ids);
-      }
-      // Bind extra buffers per-channel 
+      // Bind buffers per-channel 
       if (fullChange) {
         const allGatings = [].concat(...gatings);
         this.bindGatings(this.viaGL, allGatings, 5);
       }
-      return {
-        id_end_1i: Math.max(ids.length - 1, 0)
+      // List cell ids as array
+      const needIds = mainChange || orChange;
+      const ids = needIds ? [...this.selection.keys()] : [];
+      // Bind buffers per-cell
+      if (mainChange) {
+        this.bindLabels(this.viaGL, ids);
       }
+      // Bind or-mode buffers per-cell
+      if (orChange && this.modeFlags.or) {
+        this.selectCellMagnitudes(ids, keys);
+        this.selectCenters(ids);
+      }
+      return {
+        id_end_1i: Math.max(idCount - 1, 0)
+      }; 
     }
 
     /**
@@ -502,20 +508,6 @@ class ImageViewer {
      */
     clearCache() {
       this._cacheKeys = {};
-    }
-
-    /**
-     * @function selectLabels -- return cell labels
-     *
-     * @returns {Array}
-     */
-    selectLabels() {
-
-      if (!this.show_selection) {
-        return [];
-      }
-      
-      return [...this.selection.keys()];
     }
 
     /**
@@ -529,9 +521,6 @@ class ImageViewer {
       const xKey = 'X_centroid';
       const yKey = 'Y_centroid';
 
-      if (!this.show_selection) {
-        return [];
-      }
       let centers = [];
       try {
         ids.forEach((id) => {
@@ -660,9 +649,9 @@ class ImageViewer {
 
     /**
      * @function updateCache -- update cache keys
-     * @param ids - active cell ids
+     * @param idCount - number of active cell ids
      * @param keys - active marker channels
-     * @param gatings - cell ranges + colors array
+     * @param gatings - cell ranges + colors
      * @param ranges - cell ranges array
      *
      *
@@ -673,8 +662,8 @@ class ImageViewer {
      * }}
      */
 
-    updateCache(ids, keys, gatings, ranges) {
-      const mainCacheKey = this.toCacheKey(ids, keys, ranges);
+    updateCache(idCount, keys, gatings, ranges) {
+      const mainCacheKey = this.toCacheKey(idCount, keys, ranges);
       const mainChange = this.mainCacheKey !== mainCacheKey;
       if (mainChange) {
         this.mainCacheKey = mainCacheKey;
@@ -686,17 +675,13 @@ class ImageViewer {
         this.orCacheKey = orCacheKey;
       }
 
-      const fullCacheKey = this.toCacheKey(ids, keys, gatings);
+      const fullCacheKey = this.toCacheKey(idCount, keys, gatings);
       const fullChange = this.fullCacheKey !== fullCacheKey;
       if (fullChange) {
         this.fullCacheKey = fullCacheKey;
       }
 
-      return {
-        mainChange,
-        fullChange,
-        orChange
-      };
+      return { mainChange, fullChange, orChange };
     }
 
     /**
