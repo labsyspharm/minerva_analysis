@@ -25,6 +25,7 @@ from minerva_analysis import config_json_path
 from minerva_analysis.server.utils import pyramid_assemble
 import matplotlib.path as mpltPath
 import matplotlib.pyplot as plt
+import umap
 
 from minerva_analysis.server.utils import smallestenclosingcircle
 from minerva_analysis.server.models import database_model
@@ -40,7 +41,7 @@ import zarr
 from numcodecs import Blosc
 from scipy import spatial
 
-from line_profiler_pycharm import profile
+# from line_profiler_pycharm import profile
 
 ball_tree = None
 datasource = None
@@ -413,11 +414,11 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
 
         g_mixtures = GaussianMixture(n_components=num_clusters)
         data = np.load(Path(config[datasource_name]['embedding']))
-        # TODO REMOVE CLUSTER HARDCODE
-        coords = data[:, 0:2]
-        neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-        pcaed = PCA(n_components=2).fit_transform(neighborhoods)
-        data = np.hstack((data, pcaed))
+        # # TODO REMOVE CLUSTER HARDCODE
+        # coords = data[:, 0:2]
+        # neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+        # pcaed = PCA(n_components=2).fit_transform(neighborhoods)
+        # data = np.hstack((data, pcaed))
         g_mixtures.fit(data)
         clusters = g_mixtures.predict(data)
         for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
@@ -1598,7 +1599,7 @@ def search_across_images(datasource_name, linked_datasource, neighborhood_query=
     return results
 
 
-@profile
+# @profile
 def get_permuted_results(datasource_name, neighborhood_query):
     global config
     global datasource
@@ -1783,3 +1784,28 @@ def fast_to_dict_records(np_df_obj, columns=None):
         dict(zip(columns, datum))
         for datum in data
     ]
+
+
+def create_embedding(datasets):
+    global config
+    combined_neighborhoods = None
+    for name in datasets:
+        neighborhoods = np.load(Path(config[name]['neighborhoods']))
+        if combined_neighborhoods is None:
+            combined_neighborhoods = neighborhoods
+        else:
+            combined_neighborhoods = np.vstack((combined_neighborhoods, neighborhoods))
+    fit = umap.UMAP(n_neighbors=50, min_dist=0.01)
+    u = fit.fit_transform(combined_neighborhoods)
+    normalized_embedding = normalize_scatterplot_data(u)
+    index_sum = 0
+    for name in datasets:
+        neighborhoods = np.load(Path(config[name]['neighborhoods']))
+        next_sum = index_sum + len(neighborhoods)
+        individual_embedding = normalized_embedding[index_sum:next_sum, :]
+        embedding_path = Path(
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / name / 'embedding.npy'
+
+        np.save(embedding_path, individual_embedding)
+        config[name]['embedding'] = str(embedding_path)
+    save_config()

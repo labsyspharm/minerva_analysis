@@ -119,7 +119,6 @@ def edit_config_with_config_name(config_name):
         elem['displayName'] = config_data['featureData'][0]['celltype']
         csvHeaders.append(elem)
 
-
         channelFileNames.extend(['X Position', 'Y Position', 'Cell Type'])
         channelFileNames.extend(['X Position', 'Y Position'])
 
@@ -339,6 +338,7 @@ def save_config():
     global config_json_path
     try:
         combinedOriginalData = request.json['originalData']
+        datasets = [e['datasetName'] for e in combinedOriginalData]
         with open(config_json_path, "r+") as configJson:
             configData = json.load(configJson)
             for originalData in combinedOriginalData:
@@ -376,10 +376,12 @@ def save_config():
                 if normCsvName:
                     configData[datasetName]['clusterData'] = normCsvName
                 configData[datasetName]['activeChannel'] = ''
+                configData[datasetName]['linkedDatasets'] = datasets
                 configData[datasetName]['featureData'] = [{}]
                 configData[datasetName]['featureData'][0]['normalization'] = 'none'
                 if 'celltypeData' in originalData:
-                    configData[datasetName]['featureData'][0]['celltypeData'] = str(data_path / datasetName / celltypeName)
+                    configData[datasetName]['featureData'][0]['celltypeData'] = str(
+                        data_path / datasets[0] / celltypeName)
                     configData[datasetName]['featureData'][0]['celltype'] = headerList[2][1]['value']
                 configData[datasetName]['featureData'][0]['xCoordinate'] = headerList[0][1]['value']
                 configData[datasetName]['featureData'][0]['yCoordinate'] = headerList[1][1]['value']
@@ -432,8 +434,9 @@ def save_config():
                 configData[datasetName]['imageData'][0]['name'] = 'Segmentation'
                 configData[datasetName]['imageData'][0]['fullname'] = 'Segmentation'
                 if 'labelName' in originalData and originalData['labelName'] != '':
-                    configData[datasetName]['imageData'][0]['src'] = "/generated/data/" + datasetName + "/" + originalData[
-                        'labelName'] + "/"
+                    configData[datasetName]['imageData'][0]['src'] = "/generated/data/" + datasetName + "/" + \
+                                                                     originalData[
+                                                                         'labelName'] + "/"
                 else:
                     configData[datasetName]['imageData'][0]['src'] = ''
 
@@ -456,6 +459,13 @@ def save_config():
             configJson.seek(0)  # <--- should reset file position to the beginning.
             json.dump(configData, configJson, indent=4)
             configJson.truncate()
+
+        for name in datasets:
+            data_model.load_datasource(name, reload=True)
+        # Create Embedding
+        print('Creating Embedding')
+        data_model.create_embedding(datasets)
+
         resp = jsonify(success=True)
         return resp
 
