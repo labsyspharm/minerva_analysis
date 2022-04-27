@@ -1,1 +1,5 @@
 data/
+.editorconfig
+.eslintignore
+.eslintrc.json
+tsconfig.json
