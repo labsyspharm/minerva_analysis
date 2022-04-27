@@ -1,17 +1,24 @@
 import "regenerator-runtime/runtime.js";
 
-function clipTile(tile, fullScale) {
+function toFullTile(tile, levels) {
     const { x, y } = tile;
     const width = this.width;
     const height = this.height;
+    const { fullScale } = levels;
     const tileWidth = this._tileWidth * fullScale;
     const tileHeight = this._tileHeight * fullScale;
     const origin = [x * tileWidth, y * tileHeight];
     const fullWidth = Math.min(width - origin[0], tileWidth);
     const fullHeight = Math.min(height - origin[1], tileHeight);
+    return { fullHeight, fullWidth };
+}
+
+function clipTile(tile, levels) {
+    const { x, y } = tile;
+    const { fullHeight, fullWidth } = this.toFullTile(tile, levels);
     return {
-        x: (w) => (width * w) / fullWidth,
-        y: (h) => (height * h) / fullHeight,
+        x: (w) => (this.width * w) / fullWidth,
+        y: (h) => (this.height * h) / fullHeight,
     };
 }
 
@@ -44,10 +51,10 @@ function getLevelSource({ level, x, y }) {
     };
 }
 
-function toTileBoundary(tile, { scale, fullScale }, key) {
-    const ratio = Math.round(1 / scale);
+function toTileBoundary(tile, levels, key) {
+    const ratio = Math.round(1 / levels.scale);
     const shape = { x: "width" }[key] || "height";
-    const clipper = this.clipTile(tile, fullScale);
+    const clipper = this.clipTile(tile, levels);
     const size = clipper[key](tile.bounds[shape]);
     const center = toCenter(tile[key], size, ratio)[key];
     const central = (v) => Math.max((v + center) / ratio, 0);
@@ -55,18 +62,18 @@ function toTileBoundary(tile, { scale, fullScale }, key) {
 }
 
 function getLevels(tile) {
-    const source = this.getLevelSource(tile);
+    const levels = this.getLevelSource(tile);
     return {
-        fullScale: source.fullScale,
-        scale: source.scale,
+        fullScale: levels.fullScale,
+        scale: levels.scale,
         bounds: {
-            x: tile._x || toTileBoundary.call(this, tile, source, "x"),
-            y: tile._y || toTileBoundary.call(this, tile, source, "y"),
+            x: tile._x || toTileBoundary.call(this, tile, levels, "x"),
+            y: tile._y || toTileBoundary.call(this, tile, levels, "y"),
         },
         tile: {
-            x: source.x,
-            y: source.y,
-            level: source.tileLevel,
+            x: levels.x,
+            y: levels.y,
+            level: levels.tileLevel,
         },
     };
 }
@@ -154,6 +161,7 @@ export class ViewerManager {
                 tileHeight: this.imageViewer.config.tileHeight,
                 getTileUrl: toTileUrlGetter(src),
                 getLevelSource: getLevelSource,
+                toFullTile: toFullTile,
                 getLevels: getLevels,
                 clipTile: clipTile,
                 tileFormat: 16,
@@ -261,6 +269,7 @@ export class ViewerManager {
                     tileHeight: this.imageViewer.config.tileHeight,
                     getTileUrl: toTileUrlGetter(url),
                     getLevelSource: getLevelSource,
+                    toFullTile: toFullTile,
                     getLevels: getLevels,
                     clipTile: clipTile,
                     tileFormat: 32,

@@ -129,6 +129,11 @@ class ImageViewer {
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, width, height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
             }
 
+            const ideal_width = this.gl.canvas.width;
+            const ideal_height = this.gl.canvas.height;
+            this.gl_arguments.tile_ideal_2fv = new Float32Array([ideal_width, ideal_height]);
+            this.gl_arguments.tile_real_2fv = new Float32Array([width, height]);
+
             // Call gl-drawing after loading TEXTURE0
             this["gl-drawing"].call(this);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -145,8 +150,7 @@ class ImageViewer {
             const sub_url = group[group.length - 3];
             const { source } = e.tiledImage;
             const { tileFormat, getLevels } = source;
-            const levels = getLevels.call(source, e.tile);
-            const centerProps = that.selectCenterProps(e.tile, levels);
+            const centerProps = that.selectCenterProps(e.tile, source);
 
             const via = this.viaGL;
 
@@ -205,12 +209,14 @@ class ImageViewer {
             const fmt_1i = gl_arguments.fmt_1i;
             const color_3fv = gl_arguments.color_3fv;
             const id_end_1i = gl_arguments.id_end_1i;
+            const tile_ideal_2fv = gl_arguments.tile_ideal_2fv;
+            const tile_real_2fv = gl_arguments.tile_real_2fv;
             const modes = that.modeFlags;
 
             // Send color and range to shader
-            const size_2fv = [this.gl.canvas.height, this.gl.canvas.width];
+            this.gl.uniform2fv(this.u_tile_real, tile_real_2fv);
+            this.gl.uniform2fv(this.u_tile_ideal, tile_ideal_2fv);
             this.gl.uniform2i(this.u_draw_mode, modes.edge, modes.or);
-            this.gl.uniform2fv(this.u_tile_size, new Float32Array(size_2fv));
             this.gl.uniform3fv(this.u_tile_color, color_3fv);
             this.gl.uniform2fv(this.u_tile_range, range_2fv);
             this.gl.uniform2fv(this.u_tile_origin, origin_2fv);
@@ -238,7 +244,8 @@ class ImageViewer {
             this.u_corrections = this.gl.getUniformLocation(program, "u_corrections");
             this.u_scale_level = this.gl.getUniformLocation(program, "u_scale_level");
             this.u_real_height = this.gl.getUniformLocation(program, "u_real_height");
-            this.u_tile_size = this.gl.getUniformLocation(program, "u_tile_size");
+            this.u_tile_ideal = this.gl.getUniformLocation(program, "u_tile_ideal");
+            this.u_tile_real = this.gl.getUniformLocation(program, "u_tile_real");
             this.u_tile_fmt = this.gl.getUniformLocation(program, "u_tile_fmt");
             this.u_id_end = this.gl.getUniformLocation(program, "u_id_end");
 
@@ -547,21 +554,28 @@ class ImageViewer {
     /**
      * @function selectCenterProps -- return cell centers properties
      * @param tile - openseadragon tile
-     * @param levels - boundaries for scaled tiles
+     * @param source - openseadragon tile source 
      *
      * @returns {{
      *   real_height_1i: Number,
      *   scale_level_1f: Number,
+     *   size_2fv: Array,
+     *   x_bounds_2fv: Array,
+     *   y_bounds_2fv: Array,
      *   corrections_2fv: Array,
      *   origin_2fv: Array,
      * }}
      */
-    selectCenterProps(tile, levels) {
+    selectCenterProps(tile, source) {
+        const levels = source.getLevels(tile);
         const tileWidth = this.config.tileWidth;
         const tileHeight = this.config.tileHeight;
         const tW = tile.sourceBounds.width;
         const tH = tile.sourceBounds.height;
         const corrections = [tileWidth / tW, tileHeight / tH];
+        const { fullWidth, fullHeight } = source.toFullTile(tile, levels)
+        const scaleHeight = fullHeight / levels.fullScale;
+        const scaleWidth = fullWidth / levels.fullScale;
 
         const maxLevel = this.config.maxLevel - 1;
         const realLevel = maxLevel - tile.level;
@@ -571,6 +585,7 @@ class ImageViewer {
         return {
             real_height_1i: tH,
             scale_level_1f: scale_factor,
+            size_2fv: new Float32Array([scaleWidth, scaleHeight]),
             x_bounds_2fv: new Float32Array(levels.bounds.x),
             y_bounds_2fv: new Float32Array(levels.bounds.y),
             corrections_2fv: new Float32Array(corrections),

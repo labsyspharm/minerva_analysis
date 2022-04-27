@@ -11,7 +11,7 @@ uniform ivec3 u_magnitude_shape;
 uniform usampler2D u_centers;
 uniform usampler2D u_tile;
 uniform usampler2D u_ids;
-uniform vec2 u_tile_size;
+uniform vec2 u_tile_ideal;
 uniform vec3 u_tile_color;
 uniform vec2 u_tile_range;
 uniform vec2 u_tile_origin;
@@ -208,7 +208,7 @@ uint compare_neighborhood(vec2 off, uint ikey) {
     float ex = vec4(0, 0, 1, -1)[i];
     float ey = vec4(1, -1, 0, 0)[i];
     vec2 neighbor = off + vec2(ex, ey);
-    nkeys[i] = unpack(offset(u_tile, u_tile_size, uv, neighbor)); 
+    nkeys[i] = unpack(offset(u_tile, u_tile_ideal, uv, neighbor)); 
   }
   // Select if 2 identical cells or 3 identical background 
   if (ikey == bg) {
@@ -232,7 +232,7 @@ uint compare_neighborhood(vec2 off, uint ikey) {
 // Note: will be -1 if cell not in cell list
 int sample_cell_index(vec2 off) {
   // Find cell id at given offset 
-  uint ikey = unpack(offset(u_tile, u_tile_size, uv, off));
+  uint ikey = unpack(offset(u_tile, u_tile_ideal, uv, off));
   if (u_scale_level < 1.) { 
     ikey = compare_neighborhood(off, ikey);
   }
@@ -303,14 +303,14 @@ float distance (vec2 v) {
 
 // Colorize OR-mode pie chart slices 
 vec4 to_chart_color(vec4 empty_pixel, int cell_index) {
-  vec2 tile_size = u_tile_size;
+  vec2 tile_size = u_tile_ideal;
   int max_r2 = pow2(4);
   if (u_scale_level < 1.) { 
     tile_size = tile_size / u_scale_level;
     max_r2 = int(float(max_r2) / u_scale_level);
   }
   vec2 global_center = sample_center(cell_index);
-  vec2 center = toLocalCenter(global_center, u_tile_size);
+  vec2 center = toLocalCenter(global_center, u_tile_ideal);
   vec2 tile_xy = fromScreen(uv, vec2(1, 1));
   vec2 diff_xy = tile_xy - center;
 
@@ -401,7 +401,7 @@ float range_clamp(float value) {
 
 // Colorize continuous u16 signal
 vec4 u16_rg_range(float alpha) {
-  uvec2 pixel = offset(u_tile, u_tile_size, uv, vec2(0, 0)).rg;
+  uvec2 pixel = offset(u_tile, u_tile_ideal, uv, vec2(0, 0)).rg;
   float value = float(pixel.r * u8 + pixel.g) / 65535.;
 
   // Threshhold pixel within range
