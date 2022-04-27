@@ -111,7 +111,6 @@ class ImageViewer {
         const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
         this.viaGL = seaGL.viaGL;
 
-        // Override loadArray to add more complex drawing
         seaGL.viaGL.loadArray = function (width, height, pixels, format = "u16") {
             // Allow for custom drawing in webGL
             var gl = this.gl;
@@ -130,11 +129,9 @@ class ImageViewer {
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, width, height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
             }
 
-            this.all_gl_arguments.forEach((gl_arguments) => {
-                // Call gl-drawing after loading TEXTURE0
-                this["gl-drawing"].call(this, gl_arguments);
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-            });
+            // Call gl-drawing after loading TEXTURE0
+            this["gl-drawing"].call(this);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
             return gl.canvas;
         };
 
@@ -151,14 +148,9 @@ class ImageViewer {
             const levels = getLevels.call(source, e.tile);
             const centerProps = that.selectCenterProps(e.tile, levels);
 
-            // Turn on additive blending
             const via = this.viaGL;
-            via.gl.enable(via.gl.BLEND);
 
             if (tileFormat != 32) {
-                via.gl.blendEquationSeparate(via.gl.FUNC_ADD, via.gl.FUNC_ADD);
-                via.gl.blendFunc(via.gl.ONE, via.gl.ONE);
-
                 let channel = _.find(that.channelList.currentChannels, (e) => {
                     return e.sub_url == sub_url;
                 });
@@ -166,20 +158,15 @@ class ImageViewer {
                 const floatColor = toFloatColor(color);
                 const range = _.get(channel, "range", that.dataLayer.getImageBitRange(true));
                 // Store channel color and range to send to shader
-                via.all_gl_arguments = [
-                    {
-                        ...centerProps,
-                        centers: [],
-                        id_end_1i: 0,
-                        color_3fv: new Float32Array(floatColor),
-                        range_2fv: new Float32Array(range),
-                        fmt_1i: 16,
-                    },
-                ];
+                via.gl_arguments = {
+                    ...centerProps,
+                    centers: [],
+                    id_end_1i: 0,
+                    color_3fv: new Float32Array(floatColor),
+                    range_2fv: new Float32Array(range),
+                    fmt_1i: 16,
+                };
             } else {
-                via.gl.blendEquationSeparate(via.gl.FUNC_ADD, via.gl.MAX);
-                via.gl.blendFunc(via.gl.ONE, via.gl.ONE);
-
                 if (!e.tile._array) {
                     console.log("Missing Array", e.tile.url);
                     // this.refreshSegmentationMask();
@@ -187,15 +174,13 @@ class ImageViewer {
                 const cacheProps = that.getCacheProps();
 
                 // Use new parameters for this tile
-                via.all_gl_arguments = [
-                    {
-                        ...cacheProps,
-                        ...centerProps,
-                        color_3fv: new Float32Array([1, 1, 1]),
-                        range_2fv: new Float32Array([0, 1]),
-                        fmt_1i: 32,
-                    },
-                ];
+                via.gl_arguments = {
+                    ...cacheProps,
+                    ...centerProps,
+                    color_3fv: new Float32Array([1, 1, 1]),
+                    range_2fv: new Float32Array([0, 1]),
+                    fmt_1i: 32,
+                };
             }
 
             // Clear the rendered tile
@@ -208,7 +193,8 @@ class ImageViewer {
             callback(e);
         });
 
-        seaGL.addHandler("gl-drawing", function (gl_arguments) {
+        seaGL.addHandler("gl-drawing", function () {
+            const gl_arguments = this.gl_arguments;
             const x_bounds_2fv = gl_arguments.x_bounds_2fv;
             const y_bounds_2fv = gl_arguments.y_bounds_2fv;
             const corrections_2fv = gl_arguments.corrections_2fv;
