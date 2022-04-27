@@ -11,10 +11,10 @@ class CSVGatingList {
      */
     constructor(config, dataLayer, eventHandler) {
         this.config = config;
+        this.maxSelections = config.maxSelections;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.selections = {};
-        this.maxSelections = 4;
         this.ranges = {};
         this.hasGatingGMM = {};
         this.gatingIDs = {};

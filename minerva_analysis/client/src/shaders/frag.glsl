@@ -16,10 +16,12 @@ uniform vec3 u_tile_color;
 uniform vec2 u_tile_range;
 uniform vec2 u_tile_origin;
 uniform vec2 u_corrections;
+uniform vec2 u_x_bounds;
+uniform vec2 u_y_bounds;
 uniform bvec2 u_draw_mode;
 uniform ivec3 u_center_shape;
 uniform ivec2 u_ids_shape;
-uniform int u_scale_level;
+uniform float u_scale_level;
 uniform int u_real_height;
 uniform int u_tile_fmt;
 uniform int u_id_end;
@@ -29,16 +31,25 @@ uniform uint u8;
 in vec2 uv;
 out vec4 color;
 
+// Fixed maximum number of ids
 const uint MAX = uint(16384) * uint(16384);
 const uint bMAX = uint(ceil(log2(float(MAX))));
+// Fixed range of radians
 const vec2 PI = vec2(-3.14159265, 3.14159265);
-
-// Maximum number of channels
-const int kMAX = 512;
+// Fixed maximum number of channels
+const int kMAX = 99;
 
 // square given integer
 int pow2(int v) {
   return v * v;
+}
+float pow2(float v) {
+  return v * v;
+}
+
+// difference
+float diff(vec2 v) {
+  return v[1] - v[0];
 }
 
 // rgba to one integer
@@ -53,9 +64,13 @@ bool check_range(float value, vec2 range) {
 }
 
 // Interpolate between domain and range
-float linear(vec2 y, int domain, int x) {
-  float m = (y.y - y.x) / float(domain - 0); 
-  return m * float(clamp(x, 0, domain)) + y[0];
+float linear(vec2 ran, vec2 dom, float x) {
+  float b = ran[0];
+  float m = diff(ran) / diff(dom); 
+  return m * float(clamp(x, dom[0], dom[1])) + b;
+}
+float linear(vec2 ran, int dom, int x) {
+  return linear(ran, vec2(0, dom), float(x));
 }
 
 // Float to rounded integer
@@ -63,20 +78,35 @@ int round_integer(float v) {
   return int(round(v));
 }
 
-// Tile to screen coordinates
-vec2 toUV(vec2 center) {
-  return round(center * u_corrections);
+// Screen to texture coordinates
+vec2 fromScreen(vec2 screen, vec2 scale) {
+  float x = linear(u_x_bounds, vec2(0, scale.x), screen.x);
+  float y = linear(u_y_bounds, vec2(0, scale.y), screen.y);
+  return vec2(x, y);
 }
 
 // Global to screen coordinates
-vec2 toLocalCenter(vec2 v) {
-  vec2 small = v / float(u_scale_level);
-  vec2 c = small - u_tile_origin * u_tile_size;
-  return toUV(vec2(c.x, float(u_real_height) - c.y));
+vec2 toLocalCenter(vec2 v, vec2 tile_size) {
+  vec2 small = v / u_scale_level;
+  vec2 c = small - u_tile_origin * tile_size;
+  vec2 screen = vec2(c.x, float(u_real_height) - c.y);
+  return fromScreen(screen * u_corrections, tile_size);
+}
+
+// Check if values in array match
+bool check_same(uvec4 arr, ivec2 ii) {
+  if (arr[ii.x] == arr[ii.y]) return true;
+  return false;
+}
+bool check_same(uvec4 arr, ivec3 ii) {
+  if (arr[ii.x] == arr[ii.y]) return true;
+  if (arr[ii.y] == arr[ii.z]) return true;
+  if (arr[ii.x] == arr[ii.z]) return true;
+  return false;
 }
 
 // Float ratio of two integers
-float division(uint ai, uint bi) {
+float division(int ai, int bi) {
   return float(ai) / float(bi);
 }
 
@@ -95,7 +125,7 @@ vec2 to_texture_xy(vec2 s, float x, float y) {
 vec2 to_flat_texture_xy(ivec3 shape, int cell_index, int d) {
   uint idx = uint(cell_index * shape.z + d);
   float idx_x = modulo(idx, uint(shape.x));
-  float idx_y = floor(division(idx, uint(shape.x)));
+  float idx_y = floor(division(int(idx), shape.x));
   return to_texture_xy(vec2(shape.xy), idx_x, idx_y);
 }
 
@@ -150,7 +180,7 @@ bool match_angle(int count, int total, float rad) {
 uint sample_id(uint idx) {
   vec2 shape = vec2(u_ids_shape);
   float idx_x = modulo(idx, uint(shape.x));
-  float idx_y = floor(division(idx, uint(shape.x)));
+  float idx_y = floor(division(int(idx), int(shape.x)));
   vec2 ids_idx = to_texture_xy(shape, idx_x, idx_y);
   uvec4 m_value = texture(u_ids, ids_idx);
   return unpack(m_value);
@@ -158,17 +188,54 @@ uint sample_id(uint idx) {
 
 // Sample texture at given texel offset
 uvec4 offset(usampler2D sam, vec2 size, vec2 pos, vec2 off) {
+  vec2 domain = vec2(0, 1);
   float x_pos = pos.x + off.x / size.x;
   float y_pos = pos.y + off.y / size.y;
-  return texture(sam, vec2(x_pos, y_pos));
+  float x = linear(u_x_bounds, domain, x_pos);
+  float y = linear(u_y_bounds, domain, y_pos);
+  return texture(sam, vec2(x, y));
 }
+
+// Compare to neighborhood if high resolution
+uint compare_neighborhood(vec2 off, uint ikey) {
+  uint bg = uint(0);
+  if (ikey > bg) {
+    return ikey;
+  }
+  // List all neighbors
+  uvec4 nkeys = uvec4(bg);
+  for (int i = 0; i < 4; i++) {
+    float ex = vec4(0, 0, 1, -1)[i];
+    float ey = vec4(1, -1, 0, 0)[i];
+    vec2 neighbor = off + vec2(ex, ey);
+    nkeys[i] = unpack(offset(u_tile, u_tile_size, uv, neighbor)); 
+  }
+  // Select if 2 identical cells or 3 identical background 
+  if (ikey == bg) {
+    for (int i = 0; i < 4; i++) {
+      for (int ii = 0; ii < 6; ii++) {
+        int j = ii % 3;
+        int k = int(division(ii, 3));
+        if (i == k || i == j) ii += 1;
+        bool is_cell = nkeys[i] > bg;
+        if (check_same(nkeys, ivec3(i, j, k))) ikey = nkeys[i];
+        if (is_cell && check_same(nkeys, ivec2(i, j))) ikey = nkeys[i];
+        if (is_cell && check_same(nkeys, ivec2(i, k))) ikey = nkeys[i];
+      }
+    }
+  }
+  return ikey;
+}
+
 
 // Sample index of cell at given offset
 // Note: will be -1 if cell not in cell list
 int sample_cell_index(vec2 off) {
-  vec2 size = u_tile_size;
   // Find cell id at given offset 
-  uint ikey = unpack(offset(u_tile, size, uv, off));
+  uint ikey = unpack(offset(u_tile, u_tile_size, uv, off));
+  if (u_scale_level < 1.) { 
+    ikey = compare_neighborhood(off, ikey);
+  }
 
   // Array size
   uint first = uint(0);
@@ -230,20 +297,31 @@ int count_gated_keys(int cell_index) {
   return gated_total;
 }
 
+float distance (vec2 v) {
+  return sqrt(pow2(v.x) + pow2(v.y));
+}
+
 // Colorize OR-mode pie chart slices 
 vec4 to_chart_color(vec4 empty_pixel, int cell_index) {
-  vec2 global_center = sample_center(cell_index);
-  vec2 center = toLocalCenter(global_center);
-
-  int delta_y = round_integer(u_tile_size.y * uv.y) - int(center.y);
-  int delta_x = round_integer(u_tile_size.x * uv.x) - int(center.x);
-
+  vec2 tile_size = u_tile_size;
   int max_r2 = pow2(4);
-  if (pow2(delta_y) + pow2(delta_x) > max_r2) {
+  if (u_scale_level < 1.) { 
+    tile_size = tile_size / u_scale_level;
+    max_r2 = int(float(max_r2) / u_scale_level);
+  }
+  vec2 global_center = sample_center(cell_index);
+  vec2 center = toLocalCenter(global_center, u_tile_size);
+  vec2 tile_xy = fromScreen(uv, vec2(1, 1));
+  vec2 diff_xy = tile_xy - center;
+
+  ivec2 delta = ivec2(tile_size * diff_xy);
+  if (pow2(delta.y) + pow2(delta.x) > max_r2) {
     return empty_pixel;
   }
-  float dx = float(delta_x) + 0.0001;
-  float rad = atan(float(delta_y), dx);
+  float rad = atan(float(delta.y), float(delta.x));
+  if (delta.x == 0) {
+    rad = PI[int(1. + sign(float(delta.y))/ 2.)]; 
+  }
 
   int gated_count = 0;
   int gated_total = count_gated_keys(cell_index);
@@ -290,7 +368,7 @@ vec4 u32_rgba_map(bvec2 mode) {
 
   if(any(mode)) {
     // Charts (top layer)
-    if (use_chart) {
+    if (use_chart && cell_index != -1) {
       vec4 chart_color = to_chart_color(empty_pixel, cell_index);
       if (!all(equal(chart_color, empty_pixel))) {
         return chart_color;
@@ -323,8 +401,7 @@ float range_clamp(float value) {
 
 // Colorize continuous u16 signal
 vec4 u16_rg_range(float alpha) {
-  vec2 size = u_tile_size;
-  uvec2 pixel = offset(u_tile, size, uv, vec2(0, 0)).rg;
+  uvec2 pixel = offset(u_tile, u_tile_size, uv, vec2(0, 0)).rg;
   float value = float(pixel.r * u8 + pixel.g) / 65535.;
 
   // Threshhold pixel within range

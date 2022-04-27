@@ -1,5 +1,88 @@
 import "regenerator-runtime/runtime.js";
 
+function clipTile(tile, fullScale) {
+  const { x, y } = tile;
+  const width = this.width;
+  const height = this.height;
+  const tileWidth = this._tileWidth * fullScale;
+  const tileHeight = this._tileHeight * fullScale;
+  const origin = [x * tileWidth, y * tileHeight];
+  const fullWidth = Math.min(width - origin[0], tileWidth);
+  const fullHeight = Math.min(height - origin[1], tileHeight);
+  return {
+    x: w => width * w / fullWidth,
+    y: h => height * h / fullHeight,
+  }
+}
+
+const toCenter = (v, size, ratio) => {
+  const vCenter = (v + size / 2) % ratio;
+  return {
+    x: vCenter,
+    y: ratio - vCenter
+  }
+}
+
+const toLevelSourceGetter = (maxLevel) => {
+    return function ({level, x, y}) {
+        const deepLevel = maxLevel - level - 1;
+        const sourceLevel = Math.max(deepLevel, 0);
+        const deeper = sourceLevel - deepLevel;
+        const tileLevel = level - deeper;
+        const ratio = (2 ** deeper);
+        const scale = 1 / ratio;
+        const mag = this.magnification;
+        const xSource = Math.floor(x * scale);
+        const ySource = Math.floor(y * scale);
+        const fullScale = mag * (2 ** sourceLevel) * scale;
+        return {
+            scale,
+            fullScale,
+            tileLevel,
+            x: xSource,
+            y: ySource,
+            level: sourceLevel,
+        };
+    }
+}
+
+
+function toTileBoundary (tile, { scale, fullScale }, key) {
+  const ratio = Math.round( 1 / scale );
+  const shape = {x: 'width'}[key] || 'height';
+  const clipper = this.clipTile(tile, fullScale);
+  const size = clipper[key](tile.bounds[shape]);
+  const center = toCenter(tile[key], size, ratio)[key];
+  const central = v => Math.max((v + center) / ratio, 0);
+  return [-size/2, size/2].map(central);
+}
+
+const toLevelGetter = (maxLevel) => {
+    return function (tile) {
+        const source = this.getLevelSource(tile);
+        return {
+          fullScale: source.fullScale,
+          scale: source.scale,
+          bounds: {
+            x: tile._x || toTileBoundary.call(this, tile, source, 'x'),
+            y: tile._y || toTileBoundary.call(this, tile, source, 'y'),
+          },
+          tile: {
+            x: source.x,
+            y: source.y,
+            level: source.tileLevel
+          }
+        };
+    }
+}
+
+const toTileUrlGetter = (src, maxLevel) => {
+    return function (level, x, y) {
+        const source = this.getLevelSource({level, x, y});
+        return `${src}${source.level}/${source.x}_${source.y}.png`;
+    }
+}
+
 /**
  * @class ViewerManager
  */
@@ -67,19 +150,23 @@ export class ViewerManager {
             }
         }
 
-        let maxLevel = this.imageViewer.config['maxLevel'] - 1;
+        let maxLevel = this.imageViewer.config.maxLevel;
+        let magnification = 2 ** 1;
         // Add tiled image
         this.viewer.addTiledImage({
             tileSource: {
-                height: this.imageViewer.config['height'],
-                width: this.imageViewer.config['width'],
+                height: this.imageViewer.config.height * magnification,
+                width: this.imageViewer.config.width * magnification,
                 maxLevel: maxLevel,
+                magnification: magnification,
                 compositeOperation: 'lighten',
-                tileWidth: this.imageViewer.config['tileWidth'],
-                tileHeight: this.imageViewer.config['tileHeight'],
-                getTileUrl: function (level, x, y) {
-                    return `${src}${maxLevel - level}/${x}_${y}.png`
-                }
+                tileWidth: this.imageViewer.config.tileWidth,
+                tileHeight: this.imageViewer.config.tileHeight,
+                getTileUrl: toTileUrlGetter(src, maxLevel), 
+                getLevelSource: toLevelSourceGetter(maxLevel),
+                getLevels: toLevelGetter(maxLevel),
+                clipTile: clipTile,
+                tileFormat: 16
             },
             // index: 0,
             opacity: 1,
@@ -177,19 +264,23 @@ export class ViewerManager {
         // Load label image in background if it exists
         if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] !== '') {
             let url = this.imageViewer.config["imageData"][0]["src"];
-            let maxLevel = this.imageViewer.config['maxLevel'] - 1;
+            let maxLevel = this.imageViewer.config.maxLevel;
+            let magnification = 2 ** 1;
             this.viewer.addTiledImage({
                 tileSource: {
-                    height: this.imageViewer.config['height'],
-                    width: this.imageViewer.config['width'],
+                    height: this.imageViewer.config.height * magnification,
+                    width: this.imageViewer.config.width * magnification,
                     maxLevel: maxLevel,
                     maxImageCacheCount: 50,
+                    magnification: magnification,
                     compositeOperation: 'source-over',
-                    tileWidth: this.imageViewer.config['tileWidth'],
-                    tileHeight: this.imageViewer.config['tileHeight'],
-                    getTileUrl: function (level, x, y) {
-                        return `${url}${maxLevel - level}/${x}_${y}.png`
-                    }
+                    tileWidth: this.imageViewer.config.tileWidth,
+                    tileHeight: this.imageViewer.config.tileHeight,
+                    getTileUrl: toTileUrlGetter(url, maxLevel),
+                    getLevelSource: toLevelSourceGetter(maxLevel),
+                    getLevels: toLevelGetter(maxLevel),
+                    clipTile: clipTile,
+                    tileFormat: 32
                 },
                 index: 0,
                 opacity: 1,
@@ -208,7 +299,4 @@ export class ViewerManager {
             this.imageViewer.noLabel = true;
         }
     }
-
-
-
 }

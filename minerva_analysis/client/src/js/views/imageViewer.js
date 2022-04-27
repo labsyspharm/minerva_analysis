@@ -99,6 +99,7 @@ class ImageViewer {
             collectionMode: false,
             preload: false,
             homeFillsViewer: true,
+            debugMode:  true, // TODO
             visibilityRatio: 1.0
         };
 
@@ -161,13 +162,16 @@ class ImageViewer {
             const group = e.tile.url.split("/");
             const sub_url = group[group.length - 3];
             const sub_regex = new RegExp(sub_url + '/?$');
-            const centerProps = that.selectCenterProps(e.tile);
+            const { source } = e.tiledImage; 
+            const { tileFormat, getLevels } = source;
+            const levels = getLevels.call(source, e.tile);
+            const centerProps = that.selectCenterProps(e.tile, levels);
 
             // Turn on additive blending
             const via = this.viaGL;
             via.gl.enable(via.gl.BLEND);
 
-            if (!isMaskTile(e.tile, sub_url, that.channelList)) {
+            if (tileFormat != 32) {
 
                 via.gl.blendEquationSeparate(via.gl.FUNC_ADD, via.gl.FUNC_ADD);
                 via.gl.blendFunc(via.gl.ONE, via.gl.ONE);
@@ -187,8 +191,6 @@ class ImageViewer {
                   range_2fv: new Float32Array(range),
                   fmt_1i: 16
                 }];
-                // Start webGL rendering
-                callback(e);
             } else {
 
                 via.gl.blendEquationSeparate(via.gl.FUNC_ADD, via.gl.MAX);
@@ -206,7 +208,7 @@ class ImageViewer {
                   ...centerProps,
                   color_3fv: new Float32Array([1, 1, 1]),
                   range_2fv: new Float32Array([0, 1]),
-                  fmt_1i: 32,
+                  fmt_1i: 32
                 }];
             }
 
@@ -218,13 +220,14 @@ class ImageViewer {
 
             // Start webGL rendering
             callback(e);
-
         });
 
         seaGL.addHandler('gl-drawing', function (gl_arguments) {
 
+            const x_bounds_2fv = gl_arguments.x_bounds_2fv;
+            const y_bounds_2fv = gl_arguments.y_bounds_2fv;
             const corrections_2fv = gl_arguments.corrections_2fv;
-            const scale_level_1i = gl_arguments.scale_level_1i;
+            const scale_level_1f = gl_arguments.scale_level_1f;
             const real_height_1i = gl_arguments.real_height_1i;
             const origin_2fv = gl_arguments.origin_2fv;
             const range_2fv = gl_arguments.range_2fv;
@@ -241,8 +244,10 @@ class ImageViewer {
             this.gl.uniform3fv(this.u_tile_color, color_3fv);
             this.gl.uniform2fv(this.u_tile_range, range_2fv);
             this.gl.uniform2fv(this.u_tile_origin, origin_2fv);
+            this.gl.uniform2fv(this.u_x_bounds, x_bounds_2fv);
+            this.gl.uniform2fv(this.u_y_bounds, y_bounds_2fv);
             this.gl.uniform2fv(this.u_corrections, corrections_2fv);
-            this.gl.uniform1i(this.u_scale_level, scale_level_1i);
+            this.gl.uniform1f(this.u_scale_level, scale_level_1f);
             this.gl.uniform1i(this.u_real_height, real_height_1i);
             this.gl.uniform1i(this.u_id_end, id_end_1i);
             this.gl.uniform1i(this.u_tile_fmt, fmt_1i);
@@ -259,6 +264,8 @@ class ImageViewer {
             this.u_tile_color = this.gl.getUniformLocation(program, 'u_tile_color');
             this.u_tile_range = this.gl.getUniformLocation(program, 'u_tile_range');
             this.u_tile_origin = this.gl.getUniformLocation(program, 'u_tile_origin');
+            this.u_x_bounds = this.gl.getUniformLocation(program, 'u_x_bounds');
+            this.u_y_bounds = this.gl.getUniformLocation(program, 'u_y_bounds');
             this.u_corrections = this.gl.getUniformLocation(program, 'u_corrections');
             this.u_scale_level = this.gl.getUniformLocation(program, 'u_scale_level');
             this.u_real_height = this.gl.getUniformLocation(program, 'u_real_height');
@@ -282,28 +289,58 @@ class ImageViewer {
         });
 
 
-        seaGL.addHandler('tile-loaded', (callback, e) => {
-            try {
-                const group = e.tile.url.split("/");
-                let isLabel = group[group.length - 3] == that.labelChannel.sub_url;
-                e.tile._blobUrl = e.image?.src;
+        const matchTile = (e, tile) => {
+          const grid = e.tiledImage.tilesMatrix[tile.level];
+          return ((grid || {})[tile.x] || {})[tile.y] || {};
+        } 
 
-                if (isLabel) {
+        seaGL.addHandler('tile-loaded', (callback, e) => {
+            const { source } = e.tiledImage; 
+            const { tileFormat } = source;
+            const levels = source.getLevels.call(source, e.tile);
+            try {
+                e.tile._blobUrl = e.image?.src;
+                if (tileFormat == 32) {
                     e.tile._isLabel = true;
-                    if (!e.tile._array) {
+                    if (!e.tile?._array && e.image?._array) {
                         const responseArray = e.tileRequest?.response || e.image._array;
                         const pngBuffer = new Buffer(responseArray);
                         const pngArray = PNG.sync.read(pngBuffer, {colortype: 0});
                         e.tile._array = new Int32Array(pngArray.data.buffer);
                     }
                 }
-                // Trigger WebGL
-                return callback(e)
+                // Trigger loading of image
+                if (levels.scale != 1) {
+                  const tile = matchTile(e, levels.tile);
+                  if (tile._array && tile._format) {
+                    e.tile._format = tile._format;
+                    e.tile._array = tile._array;
+                    const bottoms = [e.tile, tile].map(t => t.isBottomMost);
+                    const rights = [e.tile, tile].map(t => t.isRightMost);
+                    // Handle botom end of image 
+                    if (bottoms[1]) {
+                      const yFull = tile.bounds.height;
+                      const h = e.tile.bounds.height;
+                      const from_start = [0, h / yFull];
+                      const from_end = [1 - h / yFull, 1];
+                      e.tile._y = bottoms[0] ? from_start : from_end;
+                    }
+                    // Handle right end of image 
+                    if (rights[1]) {
+                      const xFull = tile.bounds.width;
+                      const w = e.tile.bounds.width;
+                      const from_start = [0, w / xFull];
+                      const from_end = [1 - w / xFull, 1];
+                      e.tile._x = rights[0] ? from_end : from_start;
+                    }
+                  }
+                }
+                else {
+                  return callback(e);
+                }
             } catch (err) {
                 console.log('Load Error, Refreshing', err, e.tile.url);
                 that.forceRepaint();
-
-                // return callback(e);
             }
         });
 
@@ -551,15 +588,16 @@ class ImageViewer {
     /**
      * @function selectCenterProps -- return cell centers properties
      * @param tile - openseadragon tile
+     * @param levels - boundaries for scaled tiles 
      *
      * @returns {{
      *   real_height_1i: Number,
-     *   scale_level_1i: Number,
+     *   scale_level_1f: Number,
      *   corrections_2fv: Array,
      *   origin_2fv: Array,
      * }}
      */
-    selectCenterProps(tile) {
+    selectCenterProps(tile, levels) {
 
       const tileWidth = this.config.tileWidth;
       const tileHeight = this.config.tileHeight;
@@ -577,7 +615,9 @@ class ImageViewer {
 
       return {
         real_height_1i: tH,
-        scale_level_1i: scale_factor,
+        scale_level_1f: scale_factor,
+        x_bounds_2fv: new Float32Array(levels.bounds.x),
+        y_bounds_2fv: new Float32Array(levels.bounds.y),
         corrections_2fv: new Float32Array(corrections),
         origin_2fv: new Float32Array(origin),
       };
@@ -1239,12 +1279,6 @@ ImageViewer
     addScaleBar: 'addScaleBar'
 };
 
-function isMaskTile(tile, sub_url, channelList) {
-  let channel = _.find(channelList.currentChannels, e => {
-      return e.sub_url == sub_url;
-  })
-  return !channel;
-}
 function toFloatColor(color) {
   return [color.r / 255., color.g / 255., color.b / 255.];
 }

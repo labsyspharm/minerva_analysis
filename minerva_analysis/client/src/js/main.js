@@ -45,6 +45,8 @@ d3.json(`/config?t=${Date.now()}`).then(function (config) {
 async function init(conf) {
 
     config = conf;
+    //maximum selections
+    config.maxSelections = 4;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;
