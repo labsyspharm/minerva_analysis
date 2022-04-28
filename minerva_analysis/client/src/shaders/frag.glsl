@@ -11,18 +11,17 @@ uniform ivec3 u_magnitude_shape;
 uniform usampler2D u_centers;
 uniform usampler2D u_tile;
 uniform usampler2D u_ids;
+uniform vec2 u_tile_real;
 uniform vec2 u_tile_ideal;
 uniform vec3 u_tile_color;
 uniform vec2 u_tile_range;
 uniform vec2 u_tile_origin;
-uniform vec2 u_corrections;
 uniform vec2 u_x_bounds;
 uniform vec2 u_y_bounds;
 uniform bvec2 u_draw_mode;
 uniform ivec3 u_center_shape;
 uniform ivec2 u_ids_shape;
 uniform float u_scale_level;
-uniform int u_real_height;
 uniform int u_tile_fmt;
 uniform int u_id_end;
 
@@ -35,7 +34,8 @@ out vec4 color;
 const uint MAX = uint(16384) * uint(16384);
 const uint bMAX = uint(ceil(log2(float(MAX))));
 // Fixed range of radians
-const vec2 PI = vec2(-3.14159265, 3.14159265);
+const vec2 TAU = vec2(0., 6.2831853);
+const float PI = 3.14159265;
 // Fixed maximum number of channels
 const int kMAX = 99;
 
@@ -48,7 +48,7 @@ float pow2(float v) {
 }
 
 // difference
-float diff(vec2 v) {
+float dx(vec2 v) {
   return v[1] - v[0];
 }
 
@@ -64,13 +64,10 @@ bool check_range(float value, vec2 range) {
 }
 
 // Interpolate between domain and range
-float linear(vec2 ran, vec2 dom, float x) {
+float linear(vec2 ran, float dom, float x) {
   float b = ran[0];
-  float m = diff(ran) / diff(dom); 
-  return m * float(clamp(x, dom[0], dom[1])) + b;
-}
-float linear(vec2 ran, int dom, int x) {
-  return linear(ran, vec2(0, dom), float(x));
+  float m = dx(ran) / dom; 
+  return m * float(clamp(x, 0., dom)) + b;
 }
 
 // Float to rounded integer
@@ -78,19 +75,18 @@ int round_integer(float v) {
   return int(round(v));
 }
 
-// Screen to texture coordinates
-vec2 fromScreen(vec2 screen, vec2 scale) {
-  float x = linear(u_x_bounds, vec2(0, scale.x), screen.x);
-  float y = linear(u_y_bounds, vec2(0, scale.y), screen.y);
-  return vec2(x, y);
+// From screen to local tile coordinates
+vec2 screen_to_tile(vec2 screen) {
+  float x = linear(u_x_bounds, 1., screen.x);
+  float y = linear(u_y_bounds, 1., screen.y);
+  return vec2(x, y) * u_tile_real;
 }
 
-// Global to screen coordinates
-vec2 toLocalCenter(vec2 v, vec2 tile_size) {
-  vec2 small = v / u_scale_level;
-  vec2 c = small - u_tile_origin * tile_size;
-  vec2 screen = vec2(c.x, float(u_real_height) - c.y);
-  return fromScreen(screen * u_corrections, tile_size);
+// From global to local tile coordinates
+vec2 global_to_tile(vec2 v) {
+  float tile_scale = max(u_scale_level, 1.0);
+  vec2 c = v / tile_scale - u_tile_origin;
+  return vec2(c.x, u_tile_real.y - c.y);
 }
 
 // Check if values in array match
@@ -170,10 +166,10 @@ vec3 sample_gating_color(float key) {
 
 // Check if angle is within one evenly divided slice
 bool match_angle(int count, int total, float rad) {
-  float rad_min = linear(PI, total, count - 1);
-  float rad_max = linear(PI, total, count);
+  float rad_min = linear(TAU, float(total), float(count) - 1.);
+  float rad_max = linear(TAU, float(total), float(count));
   vec2 rad_range = vec2(rad_min, rad_max);
-  return check_range(rad, rad_range);
+  return check_range(mod(rad + PI, TAU.y), rad_range);
 }
 
 // Access cell id at cell index
@@ -188,11 +184,10 @@ uint sample_id(uint idx) {
 
 // Sample texture at given texel offset
 uvec4 offset(usampler2D sam, vec2 size, vec2 pos, vec2 off) {
-  vec2 domain = vec2(0, 1);
   float x_pos = pos.x + off.x / size.x;
   float y_pos = pos.y + off.y / size.y;
-  float x = linear(u_x_bounds, domain, x_pos);
-  float y = linear(u_y_bounds, domain, y_pos);
+  float x = linear(u_x_bounds, 1., x_pos);
+  float y = linear(u_y_bounds, 1., y_pos);
   return texture(sam, vec2(x, y));
 }
 
@@ -208,7 +203,7 @@ uint compare_neighborhood(vec2 off, uint ikey) {
     float ex = vec4(0, 0, 1, -1)[i];
     float ey = vec4(1, -1, 0, 0)[i];
     vec2 neighbor = off + vec2(ex, ey);
-    nkeys[i] = unpack(offset(u_tile, u_tile_ideal, uv, neighbor)); 
+    nkeys[i] = unpack(offset(u_tile, u_tile_real, uv, neighbor)); 
   }
   // Select if 2 identical cells or 3 identical background 
   if (ikey == bg) {
@@ -232,7 +227,7 @@ uint compare_neighborhood(vec2 off, uint ikey) {
 // Note: will be -1 if cell not in cell list
 int sample_cell_index(vec2 off) {
   // Find cell id at given offset 
-  uint ikey = unpack(offset(u_tile, u_tile_ideal, uv, off));
+  uint ikey = unpack(offset(u_tile, u_tile_real, uv, off));
   if (u_scale_level < 1.) { 
     ikey = compare_neighborhood(off, ikey);
   }
@@ -303,25 +298,16 @@ float distance (vec2 v) {
 
 // Colorize OR-mode pie chart slices 
 vec4 to_chart_color(vec4 empty_pixel, int cell_index) {
-  vec2 tile_size = u_tile_ideal;
-  int max_r2 = pow2(4);
-  if (u_scale_level < 1.) { 
-    tile_size = tile_size / u_scale_level;
-    max_r2 = int(float(max_r2) / u_scale_level);
-  }
+  float max_r = 5.;
   vec2 global_center = sample_center(cell_index);
-  vec2 center = toLocalCenter(global_center, u_tile_ideal);
-  vec2 tile_xy = fromScreen(uv, vec2(1, 1));
-  vec2 diff_xy = tile_xy - center;
+  vec2 center = global_to_tile(global_center);
+  vec2 pos = screen_to_tile(uv);
+  vec2 delta = pos - center;
 
-  ivec2 delta = ivec2(tile_size * diff_xy);
-  if (pow2(delta.y) + pow2(delta.x) > max_r2) {
+  if (distance(delta) > max_r) {
     return empty_pixel;
   }
-  float rad = atan(float(delta.y), float(delta.x));
-  if (delta.x == 0) {
-    rad = PI[int(1. + sign(float(delta.y))/ 2.)]; 
-  }
+  float rad = atan(delta.y, delta.x);
 
   int gated_count = 0;
   int gated_total = count_gated_keys(cell_index);
@@ -401,7 +387,7 @@ float range_clamp(float value) {
 
 // Colorize continuous u16 signal
 vec4 u16_rg_range(float alpha) {
-  uvec2 pixel = offset(u_tile, u_tile_ideal, uv, vec2(0, 0)).rg;
+  uvec2 pixel = offset(u_tile, u_tile_real, uv, vec2(0, 0)).rg;
   float value = float(pixel.r * u8 + pixel.g) / 65535.;
 
   // Threshhold pixel within range

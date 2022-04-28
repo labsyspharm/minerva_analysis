@@ -1,87 +1,129 @@
 import "regenerator-runtime/runtime.js";
 
-function toFullTile(tile, levels) {
-    const { x, y } = tile;
-    const width = this.width;
-    const height = this.height;
-    const { fullScale } = levels;
-    const tileWidth = this._tileWidth * fullScale;
-    const tileHeight = this._tileHeight * fullScale;
-    const origin = [x * tileWidth, y * tileHeight];
-    const fullWidth = Math.min(width - origin[0], tileWidth);
-    const fullHeight = Math.min(height - origin[1], tileHeight);
-    return { fullHeight, fullWidth };
+/**
+ * @function toIdealTile -- full tile dimension in full image pixels
+ * @param fullScale - scale factor to full image
+ * @param useY - 0 for x and 1 for y
+ *
+ * @returns Number
+ */
+function toIdealTile(fullScale, useY) {
+    const { _tileWidth, _tileHeight } = this;
+    return [_tileWidth, _tileHeight][useY] * fullScale;
 }
 
-function clipTile(tile, levels) {
-    const { x, y } = tile;
-    const { fullHeight, fullWidth } = this.toFullTile(tile, levels);
-    return {
-        x: (w) => (this.width * w) / fullWidth,
-        y: (h) => (this.height * h) / fullHeight,
-    };
+/**
+ * @function toIdealTile -- clipped tile dimension in full image pixels
+ * @param fullScale - scale factor to full image
+ * @param v - x or y index of tile
+ * @param useY - x=0 and y=1
+ *
+ * @returns Number
+ */
+function toRealTile(fullScale, v, useY) {
+    const shape = [this.width, this.height][useY];
+    const tileShape = this.toIdealTile(fullScale, useY);
+    return Math.min(shape - (v * tileShape), tileShape);
 }
 
-const toCenter = (v, size, ratio) => {
-    const vCenter = (v + size / 2) % ratio;
-    return {
-        x: vCenter,
-        y: ratio - vCenter,
-    };
-};
+/**
+ * @function toTileBoundary -- tile start and size in full image pixels
+ * @param fullScale - scale factor to full image
+ * @param v - x or y index of tile
+ * @param useY - x=0 and y=1
+ *
+ * @returns {{
+ *    x: Array,
+ *    y: Array
+ * }}
+ */
+function toTileBoundary(fullScale, v, useY) {
+    const start = v * this.toIdealTile(fullScale, useY);
+    const size = this.toRealTile(fullScale, v, useY);
+    return [start, size];
+}
 
-function getLevelSource({ level, x, y }) {
-    const deepLevel = this.maxLevel - level - 1;
+/**
+ * @function toMagnifiedBounds -- return bounds of magnified tile
+ * @param level - openseadragon tile level
+ * @param x - openseadragon tile x index
+ * @param y - openseadragon tile y index
+ *
+ * @returns {{
+ *    x: Array,
+ *    y: Array
+ * }}
+ */
+function toMagnifiedBounds(...tileArgs) {
+    const tl = this.toTileLevels(...tileArgs);
+    if (tl.imageScale >= 1) {
+      return { x: [0, 1], y: [0, 1] };
+    }
+    const ownScale = tl.fullScale;
+    const parentScale = tl.tileScale;
+    const [x, y] = [tl.imageTile.x, tl.imageTile.y].map((parentOffset, i) => {
+        const [startHD, sizeHD] = this.toTileBoundary(ownScale, tileArgs[i + 1], i);
+        const [startSD, sizeSD] = this.toTileBoundary(parentScale, parentOffset, i);
+        const start = (startHD - startSD) / sizeSD;
+        const end = start + (sizeHD) / sizeSD;
+        return [
+            [ start, end ],
+            [ 1 - end, 1 - start ],
+        ][i];
+    })
+    return {x, y};
+}
+
+/**
+ * @function toTileLevels -- measure scaled/non-scaled tile details
+ * @param level - openseadragon tile level
+ * @param x - openseadragon tile x index
+ * @param y - openseadragon tile y index
+ *
+ * @returns {{
+ *   imageTile: Object,
+ *   imageSource: Object,
+ *   fullScale: Number,
+ *   tileScale: Number,
+ *   imageScale: Number,
+ *   sourceScale: Number,
+ * }}
+ */
+function toTileLevels(level, x, y) {
+    const { extraZoomLevels } = this;
+    const flipped = this.maxLevel - level; 
+    const deepLevel = flipped - extraZoomLevels;
     const sourceLevel = Math.max(deepLevel, 0);
-    const deeper = sourceLevel - deepLevel;
-    const tileLevel = level - deeper;
-    const ratio = 2 ** deeper;
-    const scale = 1 / ratio;
-    const mag = this.magnification;
-    const xSource = Math.floor(x * scale);
-    const ySource = Math.floor(y * scale);
-    const fullScale = mag * 2 ** sourceLevel * scale;
-    return {
-        scale,
-        fullScale,
-        tileLevel,
-        x: xSource,
-        y: ySource,
-        level: sourceLevel,
+    const extraZoom = sourceLevel - deepLevel;
+    const imageSource = {
+        x: Math.floor(x / (2 ** extraZoom)),
+        y: Math.floor(y / (2 ** extraZoom)),
+        level: sourceLevel
     };
-}
-
-function toTileBoundary(tile, levels, key) {
-    const ratio = Math.round(1 / levels.scale);
-    const shape = { x: "width" }[key] || "height";
-    const clipper = this.clipTile(tile, levels);
-    const size = clipper[key](tile.bounds[shape]);
-    const center = toCenter(tile[key], size, ratio)[key];
-    const central = (v) => Math.max((v + center) / ratio, 0);
-    return [-size / 2, size / 2].map(central);
-}
-
-function getLevels(tile) {
-    const levels = this.getLevelSource(tile);
+    const imageTile = {
+        ...imageSource,
+        level: level - extraZoom
+    };
+    const tileScale = 2 ** (flipped + extraZoom);
+    const sourceScale = 2 ** sourceLevel;
+    const imageScale = 2 ** deepLevel;
+    const fullScale = 2 ** flipped;
     return {
-        fullScale: levels.fullScale,
-        scale: levels.scale,
-        bounds: {
-            x: tile._x || toTileBoundary.call(this, tile, levels, "x"),
-            y: tile._y || toTileBoundary.call(this, tile, levels, "y"),
-        },
-        tile: {
-            x: levels.x,
-            y: levels.y,
-            level: levels.tileLevel,
-        },
+        imageTile,
+        imageSource,
+        fullScale,
+        tileScale,
+        imageScale,
+        sourceScale,
     };
 }
 
 const toTileUrlGetter = (src) => {
     return function (level, x, y) {
-        const source = this.getLevelSource({ level, x, y });
-        return `${src}${source.level}/${source.x}_${source.y}.png`;
+        const s = this.toTileLevels(level, x, y).imageSource;
+        console.log(src);
+        console.log(s);
+        return `${src}${s.level}/${s.x}_${s.y}.png`;
     };
 };
 
@@ -134,9 +176,6 @@ export class ViewerManager {
             return;
         }
 
-        // Get dzi path
-        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
-
         // Find name
         let name = "";
         let name_short = "";
@@ -147,23 +186,24 @@ export class ViewerManager {
             }
         }
 
-        let maxLevel = this.imageViewer.config.maxLevel;
-        let magnification = 2 ** 1;
-        // Add tiled image
+        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
+        const { maxLevel, extraZoomLevels } = this.imageViewer.config;
+        const magnification = 2 ** extraZoomLevels;
         this.viewer.addTiledImage({
             tileSource: {
                 height: this.imageViewer.config.height * magnification,
                 width: this.imageViewer.config.width * magnification,
-                maxLevel: maxLevel,
-                magnification: magnification,
+                maxLevel: extraZoomLevels + maxLevel - 1,
                 compositeOperation: "lighter",
                 tileWidth: this.imageViewer.config.tileWidth,
                 tileHeight: this.imageViewer.config.tileHeight,
-                getTileUrl: toTileUrlGetter(src),
-                getLevelSource: getLevelSource,
-                toFullTile: toFullTile,
-                getLevels: getLevels,
-                clipTile: clipTile,
+                toMagnifiedBounds: toMagnifiedBounds,
+                getTileUrl: toTileUrlGetter(src, 0),
+                extraZoomLevels: extraZoomLevels,
+                toTileBoundary: toTileBoundary,
+                toTileLevels: toTileLevels,
+                toIdealTile: toIdealTile,
+                toRealTile: toRealTile,
                 tileFormat: 16,
             },
             // index: 0,
@@ -255,23 +295,24 @@ export class ViewerManager {
         // Load label image in background if it exists
         if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] !== "") {
             let url = this.imageViewer.config["imageData"][0]["src"];
-            let maxLevel = this.imageViewer.config.maxLevel;
-            let magnification = 2 ** 1;
+            const { maxLevel, extraZoomLevels } = this.imageViewer.config;
+            const magnification = 2 ** extraZoomLevels;
             this.viewer.addTiledImage({
                 tileSource: {
                     height: this.imageViewer.config.height * magnification,
                     width: this.imageViewer.config.width * magnification,
-                    maxLevel: maxLevel,
+                    maxLevel: extraZoomLevels + maxLevel - 1,
                     maxImageCacheCount: 50,
-                    magnification: magnification,
                     compositeOperation: "source-over",
                     tileWidth: this.imageViewer.config.tileWidth,
                     tileHeight: this.imageViewer.config.tileHeight,
+                    toMagnifiedBounds: toMagnifiedBounds,
                     getTileUrl: toTileUrlGetter(url),
-                    getLevelSource: getLevelSource,
-                    toFullTile: toFullTile,
-                    getLevels: getLevels,
-                    clipTile: clipTile,
+                    extraZoomLevels: extraZoomLevels,
+                    toTileBoundary: toTileBoundary,
+                    toTileLevels: toTileLevels,
+                    toIdealTile: toIdealTile,
+                    toRealTile: toRealTile,
                     tileFormat: 32,
                 },
                 index: 0,

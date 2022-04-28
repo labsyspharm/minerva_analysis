@@ -111,7 +111,7 @@ class ImageViewer {
         const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
         this.viaGL = seaGL.viaGL;
 
-        seaGL.viaGL.loadArray = function (width, height, pixels, format = "u16") {
+        seaGL.viaGL.loadArray = function (w, h, pixels, format = "u16") {
             // Allow for custom drawing in webGL
             var gl = this.gl;
 
@@ -124,15 +124,15 @@ class ImageViewer {
 
             // Send the tile into the texture.
             if (format == "u16") {
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8UI, width, height, 0, gl.RG_INTEGER, gl.UNSIGNED_BYTE, pixels);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8UI, w, h, 0, gl.RG_INTEGER, gl.UNSIGNED_BYTE, pixels);
             } else if (format == "u32") {
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, width, height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
             }
 
-            const ideal_width = this.gl.canvas.width;
-            const ideal_height = this.gl.canvas.height;
-            this.gl_arguments.tile_ideal_2fv = new Float32Array([ideal_width, ideal_height]);
-            this.gl_arguments.tile_real_2fv = new Float32Array([width, height]);
+            const iw = this.gl.canvas.width;
+            const ih = this.gl.canvas.height;
+            this.gl_arguments.tile_ideal_2fv = new Float32Array([iw, ih]);
+            this.gl_arguments.tile_real_2fv = new Float32Array([w, h]);
 
             // Call gl-drawing after loading TEXTURE0
             this["gl-drawing"].call(this);
@@ -149,7 +149,7 @@ class ImageViewer {
             const group = e.tile.url.split("/");
             const sub_url = group[group.length - 3];
             const { source } = e.tiledImage;
-            const { tileFormat, getLevels } = source;
+            const { tileFormat } = source;
             const centerProps = that.selectCenterProps(e.tile, source);
 
             const via = this.viaGL;
@@ -201,9 +201,7 @@ class ImageViewer {
             const gl_arguments = this.gl_arguments;
             const x_bounds_2fv = gl_arguments.x_bounds_2fv;
             const y_bounds_2fv = gl_arguments.y_bounds_2fv;
-            const corrections_2fv = gl_arguments.corrections_2fv;
             const scale_level_1f = gl_arguments.scale_level_1f;
-            const real_height_1i = gl_arguments.real_height_1i;
             const origin_2fv = gl_arguments.origin_2fv;
             const range_2fv = gl_arguments.range_2fv;
             const fmt_1i = gl_arguments.fmt_1i;
@@ -222,9 +220,7 @@ class ImageViewer {
             this.gl.uniform2fv(this.u_tile_origin, origin_2fv);
             this.gl.uniform2fv(this.u_x_bounds, x_bounds_2fv);
             this.gl.uniform2fv(this.u_y_bounds, y_bounds_2fv);
-            this.gl.uniform2fv(this.u_corrections, corrections_2fv);
             this.gl.uniform1f(this.u_scale_level, scale_level_1f);
-            this.gl.uniform1i(this.u_real_height, real_height_1i);
             this.gl.uniform1i(this.u_id_end, id_end_1i);
             this.gl.uniform1i(this.u_tile_fmt, fmt_1i);
         });
@@ -241,9 +237,7 @@ class ImageViewer {
             this.u_tile_origin = this.gl.getUniformLocation(program, "u_tile_origin");
             this.u_x_bounds = this.gl.getUniformLocation(program, "u_x_bounds");
             this.u_y_bounds = this.gl.getUniformLocation(program, "u_y_bounds");
-            this.u_corrections = this.gl.getUniformLocation(program, "u_corrections");
             this.u_scale_level = this.gl.getUniformLocation(program, "u_scale_level");
-            this.u_real_height = this.gl.getUniformLocation(program, "u_real_height");
             this.u_tile_ideal = this.gl.getUniformLocation(program, "u_tile_ideal");
             this.u_tile_real = this.gl.getUniformLocation(program, "u_tile_real");
             this.u_tile_fmt = this.gl.getUniformLocation(program, "u_tile_fmt");
@@ -264,15 +258,14 @@ class ImageViewer {
             this.gl.uniform1i(u_gatings, 4);
         });
 
-        const matchTile = (e, tile) => {
-            const grid = e.tiledImage.tilesMatrix[tile.level];
-            return ((grid || {})[tile.x] || {})[tile.y] || {};
+        const matchTile = (e, {x, y, level}) => {
+            const grid = e.tiledImage.tilesMatrix[level];
+            return ((grid || {})[x] || {})[y] || {};
         };
 
         seaGL.addHandler("tile-loaded", (callback, e) => {
             const { source } = e.tiledImage;
             const { tileFormat } = source;
-            const levels = source.getLevels.call(source, e.tile);
             try {
                 e.tile._blobUrl = e.image?.src;
                 if (tileFormat == 32) {
@@ -285,29 +278,13 @@ class ImageViewer {
                     }
                 }
                 // Trigger loading of image
-                if (levels.scale != 1) {
-                    const tile = matchTile(e, levels.tile);
-                    if (tile._array && tile._format) {
+                const tileArgs = [e.tile.level, e.tile.x, e.tile.y];
+                const tl = source.toTileLevels(...tileArgs);
+                if (tl.imageScale < 1) {
+                    const tile = matchTile(e, tl.imageTile);
+                    if (tile?._array && tile?._format) {
                         e.tile._format = tile._format;
                         e.tile._array = tile._array;
-                        const bottoms = [e.tile, tile].map((t) => t.isBottomMost);
-                        const rights = [e.tile, tile].map((t) => t.isRightMost);
-                        // Handle botom end of image
-                        if (bottoms[1]) {
-                            const yFull = tile.bounds.height;
-                            const h = e.tile.bounds.height;
-                            const from_start = [0, h / yFull];
-                            const from_end = [1 - h / yFull, 1];
-                            e.tile._y = bottoms[0] ? from_start : from_end;
-                        }
-                        // Handle right end of image
-                        if (rights[1]) {
-                            const xFull = tile.bounds.width;
-                            const w = e.tile.bounds.width;
-                            const from_start = [0, w / xFull];
-                            const from_end = [1 - w / xFull, 1];
-                            e.tile._x = rights[0] ? from_end : from_start;
-                        }
                     }
                 } else {
                     return callback(e);
@@ -557,38 +534,24 @@ class ImageViewer {
      * @param source - openseadragon tile source 
      *
      * @returns {{
-     *   real_height_1i: Number,
      *   scale_level_1f: Number,
-     *   size_2fv: Array,
      *   x_bounds_2fv: Array,
      *   y_bounds_2fv: Array,
-     *   corrections_2fv: Array,
      *   origin_2fv: Array,
      * }}
      */
     selectCenterProps(tile, source) {
-        const levels = source.getLevels(tile);
         const tileWidth = this.config.tileWidth;
         const tileHeight = this.config.tileHeight;
-        const tW = tile.sourceBounds.width;
-        const tH = tile.sourceBounds.height;
-        const corrections = [tileWidth / tW, tileHeight / tH];
-        const { fullWidth, fullHeight } = source.toFullTile(tile, levels)
-        const scaleHeight = fullHeight / levels.fullScale;
-        const scaleWidth = fullWidth / levels.fullScale;
-
-        const maxLevel = this.config.maxLevel - 1;
-        const realLevel = maxLevel - tile.level;
-        const scale_factor = 2 ** realLevel;
-        const origin = [tile.x, tile.y];
+        const tileArgs = [tile.level, tile.x, tile.y];
+        const { imageTile, imageScale } = source.toTileLevels(...tileArgs);
+        const origin = [imageTile.x * tileWidth, imageTile.y * tileHeight];
+        const bounds = source.toMagnifiedBounds(...tileArgs);
 
         return {
-            real_height_1i: tH,
-            scale_level_1f: scale_factor,
-            size_2fv: new Float32Array([scaleWidth, scaleHeight]),
-            x_bounds_2fv: new Float32Array(levels.bounds.x),
-            y_bounds_2fv: new Float32Array(levels.bounds.y),
-            corrections_2fv: new Float32Array(corrections),
+            scale_level_1f: imageScale,
+            x_bounds_2fv: new Float32Array(bounds.x),
+            y_bounds_2fv: new Float32Array(bounds.y),
             origin_2fv: new Float32Array(origin),
         };
     }

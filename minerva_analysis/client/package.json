@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack",
-    "watch": "webpack --watch"
+    "watch": "webpack --watch",
+    "lint": "eslint src/js/views/imageViewer.js",
+    "format": "prettier --ignore-path .eslintignore --write ."
   },
   "license": "MIT",
   "dependencies": {

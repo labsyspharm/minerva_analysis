@@ -47,6 +47,7 @@ async function init(conf) {
     config = conf;
     //maximum selections
     config.maxSelections = 4;
+    config.extraZoomLevels = 2;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;
