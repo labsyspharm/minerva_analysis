@@ -12,7 +12,6 @@ import numpy_indexed as npi
 from sklearn.decomposition import IncrementalPCA
 from sklearn.decomposition import PCA
 from sqlalchemy import or_
-import palettable
 import numpy as np
 import pandas as pd
 from PIL import ImageColor
@@ -787,7 +786,6 @@ def get_color_scheme(datasource_name):
     labels = get_phenotypes(datasource_name)
     color_scheme = {}
     # http://godsnotwheregodsnot.blogspot.com/2013/11/kmeans-color-quantization-seeding.html
-    # colors = palettable.colorbrewer.qualitative.Set3_12.hex_colors
     # colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
     #           '#e0bf04', '#ab9a95', '#258d6b', '#934270', '#48e26f']
     # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#fff070", "#040ee8", "#02531d", "#fbacf6",

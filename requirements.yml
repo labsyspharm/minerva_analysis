@@ -10,7 +10,6 @@ dependencies:
   - numba
   - numpy
   - orjson
-  - palettable
   - pandas
   - pillow=8.1.1
   - requests
