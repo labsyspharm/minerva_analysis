@@ -121,8 +121,6 @@ function toTileLevels(level, x, y) {
 const toTileUrlGetter = (src) => {
     return function (level, x, y) {
         const s = this.toTileLevels(level, x, y).imageSource;
-        console.log(src);
-        console.log(s);
         return `${src}${s.level}/${s.x}_${s.y}.png`;
     };
 };

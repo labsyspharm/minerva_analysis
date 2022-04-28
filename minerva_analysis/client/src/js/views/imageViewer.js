@@ -464,7 +464,12 @@ class ImageViewer {
 
         // Bind buffers per-channel
         if (fullChange) {
-            const allGatings = [].concat(...gatings);
+            const allGatings = []
+            for (const gating of gatings) {
+              for (const gatingValue of gating) {
+                allGatings.push(gatingValue);
+              }
+            }
             this.bindGatings(this.viaGL, allGatings, 5);
         }
         // List cell ids as array
@@ -503,17 +508,17 @@ class ImageViewer {
         const xKey = "X_centroid";
         const yKey = "Y_centroid";
 
-        let centers = [];
+        const centers = [];
         try {
-            ids.forEach((id) => {
+            for (const id of ids) {
                 const values = this.selection.get(id);
                 if (xKey in values && yKey in values) {
-                    const center = [values.X_centroid, values.Y_centroid];
-                    centers = centers.concat(center);
+                    centers.push(values.X_centroid);
+                    centers.push(values.Y_centroid);
                 } else {
                     throw new TypeError(`Missing "${xKey}" "${yKey}" in selection.`);
                 }
-            });
+            }
         } catch (e) {
             if (e instanceof TypeError) {
                 console.warn(e);
@@ -564,20 +569,18 @@ class ImageViewer {
      * @returns {Array}
      */
     selectCellMagnitudes(ids, keys) {
-        let magnitudes = [];
+        const magnitudes = [];
 
         try {
-            magnitudes = [].concat(
-                ...ids.map((id) => {
-                    const values = this.selection.get(id);
-                    return keys.map((key) => {
-                        if (!(key in values)) {
-                            throw new TypeError(`Missing "${key}" in selection "${id}".`);
-                        }
-                        return values[key];
-                    });
-                })
-            );
+            for (const id of ids) {
+                const values = this.selection.get(id);
+                for (const key of keys) {
+                    if (!(key in values)) {
+                        throw new TypeError(`Missing "${key}" in selection "${id}".`);
+                    }
+                    magnitudes.push(values[key]);
+                }
+            }
         } catch (e) {
             if (e instanceof TypeError) {
                 console.warn(e);
@@ -604,14 +607,14 @@ class ImageViewer {
         const ranges = [];
         const gatings = [];
         const gatingRangeMap = csv_gatingList.selections;
-        keys.forEach((key) => {
+        for (const key of keys) {
             const range = gatingRangeMap[key].map((x) => parseFloat(x));
             const color = this.selectMaskColor(key);
             const floatColor = toFloatColor(color);
             const gating = range.concat(floatColor);
             gatings.push(gating);
             ranges.push(range);
-        });
+        };
 
         return {
             ranges,
@@ -761,9 +764,9 @@ class ImageViewer {
         const full_size = width * height;
         const arr = new ArrayBuffer(4 * full_size);
         const view = new DataView(arr);
-        a.forEach((v, i) => {
-            view.setFloat32(4 * i, v, true);
-        });
+        for (const i in a) {
+          view.setFloat32(4 * i, a[i], true);
+        }
         return new Float32Array(arr);
     }
 
@@ -780,9 +783,9 @@ class ImageViewer {
         const full_size = width * height;
         const arr = new ArrayBuffer(4 * full_size);
         const view = new DataView(arr);
-        a.forEach((v, i) => {
-            view.setUint32(4 * i, v, true);
-        });
+        for (const i in a) {
+            view.setUint32(4 * i, a[i], true);
+        }
         return new Uint8Array(arr);
     }
 
