@@ -81,12 +81,12 @@ function toMagnifiedBounds(...tileArgs) {
  * @param y - openseadragon tile y index
  *
  * @returns {{
- *   imageTile: Object,
- *   imageSource: Object,
- *   fullScale: Number,
  *   tileScale: Number,
- *   imageScale: Number,
  *   sourceScale: Number,
+ *   imageScale: Number,
+ *   fullScale: Number,
+ *   imageSource: Object,
+ *   imageTile: Object,
  * }}
  */
 function toTileLevels(level, x, y) {
@@ -104,17 +104,13 @@ function toTileLevels(level, x, y) {
         ...imageSource,
         level: level - extraZoom
     };
-    const tileScale = 2 ** (flipped + extraZoom);
-    const sourceScale = 2 ** sourceLevel;
-    const imageScale = 2 ** deepLevel;
-    const fullScale = 2 ** flipped;
     return {
-        imageTile,
+        tileScale: 2 ** (flipped + extraZoom),
+        sourceScale: 2 ** sourceLevel,
+        imageScale: 2 ** deepLevel,
+        fullScale: 2 ** flipped,
         imageSource,
-        fullScale,
-        tileScale,
-        imageScale,
-        sourceScale,
+        imageTile
     };
 }
 

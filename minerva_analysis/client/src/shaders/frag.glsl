@@ -3,29 +3,26 @@ precision highp int;
 precision highp float;
 precision highp usampler2D;
 
+uniform usampler2D u_ids;
+uniform usampler2D u_tile;
 uniform sampler2D u_gatings;
+uniform usampler2D u_centers;
 uniform sampler2D u_magnitudes;
+uniform ivec2 u_ids_shape;
+uniform vec2 u_tile_shape;
 uniform ivec2 u_gating_shape;
+uniform ivec3 u_center_shape;
 uniform ivec3 u_magnitude_shape;
 
-uniform usampler2D u_centers;
-uniform usampler2D u_tile;
-uniform usampler2D u_ids;
-uniform vec2 u_tile_real;
-uniform vec2 u_tile_ideal;
-uniform vec3 u_tile_color;
-uniform vec2 u_tile_range;
+uniform float u_scale_level;
 uniform vec2 u_tile_origin;
+uniform vec2 u_tile_range;
+uniform vec3 u_tile_color;
+uniform bvec2 u_draw_mode;
 uniform vec2 u_x_bounds;
 uniform vec2 u_y_bounds;
-uniform bvec2 u_draw_mode;
-uniform ivec3 u_center_shape;
-uniform ivec2 u_ids_shape;
-uniform float u_scale_level;
 uniform int u_tile_fmt;
 uniform int u_id_end;
-
-uniform uint u8;
 
 in vec2 uv;
 out vec4 color;
@@ -39,10 +36,7 @@ const float PI = 3.14159265;
 // Fixed maximum number of channels
 const int kMAX = 99;
 
-// square given integer
-int pow2(int v) {
-  return v * v;
-}
+// square given float
 float pow2(float v) {
   return v * v;
 }
@@ -70,23 +64,18 @@ float linear(vec2 ran, float dom, float x) {
   return m * float(clamp(x, 0., dom)) + b;
 }
 
-// Float to rounded integer
-int round_integer(float v) {
-  return int(round(v));
-}
-
 // From screen to local tile coordinates
 vec2 screen_to_tile(vec2 screen) {
   float x = linear(u_x_bounds, 1., screen.x);
   float y = linear(u_y_bounds, 1., screen.y);
-  return vec2(x, y) * u_tile_real;
+  return vec2(x, y) * u_tile_shape;
 }
 
 // From global to local tile coordinates
 vec2 global_to_tile(vec2 v) {
   float tile_scale = max(u_scale_level, 1.0);
   vec2 c = v / tile_scale - u_tile_origin;
-  return vec2(c.x, u_tile_real.y - c.y);
+  return vec2(c.x, u_tile_shape.y - c.y);
 }
 
 // Check if values in array match
@@ -203,7 +192,7 @@ uint compare_neighborhood(vec2 off, uint ikey) {
     float ex = vec4(0, 0, 1, -1)[i];
     float ey = vec4(1, -1, 0, 0)[i];
     vec2 neighbor = off + vec2(ex, ey);
-    nkeys[i] = unpack(offset(u_tile, u_tile_real, uv, neighbor)); 
+    nkeys[i] = unpack(offset(u_tile, u_tile_shape, uv, neighbor)); 
   }
   // Select if 2 identical cells or 3 identical background 
   if (ikey == bg) {
@@ -227,7 +216,7 @@ uint compare_neighborhood(vec2 off, uint ikey) {
 // Note: will be -1 if cell not in cell list
 int sample_cell_index(vec2 off) {
   // Find cell id at given offset 
-  uint ikey = unpack(offset(u_tile, u_tile_real, uv, off));
+  uint ikey = unpack(offset(u_tile, u_tile_shape, uv, off));
   if (u_scale_level < 1.) { 
     ikey = compare_neighborhood(off, ikey);
   }
@@ -387,8 +376,8 @@ float range_clamp(float value) {
 
 // Colorize continuous u16 signal
 vec4 u16_rg_range(float alpha) {
-  uvec2 pixel = offset(u_tile, u_tile_real, uv, vec2(0, 0)).rg;
-  float value = float(pixel.r * u8 + pixel.g) / 65535.;
+  uvec2 pixel = offset(u_tile, u_tile_shape, uv, vec2(0, 0)).rg;
+  float value = float(pixel.r * uint(255) + pixel.g) / 65535.;
 
   // Threshhold pixel within range
   float pixel_val = range_clamp(value);

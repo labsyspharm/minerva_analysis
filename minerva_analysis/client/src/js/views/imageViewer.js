@@ -123,16 +123,13 @@ class ImageViewer {
             that.selectTexture(gl, this.texture, 0);
 
             // Send the tile into the texture.
-            if (format == "u16") {
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8UI, w, h, 0, gl.RG_INTEGER, gl.UNSIGNED_BYTE, pixels);
-            } else if (format == "u32") {
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
-            }
+            const textureArgs = {
+              u16: [gl.RG8UI, w, h, 0, gl.RG_INTEGER],
+              u32: [gl.RGBA8UI, w, h, 0, gl.RGBA_INTEGER],
+            }[format];
+            gl.texImage2D(gl.TEXTURE_2D, 0, ...textureArgs, gl.UNSIGNED_BYTE, pixels);
 
-            const iw = this.gl.canvas.width;
-            const ih = this.gl.canvas.height;
-            this.gl_arguments.tile_ideal_2fv = new Float32Array([iw, ih]);
-            this.gl_arguments.tile_real_2fv = new Float32Array([w, h]);
+            this.gl_arguments.tile_shape_2fv = new Float32Array([w, h]);
 
             // Call gl-drawing after loading TEXTURE0
             this["gl-drawing"].call(this);
@@ -198,56 +195,44 @@ class ImageViewer {
         });
 
         seaGL.addHandler("gl-drawing", function () {
-            const gl_arguments = this.gl_arguments;
-            const x_bounds_2fv = gl_arguments.x_bounds_2fv;
-            const y_bounds_2fv = gl_arguments.y_bounds_2fv;
-            const scale_level_1f = gl_arguments.scale_level_1f;
-            const origin_2fv = gl_arguments.origin_2fv;
-            const range_2fv = gl_arguments.range_2fv;
-            const fmt_1i = gl_arguments.fmt_1i;
-            const color_3fv = gl_arguments.color_3fv;
-            const id_end_1i = gl_arguments.id_end_1i;
-            const tile_ideal_2fv = gl_arguments.tile_ideal_2fv;
-            const tile_real_2fv = gl_arguments.tile_real_2fv;
+            const args = this.gl_arguments;
             const modes = that.modeFlags;
 
             // Send color and range to shader
-            this.gl.uniform2fv(this.u_tile_real, tile_real_2fv);
-            this.gl.uniform2fv(this.u_tile_ideal, tile_ideal_2fv);
+            this.gl.uniform2fv(this.u_tile_shape, args.tile_shape_2fv);
+            this.gl.uniform1f(this.u_scale_level, args.scale_level_1f);
+            this.gl.uniform2fv(this.u_tile_origin, args.origin_2fv);
+            this.gl.uniform3fv(this.u_tile_color, args.color_3fv);
+            this.gl.uniform2fv(this.u_tile_range, args.range_2fv);
             this.gl.uniform2i(this.u_draw_mode, modes.edge, modes.or);
-            this.gl.uniform3fv(this.u_tile_color, color_3fv);
-            this.gl.uniform2fv(this.u_tile_range, range_2fv);
-            this.gl.uniform2fv(this.u_tile_origin, origin_2fv);
-            this.gl.uniform2fv(this.u_x_bounds, x_bounds_2fv);
-            this.gl.uniform2fv(this.u_y_bounds, y_bounds_2fv);
-            this.gl.uniform1f(this.u_scale_level, scale_level_1f);
-            this.gl.uniform1i(this.u_id_end, id_end_1i);
-            this.gl.uniform1i(this.u_tile_fmt, fmt_1i);
+            this.gl.uniform2fv(this.u_x_bounds, args.x_bounds_2fv);
+            this.gl.uniform2fv(this.u_y_bounds, args.y_bounds_2fv);
+            this.gl.uniform1i(this.u_tile_fmt, args.fmt_1i);
+            this.gl.uniform1i(this.u_id_end, args.id_end_1i);
         });
 
         seaGL.addHandler("gl-loaded", function (program) {
             // Uniform variables for coloring
             this.u_ids_shape = this.gl.getUniformLocation(program, "u_ids_shape");
-            this.u_magnitude_shape = this.gl.getUniformLocation(program, "u_magnitude_shape");
-            this.u_center_shape = this.gl.getUniformLocation(program, "u_center_shape");
+            this.u_tile_shape = this.gl.getUniformLocation(program, "u_tile_shape");
             this.u_gating_shape = this.gl.getUniformLocation(program, "u_gating_shape");
-            this.u_draw_mode = this.gl.getUniformLocation(program, "u_draw_mode");
-            this.u_tile_color = this.gl.getUniformLocation(program, "u_tile_color");
-            this.u_tile_range = this.gl.getUniformLocation(program, "u_tile_range");
+            this.u_center_shape = this.gl.getUniformLocation(program, "u_center_shape");
+            this.u_magnitude_shape = this.gl.getUniformLocation(program, "u_magnitude_shape");
+            this.u_scale_level = this.gl.getUniformLocation(program, "u_scale_level");
             this.u_tile_origin = this.gl.getUniformLocation(program, "u_tile_origin");
+            this.u_tile_range = this.gl.getUniformLocation(program, "u_tile_range");
+            this.u_tile_color = this.gl.getUniformLocation(program, "u_tile_color");
+            this.u_draw_mode = this.gl.getUniformLocation(program, "u_draw_mode");
             this.u_x_bounds = this.gl.getUniformLocation(program, "u_x_bounds");
             this.u_y_bounds = this.gl.getUniformLocation(program, "u_y_bounds");
-            this.u_scale_level = this.gl.getUniformLocation(program, "u_scale_level");
-            this.u_tile_ideal = this.gl.getUniformLocation(program, "u_tile_ideal");
-            this.u_tile_real = this.gl.getUniformLocation(program, "u_tile_real");
             this.u_tile_fmt = this.gl.getUniformLocation(program, "u_tile_fmt");
             this.u_id_end = this.gl.getUniformLocation(program, "u_id_end");
 
             // Texture for colormap
             const u_ids = this.gl.getUniformLocation(program, "u_ids");
-            const u_magnitudes = this.gl.getUniformLocation(program, "u_magnitudes");
-            const u_centers = this.gl.getUniformLocation(program, "u_centers");
             const u_gatings = this.gl.getUniformLocation(program, "u_gatings");
+            const u_centers = this.gl.getUniformLocation(program, "u_centers");
+            const u_magnitudes = this.gl.getUniformLocation(program, "u_magnitudes");
             this.texture_ids = this.gl.createTexture();
             this.texture_magnitudes = this.gl.createTexture();
             this.texture_centers = this.gl.createTexture();
