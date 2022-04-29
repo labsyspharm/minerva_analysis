@@ -23,7 +23,7 @@ function toIdealTile(fullScale, useY) {
 function toRealTile(fullScale, v, useY) {
     const shape = [this.width, this.height][useY];
     const tileShape = this.toIdealTile(fullScale, useY);
-    return Math.min(shape - (v * tileShape), tileShape);
+    return Math.min(shape - v * tileShape, tileShape);
 }
 
 /**
@@ -57,7 +57,7 @@ function toTileBoundary(fullScale, v, useY) {
 function toMagnifiedBounds(...tileArgs) {
     const tl = this.toTileLevels(...tileArgs);
     if (tl.imageScale >= 1) {
-      return { x: [0, 1], y: [0, 1] };
+        return { x: [0, 1], y: [0, 1] };
     }
     const ownScale = tl.fullScale;
     const parentScale = tl.tileScale;
@@ -65,13 +65,13 @@ function toMagnifiedBounds(...tileArgs) {
         const [startHD, sizeHD] = this.toTileBoundary(ownScale, tileArgs[i + 1], i);
         const [startSD, sizeSD] = this.toTileBoundary(parentScale, parentOffset, i);
         const start = (startHD - startSD) / sizeSD;
-        const end = start + (sizeHD) / sizeSD;
+        const end = start + sizeHD / sizeSD;
         return [
-            [ start, end ],
-            [ 1 - end, 1 - start ],
+            [start, end],
+            [1 - end, 1 - start],
         ][i];
-    })
-    return {x, y};
+    });
+    return { x, y };
 }
 
 /**
@@ -91,18 +91,18 @@ function toMagnifiedBounds(...tileArgs) {
  */
 function toTileLevels(level, x, y) {
     const { extraZoomLevels } = this;
-    const flipped = this.maxLevel - level; 
+    const flipped = this.maxLevel - level;
     const deepLevel = flipped - extraZoomLevels;
     const sourceLevel = Math.max(deepLevel, 0);
     const extraZoom = sourceLevel - deepLevel;
     const imageSource = {
-        x: Math.floor(x / (2 ** extraZoom)),
-        y: Math.floor(y / (2 ** extraZoom)),
-        level: sourceLevel
+        x: Math.floor(x / 2 ** extraZoom),
+        y: Math.floor(y / 2 ** extraZoom),
+        level: sourceLevel,
     };
     const imageTile = {
         ...imageSource,
-        level: level - extraZoom
+        level: level - extraZoom,
     };
     return {
         tileScale: 2 ** (flipped + extraZoom),
@@ -110,7 +110,7 @@ function toTileLevels(level, x, y) {
         imageScale: 2 ** deepLevel,
         fullScale: 2 ** flipped,
         imageSource,
-        imageTile
+        imageTile,
     };
 }
 

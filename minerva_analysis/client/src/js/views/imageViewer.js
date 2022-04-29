@@ -124,8 +124,8 @@ class ImageViewer {
 
             // Send the tile into the texture.
             const textureArgs = {
-              u16: [gl.RG8UI, w, h, 0, gl.RG_INTEGER],
-              u32: [gl.RGBA8UI, w, h, 0, gl.RGBA_INTEGER],
+                u16: [gl.RG8UI, w, h, 0, gl.RG_INTEGER],
+                u32: [gl.RGBA8UI, w, h, 0, gl.RGBA_INTEGER],
             }[format];
             gl.texImage2D(gl.TEXTURE_2D, 0, ...textureArgs, gl.UNSIGNED_BYTE, pixels);
 
@@ -243,7 +243,7 @@ class ImageViewer {
             this.gl.uniform1i(u_gatings, 4);
         });
 
-        const matchTile = (e, {x, y, level}) => {
+        const matchTile = (e, { x, y, level }) => {
             const grid = e.tiledImage.tilesMatrix[level];
             return ((grid || {})[x] || {})[y] || {};
         };
@@ -449,11 +449,11 @@ class ImageViewer {
 
         // Bind buffers per-channel
         if (fullChange) {
-            const allGatings = []
+            const allGatings = [];
             for (const gating of gatings) {
-              for (const gatingValue of gating) {
-                allGatings.push(gatingValue);
-              }
+                for (const gatingValue of gating) {
+                    allGatings.push(gatingValue);
+                }
             }
             this.bindGatings(this.viaGL, allGatings, 5);
         }
@@ -521,7 +521,7 @@ class ImageViewer {
     /**
      * @function selectCenterProps -- return cell centers properties
      * @param tile - openseadragon tile
-     * @param source - openseadragon tile source 
+     * @param source - openseadragon tile source
      *
      * @returns {{
      *   scale_level_1f: Number,
@@ -599,7 +599,7 @@ class ImageViewer {
             const gating = range.concat(floatColor);
             gatings.push(gating);
             ranges.push(range);
-        };
+        }
 
         return {
             ranges,
@@ -750,7 +750,7 @@ class ImageViewer {
         const arr = new ArrayBuffer(4 * full_size);
         const view = new DataView(arr);
         for (const i in a) {
-          view.setFloat32(4 * i, a[i], true);
+            view.setFloat32(4 * i, a[i], true);
         }
         return new Float32Array(arr);
     }
