@@ -4,7 +4,6 @@ import "regenerator-runtime/runtime.js";
  * @function toIdealTile -- full tile dimension in full image pixels
  * @param fullScale - scale factor to full image
  * @param useY - 0 for x and 1 for y
- *
  * @returns Number
  */
 function toIdealTile(fullScale, useY) {
@@ -17,7 +16,6 @@ function toIdealTile(fullScale, useY) {
  * @param fullScale - scale factor to full image
  * @param v - x or y index of tile
  * @param useY - x=0 and y=1
- *
  * @returns Number
  */
 function toRealTile(fullScale, v, useY) {
@@ -31,41 +29,39 @@ function toRealTile(fullScale, v, useY) {
  * @param fullScale - scale factor to full image
  * @param v - x or y index of tile
  * @param useY - x=0 and y=1
- *
- * @returns {{
- *    x: Array,
- *    y: Array
- * }}
+ * @typedef {object} Bound
+ * @property {number} start - full image pixel start of tile
+ * @property {number} size - full image pixel size of tile
+ * @returns Bound
  */
 function toTileBoundary(fullScale, v, useY) {
     const start = v * this.toIdealTile(fullScale, useY);
-    const size = this.toRealTile(fullScale, v, useY);
-    return [start, size];
+    const size = this.toRealTile(fullScale, v, useY)
+    return {start, size};
 }
 
 /**
  * @function toMagnifiedBounds -- return bounds of magnified tile
- * @param level - openseadragon tile level
- * @param x - openseadragon tile x index
- * @param y - openseadragon tile y index
- *
- * @returns {{
- *    x: Array,
- *    y: Array
- * }}
+ * @param _level - openseadragon tile level
+ * @param _x - openseadragon tile x index
+ * @param _y - openseadragon tile y index
+ * @typedef {object} Bounds
+ * @property {Array} x - start and end image x-coordinates
+ * @property {Array} y - start and end image y-coordinates
+ * @returns Bounds
  */
-function toMagnifiedBounds(...tileArgs) {
-    const tl = this.toTileLevels(...tileArgs);
-    if (tl.imageScale >= 1) {
+function toMagnifiedBounds(_level, _x, _y) {
+    const tl = this.toTileLevels(_level, _x, _y);
+    if (tl.relativeImageScale >= 1) {
         return { x: [0, 1], y: [0, 1] };
     }
-    const ownScale = tl.fullScale;
-    const parentScale = tl.tileScale;
-    const [x, y] = [tl.imageTile.x, tl.imageTile.y].map((parentOffset, i) => {
-        const [startHD, sizeHD] = this.toTileBoundary(ownScale, tileArgs[i + 1], i);
-        const [startSD, sizeSD] = this.toTileBoundary(parentScale, parentOffset, i);
-        const start = (startHD - startSD) / sizeSD;
-        const end = start + sizeHD / sizeSD;
+    const ownScale = tl.outputFullScale;
+    const parentScale = tl.inputFullScale;
+    const [x, y] = [tl.outputTile.x, tl.outputTile.y].map((parentOffset, i) => {
+        const hd = this.toTileBoundary(ownScale, [_x, _y][i], i);
+        const sd = this.toTileBoundary(parentScale, parentOffset, i);
+        const start = (hd.start - sd.start) / sd.size;
+        const end = start + hd.size / sd.size;
         return [
             [start, end],
             [1 - end, 1 - start],
@@ -79,38 +75,35 @@ function toMagnifiedBounds(...tileArgs) {
  * @param level - openseadragon tile level
  * @param x - openseadragon tile x index
  * @param y - openseadragon tile y index
- *
- * @returns {{
- *   tileScale: Number,
- *   sourceScale: Number,
- *   imageScale: Number,
- *   fullScale: Number,
- *   imageSource: Object,
- *   imageTile: Object,
- * }}
+ * @typedef {object} TileLevels
+ * @property {number} inputFullScale - full scale of source tile 
+ * @property {number} outputFullScale - full scale of renedered tile
+ * @property {number} relativeImageScale - scale relative to image pixels
+ * @property {object} inputTile - level, x, and y of source tile
+ * @property {object} outputTile - level, x, and y of rendered tile
+ * @returns TileLevels 
  */
 function toTileLevels(level, x, y) {
     const { extraZoomLevels } = this;
     const flipped = this.maxLevel - level;
-    const deepLevel = flipped - extraZoomLevels;
-    const sourceLevel = Math.max(deepLevel, 0);
-    const extraZoom = sourceLevel - deepLevel;
-    const imageSource = {
+    const relativeLevel = flipped - extraZoomLevels;
+    const sourceLevel = Math.max(relativeLevel, 0);
+    const extraZoom = sourceLevel - relativeLevel;
+    const inputTile = {
         x: Math.floor(x / 2 ** extraZoom),
         y: Math.floor(y / 2 ** extraZoom),
         level: sourceLevel,
     };
-    const imageTile = {
-        ...imageSource,
+    const outputTile = {
+        ...inputTile,
         level: level - extraZoom,
     };
     return {
-        tileScale: 2 ** (flipped + extraZoom),
-        sourceScale: 2 ** sourceLevel,
-        imageScale: 2 ** deepLevel,
-        fullScale: 2 ** flipped,
-        imageSource,
-        imageTile,
+        inputFullScale: 2 ** (flipped + extraZoom),
+        relativeImageScale: 2 ** relativeLevel,
+        outputFullScale: 2 ** flipped,
+        inputTile,
+        outputTile,
     };
 }
 
@@ -119,11 +112,10 @@ function toTileLevels(level, x, y) {
  * @param level - openseadragon tile level
  * @param x - openseadragon tile x index
  * @param y - openseadragon tile y index
- *
- * @returns {string}
+ * @returns string
  */
 function getTileUrl(level, x, y) {
-    const s = this.toTileLevels(level, x, y).imageSource;
+    const s = this.toTileLevels(level, x, y).inputTile;
     return `${this.src}${s.level}/${s.x}_${s.y}.png`;
 }
 
@@ -132,12 +124,11 @@ function getTileUrl(level, x, y) {
  * @param level - openseadragon tile level
  * @param x - openseadragon tile x index
  * @param y - openseadragon tile y index
- *
- * @returns {string}
+ * @returns string
  */
 function getTileKey(level, x, y) {
     const { srcIdx, tileFormat } = this;
-    const s = this.toTileLevels(level, x, y).imageSource;
+    const s = this.toTileLevels(level, x, y).inputTile;
     return `${tileFormat}-${srcIdx}-${s.level}-${s.x}-${s.y}`;
 }
 
@@ -152,10 +143,11 @@ export class ViewerManager {
     sel_outlines = true;
 
     /**
-     * @constructor
      * Constructs a ColorManager instance before delegating initialization.
      *
-     * @param {Object} _viewer
+     * @param _imageViewer - ImageViewer instance
+     * @param _viewer - Openseadragon instance
+     * @param _viewerName - name as string
      */
     constructor(_imageViewer, _viewer, _viewerName) {
         this.viewer = _viewer;
@@ -170,8 +162,6 @@ export class ViewerManager {
     /**
      * @function init
      * Setups up the color manager.
-     *
-     * @returns void
      */
     init() {
         // Load label image
@@ -181,8 +171,7 @@ export class ViewerManager {
     /**
      * @function channel_add
      * Add channel to multi-channel rendering
-     *
-     * @param srcIdx
+     * @param srcIdx - integer id of channel to add
      */
     channel_add(srcIdx) {
         // If already exists
@@ -246,10 +235,8 @@ export class ViewerManager {
     }
 
     /**
-     * @function channel_remove
-     * Remove channel from multichannel rendering
-     *
-     * @param srcIdx
+     * @function channel_remove - remove channel from multichannel rendering
+     * @param srcIdx - integer id of channel to remove
      */
     channel_remove(srcIdx) {
         const img_count = this.viewer.world.getItemCount();
@@ -270,11 +257,10 @@ export class ViewerManager {
     }
 
     /**
-     * @function evaluateTF
-     *
-     * @param val
-     * @param tf
-     * @returns {*}
+     * @function evaluateTF - finds color for value in transfer function
+     * @param val - input to transfer function
+     * @param tf - colors of transfer function
+     * @returns object
      */
     evaluateTF(val, tf) {
         let lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
@@ -292,8 +278,6 @@ export class ViewerManager {
 
     /**
      * @function force_repaint
-     *
-     * @returns void
      */
     force_repaint() {
         // Refilter, redraw
@@ -303,8 +287,6 @@ export class ViewerManager {
 
     /**
      * @function load_label_image
-     *
-     * @returns void
      */
     load_label_image() {
         const self = this;

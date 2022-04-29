@@ -1,7 +1,7 @@
 /**
  * viewer.js.
- * @class ImageViewer to render multiplexed imaging data (based on OpenSeadragon)
  *
+ * @class ImageViewer to render multiplexed imaging data (based on OpenSeadragon)
  */
 
 /* todo
@@ -13,8 +13,9 @@ class ImageViewer {
     viewerManagers = [];
 
     /**
-     * @constructor
-     * @param config the cinfiguration file (json)
+     * Constructor for ImageViewer
+     *
+     * @param config - the cinfiguration file (json)
      * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
      * @param eventHandler - the event handler for distributing interface and data updates
      * @param colorScheme - the color scheme to use or selections etc.
@@ -203,12 +204,13 @@ class ImageViewer {
                     console.log("Missing Array", e.tile.url);
                     // this.refreshSegmentationMask();
                 }
-                const cacheProps = that.getCacheProps();
-
+                // transfer data to WebGL shaders
+                const idCount = that.selection.size;
+                that.loadBuffers(idCount);
                 // Use new parameters for this tile
                 via.gl_arguments = {
-                    ...cacheProps,
                     ...centerProps,
+                    id_end_1i: Math.max(idCount - 1, 0),
                     color_3fv: new Float32Array([1, 1, 1]),
                     range_2fv: new Float32Array([0, 1]),
                     fmt_1i: 32,
@@ -303,8 +305,8 @@ class ImageViewer {
                 // Trigger loading of image
                 const tileArgs = [e.tile.level, e.tile.x, e.tile.y];
                 const tl = source.toTileLevels(...tileArgs);
-                if (tl.imageScale < 1) {
-                    const tile = matchTile(e, tl.imageTile);
+                if (tl.relativeImageScale < 1) {
+                    const tile = matchTile(e, tl.outputTile);
                     if (tile?._array && tile?._format) {
                         e.tile._format = tile._format;
                         e.tile._array = tile._array;
@@ -391,10 +393,9 @@ class ImageViewer {
     }
 
     /**
-     * function indexOfTexture -- return integer for named texture
+     * @function indexOfTexture -- return integer for named texture
      * @param label - the texture key label
-     *
-     * @returns {Number}
+     * @returns number
      */
     indexOfTexture(label) {
         const via = this.viaGL;
@@ -427,7 +428,10 @@ class ImageViewer {
     /**
      * Flags for mode of webGL rendering.
      *
-     * @type {{edge: boolaen, or: boolean}}
+     * @typedef {object} ModeFlags
+     * @property {boolean} edge - render outlines
+     * @property {boolean} or - render pie charts
+     * @type {ModeFlags} 
      */
     get modeFlags() {
         const edge = this.viewerManagerVMain.sel_outlines;
@@ -451,8 +455,7 @@ class ImageViewer {
      * @param idCount - number of active cell ids
      * @param keys - active marker channels
      * @param markerLists - data for each marker
-     *
-     * @returns {string}
+     * @returns string
      */
     toCacheKey(idCount, keys, markerLists) {
         const precisions = [2 ** 25, 2 ** 25, 255, 255, 255];
@@ -511,21 +514,17 @@ class ImageViewer {
     }
 
     /**
-     * @function getCacheProps -- generate cache of gl properties
-     *
-     * @returns {{
-     *  id_end_1i: Number
-     * }}
+     * @function loadBuffers -- loads segmentation mask data to WebGL
+     * @param idCount - number of active cell ids
      */
-    getCacheProps() {
+    loadBuffers(idCount) {
         const keys = this.gatingKeys;
-        const idCount = this.selection.size;
         const { gatings, ranges } = this.selectGatings(keys);
         const changes = this.updateCache(idCount, keys, gatings, ranges);
-        const { mainChange, orChange, fullChange } = changes;
+        const { idsChanged, orChange, gatesChanged } = changes;
 
         // Bind buffers per-channel
-        if (fullChange) {
+        if (gatesChanged) {
             const allGatings = [];
             for (const gating of gatings) {
                 for (const gatingValue of gating) {
@@ -535,10 +534,10 @@ class ImageViewer {
             this.bindGatings(this.viaGL, allGatings, 5);
         }
         // List cell ids as array
-        const needIds = mainChange || orChange;
+        const needIds = idsChanged || orChange;
         const ids = needIds ? [...this.selection.keys()] : [];
         // Bind buffers per-cell
-        if (mainChange) {
+        if (idsChanged) {
             this.bindLabels(this.viaGL, ids);
         }
         // Bind or-mode buffers per-cell
@@ -546,15 +545,10 @@ class ImageViewer {
             this.selectCellMagnitudes(ids, keys);
             this.selectCenters(ids);
         }
-        return {
-            id_end_1i: Math.max(idCount - 1, 0),
-        };
     }
 
     /**
      * @function clearCache -- clear cached props
-     *
-     * @returns void
      */
     clearCache() {
         this._cacheKeys = {};
@@ -563,8 +557,7 @@ class ImageViewer {
     /**
      * @function selectCenters -- return cell centers
      * @param ids - active cell ids
-     *
-     * @returns {Array}
+     * @returns Array
      */
     selectCenters(ids) {
         const xKey = "X_centroid";
@@ -599,28 +592,28 @@ class ImageViewer {
      * @function selectCenterProps -- return cell centers properties
      * @param tile - openseadragon tile
      * @param source - openseadragon tile source
-     *
-     * @returns {{
-     *   pie_radius_1f: Number,
-     *   tile_scale_1f: Number,
-     *   tile_fraction_1f: Number,
-     *   x_bounds_2fv: Array,
-     *   y_bounds_2fv: Array,
-     *   origin_2fv: Array,
-     * }}
+     * @typedef {object} CenterProps
+     * @property {number} pie_radius_1f - radius of or-mode circles
+     * @property {number} tile_fraction_1f - subtile fraction <=1
+     * @property {number} tile_scale_1f - image tile scale >=1
+     * @property {Array} x_bounds_2fv - subtile start/end in x
+     * @property {Array} y_bounds_2fv - subtile start/end in y
+     * @property {Array} origin_2fv - origin at texture resolution
+     * @returns CenterProps
      */
     selectCenterProps(tile, source) {
-        const tileWidth = this.config.tileWidth;
-        const tileHeight = this.config.tileHeight;
+        const w = this.config.tileWidth;
+        const h = this.config.tileHeight;
         const tileArgs = [tile.level, tile.x, tile.y];
-        const { imageTile, imageScale } = source.toTileLevels(...tileArgs);
-        const origin = [imageTile.x * tileWidth, imageTile.y * tileHeight];
+        const tl = source.toTileLevels(...tileArgs);
+        const { outputTile, relativeImageScale } = tl;
+        const origin = [outputTile.x * w, outputTile.y * h];
         const bounds = source.toMagnifiedBounds(...tileArgs);
 
         return {
             pie_radius_1f: 8.5,
-            tile_scale_1f: Math.max(imageScale, 1.0),
-            tile_fraction_1f: Math.min(imageScale, 1.0),
+            tile_scale_1f: Math.max(relativeImageScale, 1.0),
+            tile_fraction_1f: Math.min(relativeImageScale, 1.0),
             x_bounds_2fv: new Float32Array(bounds.x),
             y_bounds_2fv: new Float32Array(bounds.y),
             origin_2fv: new Float32Array(origin),
@@ -631,8 +624,7 @@ class ImageViewer {
      * @function selectCellMagnitudes -- select magnitude ranges
      * @param ids - active cell ids
      * @param keys - active marker channels
-     *
-     * @returns {Array}
+     * @returns Array
      */
     selectCellMagnitudes(ids, keys) {
         const magnitudes = [];
@@ -666,8 +658,10 @@ class ImageViewer {
     /**
      * @function selectGatings -- select gating ranges
      * @param keys - active marker channels
-     *
-     * @returns {{ranges: Array, gatings: Array}}
+     * @typedef {object} Gatings
+     * @property {Array} ranges - min and max values for channel
+     * @property {Array} gatings - min, max, and r, g, b gating values
+     * @returns Gatings
      */
     selectGatings(keys) {
         const ranges = [];
@@ -694,19 +688,16 @@ class ImageViewer {
      * @param keys - active marker channels
      * @param gatings - cell ranges + colors
      * @param ranges - cell ranges array
-     *
-     *
-     * @returns {{
-     *   orChange: boolean,
-     *   mainChange: boolean,
-     *   fullChange: boolean
-     * }}
+     * @typedef {object} Changes
+     * @property {boolean} orChange - if or-mode has changed
+     * @property {boolean} idsChanged - if list of ids changed
+     * @property {boolean} gatesChanged - if gating parameters changed
+     * @returns Changes
      */
-
     updateCache(idCount, keys, gatings, ranges) {
         const mainCacheKey = this.toCacheKey(idCount, keys, ranges);
-        const mainChange = this.mainCacheKey !== mainCacheKey;
-        if (mainChange) {
+        const idsChanged = this.mainCacheKey !== mainCacheKey;
+        if (idsChanged) {
             this.mainCacheKey = mainCacheKey;
         }
 
@@ -717,19 +708,22 @@ class ImageViewer {
         }
 
         const fullCacheKey = this.toCacheKey(idCount, keys, gatings);
-        const fullChange = this.fullCacheKey !== fullCacheKey;
-        if (fullChange) {
+        const gatesChanged = this.fullCacheKey !== fullCacheKey;
+        if (gatesChanged) {
             this.fullCacheKey = fullCacheKey;
         }
 
-        return { mainChange, fullChange, orChange };
+        return { orChange, idsChanged, gatesChanged };
     }
 
     /**
      * @function selectMaskColor -- select color for mask
      * @param channel - the channel label
-     *
-     * @returns {{r: Number, g: Number, b: Number}}
+     * @typedef {object} Color
+     * @property {number} r - 0-255
+     * @property {number} g - 0-255
+     * @property {number} b - 0-255
+     * @returns Color
      */
     selectMaskColor(channel) {
         const white = {
@@ -752,8 +746,7 @@ class ImageViewer {
     /**
      * @function selectMaskIndex -- select index for mask
      * @param channel - the channel label
-     *
-     * @returns {Number}
+     * @returns number
      */
     selectMaskIndex(channel) {
         return channelList.columns.indexOf(channel);
@@ -764,8 +757,6 @@ class ImageViewer {
      * @param gl - the WebGL2 context
      * @param texture - the WebGL2 texture
      * @param idx - the texture index
-     *
-     * @returns {void}
      */
     selectTexture(gl, texture, idx) {
         // Set texture for GLSL
@@ -782,13 +773,12 @@ class ImageViewer {
     }
 
     /**
-     * @function measureLabelValues - return segmentation mask shape
+     * @function toTextureShape - shape of texture data
      * @param gl - the WebGL2 context
      * @param values - the texture data as an array
-     *
-     * @returns {[width: Number, height: Number]}
+     * @returns Array
      */
-    measureLabelValues(gl, values) {
+    toTextureShape(gl, values) {
         const width = gl.getParameter(gl.MAX_TEXTURE_SIZE);
         const height = Math.ceil(values.length / width);
         return [width, height];
@@ -798,24 +788,30 @@ class ImageViewer {
      * @function packFloat - pack 1D float texture as 2D
      * @param gl - the WebGL2 context
      * @param a - the texture data as an array
-     *
-     * @returns {{pixels: Uint8Array, width: Number, height: Number}}
+     * @typedef {object} Packed
+     * @property {number} width - width of texture
+     * @property {number} height - height of texture
+     * @property {Array} pixels - packed 1D array as 2D
+     * @returns Packed
      */
     packFloat(gl, a) {
-        const [width, height] = this.measureLabelValues(gl, a);
+        const [width, height] = this.toTextureShape(gl, a);
         const pixels = this.packFloat32(a, width, height);
         return { width, height, pixels };
     }
 
     /**
-     * @function packInteger - pack 1D float texture as 2D
+     * @function packInteger - pack 1D integer texture as 2D
      * @param gl - the WebGL2 context
      * @param a - the texture data as an array
-     *
-     * @returns {{pixels: Uint8Array, width: Number, height: Number}}
+     * @typedef {object} Packed
+     * @property {number} width - width of texture
+     * @property {number} height - height of texture
+     * @property {Array} pixels - packed 1D array as 2D
+     * @returns Packed
      */
     packInteger(gl, a) {
-        const [width, height] = this.measureLabelValues(gl, a);
+        const [width, height] = this.toTextureShape(gl, a);
         const pixels = this.packUint8(a, width, height);
         return { width, height, pixels };
     }
@@ -825,8 +821,7 @@ class ImageViewer {
      * @param a - the texture data as an array
      * @param width - the texture width
      * @param height - the texture height
-     *
-     * @returns {Uint8Array}
+     * @returns array
      */
     packFloat32(a, width, height) {
         // Create 2D array of pixels
@@ -844,8 +839,7 @@ class ImageViewer {
      * @param a - the texture data as an array
      * @param width - the texture width
      * @param height - the texture height
-     *
-     * @returns {Uint8Array}
+     * @returns array
      */
     packUint8(a, width, height) {
         // Create 2D array of pixels
@@ -923,7 +917,7 @@ class ImageViewer {
      */
     bindLabels(via, values) {
         // Add id mask map
-        const ids_2iv = this.measureLabelValues(via.gl, values);
+        const ids_2iv = this.toTextureShape(via.gl, values);
         via.gl.uniform2iv(via.u_ids_shape, ids_2iv);
         this.setLabelMap(via.gl, via.texture_ids, values);
     }
@@ -936,7 +930,7 @@ class ImageViewer {
      */
     bindMagnitudes(via, values, depth) {
         // Add a mask magnitude map
-        const magnitude_2iv = this.measureLabelValues(via.gl, values);
+        const magnitude_2iv = this.toTextureShape(via.gl, values);
         const magnitude_3iv = magnitude_2iv.concat(depth);
         via.gl.uniform3iv(via.u_magnitude_shape, magnitude_3iv);
         this.setMagnitudeMap(via.gl, via.texture_magnitudes, values);
@@ -949,7 +943,7 @@ class ImageViewer {
      */
     bindCenters(via, values) {
         // Add a mask center map
-        const center_2iv = this.measureLabelValues(via.gl, values);
+        const center_2iv = this.toTextureShape(via.gl, values);
         const center_3iv = center_2iv.concat([2]);
         via.gl.uniform3iv(via.u_center_shape, center_3iv);
         this.setCenterMap(via.gl, via.texture_centers, values);
@@ -975,12 +969,19 @@ class ImageViewer {
 
     /**
      * @function createTFArray - creates an array of colors as a transfer/lookup table for pixel values.
-     * @param min the minimum value
+     * @param min - the minimum value
      * @param max - the maximum value
      * @param rgb1 - the start color (min)
      * @param rgb2 - the end color (max)
      * @param numBins - the bins for the color interpolation steps
-     * @returns {{tf: Array, min: *, max: *, num_bins: *, start_color: *, end_color: *}}
+     * @typedef {object} TF
+     * @property {Array} tf - color list
+     * @property {number} min - min cutoff
+     * @property {number} max - max cutoff
+     * @property {number} num_bins - number of bins
+     * @property {object} start_color - lower limit color
+     * @property {object} end_color - upper limit color
+     * @returns TF
      */
     createTFArray(min, max, rgb1, rgb2, numBins) {
         const tfArray = [];
@@ -1012,92 +1013,7 @@ class ImageViewer {
     }
 
     /**
-     * @function actionFocus - sets a viewport based on an action (tool or user driven)
-     *
-     * @param vp - viewport
-     * @returns void
-     */
-    actionFocus(vp) {
-        this.setViewPort(vp.x, vp.y, vp.width, vp.height);
-    }
-
-    /**
-     * @function setViewPort
-     *
-     * @param {int} x
-     * @param {int} y
-     * @param {int} width
-     * @param {int} height
-     *
-     * @returns void
-     */
-    setViewPort(x, y, width, height) {
-        // Calc from main viewer
-        const coords = this.viewer.viewport.imageToViewportCoordinates(x, y);
-        const lowerBounds = this.viewer.viewport.imageToViewportCoordinates(width, height);
-        const box1 = new OpenSeadragon.Rect(coords.x, coords.y, lowerBounds.x, lowerBounds.y);
-
-        // Apply to all viewers
-        this.viewerManagers.forEach((vM) => {
-            vM.viewer.viewport.fitBounds(box1);
-        });
-    }
-
-    // =================================================================================================================
-    // Rendering
-    // =================================================================================================================
-
-    /**
-     * @function drawCellRadius - draws a circle with certain radius around a cell
-     *
-     * @param radius
-     * @param selection
-     * @param  - whether it fades out
-     */
-    drawCellRadius(radius, selection, dragging = false) {
-        let x = selection[dataLayer.x];
-        let y = selection[dataLayer.y];
-        let imagePoint = this.viewer.world.getItemAt(0).imageToViewportCoordinates(x, y);
-        let circlePoint = this.viewer.world.getItemAt(0).imageToViewportCoordinates(x + _.toNumber(radius), y);
-        let viewportRadius = Math.abs(circlePoint.x - imagePoint.x);
-        let overlay = seaDragonViewer.viewer.svgOverlay();
-        let fade = 0;
-        // When dragging the bar, don't fade out
-        if (dragging) {
-            fade = 1;
-        }
-
-        let circle = d3
-            .select(overlay.node())
-            .selectAll(".radius-circle")
-            .interrupt()
-            .data([{ x: imagePoint.x, y: imagePoint.y, r: viewportRadius }]);
-        circle
-            .enter()
-            .append("circle")
-            .attr("class", "radius-circle")
-            .merge(circle)
-            .attr("cx", (d) => {
-                return d.x;
-            })
-            .attr("cy", (d) => {
-                return d.y;
-            })
-            .attr("r", (d) => {
-                return d.r;
-            })
-            .style("opacity", 1)
-            .transition()
-            .duration(1000)
-            .ease(d3.easeLinear)
-            .style("opacity", fade);
-        circle.exit().remove();
-    }
-
-    /**Z
      * @function forceRepaint - for all active viewers repaint the canvas
-     *
-     * @returns void
      */
     forceRepaint() {
         // Trigger change of full cache
@@ -1110,26 +1026,13 @@ class ImageViewer {
 
     /**
      * @function updateActiveChannels
-     *
-     * @param name
-     * @param selection
-     * @param status
-     *
-     * @returns void
+     * @param name - image channel name
+     * @param action - "add" or "remove"
      */
-    updateActiveChannels(name, selection, status) {
+    updateActiveChannels(name, action) {
         const channelIdx = imageChannels[name];
 
-        if (selection.length === 0) {
-            // console.log('nothing selected - keep showing last image');
-            // return;
-        } else if (selection.length === 1) {
-            // console.log('1 channel selected');
-        } else {
-            // console.log('multiple channels selected');
-        }
-
-        if (status) {
+        if (action == "add") {
             this.viewerManagers.forEach((vM) => {
                 vM.channel_add(channelIdx);
             });
@@ -1144,12 +1047,9 @@ class ImageViewer {
 
     /**
      * @function updateChannelRange
-     *
-     * @param name
-     * @param tfmin
-     * @param tfmax
-     *
-     * @returns void
+     * @param name - image channel name
+     * @param tfmin - minimum
+     * @param tfmax - maximum
      */
     updateChannelRange(name, tfmin, tfmax) {
         const self = this;
@@ -1165,11 +1065,8 @@ class ImageViewer {
 
     /**
      * @function updateChannelColors
-     *
-     * @param name
-     * @param color
-     *
-     * @returns void
+     * @param name - image channel name
+     * @param color - rgb object with values 0-255
      */
     updateChannelColors(name, color) {
         const self = this;
@@ -1177,29 +1074,13 @@ class ImageViewer {
         if (self.channelList.currentChannels[channelIdx]) {
             self.channelList.colorConnector[channelIdx] = { color: color };
             self.channelList.currentChannels[channelIdx]["color"] = color;
-            // self.channelTF[channelIdx].end_color = color;
         }
         this.forceRepaint();
     }
 
     /**
-     * @function updateData
-     *
-     * @param data
-     *
-     * @returns void
-     */
-    updateData(data) {
-        this.data = data;
-        this.forceRepaint();
-    }
-
-    /**
      * @function updateRenderingMode
-     *
-     * @param mode
-     *
-     * @returns void
+     * @param mode -- subset or selection
      */
     updateRenderingMode(mode) {
         // Mode is a string: 'show-subset', 'show-selection'
@@ -1215,11 +1096,8 @@ class ImageViewer {
 
     /**
      * @function updateSelection
-     *
-     * @param selection
-     * @param repaint
-     *
-     * @returns void
+     * @param selection - map of ids selected
+     * @param repaint - if repaint needed
      */
     updateSelection(selection, repaint = true) {
         this.selection = selection;
@@ -1269,6 +1147,11 @@ ImageViewer.events = {
     addScaleBar: "addScaleBar",
 };
 
+/**
+ * @function toFloatColor - convert 0-255 rgb color to 0-1 float array
+ * @param color - rgb object with values 0-255
+ * @returns array
+ */
 function toFloatColor(color) {
     return [color.r / 255, color.g / 255, color.b / 255];
 }

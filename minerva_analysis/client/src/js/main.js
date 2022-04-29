@@ -114,7 +114,8 @@ const actionChannelsToRenderChange = (d) => {
     d.name = dataLayer.getFullChannelName(d.name);
 
     //send to image viewer
-    seaDragonViewer.updateActiveChannels(d.name, d.selections, d.status);
+    const action = ["remove", "add"][+d.status];
+    seaDragonViewer.updateActiveChannels(d.name, action);
 
     d3.select('body').style('cursor', 'default');
 }
