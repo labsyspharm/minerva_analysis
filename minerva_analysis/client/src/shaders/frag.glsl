@@ -14,7 +14,9 @@ uniform ivec2 u_gating_shape;
 uniform ivec3 u_center_shape;
 uniform ivec3 u_magnitude_shape;
 
-uniform float u_scale_level;
+uniform float u_tile_fraction;
+uniform float u_tile_scale;
+uniform float u_pie_radius;
 uniform vec2 u_tile_origin;
 uniform vec2 u_tile_range;
 uniform vec3 u_tile_color;
@@ -73,8 +75,7 @@ vec2 screen_to_tile(vec2 screen) {
 
 // From global to local tile coordinates
 vec2 global_to_tile(vec2 v) {
-  float tile_scale = max(u_scale_level, 1.0);
-  vec2 c = v / tile_scale - u_tile_origin;
+  vec2 c = v / u_tile_scale - u_tile_origin;
   return vec2(c.x, u_tile_shape.y - c.y);
 }
 
@@ -180,46 +181,11 @@ uvec4 offset(usampler2D sam, vec2 size, vec2 pos, vec2 off) {
   return texture(sam, vec2(x, y));
 }
 
-// Compare to neighborhood if high resolution
-uint compare_neighborhood(vec2 off, uint ikey) {
-  uint bg = uint(0);
-  if (ikey > bg) {
-    return ikey;
-  }
-  // List all neighbors
-  uvec4 nkeys = uvec4(bg);
-  for (int i = 0; i < 4; i++) {
-    float ex = vec4(0, 0, 1, -1)[i];
-    float ey = vec4(1, -1, 0, 0)[i];
-    vec2 neighbor = off + vec2(ex, ey);
-    nkeys[i] = unpack(offset(u_tile, u_tile_shape, uv, neighbor)); 
-  }
-  // Select if 2 identical cells or 3 identical background 
-  if (ikey == bg) {
-    for (int i = 0; i < 4; i++) {
-      for (int ii = 0; ii < 6; ii++) {
-        int j = ii % 3;
-        int k = int(division(ii, 3));
-        if (i == k || i == j) ii += 1;
-        bool is_cell = nkeys[i] > bg;
-        if (check_same(nkeys, ivec3(i, j, k))) ikey = nkeys[i];
-        if (is_cell && check_same(nkeys, ivec2(i, j))) ikey = nkeys[i];
-        if (is_cell && check_same(nkeys, ivec2(i, k))) ikey = nkeys[i];
-      }
-    }
-  }
-  return ikey;
-}
-
-
 // Sample index of cell at given offset
 // Note: will be -1 if cell not in cell list
 int sample_cell_index(vec2 off) {
   // Find cell id at given offset 
   uint ikey = unpack(offset(u_tile, u_tile_shape, uv, off));
-  if (u_scale_level < 1.) { 
-    ikey = compare_neighborhood(off, ikey);
-  }
 
   // Array size
   uint first = uint(0);
@@ -287,13 +253,13 @@ float distance (vec2 v) {
 
 // Colorize OR-mode pie chart slices 
 vec4 to_chart_color(vec4 empty_pixel, int cell_index) {
-  float max_r = 5.;
+  float pie_radius = u_pie_radius * u_tile_fraction;
   vec2 global_center = sample_center(cell_index);
   vec2 center = global_to_tile(global_center);
   vec2 pos = screen_to_tile(uv);
   vec2 delta = pos - center;
 
-  if (distance(delta) > max_r) {
+  if (distance(delta) > pie_radius) {
     return empty_pixel;
   }
   float rad = atan(delta.y, delta.x);
@@ -320,13 +286,16 @@ vec4 to_chart_color(vec4 empty_pixel, int cell_index) {
 }
 
 // Check if pixel is on a border
-bool near_cell_edge() {
+bool near_cell_edge(float one) {
   int cell_index = sample_cell_index(vec2(0, 0));
   for (int i = 0; i < 4; i++) {
-    float ex = vec4(0, 0, 1, -1)[i];
-    float ey = vec4(1, -1, 0, 0)[i];
+    float ex = vec4(0, 0, 1, -1)[i] * one;
+    float ey = vec4(1, -1, 0, 0)[i] * one;
     int edge_index = sample_cell_index(vec2(ex, ey));
     if (cell_index != edge_index) {
+      if (one > 1.0 && cell_index > -1) {
+        return false;
+      }
       return true;
     }
   }
@@ -351,7 +320,8 @@ vec4 u32_rgba_map(bvec2 mode) {
     }
     // Borders (bottom layer)
     if (use_edge) {
-      if (near_cell_edge()) {
+      float one = 1.0 / u_tile_fraction;
+      if (near_cell_edge(one)) {
         return white_pixel;
       }
       return empty_pixel;

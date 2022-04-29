@@ -114,12 +114,32 @@ function toTileLevels(level, x, y) {
     };
 }
 
-const toTileUrlGetter = (src) => {
-    return function (level, x, y) {
-        const s = this.toTileLevels(level, x, y).imageSource;
-        return `${src}${s.level}/${s.x}_${s.y}.png`;
-    };
-};
+/**
+ * @function getTileUrl -- return url for tile
+ * @param level - openseadragon tile level
+ * @param x - openseadragon tile x index
+ * @param y - openseadragon tile y index
+ *
+ * @returns {string}
+ */
+function getTileUrl(level, x, y) {
+    const s = this.toTileLevels(level, x, y).imageSource;
+    return `${this.src}${s.level}/${s.x}_${s.y}.png`;
+}
+
+/**
+ * @function getTileKey -- return string key for tile
+ * @param level - openseadragon tile level
+ * @param x - openseadragon tile x index
+ * @param y - openseadragon tile y index
+ *
+ * @returns {string}
+ */
+function getTileKey(level, x, y) {
+    const { srcIdx, tileFormat } = this;
+    const s = this.toTileLevels(level, x, y).imageSource;
+    return `${tileFormat}-${srcIdx}-${s.level}-${s.x}-${s.y}`;
+}
 
 /**
  * @class ViewerManager
@@ -192,13 +212,16 @@ export class ViewerManager {
                 tileWidth: this.imageViewer.config.tileWidth,
                 tileHeight: this.imageViewer.config.tileHeight,
                 toMagnifiedBounds: toMagnifiedBounds,
-                getTileUrl: toTileUrlGetter(src, 0),
                 extraZoomLevels: extraZoomLevels,
                 toTileBoundary: toTileBoundary,
                 toTileLevels: toTileLevels,
                 toIdealTile: toIdealTile,
                 toRealTile: toRealTile,
+                getTileUrl: getTileUrl,
+                getTileKey: getTileKey,
                 tileFormat: 16,
+                srcIdx: srcIdx,
+                src: src,
             },
             // index: 0,
             opacity: 1,
@@ -301,13 +324,16 @@ export class ViewerManager {
                     tileWidth: this.imageViewer.config.tileWidth,
                     tileHeight: this.imageViewer.config.tileHeight,
                     toMagnifiedBounds: toMagnifiedBounds,
-                    getTileUrl: toTileUrlGetter(url),
                     extraZoomLevels: extraZoomLevels,
                     toTileBoundary: toTileBoundary,
                     toTileLevels: toTileLevels,
                     toIdealTile: toIdealTile,
                     toRealTile: toRealTile,
+                    getTileUrl: getTileUrl,
+                    getTileKey: getTileKey,
                     tileFormat: 32,
+                    srcIdx: 0,
+                    src: url,
                 },
                 index: 0,
                 opacity: 1,

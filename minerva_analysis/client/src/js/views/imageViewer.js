@@ -107,31 +107,50 @@ class ImageViewer {
             that.addScaleBar();
         });
 
-        // Define interface to shaders
+        // Flexible use of textures
+        const constantTextures = ["ids", "magnitudes", "centers", "gatings"];
+        const textureCount = 32 - constantTextures.length;
+        const tileTextureKeys = [...Array(textureCount).keys()];
         const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
+        seaGL.viaGL._tileTextures = tileTextureKeys.map(() => "");
+        seaGL.viaGL._constantTextureOffset = textureCount;
+        seaGL.viaGL._constantTextures = constantTextures;
+        seaGL.viaGL._activeTileTexture = 0;
+        seaGL.viaGL._nextTileTexture = 0;
         this.viaGL = seaGL.viaGL;
 
-        seaGL.viaGL.loadArray = function (w, h, pixels, format = "u16") {
+        seaGL.viaGL.loadArray = function (e, w, h) {
             // Allow for custom drawing in webGL
             var gl = this.gl;
+            const { source } = e.tiledImage;
+            const tileArgs = [e.tile.level, e.tile.x, e.tile.y];
+            const format = e.tile._format || `u${source.format}`;
+            const okFormat = ["u16", "u32"].includes(format);
+            const tKey = source.getTileKey(...tileArgs);
+            const pixels = e.tile._array;
 
             // Clear before starting all the draw calls
             gl.clearColor(0, 0, 0, 0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             // Reset texture for GLSL
-            that.selectTexture(gl, this.texture, 0);
+            const oldKey = that.activeTextureLabel;
+            // Only transfer texture if needed
+            if (oldKey != tKey && okFormat) {
+                this._activeTileTexture = that.indexOfTexture(tKey);
+                that.selectTexture(gl, this.texture, this._activeTileTexture);
+                const textureArgs = {
+                    u16: [gl.RG8UI, w, h, 0, gl.RG_INTEGER],
+                    u32: [gl.RGBA8UI, w, h, 0, gl.RGBA_INTEGER],
+                }[format];
 
-            // Send the tile into the texture.
-            const textureArgs = {
-                u16: [gl.RG8UI, w, h, 0, gl.RG_INTEGER],
-                u32: [gl.RGBA8UI, w, h, 0, gl.RGBA_INTEGER],
-            }[format];
-            gl.texImage2D(gl.TEXTURE_2D, 0, ...textureArgs, gl.UNSIGNED_BYTE, pixels);
+                // Send the tile into the texture.
+                gl.texImage2D(gl.TEXTURE_2D, 0, ...textureArgs, gl.UNSIGNED_BYTE, pixels);
+            }
 
             this.gl_arguments.tile_shape_2fv = new Float32Array([w, h]);
 
-            // Call gl-drawing after loading TEXTURE0
+            // Call gl-drawing after loading
             this["gl-drawing"].call(this);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
             return gl.canvas;
@@ -139,6 +158,18 @@ class ImageViewer {
 
         seaGL.vShader = "/client/src/shaders/vert.glsl";
         seaGL.fShader = "/client/src/shaders/frag.glsl";
+
+        // Overwrite tile-drawing method
+        seaGL.io["tile-drawing"] = function (e) {
+            var w = e.rendered.canvas.width;
+            var h = e.rendered.canvas.height;
+            var gl_w = this.viaGL.width;
+            var gl_h = this.viaGL.height;
+
+            // Render a webGL canvas to an input canvas
+            var output = this.viaGL.loadArray(e, w, h);
+            e.rendered.drawImage(output, 0, 0, gl_w, gl_h, 0, 0, w, h);
+        };
 
         // Draw handler for viaWebGL
         seaGL.addHandler("tile-drawing", async function (callback, e) {
@@ -200,7 +231,9 @@ class ImageViewer {
 
             // Send color and range to shader
             this.gl.uniform2fv(this.u_tile_shape, args.tile_shape_2fv);
-            this.gl.uniform1f(this.u_scale_level, args.scale_level_1f);
+            this.gl.uniform1f(this.u_tile_fraction, args.tile_fraction_1f);
+            this.gl.uniform1f(this.u_tile_scale, args.tile_scale_1f);
+            this.gl.uniform1f(this.u_pie_radius, args.pie_radius_1f);
             this.gl.uniform2fv(this.u_tile_origin, args.origin_2fv);
             this.gl.uniform3fv(this.u_tile_color, args.color_3fv);
             this.gl.uniform2fv(this.u_tile_range, args.range_2fv);
@@ -218,7 +251,9 @@ class ImageViewer {
             this.u_gating_shape = this.gl.getUniformLocation(program, "u_gating_shape");
             this.u_center_shape = this.gl.getUniformLocation(program, "u_center_shape");
             this.u_magnitude_shape = this.gl.getUniformLocation(program, "u_magnitude_shape");
-            this.u_scale_level = this.gl.getUniformLocation(program, "u_scale_level");
+            this.u_tile_fraction = this.gl.getUniformLocation(program, "u_tile_fraction");
+            this.u_tile_scale = this.gl.getUniformLocation(program, "u_tile_scale");
+            this.u_pie_radius = this.gl.getUniformLocation(program, "u_pie_radius");
             this.u_tile_origin = this.gl.getUniformLocation(program, "u_tile_origin");
             this.u_tile_range = this.gl.getUniformLocation(program, "u_tile_range");
             this.u_tile_color = this.gl.getUniformLocation(program, "u_tile_color");
@@ -230,17 +265,20 @@ class ImageViewer {
 
             // Texture for colormap
             const u_ids = this.gl.getUniformLocation(program, "u_ids");
+            const u_tile = this.gl.getUniformLocation(program, "u_tile");
             const u_gatings = this.gl.getUniformLocation(program, "u_gatings");
             const u_centers = this.gl.getUniformLocation(program, "u_centers");
             const u_magnitudes = this.gl.getUniformLocation(program, "u_magnitudes");
             this.texture_ids = this.gl.createTexture();
-            this.texture_magnitudes = this.gl.createTexture();
-            this.texture_centers = this.gl.createTexture();
+            this.texture_mask = this.gl.createTexture();
             this.texture_gatings = this.gl.createTexture();
-            this.gl.uniform1i(u_ids, 1);
-            this.gl.uniform1i(u_magnitudes, 2);
-            this.gl.uniform1i(u_centers, 3);
-            this.gl.uniform1i(u_gatings, 4);
+            this.texture_centers = this.gl.createTexture();
+            this.texture_magnitudes = this.gl.createTexture();
+            this.gl.uniform1i(u_ids, that.indexOfTexture("ids"));
+            this.gl.uniform1i(u_tile, that._activeTileTexture);
+            this.gl.uniform1i(u_gatings, that.indexOfTexture("gatings"));
+            this.gl.uniform1i(u_centers, that.indexOfTexture("centers"));
+            this.gl.uniform1i(u_magnitudes, that.indexOfTexture("magnitudes"));
         });
 
         const matchTile = (e, { x, y, level }) => {
@@ -352,6 +390,45 @@ class ImageViewer {
         });
     }
 
+    /**
+     * function indexOfTexture -- return integer for named texture
+     * @param label - the texture key label
+     *
+     * @returns {Number}
+     */
+    indexOfTexture(label) {
+        const via = this.viaGL;
+        // Non-image textures always same index
+        const index0 = via._constantTextures.indexOf(label);
+        if (index0 > -1) {
+            return index0 + via._constantTextureOffset;
+        }
+        const index1 = via._tileTextures.indexOf(label);
+        if (index1 > -1) {
+            return index1;
+        }
+        const index2 = via._nextTileTexture;
+        const maximum = via._tileTextures.length;
+        via._nextTileTexture = (index2 + 1) % maximum;
+        via._tileTextures[index2] = label;
+        return index2;
+    }
+
+    /**
+     * Most recently bound texture label
+     *
+     * @type {string}
+     */
+    get activeTextureLabel() {
+        const via = this.viaGL;
+        return via._tileTextures[via._activeTileTexture];
+    }
+
+    /**
+     * Flags for mode of webGL rendering.
+     *
+     * @type {{edge: boolaen, or: boolean}}
+     */
     get modeFlags() {
         const edge = this.viewerManagerVMain.sel_outlines;
         const or = csv_gatingList.eval_mode == "or";
@@ -524,7 +601,9 @@ class ImageViewer {
      * @param source - openseadragon tile source
      *
      * @returns {{
-     *   scale_level_1f: Number,
+     *   pie_radius_1f: Number,
+     *   tile_scale_1f: Number,
+     *   tile_fraction_1f: Number,
      *   x_bounds_2fv: Array,
      *   y_bounds_2fv: Array,
      *   origin_2fv: Array,
@@ -539,7 +618,9 @@ class ImageViewer {
         const bounds = source.toMagnifiedBounds(...tileArgs);
 
         return {
-            scale_level_1f: imageScale,
+            pie_radius_1f: 8.5,
+            tile_scale_1f: Math.max(imageScale, 1.0),
+            tile_fraction_1f: Math.min(imageScale, 1.0),
             x_bounds_2fv: new Float32Array(bounds.x),
             y_bounds_2fv: new Float32Array(bounds.y),
             origin_2fv: new Float32Array(origin),
@@ -682,12 +763,15 @@ class ImageViewer {
      * @function selectTexture - activate a WebGL texture
      * @param gl - the WebGL2 context
      * @param texture - the WebGL2 texture
-     * @param idx - the WebGL2 texture index
+     * @param idx - the texture index
+     *
+     * @returns {void}
      */
     selectTexture(gl, texture, idx) {
         // Set texture for GLSL
         gl.activeTexture(gl["TEXTURE" + idx]);
-        gl.bindTexture(gl.TEXTURE_2D, texture), gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
         // Assign texture parameters
@@ -783,7 +867,7 @@ class ImageViewer {
     setLabelMap(gl, texture, values) {
         const packed = this.packInteger(gl, values);
         // Set texture for GLSL
-        this.selectTexture(gl, texture, 1);
+        this.selectTexture(gl, texture, this.indexOfTexture("ids"));
         // Send an empty array to the texture
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
     }
@@ -797,7 +881,7 @@ class ImageViewer {
     setMagnitudeMap(gl, texture, values) {
         const packed = this.packFloat(gl, values);
         // Set texture for GLSL
-        this.selectTexture(gl, texture, 2);
+        this.selectTexture(gl, texture, this.indexOfTexture("magnitudes"));
         // Send an empty array to the texture
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, packed.width, packed.height, 0, gl.RED, gl.FLOAT, packed.pixels);
     }
@@ -811,7 +895,7 @@ class ImageViewer {
     setCenterMap(gl, texture, values) {
         const packed = this.packInteger(gl, values);
         // Set texture for GLSL
-        this.selectTexture(gl, texture, 3);
+        this.selectTexture(gl, texture, this.indexOfTexture("centers"));
         // Send an empty array to the texture
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
     }
@@ -827,7 +911,7 @@ class ImageViewer {
     setGatingMap(gl, texture, values, width, height) {
         const pixels = this.packFloat32(values, width, height);
         // Set texture for GLSL
-        this.selectTexture(gl, texture, 4);
+        this.selectTexture(gl, texture, this.indexOfTexture("gatings"));
         // Send an empty array to the texture
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, width, height, 0, gl.RED, gl.FLOAT, pixels);
     }
