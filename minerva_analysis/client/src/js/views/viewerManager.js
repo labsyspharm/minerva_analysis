@@ -147,14 +147,11 @@ export class ViewerManager {
      *
      * @param _imageViewer - ImageViewer instance
      * @param _viewer - Openseadragon instance
-     * @param _viewerName - name as string
      */
-    constructor(_imageViewer, _viewer, _viewerName) {
+    constructor(_imageViewer, _viewer) {
         this.viewer = _viewer;
         this.imageViewer = _imageViewer;
-        this.viewer_name = _viewerName;
-        this.viewer_channels = {};
-        this.channelList = channelList;
+        this.viewer_channels = new Map();
 
         this.init();
     }
@@ -175,21 +172,21 @@ export class ViewerManager {
      */
     channel_add(srcIdx) {
         // If already exists
-        if (srcIdx in this.channelList.currentChannels) {
+        if (this.viewer_channels.has(srcIdx)) {
             return;
         }
 
         // Find name
         let name = "";
-        let name_short = "";
+        let short_name = "";
         for (let k in imageChannels) {
             if (imageChannels.hasOwnProperty(k) && imageChannels[k] === srcIdx) {
                 name = k;
-                name_short = dataLayer.getShortChannelName(k);
+                short_name = dataLayer.getShortChannelName(k);
             }
         }
 
-        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
+        const url = this.imageViewer.config["imageData"][srcIdx]["src"];
         const { maxLevel, extraZoomLevels } = this.imageViewer.config;
         const magnification = 2 ** extraZoomLevels;
         this.viewer.addTiledImage({
@@ -210,26 +207,21 @@ export class ViewerManager {
                 getTileKey: getTileKey,
                 tileFormat: 16,
                 srcIdx: srcIdx,
-                src: src,
+                src: url,
             },
             // index: 0,
             opacity: 1,
             preload: true,
             success: () => {
                 // Define url and suburl
-                const itemidx = this.viewer.world.getItemCount() - 1;
-                this.viewer.world.getItemAt(itemidx).source["channelUrl"] = src;
-                const url = src;
                 const group = url.split("/");
                 const sub_url = group[group.length - 2];
-                // Attach
-                this.channelList.currentChannels[srcIdx] = {
-                    url: url,
-                    sub_url: sub_url,
-                    color: this.channelList.colorConnector[srcIdx] ? this.channelList.colorConnector[srcIdx].color : d3.color("white"),
-                    range: this.channelList.rangeConnector[srcIdx] || dataLayer.getImageBitRange(true),
-                };
-                this.viewer_channels[srcIdx] = { url: url, sub_url: sub_url, name: name, short_name: name_short };
+                const itemidx = this.viewer.world.getItemCount() - 1;
+                this.viewer.world.getItemAt(itemidx).source["channelUrl"] = url;
+                // Attach channel selection
+                const viewerChannel = { url, sub_url, name, short_name };
+                this.imageViewer.addChannelSelection(srcIdx, viewerChannel);
+                this.viewer_channels.set(srcIdx, viewerChannel);
             },
         });
     }
@@ -242,14 +234,14 @@ export class ViewerManager {
         const img_count = this.viewer.world.getItemCount();
 
         // remove channel
-        if (srcIdx in this.channelList.currentChannels) {
+        if (this.viewer_channels.has(srcIdx)) {
             // remove channel - first find it
             for (let i = 0; i < img_count; i = i + 1) {
                 const url = this.viewer.world.getItemAt(i).source["channelUrl"];
-                if (url === this.channelList.currentChannels[srcIdx]["url"]) {
+                if (url === this.viewer_channels.get(srcIdx)?.url) {
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
-                    delete this.channelList.currentChannels[srcIdx];
-                    delete this.viewer_channels[srcIdx];
+                    this.imageViewer.removeChannelSelection(srcIdx);
+                    this.viewer_channels.delete(srcIdx);
                     break;
                 }
             }

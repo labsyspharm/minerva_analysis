@@ -17,18 +17,20 @@ class ImageViewer {
      *
      * @param config - the cinfiguration file (json)
      * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
+     * @param channelList - ChannelList instance
      * @param eventHandler - the event handler for distributing interface and data updates
      * @param colorScheme - the color scheme to use or selections etc.
      */
-    constructor(config, dataLayer, eventHandler, colorScheme) {
+    constructor(config, dataLayer, channelList, eventHandler, colorScheme) {
         this.config = config;
-        this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
-        this.colorScheme = colorScheme;
         this.channelList = channelList;
+        this.eventHandler = eventHandler;
+        this.colorScheme = colorScheme;
+        this.gatingList = null;
+        this._ready = false;
         this.clearCache();
-        const clearFullCache = () => (this.fullCacheKey = null);
-        this.eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, clearFullCache);
+        const that = this;
 
         // Viewer
         this.viewer = {};
@@ -69,14 +71,6 @@ class ImageViewer {
         // Applying TF to selection, subset, or all
         this.show_subset = false;
         this.show_selection = true;
-    }
-
-    /**
-     * @function init - initializes OSD, loads metadata, tile drawing, etc.
-     */
-    init() {
-        // Define this as that
-        const that = this;
 
         // Hide Loader
         document.getElementById("openseadragon_loader").style.display = "none";
@@ -102,7 +96,7 @@ class ImageViewer {
 
         /************************************************************************************** Get ome tiff metadata */
 
-        dataLayer.getMetadata().then((d) => {
+        this.dataLayer.getMetadata().then((d) => {
             that.imgMetadata = d;
             console.log("Image metadata:", that.imgMetadata);
             that.addScaleBar();
@@ -184,7 +178,7 @@ class ImageViewer {
             const via = this.viaGL;
 
             if (tileFormat != 32) {
-                let channel = _.find(that.channelList.currentChannels, (e) => {
+                const channel = _.find(that.channelSelections, (e) => {
                     return e.sub_url == sub_url;
                 });
                 const color = _.get(channel, "color", d3.color("white"));
@@ -206,7 +200,9 @@ class ImageViewer {
                 }
                 // transfer data to WebGL shaders
                 const idCount = that.selection.size;
-                that.loadBuffers(idCount);
+                if (that.ready) {
+                  that.loadBuffers(idCount);
+                }
                 // Use new parameters for this tile
                 via.gl_arguments = {
                     ...centerProps,
@@ -390,6 +386,17 @@ class ImageViewer {
                 });
             }
         });
+
+    }
+
+    /**
+     * @function init - initializes OSD channel and gating options
+     * @param gatingList - CSVGatingList instance
+     */
+    init(gatingList) {
+        this.gatingList = gatingList;
+        // Define this as that
+        this.ready = true;
     }
 
     /**
@@ -435,7 +442,7 @@ class ImageViewer {
      */
     get modeFlags() {
         const edge = this.viewerManagerVMain.sel_outlines;
-        const or = csv_gatingList.eval_mode == "or";
+        const or = this.gatingList?.eval_mode == "or";
         return { edge, or };
     }
 
@@ -444,10 +451,37 @@ class ImageViewer {
      *
      * @type {Array}
      */
-
     get gatingKeys() {
-        const keys = Object.keys(csv_gatingList.selections);
+        const keys = Object.keys(this.gatingSelections);
         return keys.sort();
+    }
+
+    /**
+     * Gating selections.
+     *
+     * @type {Array}
+     */
+    get gatingSelections() {
+        return this.gatingList?.selections || {};
+    }
+
+    /**
+     * Channel selections.
+     *
+     * @type {Array}
+     */
+    get channelSelections() {
+        return this.channelList.currentChannels || {};
+    }
+
+    /**
+     * @function removeChannelSelection - remove channel from channel list
+     * @param srcIdx - integer id of channel to add
+     */
+    removeChannelSelection(srcIdx) {
+        if (srcIdx in this.channelList.currentChannels) {
+            delete this.channelList.currentChannels[srcIdx];
+        }
     }
 
     /**
@@ -511,6 +545,36 @@ class ImageViewer {
 
     set mainCacheKey(key) {
         this._cacheKeys.main = key;
+    }
+
+    /**
+     * Ready to render
+     *
+     * @type {boolean}
+     */
+
+    get ready() {
+        return this._ready;
+    }
+
+    set ready(_ready) {
+        this._ready = _ready;
+    }
+
+    /**
+     * @function addChannelSelection - add channel to channel list
+     * @param srcIdx - integer id of channel to add
+     * @param viewerChannel - channel properties
+     */
+    addChannelSelection(srcIdx, viewerChannel) {
+        const range = this.channelList.rangeConnector[srcIdx];
+        const { color } = this.channelList.colorConnector[srcIdx] || {};
+        this.channelList.currentChannels[srcIdx] = {
+            url: viewerChannel.url,
+            sub_url: viewerChannel.sub_url,
+            color:  color || d3.color("white"),
+            range: range || this.dataLayer.getImageBitRange(true)
+        };
     }
 
     /**
@@ -666,9 +730,9 @@ class ImageViewer {
     selectGatings(keys) {
         const ranges = [];
         const gatings = [];
-        const gatingRangeMap = csv_gatingList.selections;
+        const selections = this.gatingSelections;
         for (const key of keys) {
-            const range = gatingRangeMap[key].map((x) => parseFloat(x));
+            const range = selections[key].map((x) => parseFloat(x));
             const color = this.selectMaskColor(key);
             const floatColor = toFloatColor(color);
             const gating = range.concat(floatColor);
@@ -734,7 +798,7 @@ class ImageViewer {
         if (!channel) {
             return white;
         }
-        const channels = channelList.currentChannels;
+        const channels = this.channelSelections;
         const idxString = (this.selectMaskIndex(channel) + 1).toString();
         if (idxString == "0" || !Object.keys(channels).includes(idxString)) {
             return white;
@@ -749,7 +813,7 @@ class ImageViewer {
      * @returns number
      */
     selectMaskIndex(channel) {
-        return channelList.columns.indexOf(channel);
+        return this.channelList.columns.indexOf(channel);
     }
 
     /**
@@ -1019,10 +1083,29 @@ class ImageViewer {
         // Trigger change of full cache
         this.fullCacheKey = null;
         // Refilter, redraw
-        this.viewerManagers.forEach((vM) => {
-            vM.viewer.forceRedraw();
+        this.viewerManagers.forEach(({viewer}) => {
+            viewer.forceRedraw();
         });
     }
+
+    /**
+     * @function sleep - temporarily disable new renders until data loads
+     * @return {function(): void} - a callback to re-enable rendering 
+     */
+    sleep() {
+        this.ready = false;
+        this.viewerManagers.forEach(({viewer}) => {
+            viewer.world._needsDraw = false;
+        });
+        return () => {
+          this.ready = true;
+          this.viewerManagers.forEach(({viewer}) => {
+              viewer.world._needsDraw = true;
+          });
+        }
+    }
+
+
 
     /**
      * @function updateActiveChannels
@@ -1055,9 +1138,9 @@ class ImageViewer {
         const self = this;
         let range = self.dataLayer.getImageBitRange();
         const channelIdx = imageChannels[name];
-        if (self.channelList.currentChannels[channelIdx]) {
+        if (self.channelSelections[channelIdx]) {
             let channelRange = [tfmin / range[1], tfmax / range[1]];
-            self.channelList.currentChannels[channelIdx]["range"] = channelRange;
+            self.channelSelections[channelIdx].range = channelRange;
             self.channelList.rangeConnector[channelIdx] = channelRange;
         }
         this.forceRepaint();
@@ -1071,9 +1154,9 @@ class ImageViewer {
     updateChannelColors(name, color) {
         const self = this;
         const channelIdx = imageChannels[name];
-        if (self.channelList.currentChannels[channelIdx]) {
+        if (self.channelSelections[channelIdx]) {
             self.channelList.colorConnector[channelIdx] = { color: color };
-            self.channelList.currentChannels[channelIdx]["color"] = color;
+            self.channelSelections[channelIdx].color = color;
         }
         this.forceRepaint();
     }
@@ -1099,19 +1182,9 @@ class ImageViewer {
      * @param selection - map of ids selected
      * @param repaint - if repaint needed
      */
-    updateSelection(selection, repaint = true) {
+    updateSelection(selection) {
         this.selection = selection;
-        // Reload Label Tiles
-        let tileLevels = this.viewer.world.getItemAt(0).tilesMatrix;
-        for (const level of Object.values(tileLevels)) {
-            for (const tile of Object.values(level)) {
-                for (const subTile of Object.values(tile)) {
-                    subTile._redrawLabel = true;
-                }
-            }
-        }
-        this.viewer.forceRedraw();
-        if (repaint) this.forceRepaint();
+        this.forceRepaint();
     }
 
     addScaleBar() {
