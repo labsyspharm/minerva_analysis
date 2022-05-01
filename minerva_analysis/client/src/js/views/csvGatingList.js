@@ -11,10 +11,11 @@ class CSVGatingList {
      */
     constructor(config, dataLayer, eventHandler) {
         this.config = config;
+        this.waiting = Promise.resolve(true);
+        this.maxSelections = config.maxSelections;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.selections = {};
-        this.maxSelections = 4;
         this.ranges = {};
         this.hasGatingGMM = {};
         this.gatingIDs = {};
@@ -40,18 +41,11 @@ class CSVGatingList {
      * @param name - the channel to set and display as selected
      */
     selectChannel(name) {
-        // For overlay (and query incrementor)
-        // seaDragonViewer.csvGatingOverlay.run_balancer++;
-
-         if (!(name in this.hasGatingGMM)) {
-            let channelTrace = this.getAndDrawGatingGMM(name);
-        }
-
-        // Add
-        this.selections[this.dataLayer.getFullChannelName(name)] = this.sliders.get(name).value();
-
-        // Trigger
-        this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+        this.awaitGatingGMM(name).then(() => {
+          const fullName = this.dataLayer.getFullChannelName(name);
+          this.selections[fullName] = this.sliders.get(name).value();
+          this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+        });
     }
 
      /**
@@ -169,7 +163,11 @@ class CSVGatingList {
             autoBtn.classList.add('auto-btn');
             autoBtn.setAttribute('id', "auto-btn_" + channelID);
             autoBtn.textContent = "auto";
-            autoBtn.addEventListener("click", async function() { await self.autoGate(fullName) });
+            autoBtn.addEventListener("click", async () => {
+                const shortName = self.dataLayer.getShortChannelName(fullName);
+                await self.awaitGatingGMM(shortName);
+                self.autoGate(shortName);
+            });
 
             autoCol.appendChild(autoBtn);
             autoBtn.addEventListener("click", e => e.stopPropagation());
@@ -303,22 +301,20 @@ class CSVGatingList {
      * @function autoGate - applies thresholds based on Gaussian Mixture Model
      * @param name - the name of the channel to apply it to
      */
-    async autoGate(name) {
+    autoGate(shortName) {
         const self = this;
-        let shortName = self.dataLayer.getShortChannelName(name);
-
-        let gate = this.hasGatingGMM[shortName]['gate']
+        let gate = this.hasGatingGMM[shortName].gate;
         if (!this.dataLayer.isTransformed()) {
             gate = parseInt(gate)
         } else {
             gate = gate.toFixed(7);
         }
         // For interaction
-        self.selections[name][0] = gate;
-        let gate_end = self.selections[name][1]
+        self.selections[shortName][0] = gate;
+        let gate_end = self.selections[shortName][1]
         self.sliders.get(shortName).value([gate, gate_end]);
         // For records
-        this.gating_channels[name] = [gate, gate_end];
+        this.gating_channels[shortName] = [gate, gate_end];
 
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, self.selections);
     }
@@ -506,6 +502,7 @@ class CSVGatingList {
         // Toggle outlined / filled cell selections
         gating_controls_outlines.addEventListener('change', e => {
             seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
+            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         })
 
         // Toggle outlined / filled cell selections
@@ -521,8 +518,7 @@ class CSVGatingList {
                 this.eval_mode = 'and';
             }
 
-            // Update overlay centroid (will also trigger event)
-            seaDragonViewer.csvGatingOverlay.control(e.target.checked);
+            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         })
 
     }
@@ -741,6 +737,14 @@ class CSVGatingList {
         this.drawGatingGMM(name);
     }
 
+    awaitGatingGMM(name) {
+        if (!(name in this.hasGatingGMM)) {
+            const waiting = this.getAndDrawGatingGMM(name)
+            this.waiting = Promise.all([this.waiting, waiting]);
+        }
+        return this.waiting;
+    }
+
     drawGatingGMM(name){
         let fullname = this.dataLayer.getFullChannelName(name);
         let channelID = this.gatingIDs[name];
@@ -849,7 +853,7 @@ window.addEventListener("resize", function () {
             csv_gatingList.addSlider(name, document.getElementById("csv_gating_list").getBoundingClientRect().width,
                 sliderRange, slider.value());
             if (csv_gatingList.hasGatingGMM[name]) {
-                let channelTrace = csv_gatingList.drawGatingGMM(name);
+                csv_gatingList.drawGatingGMM(name);
             }
         });
     }

@@ -45,6 +45,9 @@ d3.json(`/config?t=${Date.now()}`).then(function (config) {
 async function init(conf) {
 
     config = conf;
+    //maximum selections
+    config.maxSelections = 4;
+    config.extraZoomLevels = 3;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;
@@ -57,23 +60,24 @@ async function init(conf) {
     dataLayer = new DataLayer(config, imageChannels);
     await dataLayer.init();
 
+    //init color scheme
+    colorScheme = new ColorScheme(dataLayer);
+    await colorScheme.init();
+
     //init channel panel
     channelList = new ChannelList(config, dataLayer, eventHandler);
     await channelList.init();
+
+    //create image viewer
+    seaDragonViewer = new ImageViewer(config, dataLayer, channelList, eventHandler, colorScheme);
 
     //init gating panel
     csv_gatingList = new CSVGatingList(config, dataLayer, eventHandler);
     await csv_gatingList.init();
 
-    //init color scheme
-    colorScheme = new ColorScheme(dataLayer);
-    await colorScheme.init();
-
     //init image viewer
-    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-    seaDragonViewer.init();
+    seaDragonViewer.init(csv_gatingList);
 }
-
 
 //EVENT HANDLING
 
@@ -88,7 +92,6 @@ const actionColorTransferChange = (d) => {
     // d3.select('body').style('cursor', 'progress');
     seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
     // d3.select('body').style('cursor', 'default');
-    seaDragonViewer.csvGatingOverlay.draw();
 }
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
@@ -112,7 +115,8 @@ const actionChannelsToRenderChange = (d) => {
     d.name = dataLayer.getFullChannelName(d.name);
 
     //send to image viewer
-    seaDragonViewer.updateActiveChannels(d.name, d.selections, d.status);
+    const action = ["remove", "add"][+d.status];
+    seaDragonViewer.updateActiveChannels(d.name, action);
 
     d3.select('body').style('cursor', 'default');
 }
@@ -140,9 +144,12 @@ eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMul
  * @param  {package object} d The selected/deselected channels
  */
 const channelSelect = async (sels) => {
+    // pause new rendering until data loads
+    const resume = seaDragonViewer.sleep(); 
     let channelCells = await dataLayer.getChannelCellIds(sels);
     dataLayer.addAllToCurrentSelection(channelCells);
-    updateSeaDragonSelection(false);
+    updateSeaDragonSelection();
+    resume();
 }
 eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
@@ -150,9 +157,8 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
  * Listens to and updates based on selection changes (specific for seadragon)
  * @param  {boolean} d Whether to repaint
  */
-function updateSeaDragonSelection(repaint = true) {
-    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
-    seaDragonViewer.csvGatingOverlay.evaluate();
+function updateSeaDragonSelection() {
+    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
 }
 
 /**
@@ -168,6 +174,8 @@ const gatingBrushEnd = async (packet) => {
         this.config[datasource].featureData[0].xCoordinate,
         this.config[datasource].featureData[0].yCoordinate
     ];
+    // pause new rendering until data loads
+    const resume = seaDragonViewer.sleep(); 
     // Toggle these methods with centroids on/off ui
     if (csv_gatingList.eval_mode === 'and') {
         // AND
@@ -180,6 +188,7 @@ const gatingBrushEnd = async (packet) => {
     dataLayer.addAllToCurrentSelection(gatedCells);
     // Update view
     updateSeaDragonSelection();
+    resume();
 }
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 

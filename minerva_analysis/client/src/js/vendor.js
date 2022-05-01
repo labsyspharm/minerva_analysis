@@ -20,7 +20,6 @@ import 'viawebgl'
 import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
 import Dropzone from 'dropzone';
-import {CsvGatingOverlay} from './views/CsvGatingOverlay';
 
 window.convert = convert;
 window.$ = $;
@@ -32,7 +31,6 @@ window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = viaWebGL.OpenSeadragon;
 window.Dropzone = Dropzone;
-window.CsvGatingOverlay = CsvGatingOverlay;
 window.viaWebGL = viaWebGL;
 window.ViewerManager = ViewerManager;
 
