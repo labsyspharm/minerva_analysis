@@ -30,6 +30,7 @@ class ImageViewer {
         this.colorScheme = colorScheme;
         this.gatingList = null;
         this._ready = false;
+        this.pickedIds = [];
         this.clearCache();
         const that = this;
 
@@ -40,10 +41,6 @@ class ImageViewer {
 
         // Stores the ordered contents of the tile cache, so that once we hit max size we remove oldest elements
         this.pendingTiles = new Map();
-
-        // Map of selected ids, key is id
-        this.selection = new Map();
-        this.data = new Map();
 
         // Currently loaded label channels
         this.labelChannel = {};
@@ -104,7 +101,7 @@ class ImageViewer {
         });
 
         // Flexible use of textures
-        const constantTextures = ["ids", "magnitudes", "centers", "gatings"];
+        const constantTextures = ["ids", "picked", "magnitudes", "centers", "gatings"];
         const textureCount = 32 - constantTextures.length;
         const tileTextureKeys = [...Array(textureCount).keys()];
         const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
@@ -249,6 +246,7 @@ class ImageViewer {
             // Uniform variables for coloring
             this.u_ids_shape = this.gl.getUniformLocation(program, "u_ids_shape");
             this.u_tile_shape = this.gl.getUniformLocation(program, "u_tile_shape");
+            this.u_picked_shape = this.gl.getUniformLocation(program, "u_picked_shape");
             this.u_gating_shape = this.gl.getUniformLocation(program, "u_gating_shape");
             this.u_center_shape = this.gl.getUniformLocation(program, "u_center_shape");
             this.u_magnitude_shape = this.gl.getUniformLocation(program, "u_magnitude_shape");
@@ -262,11 +260,13 @@ class ImageViewer {
             this.u_x_bounds = this.gl.getUniformLocation(program, "u_x_bounds");
             this.u_y_bounds = this.gl.getUniformLocation(program, "u_y_bounds");
             this.u_tile_fmt = this.gl.getUniformLocation(program, "u_tile_fmt");
+            this.u_picked_end = this.gl.getUniformLocation(program, "u_picked_end");
             this.u_id_end = this.gl.getUniformLocation(program, "u_id_end");
 
             // Texture for colormap
             const u_ids = this.gl.getUniformLocation(program, "u_ids");
             const u_tile = this.gl.getUniformLocation(program, "u_tile");
+            const u_picked = this.gl.getUniformLocation(program, "u_picked");
             const u_gatings = this.gl.getUniformLocation(program, "u_gatings");
             const u_centers = this.gl.getUniformLocation(program, "u_centers");
             const u_magnitudes = this.gl.getUniformLocation(program, "u_magnitudes");
@@ -274,9 +274,11 @@ class ImageViewer {
             this.texture_mask = this.gl.createTexture();
             this.texture_gatings = this.gl.createTexture();
             this.texture_centers = this.gl.createTexture();
+            this.texture_picked = this.gl.createTexture();
             this.texture_magnitudes = this.gl.createTexture();
             this.gl.uniform1i(u_ids, that.indexOfTexture("ids"));
             this.gl.uniform1i(u_tile, that._activeTileTexture);
+            this.gl.uniform1i(u_picked, that.indexOfTexture("picked"));
             this.gl.uniform1i(u_gatings, that.indexOfTexture("gatings"));
             this.gl.uniform1i(u_centers, that.indexOfTexture("centers"));
             this.gl.uniform1i(u_magnitudes, that.indexOfTexture("magnitudes"));
@@ -537,17 +539,17 @@ class ImageViewer {
     }
 
     /**
-     * Cache key for magnitude/center webGL buffers.
+     * Cache key for externally picked selection.
      *
      * @type {string}
      */
 
-    get orCacheKey() {
-        return this._cacheKeys.or;
+    get pickedCacheKey() {
+        return this._cacheKeys.picked;
     }
 
-    set orCacheKey(key) {
-        this._cacheKeys.or = key;
+    set pickedCacheKey(key) {
+        this._cacheKeys.picked = key;
     }
 
     /**
@@ -586,8 +588,12 @@ class ImageViewer {
         const keys = this.gatingKeys;
         const gatingLists = this.selectGatings(keys);
         const changes = this.updateCache(idCount, keys, gatingLists);
-        const { markersChanged, gatingChanged } = changes;
+        const { markersChanged, gatingChanged, pickedChanged } = changes;
 
+        // Bind specific list of picked ids
+        if (pickedChanged) {
+            this.bindPicked(this.viaGL, this.pickedIds);
+        }
         // Bind buffers per-channel
         if (gatingChanged) {
             const gatings = [];
@@ -682,14 +688,18 @@ class ImageViewer {
         if (markersChanged) {
             this.markerCacheKey = markerCacheKey;
         }
-
         const gatingCacheKey = this.toCacheKey(idCount, keys, gatingLists);
         const gatingChanged = this.gatingCacheKey !== gatingCacheKey;
         if (gatingChanged) {
             this.gatingCacheKey = gatingCacheKey;
         }
+        const pickedCacheKey = this.pickedIds.join("-");
+        const pickedChanged = this.pickedCacheKey !== pickedCacheKey;
+        if (pickedChanged) {
+            this.pickedCacheKey = pickedCacheKey;
+        }
 
-        return { markersChanged, gatingChanged };
+        return { markersChanged, gatingChanged, pickedChanged };
     }
 
     /**
@@ -761,38 +771,6 @@ class ImageViewer {
     }
 
     /**
-     * @function packFloat - pack 1D float texture as 2D
-     * @param gl - the WebGL2 context
-     * @param a - the texture data as an array
-     * @typedef {object} Packed
-     * @property {number} width - width of texture
-     * @property {number} height - height of texture
-     * @property {Array} pixels - packed 1D array as 2D
-     * @returns Packed
-     */
-    packFloat(gl, a) {
-        const [width, height] = this.toTextureShape(gl, a);
-        const pixels = this.packFloat32(a, width, height);
-        return { width, height, pixels };
-    }
-
-    /**
-     * @function packInteger - pack 1D integer texture as 2D
-     * @param gl - the WebGL2 context
-     * @param a - the texture data as an array
-     * @typedef {object} Packed
-     * @property {number} width - width of texture
-     * @property {number} height - height of texture
-     * @property {Array} pixels - packed 1D array as 2D
-     * @returns Packed
-     */
-    packInteger(gl, a) {
-        const [width, height] = this.toTextureShape(gl, a);
-        const pixels = this.packUint8(a, width, height);
-        return { width, height, pixels };
-    }
-
-    /**
      * @function packFloat32 - pack Float32 Texture
      * @param a - the texture data as an array
      * @param width - the texture width
@@ -811,13 +789,13 @@ class ImageViewer {
     }
 
     /**
-     * @function packUint8 - pack Uint8 Texture
+     * @function packUint32 - pack Uint32 Texture
      * @param a - the texture data as an array
      * @param width - the texture width
      * @param height - the texture height
      * @returns array
      */
-    packUint8(a, width, height) {
+    packUint32(a, width, height) {
         // Create 2D array of pixels
         const full_size = width * height;
         const arr = new ArrayBuffer(4 * full_size);
@@ -829,60 +807,33 @@ class ImageViewer {
     }
 
     /**
-     * @function setLabelMap - set the segmentation mask ids
+     * @function setIntegerTexture - set an integer texture
      * @param gl - the WebGL2 context
+     * @param key - the texture key string
      * @param texture - the WebGL2 texture
      * @param values - the texture data as 2d array
      */
-    setLabelMap(gl, texture, values) {
-        const packed = this.packInteger(gl, values);
+    setIntegerTexture(gl, key, texture, values) {
+        const [width, height] = this.toTextureShape(gl, values);
+        const pixels = this.packUint32(values, width, height);
         // Set texture for GLSL
-        this.selectTexture(gl, texture, this.indexOfTexture("ids"));
+        this.selectTexture(gl, texture, this.indexOfTexture(key));
         // Send an empty array to the texture
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, width, height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
     }
 
     /**
-     * @function setMagnitudeMap - set the segmentation mask magnitudes
+     * @function setFloatTexture - set a floating point texture
      * @param gl - the WebGL2 context
-     * @param texture - the WebGL2 texture
-     * @param values - the texture data as 2d array
-     */
-    setMagnitudeMap(gl, texture, values) {
-        const packed = this.packFloat(gl, values);
-        // Set texture for GLSL
-        this.selectTexture(gl, texture, this.indexOfTexture("magnitudes"));
-        // Send an empty array to the texture
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, packed.width, packed.height, 0, gl.RED, gl.FLOAT, packed.pixels);
-    }
-
-    /**
-     * @function setCenterMap - set the segmentation mask centers
-     * @param gl - the WebGL2 context
-     * @param texture - the WebGL2 texture
-     * @param values - the texture data as 2d array
-     */
-    setCenterMap(gl, texture, values) {
-        const packed = this.packInteger(gl, values);
-        // Set texture for GLSL
-        this.selectTexture(gl, texture, this.indexOfTexture("centers"));
-        // Send an empty array to the texture
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, packed.width, packed.height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, packed.pixels);
-    }
-
-    /**
-     * @function setGatingMap - set the segmentation mask gatings
-     * @param gl - the WebGL2 context
+     * @param key - the texture key string
      * @param texture - the WebGL2 texture
      * @param values - the texture data as 2d array
      * @param width - the texture width
      * @param height - the texture height
      */
-    setGatingMap(gl, texture, values, width, height) {
+    setFloatTexture(gl, key, texture, values, width, height) {
         const pixels = this.packFloat32(values, width, height);
-        // Set texture for GLSL
-        this.selectTexture(gl, texture, this.indexOfTexture("gatings"));
-        // Send an empty array to the texture
+        this.selectTexture(gl, texture, this.indexOfTexture(key));
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, width, height, 0, gl.RED, gl.FLOAT, pixels);
     }
 
@@ -895,7 +846,7 @@ class ImageViewer {
         // Add id mask map
         const ids_2iv = this.toTextureShape(via.gl, values);
         via.gl.uniform2iv(via.u_ids_shape, ids_2iv);
-        this.setLabelMap(via.gl, via.texture_ids, values);
+        this.setIntegerTexture(via.gl, "ids", via.texture_ids, values);
     }
 
     /**
@@ -909,7 +860,8 @@ class ImageViewer {
         const magnitude_2iv = this.toTextureShape(via.gl, values);
         const magnitude_3iv = magnitude_2iv.concat(depth);
         via.gl.uniform3iv(via.u_magnitude_shape, magnitude_3iv);
-        this.setMagnitudeMap(via.gl, via.texture_magnitudes, values);
+        const [width, height] = this.toTextureShape(via.gl, values);
+        this.setFloatTexture(via.gl, "magnitudes", via.texture_magnitudes, values, width, height); 
     }
 
     /**
@@ -922,7 +874,7 @@ class ImageViewer {
         const center_2iv = this.toTextureShape(via.gl, values);
         const center_3iv = center_2iv.concat([2]);
         via.gl.uniform3iv(via.u_center_shape, center_3iv);
-        this.setCenterMap(via.gl, via.texture_centers, values);
+        this.setIntegerTexture(via.gl, "centers", via.texture_centers, values);
     }
 
     /**
@@ -936,8 +888,22 @@ class ImageViewer {
         const height = Math.floor(values.length / width);
         const gating_2iv = [width, height];
         via.gl.uniform2iv(via.u_gating_shape, gating_2iv);
-        this.setGatingMap(via.gl, via.texture_gatings, values, width, height);
+        this.setFloatTexture(via.gl, "gatings", via.texture_gatings, values, width, height);
     }
+
+    /**
+     * @function bindPicked - bind externally picked cell ids
+     * @param via - the viaGL context
+     * @param values - the texture data as 2d array
+     */
+    bindPicked(via, values) {
+        // Add a mask center map
+        const picked_2iv = this.toTextureShape(via.gl, values);
+        via.gl.uniform2iv(via.u_picked_shape, picked_2iv);
+        via.gl.uniform1i(via.u_picked_end, values.length - 1);
+        this.setIntegerTexture(via.gl, "picked", via.texture_picked, values);
+    }
+
 
     // =================================================================================================================
     // Tile cache management
@@ -1084,15 +1050,6 @@ class ImageViewer {
             this.show_selection = !this.show_selection;
         }
 
-        this.forceRepaint();
-    }
-
-    /**
-     * @function updateSelection
-     * @param selection - map of ids selected
-     */
-    updateSelection(selection) {
-        this.selection = selection;
         this.forceRepaint();
     }
 

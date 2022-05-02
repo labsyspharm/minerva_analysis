@@ -5,11 +5,13 @@ precision highp usampler2D;
 
 uniform usampler2D u_ids;
 uniform usampler2D u_tile;
+uniform usampler2D u_picked;
 uniform sampler2D u_gatings;
 uniform usampler2D u_centers;
 uniform sampler2D u_magnitudes;
 uniform ivec2 u_ids_shape;
 uniform vec2 u_tile_shape;
+uniform ivec2 u_picked_shape;
 uniform ivec2 u_gating_shape;
 uniform ivec3 u_center_shape;
 uniform ivec3 u_magnitude_shape;
@@ -24,6 +26,7 @@ uniform bvec2 u_draw_mode;
 uniform vec2 u_x_bounds;
 uniform vec2 u_y_bounds;
 uniform int u_tile_fmt;
+uniform int u_picked_end;
 uniform int u_id_end;
 
 in vec2 uv;
@@ -108,18 +111,18 @@ vec2 to_texture_xy(vec2 s, float x, float y) {
 
 // Turn 2D integers to coordinates for wrapped texture
 // Note: needed for 2D textures larger than normal limits
-vec2 to_flat_texture_xy(ivec3 shape, int cell_index, int d) {
-  uint idx = uint(cell_index * shape.z + d);
-  float idx_x = modulo(idx, uint(shape.x));
-  float idx_y = floor(division(int(idx), shape.x));
-  return to_texture_xy(vec2(shape.xy), idx_x, idx_y);
+vec2 to_flat_texture_xy(ivec3 size, int cell_index, int d) {
+  uint idx = uint(cell_index * size.z + d);
+  float idx_x = modulo(idx, uint(size.x));
+  float idx_y = floor(division(int(idx), size.x));
+  return to_texture_xy(vec2(size.xy), idx_x, idx_y);
 }
 
 // Access cell center at cell index
 vec2 sample_center(int cell_index) {
-  ivec3 shape = u_center_shape;
-  vec2 center_x = to_flat_texture_xy(shape, cell_index, 0);
-  vec2 center_y = to_flat_texture_xy(shape, cell_index, 1);
+  ivec3 size = u_center_shape;
+  vec2 center_x = to_flat_texture_xy(size, cell_index, 0);
+  vec2 center_y = to_flat_texture_xy(size, cell_index, 1);
   uint cx = unpack(texture(u_centers, center_x));
   uint cy = unpack(texture(u_centers, center_y));
   return vec2(cx, cy);
@@ -127,15 +130,15 @@ vec2 sample_center(int cell_index) {
 
 // Access marker key magnitude at cell index
 float sample_magnitude(int cell_index, int key) {
-  ivec3 shape = u_magnitude_shape;
-  vec2 idx_2d = to_flat_texture_xy(shape, cell_index, key);
+  ivec3 size = u_magnitude_shape;
+  vec2 idx_2d = to_flat_texture_xy(size, cell_index, key);
   return texture(u_magnitudes, idx_2d).r;
 }
 
 // Access marker key gating parameter
 float sample_gating(float param, float key) {
-  vec2 shape = vec2(u_gating_shape);
-  vec2 idx_2d = to_texture_xy(shape, param, key);
+  vec2 size = vec2(u_gating_shape);
+  vec2 idx_2d = to_texture_xy(size, param, key);
   return texture(u_gatings, idx_2d).r;
 }
 
@@ -163,12 +166,11 @@ bool match_angle(int count, int total, float angle) {
 }
 
 // Access cell id at cell index
-uint sample_id(uint idx) {
-  vec2 shape = vec2(u_ids_shape);
-  float idx_x = modulo(idx, uint(shape.x));
-  float idx_y = floor(division(int(idx), int(shape.x)));
-  vec2 ids_idx = to_texture_xy(shape, idx_x, idx_y);
-  uvec4 m_value = texture(u_ids, ids_idx);
+uint sample_id(usampler2D sam, ivec2 size, uint idx) {
+  float idx_x = modulo(idx, uint(size.x));
+  float idx_y = floor(division(int(idx), int(size.x)));
+  vec2 ids_idx = to_texture_xy(vec2(size), idx_x, idx_y);
+  uvec4 m_value = texture(sam, ids_idx);
   return unpack(m_value);
 }
 
@@ -181,26 +183,14 @@ uvec4 offset(usampler2D sam, vec2 size, vec2 pos, vec2 off) {
   return texture(sam, vec2(x, y));
 }
 
-// Sample index of cell at given offset
-// Note: will be -1 if cell not in cell list
-int sample_cell_index(vec2 off) {
-  // Find cell id at given offset 
-  uint ikey = unpack(offset(u_tile, u_tile_shape, uv, off));
-
-  // Array size
+// Generic binary search of ids
+int binary_search(usampler2D sam, ivec2 size, uint last, uint ikey) {
   uint first = uint(0);
-  uint last = uint(u_id_end);
-
-  // Return -1 if background
-  if (ikey == uint(0)) {
-    return -1;
-  }
-
   // Search within log(n) runtime
   for (uint i = uint(0); i <= bMAX; i++) {
     // Evaluate the midpoint
     uint mid = (first + last) / uint(2);
-    uint here = sample_id(mid);
+    uint here = sample_id(sam, size, mid);
 
     // Break if list gone
     if (first == last && ikey != here) {
@@ -217,6 +207,27 @@ int sample_cell_index(vec2 off) {
     else return int(mid);
   }
   // Return -1 if id not in list
+  return -1;
+}
+
+// Sample index of cell at given offset
+// Note: will be -1 if cell not in cell list
+int sample_cell_index(vec2 off) {
+  // Find cell id at given offset 
+  uint ikey = unpack(offset(u_tile, u_tile_shape, uv, off));
+
+  // Array size
+  // Return -1 if background
+  if (ikey == uint(0)) {
+    return -1;
+  }
+
+  int picked_idx = binary_search(u_picked, u_picked_shape, uint(u_picked_end), ikey);
+  // Use any available externally picked ids
+  if (u_picked_end < 0 || picked_idx > -1) {
+    // Return index in main id list
+    return binary_search(u_ids, u_ids_shape, uint(u_id_end), ikey);
+  }
   return -1;
 }
 

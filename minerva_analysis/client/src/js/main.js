@@ -137,10 +137,11 @@ const actionImageClickedMultiSel = (d) => {
     // add newly clicked item to selection
     if (!Array.isArray(d.item)) {
         dataLayer.addToCurrentSelection(d.item, true, d.clearPriors);
+        updateSeaDragonSelection([d.item]);
     } else {
         dataLayer.addAllToCurrentSelection(d.item);
+        updateSeaDragonSelection(d.item);
     }
-    updateSeaDragonSelection();
     d3.select('body').style('cursor', 'default');
 }
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
@@ -162,9 +163,13 @@ eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 /**
  * Listens to and updates based on selection changes (specific for seadragon).
+ *
+ * @param ids - list of selected ids
  */
-function updateSeaDragonSelection() {
-    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
+function updateSeaDragonSelection(ids=[]) {
+    const { idField } = this.config[datasource].featureData[0];
+    seaDragonViewer.pickedIds = ids.map(v => v[idField]);
+    seaDragonViewer.forceRepaint();
 }
 
 /**
