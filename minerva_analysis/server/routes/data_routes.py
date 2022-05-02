@@ -94,6 +94,14 @@ def get_num_cells_in_circle():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/get_all_cells', methods=['GET'])
+def get_all_cells():
+    datasource = request.args.get('datasource')
+    start_keys = list(request.args.get('start_keys').split(','))
+    resp = data_model.get_all_cells(datasource, start_keys)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/get_gated_cell_ids', methods=['GET'])
 def get_gated_cell_ids():
     datasource = request.args.get('datasource')

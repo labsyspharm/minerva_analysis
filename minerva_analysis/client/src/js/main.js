@@ -39,8 +39,9 @@ d3.json(`/config?t=${Date.now()}`).then(function (config) {
 //INITS
 
 /**
- * init all views
- * @param  {json} conf The configuration json file
+ * Init all views.
+ *
+ * @param conf - The configuration json file
  */
 async function init(conf) {
 
@@ -69,21 +70,23 @@ async function init(conf) {
     await channelList.init();
 
     //create image viewer
-    seaDragonViewer = new ImageViewer(config, dataLayer, channelList, eventHandler, colorScheme);
+    const numericData = new NumericData(config, dataLayer);
+    seaDragonViewer = new ImageViewer(config, numericData, channelList, eventHandler, colorScheme);
 
     //init gating panel
     csv_gatingList = new CSVGatingList(config, dataLayer, eventHandler);
     await csv_gatingList.init();
 
     //init image viewer
-    seaDragonViewer.init(csv_gatingList);
+    await seaDragonViewer.init(csv_gatingList);
 }
 
 //EVENT HANDLING
 
 /**
- * Listen to Color Transfer Change Events and forwards it to respective views
- * @param  {package object} d The color map object
+ * Listen to Color Transfer Change Events and forwards it to respective views.
+ *
+ * @param d - The color map object
  */
 const actionColorTransferChange = (d) => {
 
@@ -96,8 +99,9 @@ const actionColorTransferChange = (d) => {
 eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
 /**
- * Listen to Render Mode Events and forwards it to respective views
- * @param  {package object} d The render mode object
+ * Listen to Render Mode Events and forwards it to respective views.
+ *
+ * @param d - The render mode object
  */
 const actionRenderingModeChange = (d) => {
     seaDragonViewer.updateRenderingMode(d);
@@ -105,8 +109,9 @@ const actionRenderingModeChange = (d) => {
 eventHandler.bind(ImageViewer.events.renderingMode, actionRenderingModeChange);
 
 /**
- * Listen to Channels set for Rendering and forwards it to respective views
- * @param  {package object} d The channel package object
+ * Listen to Channels set for Rendering and forwards it to respective views.
+ *
+ * @param d - The channel package object
  */
 const actionChannelsToRenderChange = (d) => {
     d3.select('body').style('cursor', 'progress');
@@ -123,16 +128,17 @@ const actionChannelsToRenderChange = (d) => {
 eventHandler.bind(ChannelList.events.CHANNELS_CHANGE, actionChannelsToRenderChange);
 
 /**
- * Listen to regional or single cell selection
- * @param  {package object} d The selections
+ * Listen to regional or single cell selection.
+ *
+ * @param d - The selections
  */
 const actionImageClickedMultiSel = (d) => {
     d3.select('body').style('cursor', 'progress');
     // add newly clicked item to selection
-    if (!Array.isArray(d.selectedItem)) {
-        dataLayer.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
+    if (!Array.isArray(d.item)) {
+        dataLayer.addToCurrentSelection(d.item, true, d.clearPriors);
     } else {
-        dataLayer.addAllToCurrentSelection(d.selectedItem);
+        dataLayer.addAllToCurrentSelection(d.item);
     }
     updateSeaDragonSelection();
     d3.select('body').style('cursor', 'default');
@@ -140,8 +146,9 @@ const actionImageClickedMultiSel = (d) => {
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
 
 /**
- * Listen to Channel Select Click Events
- * @param  {package object} d The selected/deselected channels
+ * Listen to Channel Select Click Events.
+ *
+ * @param sels - The selected/deselected channels
  */
 const channelSelect = async (sels) => {
     // pause new rendering until data loads
@@ -154,16 +161,16 @@ const channelSelect = async (sels) => {
 eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 /**
- * Listens to and updates based on selection changes (specific for seadragon)
- * @param  {boolean} d Whether to repaint
+ * Listens to and updates based on selection changes (specific for seadragon).
  */
 function updateSeaDragonSelection() {
     seaDragonViewer.updateSelection(dataLayer.getCurrentSelection());
 }
 
 /**
- * Listens to and updates based on selection changes (specific for seadragon)
- * @param  {boolean} d Whether to repaint
+ * Listens to and updates based on selection changes (specific for seadragon).
+ *
+ * @param packet - gating filter
  */
 const gatingBrushEnd = async (packet) => {
     // Init gated cells
@@ -193,8 +200,9 @@ const gatingBrushEnd = async (packet) => {
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 
 /**
- * Listens to feature gating selection changes
- * @param  {packet object} d The name of the channel and its gating range information
+ * Listens to feature gating selection changes.
+ *
+ * @param d - The name of the channel and its gating range information
  */
 const actionFeatureGatingChange = (d) => {
     // console.log("gating event received");
@@ -203,7 +211,7 @@ const actionFeatureGatingChange = (d) => {
 eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
 
 /**
- * Reset the gating list to inital values
+ * Reset the gating list to inital values.
  */
 const reset_lists = () => {
     csv_gatingList.resetGatingList();

@@ -13,18 +13,19 @@ class ImageViewer {
     viewerManagers = [];
 
     /**
-     * Constructor for ImageViewer
+     * Constructor for ImageViewer.
      *
      * @param config - the cinfiguration file (json)
-     * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
+     * @param numericData - custom numeric data layer
      * @param channelList - ChannelList instance
      * @param eventHandler - the event handler for distributing interface and data updates
      * @param colorScheme - the color scheme to use or selections etc.
      */
-    constructor(config, dataLayer, channelList, eventHandler, colorScheme) {
+    constructor(config, numericData, channelList, eventHandler, colorScheme) {
         this.config = config;
-        this.dataLayer = dataLayer;
+        this.numericData = numericData;
         this.channelList = channelList;
+        this.xyKeys = [numericData.features.xCoordinate, numericData.features.yCoordinate];
         this.eventHandler = eventHandler;
         this.colorScheme = colorScheme;
         this.gatingList = null;
@@ -96,7 +97,7 @@ class ImageViewer {
 
         /************************************************************************************** Get ome tiff metadata */
 
-        this.dataLayer.getMetadata().then((d) => {
+        this.numericData.metadata.then((d) => {
             that.imgMetadata = d;
             console.log("Image metadata:", that.imgMetadata);
             that.addScaleBar();
@@ -183,7 +184,7 @@ class ImageViewer {
                 });
                 const color = _.get(channel, "color", d3.color("white"));
                 const floatColor = toFloatColor(color);
-                const range = _.get(channel, "range", that.dataLayer.getImageBitRange(true));
+                const range = _.get(channel, "range", that.numericData.bitRange);
                 // Store channel color and range to send to shader
                 via.gl_arguments = {
                     ...centerProps,
@@ -199,9 +200,11 @@ class ImageViewer {
                     // this.refreshSegmentationMask();
                 }
                 // transfer data to WebGL shaders
-                const idCount = that.selection.size;
+                const { idCount } = that;
                 if (that.ready) {
-                  that.loadBuffers(idCount);
+                    const resume = seaDragonViewer.sleep();
+                    await that.loadBuffers(idCount);
+                    resume();
                 }
                 // Use new parameters for this tile
                 via.gl_arguments = {
@@ -360,43 +363,40 @@ class ImageViewer {
         });
 
         // Add event mouse handler (cell selection)
-        this.viewer.addHandler("canvas-nonprimary-press", function (event) {
+        this.viewer.addHandler("canvas-nonprimary-press", (e) => {
             // Right click (cell selection)
             if (event.button === 2) {
-                // The canvas-click event gives us a position in web coordinates.
-                const webPoint = event.position;
-                // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-                const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
-                // Convert from viewport coordinates to image coordinates.
-                const imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-
-                return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y).then((selectedItem) => {
-                    if (selectedItem !== null && selectedItem !== undefined) {
+                const { numericData } = that;
+                const { source } = e.eventSource;
+                const tiledImage = that.viewer.world.getItemAt(0);
+                const imageCoords = source.getImagePixel(tiledImage, e.position);
+                return numericData.getNearestCell(...imageCoords).then((item) => {
+                    if (item !== null && item !== undefined) {
                         // Check if user is doing multi-selection or not
                         let clearPriors = true;
-                        if (event.originalEvent.ctrlKey) {
+                        if (e.originalEvent.ctrlKey) {
                             clearPriors = false;
                         }
                         // Trigger event
-                        that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
-                            selectedItem,
-                            clearPriors,
-                        });
+                        const imageClick = ImageViewer.events.imageClickedMultiSel;
+                        that.eventHandler.trigger(imageClick, { item, clearPriors });
                     }
                 });
             }
         });
-
     }
 
     /**
      * @function init - initializes OSD channel and gating options
      * @param gatingList - CSVGatingList instance
      */
-    init(gatingList) {
+    async init(gatingList) {
         this.gatingList = gatingList;
-        // Define this as that
-        this.ready = true;
+        const resume = seaDragonViewer.sleep();
+        const allIds = await this.numericData.getAllIds();
+        this.bindLabels(this.viaGL, allIds);
+        this.idCount = allIds.length;
+        resume();
     }
 
     /**
@@ -423,7 +423,7 @@ class ImageViewer {
     }
 
     /**
-     * Most recently bound texture label
+     * Most recently bound texture label.
      *
      * @type {string}
      */
@@ -438,7 +438,7 @@ class ImageViewer {
      * @typedef {object} ModeFlags
      * @property {boolean} edge - render outlines
      * @property {boolean} or - render pie charts
-     * @type {ModeFlags} 
+     * @type {ModeFlags}
      */
     get modeFlags() {
         const edge = this.viewerManagerVMain.sel_outlines;
@@ -485,6 +485,22 @@ class ImageViewer {
     }
 
     /**
+     * @function addChannelSelection - add channel to channel list
+     * @param srcIdx - integer id of channel to add
+     * @param viewerChannel - channel properties
+     */
+    addChannelSelection(srcIdx, viewerChannel) {
+        const range = this.channelList.rangeConnector[srcIdx];
+        const { color } = this.channelList.colorConnector[srcIdx] || {};
+        this.channelList.currentChannels[srcIdx] = {
+            url: viewerChannel.url,
+            sub_url: viewerChannel.sub_url,
+            color: color || d3.color("white"),
+            range: range || this.numericData.bitRange,
+        };
+    }
+
+    /**
      * @function toCacheKey -- generate cache keys of gl properties
      * @param idCount - number of active cell ids
      * @param keys - active marker channels
@@ -495,7 +511,8 @@ class ImageViewer {
         const precisions = [2 ** 25, 2 ** 25, 255, 255, 255];
         const tuples = keys.map((channel, i) => {
             const idx = 1 + this.selectMaskIndex(channel);
-            const hashes = markerLists[i].map((r, j) => {
+            const keyData = markerLists[i] || [];
+            const hashes = keyData.map((r, j) => {
                 // use precision for each item
                 const integral = r * precisions[j];
                 return parseInt(integral).toString(36);
@@ -511,11 +528,11 @@ class ImageViewer {
      * @type {string}
      */
 
-    get fullCacheKey() {
+    get gatingCacheKey() {
         return this._cacheKeys.full;
     }
 
-    set fullCacheKey(key) {
+    set gatingCacheKey(key) {
         this._cacheKeys.full = key;
     }
 
@@ -539,11 +556,11 @@ class ImageViewer {
      * @type {string}
      */
 
-    get mainCacheKey() {
+    get markerCacheKey() {
         return this._cacheKeys.main;
     }
 
-    set mainCacheKey(key) {
+    set markerCacheKey(key) {
         this._cacheKeys.main = key;
     }
 
@@ -562,52 +579,32 @@ class ImageViewer {
     }
 
     /**
-     * @function addChannelSelection - add channel to channel list
-     * @param srcIdx - integer id of channel to add
-     * @param viewerChannel - channel properties
-     */
-    addChannelSelection(srcIdx, viewerChannel) {
-        const range = this.channelList.rangeConnector[srcIdx];
-        const { color } = this.channelList.colorConnector[srcIdx] || {};
-        this.channelList.currentChannels[srcIdx] = {
-            url: viewerChannel.url,
-            sub_url: viewerChannel.sub_url,
-            color:  color || d3.color("white"),
-            range: range || this.dataLayer.getImageBitRange(true)
-        };
-    }
-
-    /**
      * @function loadBuffers -- loads segmentation mask data to WebGL
      * @param idCount - number of active cell ids
      */
-    loadBuffers(idCount) {
+    async loadBuffers(idCount) {
         const keys = this.gatingKeys;
-        const { gatings, ranges } = this.selectGatings(keys);
-        const changes = this.updateCache(idCount, keys, gatings, ranges);
-        const { idsChanged, orChange, gatesChanged } = changes;
+        const gatingLists = this.selectGatings(keys);
+        const changes = this.updateCache(idCount, keys, gatingLists);
+        const { markersChanged, gatingChanged } = changes;
 
         // Bind buffers per-channel
-        if (gatesChanged) {
-            const allGatings = [];
-            for (const gating of gatings) {
+        if (gatingChanged) {
+            const gatings = [];
+            for (const gating of gatingLists) {
                 for (const gatingValue of gating) {
-                    allGatings.push(gatingValue);
+                    gatings.push(gatingValue);
                 }
             }
-            this.bindGatings(this.viaGL, allGatings, 5);
-        }
-        // List cell ids as array
-        const needIds = idsChanged || orChange;
-        const ids = needIds ? [...this.selection.keys()] : [];
-        // Bind buffers per-cell
-        if (idsChanged) {
-            this.bindLabels(this.viaGL, ids);
+            this.bindGatings(this.viaGL, gatings, 5);
         }
         // Bind or-mode buffers per-cell
-        if (orChange && this.modeFlags.or) {
-            this.selectCellMagnitudes(ids, keys);
-            this.selectCenters(ids);
+        if (markersChanged) {
+            const keyCount = Math.max(keys.length, 1);
+            const magnitudes = await this.numericData.getAllEntries(keys);
+            const centers = await this.numericData.getAllEntries(this.xyKeys);
+            this.bindMagnitudes(this.viaGL, magnitudes, keyCount);
+            this.bindCenters(this.viaGL, centers);
         }
     }
 
@@ -616,40 +613,6 @@ class ImageViewer {
      */
     clearCache() {
         this._cacheKeys = {};
-    }
-
-    /**
-     * @function selectCenters -- return cell centers
-     * @param ids - active cell ids
-     * @returns Array
-     */
-    selectCenters(ids) {
-        const xKey = "X_centroid";
-        const yKey = "Y_centroid";
-
-        const centers = [];
-        try {
-            for (const id of ids) {
-                const values = this.selection.get(id);
-                if (xKey in values && yKey in values) {
-                    centers.push(values.X_centroid);
-                    centers.push(values.Y_centroid);
-                } else {
-                    throw new TypeError(`Missing "${xKey}" "${yKey}" in selection.`);
-                }
-            }
-        } catch (e) {
-            if (e instanceof TypeError) {
-                console.warn(e);
-                return [];
-            }
-            throw e;
-        }
-
-        if (centers.length) {
-            this.bindCenters(this.viaGL, centers);
-        }
-        return centers;
     }
 
     /**
@@ -685,99 +648,48 @@ class ImageViewer {
     }
 
     /**
-     * @function selectCellMagnitudes -- select magnitude ranges
-     * @param ids - active cell ids
-     * @param keys - active marker channels
-     * @returns Array
-     */
-    selectCellMagnitudes(ids, keys) {
-        const magnitudes = [];
-
-        try {
-            for (const id of ids) {
-                const values = this.selection.get(id);
-                for (const key of keys) {
-                    if (!(key in values)) {
-                        throw new TypeError(`Missing "${key}" in selection "${id}".`);
-                    }
-                    magnitudes.push(values[key]);
-                }
-            }
-        } catch (e) {
-            if (e instanceof TypeError) {
-                console.warn(e);
-                return [];
-            }
-            throw e;
-        }
-
-        const keyCount = Math.max(keys.length, 1);
-        if (magnitudes.length) {
-            this.bindMagnitudes(this.viaGL, magnitudes, keyCount);
-        }
-
-        return magnitudes;
-    }
-
-    /**
      * @function selectGatings -- select gating ranges
      * @param keys - active marker channels
-     * @typedef {object} Gatings
-     * @property {Array} ranges - min and max values for channel
-     * @property {Array} gatings - min, max, and r, g, b gating values
-     * @returns Gatings
+     * @returns - lists of min, max, r, g, b gating values
      */
     selectGatings(keys) {
-        const ranges = [];
-        const gatings = [];
+        const gatingLists = [];
         const selections = this.gatingSelections;
         for (const key of keys) {
             const range = selections[key].map((x) => parseFloat(x));
             const color = this.selectMaskColor(key);
             const floatColor = toFloatColor(color);
             const gating = range.concat(floatColor);
-            gatings.push(gating);
-            ranges.push(range);
+            gatingLists.push(gating);
         }
 
-        return {
-            ranges,
-            gatings,
-        };
+        return gatingLists;
     }
 
     /**
      * @function updateCache -- update cache keys
      * @param idCount - number of active cell ids
      * @param keys - active marker channels
-     * @param gatings - cell ranges + colors
-     * @param ranges - cell ranges array
+     * @param gatingLists - lists of min, max, r, g, b gating values
      * @typedef {object} Changes
-     * @property {boolean} orChange - if or-mode has changed
-     * @property {boolean} idsChanged - if list of ids changed
-     * @property {boolean} gatesChanged - if gating parameters changed
+     * @property {boolean} markersChanged - if marke lists have changed
+     * @property {boolean} gatingChanged - if gating parameters changed
      * @returns Changes
      */
-    updateCache(idCount, keys, gatings, ranges) {
-        const mainCacheKey = this.toCacheKey(idCount, keys, ranges);
-        const idsChanged = this.mainCacheKey !== mainCacheKey;
-        if (idsChanged) {
-            this.mainCacheKey = mainCacheKey;
+    updateCache(idCount, keys, gatingLists) {
+        const markerCacheKey = this.toCacheKey(idCount, keys, []);
+        const markersChanged = this.markerCacheKey !== markerCacheKey;
+        if (markersChanged) {
+            this.markerCacheKey = markerCacheKey;
         }
 
-        const orCacheKey = this.modeFlags.or ? mainCacheKey : null;
-        const orChange = this.orCacheKey !== orCacheKey;
-        if (orChange) {
-            this.orCacheKey = orCacheKey;
+        const gatingCacheKey = this.toCacheKey(idCount, keys, gatingLists);
+        const gatingChanged = this.gatingCacheKey !== gatingCacheKey;
+        if (gatingChanged) {
+            this.gatingCacheKey = gatingCacheKey;
         }
 
-        const fullCacheKey = this.toCacheKey(idCount, keys, gatings);
-        const gatesChanged = this.fullCacheKey !== fullCacheKey;
-        if (gatesChanged) {
-            this.fullCacheKey = fullCacheKey;
-        }
-
-        return { orChange, idsChanged, gatesChanged };
+        return { markersChanged, gatingChanged };
     }
 
     /**
@@ -1081,31 +993,29 @@ class ImageViewer {
      */
     forceRepaint() {
         // Trigger change of full cache
-        this.fullCacheKey = null;
+        this.gatingCacheKey = null;
         // Refilter, redraw
-        this.viewerManagers.forEach(({viewer}) => {
+        this.viewerManagers.forEach(({ viewer }) => {
             viewer.forceRedraw();
         });
     }
 
     /**
      * @function sleep - temporarily disable new renders until data loads
-     * @return {function(): void} - a callback to re-enable rendering 
+     * @returns - a callback to re-enable rendering
      */
     sleep() {
         this.ready = false;
-        this.viewerManagers.forEach(({viewer}) => {
+        this.viewerManagers.forEach(({ viewer }) => {
             viewer.world._needsDraw = false;
         });
         return () => {
-          this.ready = true;
-          this.viewerManagers.forEach(({viewer}) => {
-              viewer.world._needsDraw = true;
-          });
-        }
+            this.ready = true;
+            this.viewerManagers.forEach(({ viewer }) => {
+                viewer.world._needsDraw = true;
+            });
+        };
     }
-
-
 
     /**
      * @function updateActiveChannels
@@ -1136,7 +1046,7 @@ class ImageViewer {
      */
     updateChannelRange(name, tfmin, tfmax) {
         const self = this;
-        let range = self.dataLayer.getImageBitRange();
+        let range = self.numericData.bitRange;
         const channelIdx = imageChannels[name];
         if (self.channelSelections[channelIdx]) {
             let channelRange = [tfmin / range[1], tfmax / range[1]];
@@ -1180,7 +1090,6 @@ class ImageViewer {
     /**
      * @function updateSelection
      * @param selection - map of ids selected
-     * @param repaint - if repaint needed
      */
     updateSelection(selection) {
         this.selection = selection;

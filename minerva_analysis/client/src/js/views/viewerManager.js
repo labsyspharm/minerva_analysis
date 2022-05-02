@@ -36,8 +36,8 @@ function toRealTile(fullScale, v, useY) {
  */
 function toTileBoundary(fullScale, v, useY) {
     const start = v * this.toIdealTile(fullScale, useY);
-    const size = this.toRealTile(fullScale, v, useY)
-    return {start, size};
+    const size = this.toRealTile(fullScale, v, useY);
+    return { start, size };
 }
 
 /**
@@ -76,12 +76,12 @@ function toMagnifiedBounds(_level, _x, _y) {
  * @param x - openseadragon tile x index
  * @param y - openseadragon tile y index
  * @typedef {object} TileLevels
- * @property {number} inputFullScale - full scale of source tile 
+ * @property {number} inputFullScale - full scale of source tile
  * @property {number} outputFullScale - full scale of renedered tile
  * @property {number} relativeImageScale - scale relative to image pixels
  * @property {object} inputTile - level, x, and y of source tile
  * @property {object} outputTile - level, x, and y of rendered tile
- * @returns TileLevels 
+ * @returns TileLevels
  */
 function toTileLevels(level, x, y) {
     const { extraZoomLevels } = this;
@@ -130,6 +130,19 @@ function getTileKey(level, x, y) {
     const { srcIdx, tileFormat } = this;
     const s = this.toTileLevels(level, x, y).inputTile;
     return `${tileFormat}-${srcIdx}-${s.level}-${s.x}-${s.y}`;
+}
+
+/**
+ * @function getImagePixel -- return image pixel for screen position
+ * @param tiledImage - openseadragon tiled image
+ * @param position - screen position
+ * @returns array
+ */
+function getImagePixel(tiledImage, position) {
+    const tileScale = 2 ** this.extraZoomLevels;
+    const frac = tiledImage.viewport.pointFromPixel(position);
+    const zoomed = tiledImage.viewportToImageCoordinates(frac);
+    return [zoomed.x, zoomed.y].map((v) => v / tileScale);
 }
 
 /**
@@ -200,6 +213,7 @@ export class ViewerManager {
                 toMagnifiedBounds: toMagnifiedBounds,
                 extraZoomLevels: extraZoomLevels,
                 toTileBoundary: toTileBoundary,
+                getImagePixel: getImagePixel,
                 toTileLevels: toTileLevels,
                 toIdealTile: toIdealTile,
                 toRealTile: toRealTile,
@@ -300,6 +314,7 @@ export class ViewerManager {
                     toMagnifiedBounds: toMagnifiedBounds,
                     extraZoomLevels: extraZoomLevels,
                     toTileBoundary: toTileBoundary,
+                    getImagePixel: getImagePixel,
                     toTileLevels: toTileLevels,
                     toIdealTile: toIdealTile,
                     toRealTile: toRealTile,

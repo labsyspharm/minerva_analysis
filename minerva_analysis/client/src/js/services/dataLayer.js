@@ -289,6 +289,19 @@ class DataLayer {
         }
     }
 
+    async getAllCells(start_keys) {
+        try {
+            let response = await fetch('/get_all_cells?' + new URLSearchParams({
+                start_keys: start_keys,
+                datasource: datasource
+            }))
+            let cellIds = await response.json();
+            return cellIds;
+        } catch (e) {
+            console.log("Error Getting Gated Cell Ids", e);
+        }
+    }
+
     async getGatedCellIds(filter, start_keys) {
         try {
             let response = await fetch('/get_gated_cell_ids?' + new URLSearchParams({

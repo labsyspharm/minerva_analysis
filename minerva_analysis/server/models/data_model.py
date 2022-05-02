@@ -455,6 +455,18 @@ def get_gated_cells_custom(datasource_name, gates, start_keys):
     return query
 
 
+def get_all_cells(datasource_name, start_keys):
+    global datasource
+    global source
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+
+    query = datasource[start_keys].values.tolist()
+    return query
+
+
 def download_gating_csv(datasource_name, gates, channels, encoding):
     global datasource
     global source
