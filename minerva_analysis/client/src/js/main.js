@@ -82,11 +82,9 @@ async function init(conf) {
     ]
     seaDragonViewer = new ImageViewer(config, ...imageArgs);
 
-    //Initialize asynchronously
-    await Promise.all([
-      dataLayer.init(),
-      seaDragonViewer.init()
-    ])
+    //Initialize 
+    await dataLayer.init();
+    await seaDragonViewer.init();
 }
 
 //EVENT HANDLING

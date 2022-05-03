@@ -74,7 +74,6 @@ class NumericData {
       }
       const { dataLayer } = this;
       const arr = await dataLayer.getAllCells(keys);
-      const output = constructor(arr);
-      return output;
+      return constructor(arr);
   }
 }

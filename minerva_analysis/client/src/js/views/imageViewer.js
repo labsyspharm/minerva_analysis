@@ -27,13 +27,11 @@ class ImageViewer {
         this.imgMetadata = imgMetadata;
         this.numericData = numericData;
         this.channelList = channelList;
-        this.xyKeys = [numericData.features.xCoordinate, numericData.features.yCoordinate];
         this.eventHandler = eventHandler;
         this._ready = false;
         this._cacheKeys = {};
         this.gatingList = gatingList;
         this.pickedIds = [];
-        const that = this;
 
         // Viewer
         this.viewer = {};
@@ -88,13 +86,17 @@ class ImageViewer {
         const constantTextures = ["ids", "picked", "magnitudes", "centers", "gatings"];
         const textureCount = 32 - constantTextures.length;
         const tileTextureKeys = [...Array(textureCount).keys()];
-        const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
+        const seaGL = new viaWebGL.openSeadragonGL(this.viewer);
         seaGL.viaGL._tileTextures = tileTextureKeys.map(() => "");
         seaGL.viaGL._constantTextureOffset = textureCount;
         seaGL.viaGL._constantTextures = constantTextures;
         seaGL.viaGL._activeTileTexture = 0;
         seaGL.viaGL._nextTileTexture = 0;
         this.viaGL = seaGL.viaGL;
+
+        const getTexture = this.activeTextureLabel.bind(this);
+        const indexOfTexture = this.indexOfTexture.bind(this);
+        const selectTexture = this.selectTexture.bind(this);
 
         seaGL.viaGL.loadArray = function (e, w, h) {
             // Allow for custom drawing in webGL
@@ -111,11 +113,11 @@ class ImageViewer {
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             // Reset texture for GLSL
-            const oldKey = that.activeTextureLabel;
+            const oldKey = getTexture();
             // Only transfer texture if needed
             if (oldKey != tKey && okFormat) {
-                this._activeTileTexture = that.indexOfTexture(tKey);
-                that.selectTexture(gl, this.texture, this._activeTileTexture);
+                this._activeTileTexture = indexOfTexture(tKey);
+                selectTexture(gl, this.texture, this._activeTileTexture);
                 const textureArgs = {
                     u16: [gl.RG8UI, w, h, 0, gl.RG_INTEGER],
                     u32: [gl.RGBA8UI, w, h, 0, gl.RGBA_INTEGER],
@@ -148,24 +150,25 @@ class ImageViewer {
             e.rendered.drawImage(output, 0, 0, gl_w, gl_h, 0, 0, w, h);
         };
 
+        const { floatRange } = this.numericData;
+        const findCurrentChannel = this.findCurrentChannel.bind(this);
+        const selectCenterProps = this.selectCenterProps.bind(this);
         // Draw handler for viaWebGL
         seaGL.addHandler("tile-drawing", async function (callback, e) {
             // Read parameters from each tile
-            const group = e.tile.url.split("/");
-            const sub_url = group[group.length - 3];
             const { source } = e.tiledImage;
             const { tileFormat } = source;
-            const centerProps = that.selectCenterProps(e.tile, source);
+            const group = e.tile.url.split("/");
+            const sub_url = group[group.length - 3];
+            const centerProps = selectCenterProps(e.tile, source);
 
             const via = this.viaGL;
 
             if (tileFormat != 32) {
-                const channel = _.find(that.currentChannels, (e) => {
-                    return e.sub_url == sub_url;
-                });
+                const channel = findCurrentChannel(sub_url);
+                const range = _.get(channel, "range", floatRange);
                 const color = _.get(channel, "color", d3.color("white"));
                 const floatColor = toFloatColor(color);
-                const range = _.get(channel, "range", that.numericData.floatRange);
                 // Store channel color and range to send to shader
                 via.gl_arguments = {
                     ...centerProps,
@@ -180,10 +183,8 @@ class ImageViewer {
                     console.log("Missing Array", e.tile.url);
                 }
                 // Use new parameters for this tile
-                const lastId = (that.idCount || 0) - 1;
                 via.gl_arguments = {
                     ...centerProps,
-                    id_end_1i: Math.max(lastId, 0),
                     color_3fv: new Float32Array([1, 1, 1]),
                     range_2fv: new Float32Array([0, 1]),
                     fmt_1i: 32,
@@ -200,9 +201,9 @@ class ImageViewer {
             callback(e);
         });
 
+        const getModes = () => this.modeFlags;
         seaGL.addHandler("gl-drawing", function () {
             const args = this.gl_arguments;
-            const modes = that.modeFlags;
 
             // Send color and range to shader
             this.gl.uniform2fv(this.u_tile_shape, args.tile_shape_2fv);
@@ -212,7 +213,7 @@ class ImageViewer {
             this.gl.uniform2fv(this.u_tile_origin, args.origin_2fv);
             this.gl.uniform3fv(this.u_tile_color, args.color_3fv);
             this.gl.uniform2fv(this.u_tile_range, args.range_2fv);
-            this.gl.uniform2i(this.u_draw_mode, modes.edge, modes.or);
+            this.gl.uniform2iv(this.u_draw_mode, args.modes_2i);
             this.gl.uniform2fv(this.u_x_bounds, args.x_bounds_2fv);
             this.gl.uniform2fv(this.u_y_bounds, args.y_bounds_2fv);
             this.gl.uniform1i(this.u_tile_fmt, args.fmt_1i);
@@ -248,12 +249,11 @@ class ImageViewer {
             const u_centers = this.gl.getUniformLocation(program, "u_centers");
             const u_magnitudes = this.gl.getUniformLocation(program, "u_magnitudes");
             this.texture_magnitudes = this.gl.createTexture();
-            this.gl.uniform1i(u_ids, that.indexOfTexture("ids"));
-            this.gl.uniform1i(u_tile, that._activeTileTexture);
-            this.gl.uniform1i(u_picked, that.indexOfTexture("picked"));
-            this.gl.uniform1i(u_gatings, that.indexOfTexture("gatings"));
-            this.gl.uniform1i(u_centers, that.indexOfTexture("centers"));
-            this.gl.uniform1i(u_magnitudes, that.indexOfTexture("magnitudes"));
+            this.gl.uniform1i(u_ids, indexOfTexture("ids"));
+            this.gl.uniform1i(u_picked, indexOfTexture("picked"));
+            this.gl.uniform1i(u_gatings, indexOfTexture("gatings"));
+            this.gl.uniform1i(u_centers, indexOfTexture("centers"));
+            this.gl.uniform1i(u_magnitudes, indexOfTexture("magnitudes"));
         });
 
         const matchTile = (e, { x, y, level }) => {
@@ -261,6 +261,7 @@ class ImageViewer {
             return ((grid || {})[x] || {})[y] || {};
         };
 
+        const forceRepaint = this.forceRepaint.bind(this);
         seaGL.addHandler("tile-loaded", (callback, e) => {
             const { source } = e.tiledImage;
             const { tileFormat } = source;
@@ -289,7 +290,7 @@ class ImageViewer {
                 }
             } catch (err) {
                 console.log("Load Error, Refreshing", err, e.tile.url);
-                that.forceRepaint();
+                forceRepaint();
             }
         });
 
@@ -312,10 +313,10 @@ class ImageViewer {
         });
 
         // Instantiate viewer managers
-        that.viewerManagerVMain = new ViewerManager(that, seaGL.openSD, channelList);
+        this.viewerManagerVMain = new ViewerManager(this, seaGL.openSD, channelList);
         //
         // // Append to viewers
-        that.viewerManagers.push(that.viewerManagerVMain);
+        this.viewerManagers.push(this.viewerManagerVMain);
 
         seaGL.init();
 
@@ -340,9 +341,9 @@ class ImageViewer {
         this.viewer.addHandler("canvas-nonprimary-press", (e) => {
             // Right click (cell selection)
             if (event.button === 2) {
-                const { numericData } = that;
+                const { numericData } = this;
                 const { source } = e.eventSource;
-                const tiledImage = that.viewer.world.getItemAt(0);
+                const tiledImage = this.viewer.world.getItemAt(0);
                 const imageCoords = source.getImagePixel(tiledImage, e.position);
                 return numericData.getNearestCell(...imageCoords).then((item) => {
                     if (item !== null && item !== undefined) {
@@ -353,7 +354,7 @@ class ImageViewer {
                         }
                         // Trigger event
                         const imageClick = ImageViewer.events.imageClickedMultiSel;
-                        that.eventHandler.trigger(imageClick, { item, clearPriors });
+                        this.eventHandler.trigger(imageClick, { item, clearPriors });
                     }
                 });
             }
@@ -365,15 +366,25 @@ class ImageViewer {
      */
     async init() {
         this.ready = false;
-        const { idField } = this.numericData.features;
-        const allIds = await this.numericData.getAllInt32Entries([idField]);
+        const { numericData } = this;
+        const { getAllFloat32Entries, features } = numericData;
+        const { idField, xCoordinate, yCoordinate } = features;
+        const fields = [ idField, xCoordinate, yCoordinate ];
+        const numFields = fields.length;
+        const getter = getAllFloat32Entries.bind(numericData);
+        const idsCenters = await getter(fields);
+        const isCenter = (_, i) => !!(i % numFields);
+        const centers = idsCenters.filter(isCenter);
+        const isId = (_, i) => !(i % numFields);
+        const ids = idsCenters.filter(isId);
         this.viaGL.texture_ids = this.viaGL.gl.createTexture();
         this.viaGL.texture_mask = this.viaGL.gl.createTexture();
         this.viaGL.texture_gatings = this.viaGL.gl.createTexture();
         this.viaGL.texture_centers = this.viaGL.gl.createTexture();
         this.viaGL.texture_picked = this.viaGL.gl.createTexture();
-        this.bindLabels(this.viaGL, allIds);
-        this.idCount = allIds.length;
+        this.bindCenters(this.viaGL, centers);
+        this.bindLabels(this.viaGL, ids);
+        this.idCount = ids.length;
         this.ready = true;
     }
 
@@ -401,13 +412,23 @@ class ImageViewer {
     }
 
     /**
-     * Most recently bound texture label.
+     * @function -- Most recently bound texture label.
      *
-     * @type {string}
+     * @returns string
      */
-    get activeTextureLabel() {
+    activeTextureLabel() {
         const via = this.viaGL;
         return via._tileTextures[via._activeTileTexture];
+    }
+
+    /**
+     * @function -- Return given channel for partial url
+     * @param string - partial url
+     * @returns - current channel
+     */
+    findCurrentChannel(sub_url) {
+        const channels = Object.values(this.currentChannels);
+        return channels.find(e => e.sub_url == sub_url);
     }
 
     /**
@@ -533,7 +554,7 @@ class ImageViewer {
      * @function loadBuffers -- loads segmentation mask data to WebGL
      */
     async loadBuffers() {
-        const keys = this.gatingKeys;
+        const keys = [...this.gatingKeys];
         const gatingLists = this.selectGatings(keys);
         const changes = this.updateCache(keys, gatingLists);
         const { markersChanged, gatingChanged, pickedChanged } = changes;
@@ -554,13 +575,10 @@ class ImageViewer {
         }
         // Bind or-mode buffers per-cell
         if (markersChanged) {
+            console.log('keys', keys.join('-'));
+            const m = await this.numericData.getAllFloat32Entries(keys);
             const keyCount = Math.max(keys.length, 1);
-            const [magnitudes, centers] = await Promise.all([
-              this.numericData.getAllFloat32Entries(keys),
-              this.numericData.getAllFloat32Entries(this.xyKeys),
-            ]);
-            this.bindMagnitudes(this.viaGL, magnitudes, keyCount);
-            this.bindCenters(this.viaGL, centers);
+            this.bindMagnitudes(this.viaGL, m, keyCount);
         }
     }
 
@@ -570,6 +588,8 @@ class ImageViewer {
      * @param source - openseadragon tile source
      * @typedef {object} CenterProps
      * @property {number} pie_radius_1f - radius of or-mode circles
+     * @property {number} id_end_1i - the last id in list of ids
+     * @property {number} modes_2i - the currently active mode flags
      * @property {number} tile_fraction_1f - subtile fraction <=1
      * @property {number} tile_scale_1f - image tile scale >=1
      * @property {Array} x_bounds_2fv - subtile start/end in x
@@ -578,8 +598,10 @@ class ImageViewer {
      * @returns CenterProps
      */
     selectCenterProps(tile, source) {
+        const modes = this.modeFlags;
         const w = this.config.tileWidth;
         const h = this.config.tileHeight;
+        const lastId = (this.idCount || 0) - 1;
         const tileArgs = [tile.level, tile.x, tile.y];
         const tl = source.toTileLevels(...tileArgs);
         const { outputTile, relativeImageScale } = tl;
@@ -588,6 +610,8 @@ class ImageViewer {
 
         return {
             pie_radius_1f: 8.5,
+            id_end_1i: Math.max(lastId, 0),
+            modes_2i: [modes.edge, modes.or],
             tile_scale_1f: Math.max(relativeImageScale, 1.0),
             tile_fraction_1f: Math.min(relativeImageScale, 1.0),
             x_bounds_2fv: new Float32Array(bounds.x),
