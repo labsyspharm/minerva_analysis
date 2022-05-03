@@ -22,7 +22,6 @@ class CSVGatingList {
         this.hasGatingGMM = {};
         this.gatingIDs = {};
         this.sliders = new Map();
-        // this.imageBitRange = [0, 65536];
         this.container = d3.select("#csv_gating_list");
         // Gating vars
         this.global_channel_list = channelList;
@@ -545,36 +544,35 @@ class CSVGatingList {
 
         let f = d3.format("d")
         //add range slider row content
-        const sliderSimple = (() => {
-            return d3.sliderBottom()
-                .min(data_min)
-                .max(data_max)
-                .width(swidth - 75)
-                .tickFormat(f)
-                .fill('orange')
-                .ticks(1)
-                .default([handle_min, handle_max])
-                .handle(
-                    d3.symbol()
-                        .type(d3.symbolCircle)
-                        .size(100))
-                .tickValues([])
-                .on('end', (range) => {
-                    const transformed = this.dataLayer.isTransformed();
-                    const v0 = transformed ? range[0] : Math.round(range[0]);
-                    const v1 = transformed ? range[1] : Math.round(range[1]);
-                    this.moveSliderHandles(sliderSimple, [v0, v1], name, "GATING_BRUSH_END");
-                }).on('onchange', (range) => {
-                    const transformed = this.dataLayer.isTransformed();
-                    const v0 = transformed ? range[0] : Math.round(range[0]);
-                    const v1 = transformed ? range[1] : Math.round(range[1]);
-                    d3.select('#gating_slider-input' + channelID + 0).attr('value', v0)
-                    d3.select('#gating_slider-input' + channelID + 0).property('value', v0);
-                    d3.select('#gating_slider-input' + channelID + 1).attr('value', v1);
-                    d3.select('#gating_slider-input' + channelID + 1).property('value', v1);
-                    this.moveSliderHandles(sliderSimple, [v0, v1], name, "GATING_BRUSH_MOVE");
-                });
-        })();
+        const sliderSimple = d3.sliderBottom()
+            .min(data_min)
+            .max(data_max)
+            .width(swidth - 75)
+            .tickFormat(f)
+            .fill('orange')
+            .ticks(1)
+            .default([handle_min, handle_max])
+            .handle(
+                d3.symbol()
+                    .type(d3.symbolCircle)
+                    .size(100))
+            .tickValues([])
+            .on('end', (range) => {
+                const transformed = this.dataLayer.isTransformed();
+                const v0 = transformed ? range[0] : Math.round(range[0]);
+                const v1 = transformed ? range[1] : Math.round(range[1]);
+                this.moveSliderHandles(sliderSimple, [v0, v1], name, "GATING_BRUSH_END");
+            }).on('onchange', (range) => {
+                const transformed = this.dataLayer.isTransformed();
+                const v0 = transformed ? range[0] : Math.round(range[0]);
+                const v1 = transformed ? range[1] : Math.round(range[1]);
+                d3.select('#gating_slider-input' + channelID + 0).attr('value', v0)
+                d3.select('#gating_slider-input' + channelID + 0).property('value', v0);
+                d3.select('#gating_slider-input' + channelID + 1).attr('value', v1);
+                d3.select('#gating_slider-input' + channelID + 1).property('value', v1);
+                this.moveSliderHandles(sliderSimple, [v0, v1], name, "GATING_BRUSH_MOVE");
+            });
+
         this.sliders.set(name, sliderSimple);
 
         //create the slider svg and call the slider
@@ -587,7 +585,6 @@ class CSVGatingList {
             .attr('height', 80)
             .append('g')
             .attr('transform', 'translate(20,40)');
-
 
         let xScale = d3.scaleLinear()
             .domain(xDomain)
@@ -612,7 +609,6 @@ class CSVGatingList {
         .attr('fill', 'none')
 
         gSimple.call(sliderSimple);
-
 
         //slider value to be displayed closer to the slider than default
         d3.selectAll('.parameter-value').select('text')

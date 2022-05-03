@@ -463,30 +463,28 @@ class ChannelList {
         let data_max = this.databaseDescription[fullName]['image_max'];
 
         //add range slider row content
-        const sliderSimple = (() => {
-            return d3.sliderBottom(d3.scaleLog())
-                .min(data_min)
-                .max(data_max)
-                .width(swidth - 75)//.tickFormat(d3.format("s"))
-                .fill('orange')
-                .on('onchange', (range) => {
-                    const v0 = Math.round(range[0]);
-                    const v1 = Math.round(range[1]);
-                    d3.select('#slider-input' + channelID + 0).attr('value', v0);
-                    d3.select('#slider-input' + channelID + 0).property('value', v0);
-                    d3.select('#slider-input' + channelID + 1).attr('value', v1);
-                    d3.select('#slider-input' + channelID + 1).property('value', v1);
-                    this.moveSliderHandles(sliderSimple, [v0, v1], name);
-                })
-                .ticks(5)
-                .default([Math.round(activeRange[0]), Math.round(activeRange[1])])
-                .handle(
-                    d3.symbol()
-                        .type(d3.symbolCircle)
-                        .size(100)
-                )
-                .tickValues([])
-        })();
+        const sliderSimple = d3.sliderBottom(d3.scaleLog())
+            .min(data_min)
+            .max(data_max)
+            .width(swidth - 75)//.tickFormat(d3.format("s"))
+            .fill('orange')
+            .on('onchange', (range) => {
+                const v0 = Math.round(range[0]);
+                const v1 = Math.round(range[1]);
+                d3.select('#slider-input' + channelID + 0).attr('value', v0);
+                d3.select('#slider-input' + channelID + 0).property('value', v0);
+                d3.select('#slider-input' + channelID + 1).attr('value', v1);
+                d3.select('#slider-input' + channelID + 1).property('value', v1);
+                this.moveSliderHandles(sliderSimple, [v0, v1], name);
+            })
+            .ticks(5)
+            .default([Math.round(activeRange[0]), Math.round(activeRange[1])])
+            .handle(
+                d3.symbol()
+                    .type(d3.symbolCircle)
+                    .size(100)
+            )
+            .tickValues([])
 
         this.sliders.set(name, sliderSimple);
 
