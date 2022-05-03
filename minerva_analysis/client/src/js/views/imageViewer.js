@@ -83,18 +83,26 @@ class ImageViewer {
         this.addScaleBar();
 
         // Flexible use of textures
-        const constantTextures = ["ids", "picked", "magnitudes", "centers", "gatings"];
-        const textureCount = 32 - constantTextures.length;
-        const tileTextureKeys = [...Array(textureCount).keys()];
+        const constantTextures = ["ids", "picked", "centers", "gatings"];
+        const otherOffset = 32 - constantTextures.length;
         const seaGL = new viaWebGL.openSeadragonGL(this.viewer);
+        const nMarkers = 4;
+        const markerOffset = otherOffset - nMarkers;
+        const nTiles = markerOffset;
+        const tileTextureKeys = [...Array(nTiles).keys()];
+        const markerTextureKeys = [...Array(nTiles).keys()];
+        seaGL.viaGL._otherOffset = otherOffset;
+        seaGL.viaGL._markerOffset = markerOffset;
         seaGL.viaGL._tileTextures = tileTextureKeys.map(() => "");
-        seaGL.viaGL._constantTextureOffset = textureCount;
+        seaGL.viaGL._markerTextures = markerTextureKeys.map(() => "");
         seaGL.viaGL._constantTextures = constantTextures;
+        seaGL.viaGL._activeMarkerTexture = 0;
+        seaGL.viaGL._nextMarkerTexture = 0;
         seaGL.viaGL._activeTileTexture = 0;
         seaGL.viaGL._nextTileTexture = 0;
         this.viaGL = seaGL.viaGL;
 
-        const getTexture = this.activeTextureLabel.bind(this);
+        const getTileTexture = this.getTileTexture.bind(this);
         const indexOfTexture = this.indexOfTexture.bind(this);
         const selectTexture = this.selectTexture.bind(this);
 
@@ -113,10 +121,10 @@ class ImageViewer {
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             // Reset texture for GLSL
-            const oldKey = getTexture();
+            const oldKey = getTileTexture();
             // Only transfer texture if needed
             if (oldKey != tKey && okFormat) {
-                this._activeTileTexture = indexOfTexture(tKey);
+                this._activeTileTexture = indexOfTexture(tKey, "T");
                 selectTexture(gl, this.texture, this._activeTileTexture);
                 const textureArgs = {
                     u16: [gl.RG8UI, w, h, 0, gl.RG_INTEGER],
@@ -201,12 +209,13 @@ class ImageViewer {
             callback(e);
         });
 
-        const getModes = () => this.modeFlags;
         seaGL.addHandler("gl-drawing", function () {
             const args = this.gl_arguments;
 
             // Send color and range to shader
             this.gl.uniform2fv(this.u_tile_shape, args.tile_shape_2fv);
+            this.gl.uniform4iv(this.u_marker_sample, args.marker_sample_4iv);
+            this.gl.uniform2iv(this.u_magnitude_shape, args.magnitude_2iv);
             this.gl.uniform1f(this.u_tile_fraction, args.tile_fraction_1f);
             this.gl.uniform1f(this.u_tile_scale, args.tile_scale_1f);
             this.gl.uniform1f(this.u_pie_radius, args.pie_radius_1f);
@@ -227,6 +236,7 @@ class ImageViewer {
             this.u_picked_shape = this.gl.getUniformLocation(program, "u_picked_shape");
             this.u_gating_shape = this.gl.getUniformLocation(program, "u_gating_shape");
             this.u_center_shape = this.gl.getUniformLocation(program, "u_center_shape");
+            this.u_marker_sample = this.gl.getUniformLocation(program, "u_marker_sample");
             this.u_magnitude_shape = this.gl.getUniformLocation(program, "u_magnitude_shape");
             this.u_tile_fraction = this.gl.getUniformLocation(program, "u_tile_fraction");
             this.u_tile_scale = this.gl.getUniformLocation(program, "u_tile_scale");
@@ -247,13 +257,14 @@ class ImageViewer {
             const u_picked = this.gl.getUniformLocation(program, "u_picked");
             const u_gatings = this.gl.getUniformLocation(program, "u_gatings");
             const u_centers = this.gl.getUniformLocation(program, "u_centers");
-            const u_magnitudes = this.gl.getUniformLocation(program, "u_magnitudes");
-            this.texture_magnitudes = this.gl.createTexture();
-            this.gl.uniform1i(u_ids, indexOfTexture("ids"));
-            this.gl.uniform1i(u_picked, indexOfTexture("picked"));
-            this.gl.uniform1i(u_gatings, indexOfTexture("gatings"));
-            this.gl.uniform1i(u_centers, indexOfTexture("centers"));
-            this.gl.uniform1i(u_magnitudes, indexOfTexture("magnitudes"));
+            this.gl.uniform1i(u_ids, indexOfTexture("ids", null));
+            this.gl.uniform1i(u_picked, indexOfTexture("picked", null));
+            this.gl.uniform1i(u_gatings, indexOfTexture("gatings", null));
+            this.gl.uniform1i(u_centers, indexOfTexture("centers", null));
+            for (const i of [0, 1, 2, 3]) {
+                const u_mag_i = this.gl.getUniformLocation(program, `u_mag_${i}`);
+                this.gl.uniform1i(u_mag_i, i + this._markerOffset);
+            }
         });
 
         const matchTile = (e, { x, y, level }) => {
@@ -366,6 +377,7 @@ class ImageViewer {
      */
     async init() {
         this.ready = false;
+        const via = this.viaGL;
         const { numericData } = this;
         const { getAllFloat32Entries, features } = numericData;
         const { idField, xCoordinate, yCoordinate } = features;
@@ -377,48 +389,81 @@ class ImageViewer {
         const centers = idsCenters.filter(isCenter);
         const isId = (_, i) => !(i % numFields);
         const ids = idsCenters.filter(isId);
-        this.viaGL.texture_ids = this.viaGL.gl.createTexture();
-        this.viaGL.texture_mask = this.viaGL.gl.createTexture();
-        this.viaGL.texture_gatings = this.viaGL.gl.createTexture();
-        this.viaGL.texture_centers = this.viaGL.gl.createTexture();
-        this.viaGL.texture_picked = this.viaGL.gl.createTexture();
-        this.bindCenters(this.viaGL, centers);
-        this.bindLabels(this.viaGL, ids);
+        via.texture_ids = via.gl.createTexture();
+        via.texture_mask = via.gl.createTexture();
+        via.texture_gatings = via.gl.createTexture();
+        via.texture_centers = via.gl.createTexture();
+        via.texture_picked = via.gl.createTexture();
+        via.texture_mag = [
+          via.gl.createTexture(),
+          via.gl.createTexture(),
+          via.gl.createTexture(),
+          via.gl.createTexture(),
+        ];
         this.idCount = ids.length;
+        this.bindLabels(via, ids);
+        this.bindCenters(via, centers);
         this.ready = true;
     }
 
     /**
      * @function indexOfTexture -- return integer for named texture
      * @param label - the texture key label
+     * @param scope - type of texture
      * @returns number
      */
-    indexOfTexture(label) {
+    indexOfTexture(label, scope=null) {
         const via = this.viaGL;
-        // Non-image textures always same index
-        const index0 = via._constantTextures.indexOf(label);
-        if (index0 > -1) {
-            return index0 + via._constantTextureOffset;
+        // image tiles
+        if (scope == 'T') {
+            const index = via._tileTextures.indexOf(label);
+            if (index > -1) {
+                return index;
+            }
+            const newIndex = via._nextTileTexture;
+            const maximum = via._tileTextures.length;
+            via._nextTileTexture = (newIndex + 1) % maximum;
+            via._tileTextures[newIndex] = label;
+            return newIndex;
         }
-        const index1 = via._tileTextures.indexOf(label);
-        if (index1 > -1) {
-            return index1;
+        // magnitudes
+        if (scope == 'M') {
+            const index = via._markerTextures.indexOf(label);
+            if (index > -1) {
+                return index;
+            }
+            const newIndex = via._nextMarkerTexture;
+            const maximum = via._markerTextures.length;
+            via._nextMarkerTexture = (newIndex + 1) % maximum;
+            via._markerTextures[newIndex] = label;
+            return newIndex + via._markerOffset;
         }
-        const index2 = via._nextTileTexture;
-        const maximum = via._tileTextures.length;
-        via._nextTileTexture = (index2 + 1) % maximum;
-        via._tileTextures[index2] = label;
-        return index2;
+        // other
+        const index = via._constantTextures.indexOf(label);
+        if (index > -1) {
+            return index + via._otherOffset;
+        }
+        return -1;
     }
 
     /**
-     * @function -- Most recently bound texture label.
+     * @function -- Most recently bound tile texture label.
      *
      * @returns string
      */
-    activeTextureLabel() {
+    getTileTexture() {
         const via = this.viaGL;
         return via._tileTextures[via._activeTileTexture];
+    }
+
+    /**
+     * @function -- Check if texture label is active.
+     * @params string 
+     * @returns number 
+     */
+    findMarkerTexture(label) {
+        const via = this.viaGL;
+        return via._markerTextures.indexOf(label);
     }
 
     /**
@@ -466,7 +511,7 @@ class ImageViewer {
      */
     get gatingKeys() {
         const keys = Object.keys(this.gatingSelections);
-        return keys.sort();
+        return [...keys.sort()];
     }
 
     /**
@@ -554,7 +599,7 @@ class ImageViewer {
      * @function loadBuffers -- loads segmentation mask data to WebGL
      */
     async loadBuffers() {
-        const keys = [...this.gatingKeys];
+        const keys = this.gatingKeys;
         const gatingLists = this.selectGatings(keys);
         const changes = this.updateCache(keys, gatingLists);
         const { markersChanged, gatingChanged, pickedChanged } = changes;
@@ -575,10 +620,15 @@ class ImageViewer {
         }
         // Bind or-mode buffers per-cell
         if (markersChanged) {
-            console.log('keys', keys.join('-'));
-            const m = await this.numericData.getAllFloat32Entries(keys);
-            const keyCount = Math.max(keys.length, 1);
-            this.bindMagnitudes(this.viaGL, m, keyCount);
+            const newKeys = keys.filter((k) => {
+                return this.findMarkerTexture(k) == -1;
+            })
+            const m = await this.numericData.getAllFloat32Entries(newKeys);
+            const nNew = newKeys.length; 
+            newKeys.forEach((k, ki) => {
+                const mk = m.filter((_, i) => (i % nNew) == ki);
+                this.bindMagnitudes(this.viaGL, mk, k);
+            });
         }
     }
 
@@ -588,7 +638,9 @@ class ImageViewer {
      * @param source - openseadragon tile source
      * @typedef {object} CenterProps
      * @property {number} pie_radius_1f - radius of or-mode circles
+     * @property {number} magnitude_2iv - the shape of each magnitude array
      * @property {number} id_end_1i - the last id in list of ids
+     * @property {number} marker_sample_4iv - indices of magnitudes
      * @property {number} modes_2i - the currently active mode flags
      * @property {number} tile_fraction_1f - subtile fraction <=1
      * @property {number} tile_scale_1f - image tile scale >=1
@@ -598,6 +650,7 @@ class ImageViewer {
      * @returns CenterProps
      */
     selectCenterProps(tile, source) {
+        const via = this.viaGL;
         const modes = this.modeFlags;
         const w = this.config.tileWidth;
         const h = this.config.tileHeight;
@@ -607,11 +660,19 @@ class ImageViewer {
         const { outputTile, relativeImageScale } = tl;
         const origin = [outputTile.x * w, outputTile.y * h];
         const bounds = source.toMagnifiedBounds(...tileArgs);
-
+        // Assume uniform shape of all magnitude buffers
+        const magnitude_2iv = this.toTextureShape(via.gl, this.idCount);
+        const markerSamples = [0, 1, 2, 3].map((i) => {
+            const label = via._markerTextures[i];
+            return this.gatingKeys.indexOf(label);
+        });
         return {
             pie_radius_1f: 8.5,
+            magnitude_2iv: magnitude_2iv,
             id_end_1i: Math.max(lastId, 0),
             modes_2i: [modes.edge, modes.or],
+            key_end_1i: this.gatingKeys.length,
+            marker_sample_4iv: markerSamples,
             tile_scale_1f: Math.max(relativeImageScale, 1.0),
             tile_fraction_1f: Math.min(relativeImageScale, 1.0),
             x_bounds_2fv: new Float32Array(bounds.x),
@@ -732,12 +793,12 @@ class ImageViewer {
     /**
      * @function toTextureShape - shape of texture data
      * @param gl - the WebGL2 context
-     * @param values - the texture data as an array
+     * @param length - the 1D length of the data
      * @returns Array
      */
-    toTextureShape(gl, values) {
+    toTextureShape(gl, length) {
         const width = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-        const height = Math.ceil(values.length / width);
+        const height = Math.ceil(length / width);
         return [width, height];
     }
 
@@ -780,15 +841,15 @@ class ImageViewer {
     /**
      * @function setIntegerTexture - set an integer texture
      * @param gl - the WebGL2 context
-     * @param key - the texture key string
+     * @param idx - texture index
      * @param texture - the WebGL2 texture
      * @param values - the texture data as 2d array
      */
-    setIntegerTexture(gl, key, texture, values) {
-        const [width, height] = this.toTextureShape(gl, values);
+    setIntegerTexture(gl, idx, texture, values) {
+        const [width, height] = this.toTextureShape(gl, values.length);
         const pixels = this.packUint32(values, width, height);
         // Set texture for GLSL
-        this.selectTexture(gl, texture, this.indexOfTexture(key));
+        this.selectTexture(gl, texture, idx);
         // Send an empty array to the texture
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, width, height, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
     }
@@ -796,15 +857,15 @@ class ImageViewer {
     /**
      * @function setFloatTexture - set a floating point texture
      * @param gl - the WebGL2 context
-     * @param key - the texture key string
+     * @param idx - texture index
      * @param texture - the WebGL2 texture
      * @param values - the texture data as 2d array
      * @param width - the texture width
      * @param height - the texture height
      */
-    setFloatTexture(gl, key, texture, values, width, height) {
+    setFloatTexture(gl, idx, texture, values, width, height) {
+        this.selectTexture(gl, texture, idx);
         const pixels = this.packFloat32(values, width, height);
-        this.selectTexture(gl, texture, this.indexOfTexture(key));
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, width, height, 0, gl.RED, gl.FLOAT, pixels);
     }
 
@@ -815,24 +876,24 @@ class ImageViewer {
      */
     bindLabels(via, values) {
         // Add id mask map
-        const ids_2iv = this.toTextureShape(via.gl, values);
+        const idx = this.indexOfTexture("ids", null);
+        const ids_2iv = this.toTextureShape(via.gl, values.length);
         via.gl.uniform2iv(via.u_ids_shape, ids_2iv);
-        this.setIntegerTexture(via.gl, "ids", via.texture_ids, values);
+        this.setIntegerTexture(via.gl, idx, via.texture_ids, values);
     }
 
     /**
      * @function bindMagnitudes - bind segmentation mask magnitudes
      * @param via - the viaGL context
      * @param values - the texture data as 2d array
-     * @param depth - number of items at each texel
+     * @param key - the marker label
      */
-    bindMagnitudes(via, values, depth) {
+    bindMagnitudes(via, values, key) {
         // Add a mask magnitude map
-        const magnitude_2iv = this.toTextureShape(via.gl, values);
-        const magnitude_3iv = magnitude_2iv.concat(depth);
-        via.gl.uniform3iv(via.u_magnitude_shape, magnitude_3iv);
-        const [width, height] = this.toTextureShape(via.gl, values);
-        this.setFloatTexture(via.gl, "magnitudes", via.texture_magnitudes, values, width, height); 
+        const idx = this.indexOfTexture(key, "M");
+        const texture = via.texture_mag[idx - via._markerOffset];
+        const [width, height] = this.toTextureShape(via.gl, values.length);
+        this.setFloatTexture(via.gl, idx, texture, values, width, height); 
     }
 
     /**
@@ -842,10 +903,11 @@ class ImageViewer {
      */
     bindCenters(via, values) {
         // Add a mask center map
-        const [width, height] = this.toTextureShape(via.gl, values);
+        const idx = this.indexOfTexture("centers", null);
+        const [width, height] = this.toTextureShape(via.gl, values.length);
         const pixels = this.packFloat32(values, width, height);
         via.gl.uniform3iv(via.u_center_shape, [width, height, 2]);
-        this.setFloatTexture(via.gl, "centers", via.texture_centers, values, width, height);
+        this.setFloatTexture(via.gl, idx, via.texture_centers, values, width, height);
     }
 
     /**
@@ -856,10 +918,11 @@ class ImageViewer {
      */
     bindGatings(via, values, width) {
         // Add a mask gating map
+        const idx = this.indexOfTexture("gatings", null);
         const height = Math.floor(values.length / width);
         const gating_2iv = [width, height];
         via.gl.uniform2iv(via.u_gating_shape, gating_2iv);
-        this.setFloatTexture(via.gl, "gatings", via.texture_gatings, values, width, height);
+        this.setFloatTexture(via.gl, idx, via.texture_gatings, values, width, height);
     }
 
     /**
@@ -869,10 +932,11 @@ class ImageViewer {
      */
     bindPicked(via, values) {
         // Add a mask center map
-        const picked_2iv = this.toTextureShape(via.gl, values);
+        const idx = this.indexOfTexture("picked", null);
+        const picked_2iv = this.toTextureShape(via.gl, values.length);
         via.gl.uniform2iv(via.u_picked_shape, picked_2iv);
         via.gl.uniform1i(via.u_picked_end, values.length - 1);
-        this.setIntegerTexture(via.gl, "picked", via.texture_picked, values);
+        this.setIntegerTexture(via.gl, idx, via.texture_picked, values);
     }
 
 

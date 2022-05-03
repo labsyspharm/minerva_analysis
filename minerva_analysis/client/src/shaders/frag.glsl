@@ -8,13 +8,17 @@ uniform usampler2D u_tile;
 uniform usampler2D u_picked;
 uniform sampler2D u_gatings;
 uniform sampler2D u_centers;
-uniform sampler2D u_magnitudes;
+uniform sampler2D u_mag_0;
+uniform sampler2D u_mag_1;
+uniform sampler2D u_mag_2;
+uniform sampler2D u_mag_3;
 uniform ivec2 u_ids_shape;
 uniform vec2 u_tile_shape;
 uniform ivec2 u_picked_shape;
 uniform ivec2 u_gating_shape;
 uniform ivec3 u_center_shape;
-uniform ivec3 u_magnitude_shape;
+uniform ivec2 u_magnitude_shape;
+uniform ivec4 u_marker_sample;
 
 uniform float u_tile_fraction;
 uniform float u_tile_scale;
@@ -39,7 +43,7 @@ const uint bMAX = uint(ceil(log2(float(MAX))));
 const vec2 TAU = vec2(0., 6.2831853);
 const float PI = 3.14159265;
 // Fixed maximum number of channels
-const int kMAX = 99;
+const int kMAX = 4;
 
 // square given float
 float pow2(float v) {
@@ -130,9 +134,24 @@ vec2 sample_center(int cell_index) {
 
 // Access marker key magnitude at cell index
 float sample_magnitude(int cell_index, int key) {
-  ivec3 size = u_magnitude_shape;
-  vec2 idx_2d = to_flat_texture_xy(size, cell_index, key);
-  return texture(u_magnitudes, idx_2d).r;
+  ivec3 size = ivec3(u_magnitude_shape, 1);
+  vec2 idx_2d = to_flat_texture_xy(size, cell_index, 0);
+  // Use any of available samplers
+  if (u_marker_sample[0] == key) {
+    return texture(u_mag_0, idx_2d).r;
+  }
+  else if (u_marker_sample[1] == key) {
+    return texture(u_mag_1, idx_2d).r;
+  }
+  else if (u_marker_sample[2] == key) {
+    return texture(u_mag_2, idx_2d).r;
+  }
+  else if (u_marker_sample[3] == key) {
+    return texture(u_mag_3, idx_2d).r;
+  }
+  else {
+    return -1.;
+  }
 }
 
 // Access marker key gating parameter
@@ -236,9 +255,6 @@ bool catch_key(int key) {
   if (key >= u_gating_shape.x) {
     return true;
   }
-  if (key >= u_magnitude_shape.z) {
-    return true;
-  }
   return false;
 }
 
@@ -271,7 +287,7 @@ int to_and_gate(int cell_index) {
     }
     float scale = sample_magnitude(cell_index, key);
     vec2 range = sample_gating_range(float(key));
-    if (!check_range(scale, range)) {
+    if (scale >= 0. && !check_range(scale, range)) {
       return -1;
     }
   }
@@ -373,7 +389,7 @@ vec4 u32_rgba_map(bvec2 mode) {
     if (or_mode) {
       return vec4(sample_gating_color(float(key)), 1.0);
     }
-    else if (!edge_mode) {
+    else if (true) {
       return white_pixel;
     }
   }
