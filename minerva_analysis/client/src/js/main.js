@@ -57,28 +57,36 @@ async function init(conf) {
             imageChannelsIdx[idx] = name;
         }
     }
-    //init data filter
+
+    //initialize metadata
     dataLayer = new DataLayer(config, imageChannels);
-    await dataLayer.init();
-
-    //init color scheme
-    colorScheme = new ColorScheme(dataLayer);
-    await colorScheme.init();
-
-    //init channel panel
-    channelList = new ChannelList(config, dataLayer, eventHandler);
-    await channelList.init();
-
-    //create image viewer
     const numericData = new NumericData(config, dataLayer);
-    seaDragonViewer = new ImageViewer(config, numericData, channelList, eventHandler, colorScheme);
+    const dd = await dataLayer.getDatabaseDescription();
+    const columns = await dataLayer.getChannelNames(true);
+    const imgMetadata = await numericData.metadata;
 
-    //init gating panel
-    csv_gatingList = new CSVGatingList(config, dataLayer, eventHandler);
-    await csv_gatingList.init();
+    //Create channel panels
+    channelList = new ChannelList(config, columns, dd, dataLayer, eventHandler);
+    csv_gatingList = new CSVGatingList(config, columns, dd, dataLayer, eventHandler);
+    csv_gatingList.init();
+    channelList.init();
 
-    //init image viewer
-    await seaDragonViewer.init(csv_gatingList);
+    //Create image viewer
+    const imageArgs = [
+      imgMetadata,
+      numericData,
+      channelList,
+      csv_gatingList,
+      eventHandler,
+      colorScheme
+    ]
+    seaDragonViewer = new ImageViewer(config, ...imageArgs);
+
+    //Initialize asynchronously
+    await Promise.all([
+      dataLayer.init(),
+      seaDragonViewer.init()
+    ])
 }
 
 //EVENT HANDLING
@@ -152,12 +160,9 @@ eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMul
  * @param sels - The selected/deselected channels
  */
 const channelSelect = async (sels) => {
-    // pause new rendering until data loads
-    const resume = seaDragonViewer.sleep(); 
+    updateSeaDragonSelection();
     let channelCells = await dataLayer.getChannelCellIds(sels);
     dataLayer.addAllToCurrentSelection(channelCells);
-    updateSeaDragonSelection();
-    resume();
 }
 eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
@@ -178,16 +183,13 @@ function updateSeaDragonSelection(ids=[]) {
  * @param packet - gating filter
  */
 const gatingBrushEnd = async (packet) => {
-    // Init gated cells
-    let gatedCells = [];
-    // Get custom cell ids (made-to-order properties)
+    return updateSeaDragonSelection(); // TODO, compatibility
+    /*
     const start_keys = [
         this.config[datasource].featureData[0].idField,
         this.config[datasource].featureData[0].xCoordinate,
         this.config[datasource].featureData[0].yCoordinate
     ];
-    // pause new rendering until data loads
-    const resume = seaDragonViewer.sleep(); 
     // Toggle these methods with centroids on/off ui
     if (csv_gatingList.eval_mode === 'and') {
         // AND
@@ -198,22 +200,18 @@ const gatingBrushEnd = async (packet) => {
     }
     // Update selection
     dataLayer.addAllToCurrentSelection(gatedCells);
-    // Update view
-    updateSeaDragonSelection();
-    resume();
+    */
 }
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, gatingBrushEnd);
 
-/**
- * Listens to feature gating selection changes.
- *
- * @param d - The name of the channel and its gating range information
- */
-const actionFeatureGatingChange = (d) => {
-    // console.log("gating event received");
-    seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
-}
-eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
+eventHandler.bind(CSVGatingList.events.GATING_BRUSH_MOVE, () => {
+    updateSeaDragonSelection();
+});
+
+eventHandler.bind(ChannelList.events.BRUSH_MOVE, (d) => {
+    const fullName = dataLayer.getFullChannelName(d.name);
+    seaDragonViewer.updateChannelRange(fullName, d.dataRange[0], d.dataRange[1]);
+});
 
 /**
  * Reset the gating list to inital values.

@@ -16,46 +16,37 @@ class ImageViewer {
      * Constructor for ImageViewer.
      *
      * @param config - the cinfiguration file (json)
+     * @param imgMetadata - image metadata from ome
      * @param numericData - custom numeric data layer
      * @param channelList - ChannelList instance
+     * @param gatingList - CSVGatingList instance
      * @param eventHandler - the event handler for distributing interface and data updates
-     * @param colorScheme - the color scheme to use or selections etc.
      */
-    constructor(config, numericData, channelList, eventHandler, colorScheme) {
+    constructor(config, imgMetadata, numericData, channelList, gatingList, eventHandler) {
         this.config = config;
+        this.imgMetadata = imgMetadata;
         this.numericData = numericData;
         this.channelList = channelList;
         this.xyKeys = [numericData.features.xCoordinate, numericData.features.yCoordinate];
         this.eventHandler = eventHandler;
-        this.colorScheme = colorScheme;
-        this.gatingList = null;
         this._ready = false;
+        this._cacheKeys = {};
+        this.gatingList = gatingList;
         this.pickedIds = [];
-        this.clearCache();
         const that = this;
 
         // Viewer
         this.viewer = {};
 
         // OSD plugins
-
-        // Stores the ordered contents of the tile cache, so that once we hit max size we remove oldest elements
-        this.pendingTiles = new Map();
-
-        // Currently loaded label channels
-        this.labelChannel = {};
-        this.noLabel = false;
-        this.sel_outlines = true;
         this.show_scalebar = true;
-
-        // Selection polygon (array of xy positions)
-        this.selectionPolygonToDraw = [];
 
         // Transfer function constant
         this.numTFBins = 1024;
 
         // Transfer function per channel (min,max, start color, end color)
         this.channelTF = [];
+
         for (let i = 0; i < this.config["imageData"].length; i = i + 1) {
             const start_color = d3.rgb(0, 0, 0);
             const end_color = d3.rgb(255, 255, 255);
@@ -90,15 +81,8 @@ class ImageViewer {
         };
 
         // Instantiate viewer with the ViaWebGL Version of OSD
-        that.viewer = viaWebGL.OpenSeadragon(viewer_config);
-
-        /************************************************************************************** Get ome tiff metadata */
-
-        this.numericData.metadata.then((d) => {
-            that.imgMetadata = d;
-            console.log("Image metadata:", that.imgMetadata);
-            that.addScaleBar();
-        });
+        this.viewer = viaWebGL.OpenSeadragon(viewer_config);
+        this.addScaleBar();
 
         // Flexible use of textures
         const constantTextures = ["ids", "picked", "magnitudes", "centers", "gatings"];
@@ -176,12 +160,12 @@ class ImageViewer {
             const via = this.viaGL;
 
             if (tileFormat != 32) {
-                const channel = _.find(that.channelSelections, (e) => {
+                const channel = _.find(that.currentChannels, (e) => {
                     return e.sub_url == sub_url;
                 });
                 const color = _.get(channel, "color", d3.color("white"));
                 const floatColor = toFloatColor(color);
-                const range = _.get(channel, "range", that.numericData.bitRange);
+                const range = _.get(channel, "range", that.numericData.floatRange);
                 // Store channel color and range to send to shader
                 via.gl_arguments = {
                     ...centerProps,
@@ -194,19 +178,12 @@ class ImageViewer {
             } else {
                 if (!e.tile._array) {
                     console.log("Missing Array", e.tile.url);
-                    // this.refreshSegmentationMask();
-                }
-                // transfer data to WebGL shaders
-                const { idCount } = that;
-                if (that.ready) {
-                    const resume = seaDragonViewer.sleep();
-                    await that.loadBuffers(idCount);
-                    resume();
                 }
                 // Use new parameters for this tile
+                const lastId = (that.idCount || 0) - 1;
                 via.gl_arguments = {
                     ...centerProps,
-                    id_end_1i: Math.max(idCount - 1, 0),
+                    id_end_1i: Math.max(lastId, 0),
                     color_3fv: new Float32Array([1, 1, 1]),
                     range_2fv: new Float32Array([0, 1]),
                     fmt_1i: 32,
@@ -270,11 +247,6 @@ class ImageViewer {
             const u_gatings = this.gl.getUniformLocation(program, "u_gatings");
             const u_centers = this.gl.getUniformLocation(program, "u_centers");
             const u_magnitudes = this.gl.getUniformLocation(program, "u_magnitudes");
-            this.texture_ids = this.gl.createTexture();
-            this.texture_mask = this.gl.createTexture();
-            this.texture_gatings = this.gl.createTexture();
-            this.texture_centers = this.gl.createTexture();
-            this.texture_picked = this.gl.createTexture();
             this.texture_magnitudes = this.gl.createTexture();
             this.gl.uniform1i(u_ids, that.indexOfTexture("ids"));
             this.gl.uniform1i(u_tile, that._activeTileTexture);
@@ -340,7 +312,7 @@ class ImageViewer {
         });
 
         // Instantiate viewer managers
-        that.viewerManagerVMain = new ViewerManager(that, seaGL.openSD, "main");
+        that.viewerManagerVMain = new ViewerManager(that, seaGL.openSD, channelList);
         //
         // // Append to viewers
         that.viewerManagers.push(that.viewerManagerVMain);
@@ -390,15 +362,19 @@ class ImageViewer {
 
     /**
      * @function init - initializes OSD channel and gating options
-     * @param gatingList - CSVGatingList instance
      */
-    async init(gatingList) {
-        this.gatingList = gatingList;
-        const resume = seaDragonViewer.sleep();
-        const allIds = await this.numericData.getAllIds();
+    async init() {
+        this.ready = false;
+        const { idField } = this.numericData.features;
+        const allIds = await this.numericData.getAllInt32Entries([idField]);
+        this.viaGL.texture_ids = this.viaGL.gl.createTexture();
+        this.viaGL.texture_mask = this.viaGL.gl.createTexture();
+        this.viaGL.texture_gatings = this.viaGL.gl.createTexture();
+        this.viaGL.texture_centers = this.viaGL.gl.createTexture();
+        this.viaGL.texture_picked = this.viaGL.gl.createTexture();
         this.bindLabels(this.viaGL, allIds);
         this.idCount = allIds.length;
-        resume();
+        this.ready = true;
     }
 
     /**
@@ -432,6 +408,20 @@ class ImageViewer {
     get activeTextureLabel() {
         const via = this.viaGL;
         return via._tileTextures[via._activeTileTexture];
+    }
+
+    /**
+     * Flag for webGL rendering.
+     */
+    get ready() {
+        return this._ready || false;
+    }
+
+    set ready(bool) {
+        this._ready = bool;
+        this.viewerManagers.forEach(({ viewer }) => {
+            viewer.world._needsDraw = bool;
+        })
     }
 
     /**
@@ -472,44 +462,17 @@ class ImageViewer {
      *
      * @type {Array}
      */
-    get channelSelections() {
+    get currentChannels() {
         return this.channelList.currentChannels || {};
     }
 
     /**
-     * @function removeChannelSelection - remove channel from channel list
-     * @param srcIdx - integer id of channel to add
-     */
-    removeChannelSelection(srcIdx) {
-        if (srcIdx in this.channelList.currentChannels) {
-            delete this.channelList.currentChannels[srcIdx];
-        }
-    }
-
-    /**
-     * @function addChannelSelection - add channel to channel list
-     * @param srcIdx - integer id of channel to add
-     * @param viewerChannel - channel properties
-     */
-    addChannelSelection(srcIdx, viewerChannel) {
-        const range = this.channelList.rangeConnector[srcIdx];
-        const { color } = this.channelList.colorConnector[srcIdx] || {};
-        this.channelList.currentChannels[srcIdx] = {
-            url: viewerChannel.url,
-            sub_url: viewerChannel.sub_url,
-            color: color || d3.color("white"),
-            range: range || this.numericData.bitRange,
-        };
-    }
-
-    /**
      * @function toCacheKey -- generate cache keys of gl properties
-     * @param idCount - number of active cell ids
      * @param keys - active marker channels
      * @param markerLists - data for each marker
      * @returns string
      */
-    toCacheKey(idCount, keys, markerLists) {
+    toCacheKey(keys, markerLists) {
         const precisions = [2 ** 25, 2 ** 25, 255, 255, 255];
         const tuples = keys.map((channel, i) => {
             const idx = 1 + this.selectMaskIndex(channel);
@@ -521,7 +484,7 @@ class ImageViewer {
             });
             return [idx, ...hashes].join("-");
         });
-        return [idCount, ...tuples].join("-");
+        return tuples.join("-");
     }
 
     /**
@@ -531,11 +494,11 @@ class ImageViewer {
      */
 
     get gatingCacheKey() {
-        return this._cacheKeys.full;
+        return this._cacheKeys.gating;
     }
 
     set gatingCacheKey(key) {
-        this._cacheKeys.full = key;
+        this._cacheKeys.gating = key;
     }
 
     /**
@@ -567,27 +530,12 @@ class ImageViewer {
     }
 
     /**
-     * Ready to render
-     *
-     * @type {boolean}
-     */
-
-    get ready() {
-        return this._ready;
-    }
-
-    set ready(_ready) {
-        this._ready = _ready;
-    }
-
-    /**
      * @function loadBuffers -- loads segmentation mask data to WebGL
-     * @param idCount - number of active cell ids
      */
-    async loadBuffers(idCount) {
+    async loadBuffers() {
         const keys = this.gatingKeys;
         const gatingLists = this.selectGatings(keys);
-        const changes = this.updateCache(idCount, keys, gatingLists);
+        const changes = this.updateCache(keys, gatingLists);
         const { markersChanged, gatingChanged, pickedChanged } = changes;
 
         // Bind specific list of picked ids
@@ -607,18 +555,13 @@ class ImageViewer {
         // Bind or-mode buffers per-cell
         if (markersChanged) {
             const keyCount = Math.max(keys.length, 1);
-            const magnitudes = await this.numericData.getAllEntries(keys);
-            const centers = await this.numericData.getAllEntries(this.xyKeys);
+            const [magnitudes, centers] = await Promise.all([
+              this.numericData.getAllFloat32Entries(keys),
+              this.numericData.getAllFloat32Entries(this.xyKeys),
+            ]);
             this.bindMagnitudes(this.viaGL, magnitudes, keyCount);
             this.bindCenters(this.viaGL, centers);
         }
-    }
-
-    /**
-     * @function clearCache -- clear cached props
-     */
-    clearCache() {
-        this._cacheKeys = {};
     }
 
     /**
@@ -674,21 +617,21 @@ class ImageViewer {
 
     /**
      * @function updateCache -- update cache keys
-     * @param idCount - number of active cell ids
      * @param keys - active marker channels
      * @param gatingLists - lists of min, max, r, g, b gating values
      * @typedef {object} Changes
      * @property {boolean} markersChanged - if marke lists have changed
+     * @property {boolean} pickedChanged - if picked parameters changed
      * @property {boolean} gatingChanged - if gating parameters changed
      * @returns Changes
      */
-    updateCache(idCount, keys, gatingLists) {
-        const markerCacheKey = this.toCacheKey(idCount, keys, []);
+    updateCache(keys, gatingLists) {
+        const markerCacheKey = this.toCacheKey(keys, []);
         const markersChanged = this.markerCacheKey !== markerCacheKey;
         if (markersChanged) {
             this.markerCacheKey = markerCacheKey;
         }
-        const gatingCacheKey = this.toCacheKey(idCount, keys, gatingLists);
+        const gatingCacheKey = this.toCacheKey(keys, gatingLists);
         const gatingChanged = this.gatingCacheKey !== gatingCacheKey;
         if (gatingChanged) {
             this.gatingCacheKey = gatingCacheKey;
@@ -720,7 +663,7 @@ class ImageViewer {
         if (!channel) {
             return white;
         }
-        const channels = this.channelSelections;
+        const channels = this.currentChannels;
         const idxString = (this.selectMaskIndex(channel) + 1).toString();
         if (idxString == "0" || !Object.keys(channels).includes(idxString)) {
             return white;
@@ -735,7 +678,8 @@ class ImageViewer {
      * @returns number
      */
     selectMaskIndex(channel) {
-        return this.channelList.columns.indexOf(channel);
+        const columns = this.channelList?.columns || [];
+        return columns.indexOf(channel);
     }
 
     /**
@@ -745,6 +689,9 @@ class ImageViewer {
      * @param idx - the texture index
      */
     selectTexture(gl, texture, idx) {
+        if (texture === undefined) {
+            throw new TypeError(`Cannot bind undefined to texture ${idx}.`);
+        }
         // Set texture for GLSL
         gl.activeTexture(gl["TEXTURE" + idx]);
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -871,10 +818,10 @@ class ImageViewer {
      */
     bindCenters(via, values) {
         // Add a mask center map
-        const center_2iv = this.toTextureShape(via.gl, values);
-        const center_3iv = center_2iv.concat([2]);
-        via.gl.uniform3iv(via.u_center_shape, center_3iv);
-        this.setIntegerTexture(via.gl, "centers", via.texture_centers, values);
+        const [width, height] = this.toTextureShape(via.gl, values);
+        const pixels = this.packFloat32(values, width, height);
+        via.gl.uniform3iv(via.u_center_shape, [width, height, 2]);
+        this.setFloatTexture(via.gl, "centers", via.texture_centers, values, width, height);
     }
 
     /**
@@ -957,30 +904,16 @@ class ImageViewer {
     /**
      * @function forceRepaint - for all active viewers repaint the canvas
      */
-    forceRepaint() {
-        // Trigger change of full cache
-        this.gatingCacheKey = null;
-        // Refilter, redraw
-        this.viewerManagers.forEach(({ viewer }) => {
-            viewer.forceRedraw();
-        });
-    }
-
-    /**
-     * @function sleep - temporarily disable new renders until data loads
-     * @returns - a callback to re-enable rendering
-     */
-    sleep() {
-        this.ready = false;
-        this.viewerManagers.forEach(({ viewer }) => {
-            viewer.world._needsDraw = false;
-        });
-        return () => {
+    async forceRepaint() {
+        if (this.ready && this.idCount) {
+            this.ready = false;
+            await this.loadBuffers();
             this.ready = true;
+            // Trigger change of full cache
             this.viewerManagers.forEach(({ viewer }) => {
-                viewer.world._needsDraw = true;
+                viewer.forceRedraw();
             });
-        };
+        }
     }
 
     /**
@@ -1011,13 +944,12 @@ class ImageViewer {
      * @param tfmax - maximum
      */
     updateChannelRange(name, tfmin, tfmax) {
-        const self = this;
-        let range = self.numericData.bitRange;
+        let range = this.numericData.intRange;
         const channelIdx = imageChannels[name];
-        if (self.channelSelections[channelIdx]) {
+        if (this.currentChannels[channelIdx]) {
             let channelRange = [tfmin / range[1], tfmax / range[1]];
-            self.channelSelections[channelIdx].range = channelRange;
-            self.channelList.rangeConnector[channelIdx] = channelRange;
+            this.currentChannels[channelIdx].range = channelRange;
+            this.channelList.rangeConnector[channelIdx] = channelRange;
         }
         this.forceRepaint();
     }
@@ -1028,11 +960,10 @@ class ImageViewer {
      * @param color - rgb object with values 0-255
      */
     updateChannelColors(name, color) {
-        const self = this;
         const channelIdx = imageChannels[name];
-        if (self.channelSelections[channelIdx]) {
-            self.channelList.colorConnector[channelIdx] = { color: color };
-            self.channelSelections[channelIdx].color = color;
+        if (this.currentChannels[channelIdx]) {
+            this.channelList.colorConnector[channelIdx] = { color: color };
+            this.currentChannels[channelIdx].color = color;
         }
         this.forceRepaint();
     }

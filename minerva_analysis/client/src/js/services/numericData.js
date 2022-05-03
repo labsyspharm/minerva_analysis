@@ -20,8 +20,15 @@ class NumericData {
   /*
    * Access DataLayer bitrange as floating point.
    */
-  get bitRange() {
+  get floatRange() {
       return this.dataLayer.getImageBitRange(true);
+  }
+
+  /*
+   * Access DataLayer bitrange as an integer.
+   */
+  get intRange() {
+      return this.dataLayer.getImageBitRange(false);
   }
 
   /*
@@ -35,25 +42,39 @@ class NumericData {
   }
 
   /*
-   * @function getAllIds - all cell ids
+   * @function getAllFloat32Ids - all integer entries
+   * @param keys - list of keys to access
    */
-  async getAllIds() {
-      const { idField } = this.features;
-      return this.getAllEntries([idField]);
+  async getAllFloat32Entries(keys) {
+      const constructor = (arr) => {
+          return new Float32Array(arr);
+      }
+      return this.getAllEntries(keys, constructor);
+  }
+
+  /*
+   * @function getAllInt32Ids - all integer entries
+   * @param keys - list of keys to access
+   */
+  async getAllInt32Entries(keys) {
+      const constructor = (arr) => {
+          return new Uint32Array(arr);
+      }
+      return this.getAllEntries(keys, constructor);
   }
 
   /*
    * @function getAllEntries - all cell entries by keys
+   * @param keys - list of keys to access
+   * @param constructor - a typed array constructor
    */
-  async getAllEntries(keys) {
-      const output = [];
+  async getAllEntries(keys, constructor) {
       if (!keys.length) {
-        return output;
+          return [];
       }
       const { dataLayer } = this;
-      for (const list of await dataLayer.getAllCells(keys)) {
-        for (const item of list) output.push(item);
-      }
+      const arr = await dataLayer.getAllCells(keys);
+      const output = constructor(arr);
       return output;
   }
 }

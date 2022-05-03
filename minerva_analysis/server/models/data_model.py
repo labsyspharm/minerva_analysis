@@ -463,8 +463,11 @@ def get_all_cells(datasource_name, start_keys):
     if datasource_name != source:
         load_ball_tree(datasource_name)
 
-    query = datasource[start_keys].values.tolist()
-    return query
+    query = datasource[start_keys].values.flatten('C');
+    dtype = query.dtype
+    if np.issubdtype(dtype, int):
+        return query.astype(np.uint32)
+    return query.astype(np.float32)
 
 
 def download_gating_csv(datasource_name, gates, channels, encoding):

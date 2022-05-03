@@ -6,18 +6,21 @@ class ChannelList {
     /**
      * @constructor
      * @param config the cinfiguration file (json)
+     * @param columns - all the channel names
+     * @param dd - database description
      * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
      * @param eventHandler - the event handler for distributing interface and data updates
      */
-    constructor(config, dataLayer, eventHandler) {
+    constructor(config, columns, dd, dataLayer, eventHandler) {
         this.config = config;
+        this.columns = [...columns];
+        this.databaseDescription = dd;
         this.maxSelections = config.maxSelections;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.selections = [];
         this.ranges = {};
         this.sliders = new Map();
-        var that = this;
         this.image_channels = {};
         this.sel = {};
         this.currentChannels = {};
@@ -68,14 +71,14 @@ class ChannelList {
      * @param name - the channel to set and display as selected
      */
     selectChannel(name) {
-        const self = this;
+        this.getAndDrawChannelGMM(name)
 
-        let fullName = self.dataLayer.getFullChannelName(name);
+        let fullName = this.dataLayer.getFullChannelName(name);
         let channelIdx = imageChannels[fullName];
-        let channelID = self.channelIDs[name];
+        let channelID = this.channelIDs[name];
 
         if (!this.rangeConnector[channelIdx]) {
-            let defaultRange = self.dataLayer.imageBitRange;
+            let defaultRange = this.dataLayer.imageBitRange;
             this.sliders.get(name).value([defaultRange[0], defaultRange[1]]);
         }
 
@@ -91,8 +94,8 @@ class ChannelList {
         }
 
         // Update selections
-        self.selections.push(name);
-        self.sel[dataLayer.getFullChannelName(name)] = self.image_channels[name];
+        this.selections.push(name);
+        this.sel[dataLayer.getFullChannelName(name)] = this.image_channels[name];
 
         // Trigger
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
@@ -110,11 +113,8 @@ class ChannelList {
      * initializes the view (channel list)
      * @returns {Promise<void>}
      */
-    async init() {
-        const self = this;
+    init() {
         this.rainbow.hide();
-        this.columns = await this.dataLayer.getChannelNames(true);
-        this.databaseDescription = await self.dataLayer.getDatabaseDescription();
         // Hide the Loader
         document.getElementById('channel_list_loader').style.display = "none";
         let channel_list = document.getElementById("channel_list");
@@ -208,7 +208,9 @@ class ChannelList {
             autoBtn.classList.add('auto-btn');
             autoBtn.setAttribute('id', "auto-btn_" + channelID);
             autoBtn.textContent = "auto";
-            autoBtn.addEventListener("click", async function() { await self.auto_channel(column) });
+            autoBtn.addEventListener("click", async () => {
+                return await this.auto_channel(column)
+            });
 
             autoCol.appendChild(autoBtn);
             autoBtn.addEventListener("click", e => e.stopPropagation());
@@ -226,15 +228,17 @@ class ChannelList {
             let fullName = this.dataLayer.getFullChannelName(column)
             let sliderMin = this.databaseDescription[fullName]['image_min']
             let sliderMax = this.databaseDescription[fullName]['image_max']
-            self.image_channels[column] = [sliderMin, sliderMax];
-            let sliderRange = this.addSlider(column, document.getElementById("channel_list").getBoundingClientRect().width, [sliderMin, sliderMax]);
+            this.image_channels[column] = [sliderMin, sliderMax];
+            const channelListEl = document.getElementById("channel_list");
+            const swidth = channelListEl.getBoundingClientRect().width;
+            let sliderRange = this.addSlider(column, swidth, [sliderMin, sliderMax]);
             d3.select('div#channel-slider_' + channelID).style('display', "none");
 
         });
 
         let arrow_db = document.getElementById('channels_upload_icon_db')
-        arrow_db.onclick = async function () {
-            await self.applyChannels('db');
+        arrow_db.onclick = async () => {
+            await this.applyChannels('db');
         }
 
         let arrow = document.getElementById('channels_upload_icon')
@@ -246,18 +250,18 @@ class ChannelList {
                 elem.dispatchEvent(evt);
             }
         }
-        document.getElementById("channels-upload-from-arrow").onchange = async function () {
+        document.getElementById("channels-upload-from-arrow").onchange = async () => {
             if (document.getElementById("channels-upload-from-arrow").files) {
                 let file = document.getElementById("channels-upload-from-arrow").files[0]
                 let formData = new FormData();
                 formData.append("file", file);
-                await self.dataLayer.submitChannelUpload(formData);
+                await this.dataLayer.submitChannelUpload(formData);
                 document.getElementById("channels-upload-from-arrow").value = []
-                await self.applyChannels('file');
+                await this.applyChannels('file');
             }
         }
 
-        self.addDownloadEvents();
+        this.addDownloadEvents();
     }
 
     /**
@@ -266,22 +270,20 @@ class ChannelList {
      * @parms {String} source Whether it is from new file upload or saved
      */
     async applyChannels(source) {
-        const self = this;
-
         let channels;
         if (source === 'file'){
-            channels = await self.dataLayer.getUploadedChannelCsvValues();
+            channels = await this.dataLayer.getUploadedChannelCsvValues();
         } else {
-            channels = await self.dataLayer.getSavedChannelList();
+            channels = await this.dataLayer.getSavedChannelList();
         }
 
-        let defaultRange = self.dataLayer.imageBitRange;
+        let defaultRange = this.dataLayer.imageBitRange;
 
         // this.eventHandler.trigger(ChannelList.events.RESET_LISTS);
         _.each(channels, col => {
-            let fullName = self.dataLayer.getFullChannelName(col.channel);
+            let fullName = this.dataLayer.getFullChannelName(col.channel);
             let channelIdx = imageChannels[fullName];
-            let channelID = self.channelIDs[col.channel];
+            let channelID = this.channelIDs[col.channel];
 
             if (this.sliders.get(col.channel)) {
                 if (this.currentChannels[channelIdx]) {
@@ -296,9 +298,9 @@ class ChannelList {
         this.colorConnector = {};
 
         _.each(channels, col => {
-            let fullName = self.dataLayer.getFullChannelName(col.channel);
+            let fullName = this.dataLayer.getFullChannelName(col.channel);
             let channelIdx = imageChannels[fullName];
-            let channelID = self.channelIDs[col.channel];
+            let channelID = this.channelIDs[col.channel];
 
             if (this.sliders.get(col.channel)) {
                 if (col.start > this.image_channels[col.channel][0] || col.end < this.image_channels[col.channel][1]){
@@ -331,15 +333,13 @@ class ChannelList {
 
 
      async auto_channel(name) {
-        const self = this;
-
-        let fullName = self.dataLayer.getFullChannelName(name);
+        let fullName = this.dataLayer.getFullChannelName(name);
         let vmin = this.hasChannelGMM[name]['vmin'];
         let vmax = this.hasChannelGMM[name]['vmax'];
         this.sliders.get(name).value([vmin, vmax]);
 
         let channelIdx = imageChannels[fullName];
-        let defaultRange = self.dataLayer.imageBitRange;
+        let defaultRange = this.dataLayer.imageBitRange;
         this.rangeConnector[channelIdx] = [vmin / defaultRange[1], vmax / defaultRange[1]];
     }
 
@@ -455,48 +455,38 @@ class ChannelList {
      */
     addSlider(name, swidth, activeRange) {
 
-        //formatter
         const f = (d3.format('.2%'))
-
-        var that = this;
-        let fullName = this.dataLayer.getFullChannelName(name);
         let channelID = this.channelIDs[name];
-        let histogramData = this.databaseDescription[fullName]['image_histogram']
-        let data_min = this.databaseDescription[fullName]['image_min']
-        let data_max = this.databaseDescription[fullName]['image_max']
+        const fullName = this.dataLayer.getFullChannelName(name);
+        const { xDomain, yDomain, histogramData} = this.histogramData(fullName); 
+        let data_min = this.databaseDescription[fullName]['image_min'];
+        let data_max = this.databaseDescription[fullName]['image_max'];
 
         //add range slider row content
-        var sliderSimple = d3.sliderBottom(d3.scaleLog())
-            .min(data_min)
-            .max(data_max)
-            .width(swidth - 75)//.tickFormat(d3.format("s"))
-            .fill('orange')
-            .on('onchange', val => {
-                val = [Math.round(val[0]), Math.round(val[1])]
-              // d3.select('p#value-range').text(val.map(d3.format('.2%')).join('-'));
-              d3.select('#slider-input' + channelID + 0).attr('value', val[0]);
-              d3.select('#slider-input' + channelID + 0).property('value', val[0]);
-              d3.select('#slider-input' + channelID + 1).attr('value', val[1]);
-              d3.select('#slider-input' + channelID + 1).property('value', val[1]);
-              // sliderSimple.silentValue([val[0], val[1]]);
-              that.moveSliderHandles(sliderSimple, val, name);
-              let packet_val = [val[0], val[1]]
-              let packet = {name: name, dataRange: packet_val};
-              this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-              this.image_channels[name] = packet_val;
-            })
-            .ticks(5)
-            .default([Math.round(activeRange[0]), Math.round(activeRange[1])])
-            .handle(
-                d3.symbol()
-                    .type(d3.symbolCircle)
-                    .size(100)
-            )
-            .tickValues([])
-            // .on('end', range => {
-            //     let packet = {name: name, dataRange: range};
-            //     this.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-            // });
+        const sliderSimple = (() => {
+            return d3.sliderBottom(d3.scaleLog())
+                .min(data_min)
+                .max(data_max)
+                .width(swidth - 75)//.tickFormat(d3.format("s"))
+                .fill('orange')
+                .on('onchange', (range) => {
+                    const v0 = Math.round(range[0]);
+                    const v1 = Math.round(range[1]);
+                    d3.select('#slider-input' + channelID + 0).attr('value', v0);
+                    d3.select('#slider-input' + channelID + 0).property('value', v0);
+                    d3.select('#slider-input' + channelID + 1).attr('value', v1);
+                    d3.select('#slider-input' + channelID + 1).property('value', v1);
+                    this.moveSliderHandles(sliderSimple, [v0, v1], name);
+                })
+                .ticks(5)
+                .default([Math.round(activeRange[0]), Math.round(activeRange[1])])
+                .handle(
+                    d3.symbol()
+                        .type(d3.symbolCircle)
+                        .size(100)
+                )
+                .tickValues([])
+        })();
 
         this.sliders.set(name, sliderSimple);
 
@@ -512,30 +502,25 @@ class ChannelList {
             .attr('transform', 'translate(20,40)');
 
         let xScale = d3.scaleLinear()
-            .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
+            .domain(xDomain)
             .range([0, swidth - 73])
 
         let yScale = d3.scaleLinear()
-            .domain([_.max(_.map(histogramData, e => e.y)), 0])
+            .domain(yDomain)
             .range([0, 23])
 
         let line = d3.line()
-            .x(d => {
-                return xScale(d.x)
-            })
-            .y(d => {
-                return yScale(d.y)
-            })
+            .x(d => xScale(d.x))
+            .y(d => yScale(d.y))
             .curve(d3.curveMonotoneX)
 
-        gSimple.selectAll('.image_distribution_line')
-            .data([histogramData])
-            .enter()
-            .append('path')
-            .attr('d', line)
-            .attr('class', 'image_distribution_line')
-            .attr('transform', 'translate(0,-31)')
-            .attr('fill', 'none')
+        const lines = gSimple.selectAll('.image_distribution_line');
+        const paths = lines.data([histogramData]).enter().append('path');
+        paths
+        .attr('d', line)
+        .attr('class', 'image_distribution_line')
+        .attr('transform', 'translate(0,-31)')
+        .attr('fill', 'none')
 
         gSimple.call(sliderSimple);
 
@@ -544,81 +529,88 @@ class ChannelList {
             .attr("y", 10);
 
         //both handles
-        d3.select('#channel-slider_' + channelID).selectAll(".parameter-value").each(function(d, i) {
-        d3.select(this).append("foreignObject")
-                    .attr('id', 'foreignObject_' + channelID + i)
-                    .attr("width", 50)
-                    .attr("height", 40)
-                    .attr('x', -25)
-                    .attr( 'y', -17)
-                    .style('padding',"10px")
-                    .append("xhtml:body")
-                      .attr('xmlns','http://www.w3.org/1999/xhtml')
-                        .style('background', 'none')
-                      .append('input')
-                        .attr( 'y', -17)
-                        .attr('id', 'slider-input' + channelID + i)
-                        .attr('type', 'text')
-                        .attr('class', 'input')
-                        .attr('value', function(){return channelList.sliders.get(name).value()[i]});
+        const { sliders } = this;
+        const handles = d3.select('#channel-slider_' + channelID).selectAll(".parameter-value");
+        handles.each(function(d, i) {
+            d3.select(this).append("foreignObject")
+            .attr('id', 'foreignObject_' + channelID + i)
+            .attr("width", 50)
+            .attr("height", 40)
+            .attr('x', -25)
+            .attr( 'y', -17)
+            .style('padding',"10px")
+            .append("xhtml:body")
+            .attr('xmlns','http://www.w3.org/1999/xhtml')
+            .style('background', 'none')
+            .append('input')
+            .attr( 'y', -17)
+            .attr('id', 'slider-input' + channelID + i)
+            .attr('type', 'text')
+            .attr('class', 'input')
+            .attr('value', () => {
+                return sliders.get(name).value()[i]
+            });
             //remove the previous text label
             d3.select(this).select('text').remove();
         });
 
-        //entering a value in the input field of a slider handle will set this value and move the slider to this position
-        d3.select('#channel-slider_' + channelID).selectAll(".parameter-value").selectAll('.input').on('keydown', function(event, d){
+        //entering a value in the input field of a slider handle
+        const moveSliderHandles = this.moveSliderHandles.bind(this);
+        handles.selectAll('.input').on('keydown', function (event, d) {
           if(event.key == "Enter"){
-            // if (d.index = d3.select(this).attr('id')){
-              let val = parseFloat(this.value.replace("%", ""));
-              let handleVals = sliderSimple.silentValue();
-              handleVals[d.index] = val;
-              that.moveSliderHandles(sliderSimple, handleVals, name)
-
-              let packetHandleVals = [handleVals[0], handleVals[1]]
-              let packet = {name: name, dataRange: packetHandleVals};
-              that.eventHandler.trigger(ChannelList.events.BRUSH_END, packet);
-              that.image_channels[name] = packetHandleVals;
+              const val = parseFloat(this.value.replace("%", ""));
+              const vals = sliderSimple.silentValue();
+              vals[d.index] = val;
+              moveSliderHandles(sliderSimple, vals, name);
           }
         })
 
         return sliderSimple;
     };
 
-    async getAndDrawChannelGMM(name){
-        let fullname = this.dataLayer.getFullChannelName(name);
-        let packet = await this.dataLayer.getChannelGMM(fullname);
+    histogramData(fullName) {
+        const histogramData = this.databaseDescription[fullName].image_histogram;
+        const xMin = Math.min(...histogramData.map(e => e.x));
+        const xMax = Math.max(...histogramData.map(e => e.x));
+        const yMax = Math.max(...histogramData.map(e => e.y));
+        return {
+            histogramData,
+            xDomain: [xMin, xMax],
+            yDomain: [yMax, 0],
+        };
+    }
+
+    async getAndDrawChannelGMM(name) {
+        const fullName = this.dataLayer.getFullChannelName(name);
+        const packet = await this.dataLayer.getChannelGMM(fullName);
         this.hasChannelGMM[name] = packet;
 
         this.drawChannelGMM(name);
     }
 
-    drawChannelGMM(name){
-        let fullname = this.dataLayer.getFullChannelName(name);
+    drawChannelGMM(name) {
         let channelID = this.channelIDs[name];
         let packet = this.hasChannelGMM[name];
-
-        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['image_histogram'];
         let channel_gmm1Data = packet['image_gmm_1'];
         let channel_gmm2Data = packet['image_gmm_2'];
         let channel_gmm3Data = packet['image_gmm_3'];
+        const fullName = this.dataLayer.getFullChannelName(name);
+        const { xDomain, yDomain } = this.histogramData(fullName); 
 
-        let swidth = document.getElementById("channel_list").getBoundingClientRect().width;
+        const channelListEl = document.getElementById("channel_list");
+        const swidth = channelListEl.getBoundingClientRect().width;
 
         let xScale = d3.scaleLinear()
-            .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
+            .domain(xDomain)
             .range([0, swidth - 73])
 
         let yScale = d3.scaleLinear()
-            .domain([_.max(_.map(histogramData, e => e.y)), 0])
+            .domain(yDomain)
             .range([0, 23])
 
         let line = d3.line()
-            .x(d => {
-                return xScale(d.x)
-            })
-            .y(d => {
-                return yScale(d.y)
-            })
+            .x(d => xScale(d.x))
+            .y(d => yScale(d.y))
             .curve(d3.curveMonotoneX)
 
         let gSimple = d3.select('#channel-slider_svg_' + channelID + ' g')
@@ -658,29 +650,30 @@ class ChannelList {
     }
 
     /**
-     * move the slider handles and input fields so that input fields don't overlap when handles are close
+     * @function moveSliderHandles - move the slider handles and input fields so that input fields don't overlap when handles are close
+     *
      * @param slider - the slider affected
-     * @param valArray - holds the new positions
+     * @param vals - holds the new positions
      * @param name - the name of the slider
      */
-    moveSliderHandles(slider, valArray, name){
-        const self = this;
-        let channelID = self.channelIDs[name];
-        slider.silentValue(valArray);
-        if (valArray[1] - valArray[0] < 0.41){
+    moveSliderHandles(slider, vals, name){
+        let channelID = this.channelIDs[name];
+        this.image_channels[name] = vals;
+        slider.silentValue(vals);
+        if (vals[1] - vals[0] < 0.41){
             console.log('slider handles overlap..do something');
             d3.select('#foreignObject_'  + channelID + 1).attr('x', 5);
         }else{
             d3.select('#foreignObject_'  + channelID + 1).attr('x', -25);
         }
+        const packet = {name: name, dataRange: [...vals]};
+        this.eventHandler.trigger(ChannelList.events.BRUSH_MOVE, packet);
     }
 
     /**
-     * rests the channel list to its initial values (usually full range)
      */
     resetChannelList() {
-        const self = this;
-        let channelList = _.clone(self.selections);
+        let channelList = _.clone(this.selections);
         _.each(channelList, col => {
             let channelID = this.channelIDs[col];
             let channel_selector = `#channel-slider_${channelID}`;
@@ -696,7 +689,9 @@ window.addEventListener("resize", function () {
     if (typeof channelList != "undefined" && channelList) {
         channelList.sliders.forEach(function (slider, name) {
             d3.select('div#channel-slider_' + name).select('svg').remove();
-            channelList.addSlider(name, document.getElementById("channel_list").getBoundingClientRect().width, slider.value());
+            const channelListEl = document.getElementById("channel_list");
+            const swidth = channelListEl.getBoundingClientRect().width;
+            channelList.addSlider(name, swidth, slider.value());
             if (channelList.hasChannelGMM[name]) {
                 let channelTrace = channelList.drawChannelGMM(name);
             }
@@ -707,7 +702,6 @@ window.addEventListener("resize", function () {
 //static vars: events introduced in this class and used across the app
 ChannelList.events = {
     BRUSH_MOVE: "BRUSH_MOVE",
-    BRUSH_END: "BRUSH_END",
     COLOR_TRANSFER_CHANGE_MOVE: "COLOR_TRANSFER_CHANGE_MOVE",
     COLOR_TRANSFER_CHANGE: "COLOR_TRANSFER_CHANGE",
     CHANNELS_CHANGE: "CHANNELS_CHANGE",

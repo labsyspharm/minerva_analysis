@@ -291,12 +291,16 @@ class DataLayer {
 
     async getAllCells(start_keys) {
         try {
-            let response = await fetch('/get_all_cells?' + new URLSearchParams({
+            const headers = new Headers();
+            headers.append("Content-Type","application/octet-stream");
+            headers.append("Content-Encoding","gzip");
+            const response = await fetch('/get_all_cells?' + new URLSearchParams({
                 start_keys: start_keys,
                 datasource: datasource
-            }))
-            let cellIds = await response.json();
-            return cellIds;
+            }), {
+                headers: headers
+            })
+            return response.arrayBuffer();
         } catch (e) {
             console.log("Error Getting Gated Cell Ids", e);
         }

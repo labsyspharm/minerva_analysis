@@ -1,5 +1,5 @@
 from minerva_analysis import app
-from flask import render_template, request, Response, jsonify, abort, send_file
+from flask import make_response, render_template, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
 from minerva_analysis import data_path, get_config
@@ -7,6 +7,7 @@ from minerva_analysis.server.models import data_model
 from pathlib import Path
 from time import time
 import pandas as pd
+import gzip
 import json
 import orjson
 import os
@@ -99,7 +100,12 @@ def get_all_cells():
     datasource = request.args.get('datasource')
     start_keys = list(request.args.get('start_keys').split(','))
     resp = data_model.get_all_cells(datasource, start_keys)
-    return serialize_and_submit_json(resp)
+    content = gzip.compress(resp.tobytes('C'))
+    response = make_response(content)
+    response.headers.set('Content-Type', 'application/octet-stream')
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+    return response
 
 
 @app.route('/get_gated_cell_ids', methods=['GET'])
