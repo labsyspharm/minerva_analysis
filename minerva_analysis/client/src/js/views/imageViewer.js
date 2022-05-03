@@ -627,7 +627,18 @@ class ImageViewer {
             const nNew = newKeys.length; 
             newKeys.forEach((k, ki) => {
                 const mk = m.filter((_, i) => (i % nNew) == ki);
-                this.bindMagnitudes(this.viaGL, mk, k);
+                // Attempt to bind marker magnitude texture
+                try {
+                    this.bindMagnitudes(this.viaGL, mk, k);
+                }
+                catch (e) {
+                    if (e instanceof TypeError) {
+                        console.warn(`Unable to bind ${k} marker texture.`)
+                    }
+                    else {
+                        throw e; 
+                    }
+                }
             });
         }
     }

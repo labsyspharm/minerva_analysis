@@ -389,7 +389,7 @@ vec4 u32_rgba_map(bvec2 mode) {
     if (or_mode) {
       return vec4(sample_gating_color(float(key)), 1.0);
     }
-    else if (true) {
+    else if (!edge_mode) {
       return white_pixel;
     }
   }
