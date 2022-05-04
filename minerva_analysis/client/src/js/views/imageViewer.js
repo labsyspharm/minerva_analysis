@@ -251,7 +251,6 @@ class ImageViewer {
 
             // Texture for colormap
             const u_ids = this.gl.getUniformLocation(program, "u_ids");
-            const u_tile = this.gl.getUniformLocation(program, "u_tile");
             const u_picked = this.gl.getUniformLocation(program, "u_picked");
             const u_gatings = this.gl.getUniformLocation(program, "u_gatings");
             const u_centers = this.gl.getUniformLocation(program, "u_centers");
@@ -379,12 +378,7 @@ class ImageViewer {
         this.viewerManagerVMain = viewerManager;
         this.viewerManagers.push(this.viewerManagerVMain);
         const via = this.viaGL;
-        via.texture_mag = [
-          via.gl.createTexture(),
-          via.gl.createTexture(),
-          via.gl.createTexture(),
-          via.gl.createTexture(),
-        ];
+        via.texture_mag = [via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture()];
         via.texture_ids = via.gl.createTexture();
         via.texture_mask = via.gl.createTexture();
         via.texture_picked = via.gl.createTexture();
@@ -398,15 +392,15 @@ class ImageViewer {
     }
 
     /**
-     * @function indexOfTexture -- return integer for named texture
+     * @function indexOfTexture - return integer for named texture
      * @param label - the texture key label
      * @param scope - type of texture
      * @returns number
      */
-    indexOfTexture(label, scope=null) {
+    indexOfTexture(label, scope = null) {
         const via = this.viaGL;
         // image tiles
-        if (scope == 'T') {
+        if (scope == "T") {
             const index = via._tileTextures.indexOf(label);
             if (index > -1) {
                 return index;
@@ -418,7 +412,7 @@ class ImageViewer {
             return newIndex;
         }
         // magnitudes
-        if (scope == 'M') {
+        if (scope == "M") {
             const index = via._markerTextures.indexOf(label);
             if (index > -1) {
                 return index;
@@ -438,8 +432,7 @@ class ImageViewer {
     }
 
     /**
-     * @function -- Most recently bound tile texture label.
-     *
+     * @function getTileTexture - Most recently bound tile texture label.
      * @returns string
      */
     getTileTexture() {
@@ -448,9 +441,9 @@ class ImageViewer {
     }
 
     /**
-     * @function -- Check if texture label is active.
-     * @params string 
-     * @returns number 
+     * @function findMarkerTexture - Check if texture label is active.
+     * @param label - marker texture label
+     * @returns number
      */
     findMarkerTexture(label) {
         const via = this.viaGL;
@@ -458,17 +451,19 @@ class ImageViewer {
     }
 
     /**
-     * @function -- Return given channel for partial url
-     * @param string - partial url
+     * @function findCurrentChannel - Return given channel for partial url
+     * @param sub_url - partial url
      * @returns - current channel
      */
     findCurrentChannel(sub_url) {
         const channels = Object.values(this.currentChannels);
-        return channels.find(e => e.sub_url == sub_url);
+        return channels.find((e) => e.sub_url == sub_url);
     }
 
     /**
      * Flag for webGL rendering.
+     *
+     * @type {boolean}
      */
     get ready() {
         return this._ready || false;
@@ -478,7 +473,7 @@ class ImageViewer {
         this._ready = bool;
         this.viewerManagers.forEach(({ viewer }) => {
             viewer.world._needsDraw = bool;
-        })
+        });
     }
 
     /**
@@ -491,8 +486,8 @@ class ImageViewer {
      */
     get modeFlags() {
         return {
-          edge: !!this.viewerManagerVMain?.sel_outlines,
-          or: this.gatingList?.eval_mode == "or"
+            edge: !!this.viewerManagerVMain?.sel_outlines,
+            or: this.gatingList?.eval_mode == "or",
         };
     }
 
@@ -525,7 +520,7 @@ class ImageViewer {
     }
 
     /**
-     * @function toCacheKey -- generate cache keys of gl properties
+     * @function toCacheKey - generate cache keys of gl properties
      * @param keys - active marker channels
      * @param markerLists - data for each marker
      * @returns string
@@ -588,7 +583,7 @@ class ImageViewer {
     }
 
     /**
-     * @function loadBuffers -- loads segmentation mask data to WebGL
+     * @function loadBuffers - loads segmentation mask data to WebGL
      */
     async loadBuffers() {
         const keys = this.gatingKeys;
@@ -614,21 +609,19 @@ class ImageViewer {
         if (markersChanged) {
             const newKeys = keys.filter((k) => {
                 return this.findMarkerTexture(k) == -1;
-            })
+            });
             const m = await this.numericData.getAllFloat32Entries(newKeys);
-            const nNew = newKeys.length; 
+            const nNew = newKeys.length;
             newKeys.forEach((k, ki) => {
-                const mk = m.filter((_, i) => (i % nNew) == ki);
+                const mk = m.filter((_, i) => i % nNew == ki);
                 // Attempt to bind marker magnitude texture
                 try {
                     this.bindMagnitudes(this.viaGL, mk, k);
-                }
-                catch (e) {
+                } catch (e) {
                     if (e instanceof TypeError) {
-                        console.warn(`Unable to bind ${k} marker texture.`)
-                    }
-                    else {
-                        throw e; 
+                        console.warn(`Unable to bind ${k} marker texture.`);
+                    } else {
+                        throw e;
                     }
                 }
             });
@@ -636,7 +629,7 @@ class ImageViewer {
     }
 
     /**
-     * @function selectCenterProps -- return cell centers properties
+     * @function selectCenterProps - return cell centers properties
      * @param tile - openseadragon tile
      * @param source - openseadragon tile source
      * @typedef {object} CenterProps
@@ -685,7 +678,7 @@ class ImageViewer {
     }
 
     /**
-     * @function selectGatings -- select gating ranges
+     * @function selectGatings - select gating ranges
      * @param keys - active marker channels
      * @returns - lists of min, max, r, g, b gating values
      */
@@ -704,7 +697,7 @@ class ImageViewer {
     }
 
     /**
-     * @function updateCache -- update cache keys
+     * @function updateCache - update cache keys
      * @param keys - active marker channels
      * @param gatingLists - lists of min, max, r, g, b gating values
      * @typedef {object} Changes
@@ -734,7 +727,7 @@ class ImageViewer {
     }
 
     /**
-     * @function selectMaskColor -- select color for mask
+     * @function selectMaskColor - select color for mask
      * @param channel - the channel label
      * @typedef {object} Color
      * @property {number} r - 0-255
@@ -761,7 +754,7 @@ class ImageViewer {
     }
 
     /**
-     * @function selectMaskIndex -- select index for mask
+     * @function selectMaskIndex - select index for mask
      * @param channel - the channel label
      * @returns number
      */
@@ -896,7 +889,7 @@ class ImageViewer {
         const idx = this.indexOfTexture(key, "M");
         const texture = via.texture_mag[idx - via._markerOffset];
         const [width, height] = this.toTextureShape(via.gl, values.length);
-        this.setFloatTexture(via.gl, idx, texture, values, width, height); 
+        this.setFloatTexture(via.gl, idx, texture, values, width, height);
     }
 
     /**
@@ -908,7 +901,6 @@ class ImageViewer {
         // Add a mask center map
         const idx = this.indexOfTexture("centers", null);
         const [width, height] = this.toTextureShape(via.gl, values.length);
-        const pixels = this.packFloat32(values, width, height);
         via.gl.uniform3iv(via.u_center_shape, [width, height, 2]);
         this.setFloatTexture(via.gl, idx, via.texture_centers, values, width, height);
     }
@@ -941,7 +933,6 @@ class ImageViewer {
         via.gl.uniform1i(via.u_picked_end, values.length - 1);
         this.setIntegerTexture(via.gl, idx, via.texture_picked, values);
     }
-
 
     // =================================================================================================================
     // Tile cache management
@@ -1061,7 +1052,7 @@ class ImageViewer {
 
     /**
      * @function updateRenderingMode
-     * @param mode -- subset or selection
+     * @param mode - subset or selection
      */
     updateRenderingMode(mode) {
         // Mode is a string: 'show-subset', 'show-selection'

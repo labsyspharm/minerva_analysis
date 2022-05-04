@@ -188,16 +188,6 @@ export class ViewerManager {
             return;
         }
 
-        // Find name
-        let name = "";
-        let short_name = "";
-        for (let k in imageChannels) {
-            if (imageChannels.hasOwnProperty(k) && imageChannels[k] === srcIdx) {
-                name = k;
-                short_name = dataLayer.getShortChannelName(k);
-            }
-        }
-
         const url = this.imageViewer.config["imageData"][srcIdx]["src"];
         const { maxLevel, extraZoomLevels } = this.imageViewer.config;
         const magnification = 2 ** extraZoomLevels;
@@ -238,7 +228,7 @@ export class ViewerManager {
             },
             // index: 0,
             opacity: 1,
-            preload: true
+            preload: true,
         });
     }
 
