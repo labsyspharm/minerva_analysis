@@ -11,10 +11,17 @@ class NumericData {
   }
 
   /*
-   * Access DataLayer metadata.
+   * Load cell segmentation data
    */
-  get metadata() {
-      return this.dataLayer.getMetadata();
+  async loadCells() {
+      const { idField, xCoordinate, yCoordinate } = this.features;
+      const fields = [ idField, xCoordinate, yCoordinate ];
+      const idsCenters = await this.getAllUInt32Entries(fields);
+      const isCenter = (_, i) => !!(i % fields.length);
+      const centers = idsCenters.filter(isCenter);
+      const isId = (_, i) => !(i % fields.length);
+      const ids = idsCenters.filter(isId);
+      return { ids, centers };
   }
 
   /*
@@ -46,34 +53,31 @@ class NumericData {
    * @param keys - list of keys to access
    */
   async getAllFloat32Entries(keys) {
-      const constructor = (arr) => {
-          return new Float32Array(arr);
-      }
-      return this.getAllEntries(keys, constructor);
+      return this.getAllEntries(keys, false);
   }
 
   /*
-   * @function getAllInt32Ids - all integer entries
+   * @function getAllUInt32Ids - all integer entries
    * @param keys - list of keys to access
    */
-  async getAllInt32Entries(keys) {
-      const constructor = (arr) => {
-          return new Uint32Array(arr);
-      }
-      return this.getAllEntries(keys, constructor);
+  async getAllUInt32Entries(keys) {
+      return this.getAllEntries(keys, true);
   }
 
   /*
    * @function getAllEntries - all cell entries by keys
    * @param keys - list of keys to access
-   * @param constructor - a typed array constructor
+   * @param useInt - whether requesting integers
    */
-  async getAllEntries(keys, constructor) {
+  async getAllEntries(keys, useInt) {
       if (!keys.length) {
           return [];
       }
       const { dataLayer } = this;
-      const arr = await dataLayer.getAllCells(keys);
-      return constructor(arr);
+      const arr = await dataLayer.getAllCells(keys, useInt);
+      if (useInt) {
+          return new Uint32Array(arr);
+      }
+      return new Float32Array(arr);
   }
 }

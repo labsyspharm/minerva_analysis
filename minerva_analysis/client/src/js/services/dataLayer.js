@@ -20,11 +20,9 @@ class DataLayer {
 
     async init() {
         try {
-            let response = await fetch('/init_database?' + new URLSearchParams({
+            await fetch('/init_database?' + new URLSearchParams({
                 datasource: datasource
             }))
-            let response_data = await response.json();
-            this.phenotypes = await this.getPhenotypes();
 
         } catch (e) {
             console.log("Error Initializing Dataset", e);
@@ -289,12 +287,14 @@ class DataLayer {
         }
     }
 
-    async getAllCells(start_keys) {
+    async getAllCells(start_keys, use_integer) {
+        const dtype = use_integer ? 'integer' : 'float'
+        const base_url = `/get_all_cells/${dtype}/?`
         try {
             const headers = new Headers();
             headers.append("Content-Type","application/octet-stream");
             headers.append("Content-Encoding","gzip");
-            const response = await fetch('/get_all_cells?' + new URLSearchParams({
+            const response = await fetch(base_url + new URLSearchParams({
                 start_keys: start_keys,
                 datasource: datasource
             }), {
@@ -412,18 +412,6 @@ class DataLayer {
             return response_data;
         } catch (e) {
             console.log("Error Getting Sample Row", e);
-        }
-    }
-
-    async getPhenotypes() {
-        try {
-            let response = await fetch('/get_phenotypes?' + new URLSearchParams({
-                datasource: datasource
-            }))
-            let response_data = await response.json();
-            return response_data;
-        } catch (e) {
-            console.log("Error Getting Phenotypes", e);
         }
     }
 

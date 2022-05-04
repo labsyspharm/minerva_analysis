@@ -95,11 +95,12 @@ def get_num_cells_in_circle():
     return serialize_and_submit_json(resp)
 
 
-@app.route('/get_all_cells', methods=['GET'])
-def get_all_cells():
+@app.route('/get_all_cells/<dtype>/', methods=['GET'])
+def get_all_cells(dtype):
     datasource = request.args.get('datasource')
+    data_type = int if 'integer' == dtype else float
     start_keys = list(request.args.get('start_keys').split(','))
-    resp = data_model.get_all_cells(datasource, start_keys)
+    resp = data_model.get_all_cells(datasource, start_keys, data_type)
     content = gzip.compress(resp.tobytes('C'))
     response = make_response(content)
     response.headers.set('Content-Type', 'application/octet-stream')

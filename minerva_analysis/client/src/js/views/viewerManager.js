@@ -159,11 +159,10 @@ export class ViewerManager {
      * Constructs a ColorManager instance before delegating initialization.
      *
      * @param imageViewer - ImageViewer instance
-     * @param viewer - Openseadragon instance
      * @param channelList - ChannelList instance
      */
-    constructor(imageViewer, viewer, channelList) {
-        this.viewer = viewer;
+    constructor(imageViewer, channelList) {
+        this.viewer = imageViewer.viewer;
         this.imageViewer = imageViewer;
         this.channelList = channelList;
         this.init();

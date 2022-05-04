@@ -18,19 +18,17 @@ class ImageViewer {
      * @param config - the cinfiguration file (json)
      * @param imgMetadata - image metadata from ome
      * @param numericData - custom numeric data layer
-     * @param channelList - ChannelList instance
-     * @param gatingList - CSVGatingList instance
      * @param eventHandler - the event handler for distributing interface and data updates
      */
-    constructor(config, imgMetadata, numericData, channelList, gatingList, eventHandler) {
+    constructor(config, imgMetadata, numericData, eventHandler) {
+        this.ready = false;
         this.config = config;
+        this.gatingList = null;
+        this.channelList = null;
         this.imgMetadata = imgMetadata;
         this.numericData = numericData;
-        this.channelList = channelList;
         this.eventHandler = eventHandler;
-        this._ready = false;
         this._cacheKeys = {};
-        this.gatingList = gatingList;
         this.pickedIds = [];
 
         // Viewer
@@ -323,12 +321,6 @@ class ImageViewer {
             delete e.tile._array;
         });
 
-        // Instantiate viewer managers
-        this.viewerManagerVMain = new ViewerManager(this, seaGL.openSD, channelList);
-        //
-        // // Append to viewers
-        this.viewerManagers.push(this.viewerManagerVMain);
-
         seaGL.init();
 
         this.viewer.scalebar({
@@ -374,36 +366,35 @@ class ImageViewer {
 
     /**
      * @function init - initializes OSD channel and gating options
+     * @param viewerManager - Viewer Manager Instance
+     * @param channelList - ChannelList instance
+     * @param gatingList - CSVGatingList instance
+     * @param centers - List of image pixel coordinates per cell
+     * @param ids - List of integer ids per cell
      */
-    async init() {
-        this.ready = false;
+    async init(viewerManager, channelList, gatingList, centers, ids) {
+        this.channelList = channelList;
+        this.gatingList = gatingList;
+        // Instantiate viewer managers
+        this.viewerManagerVMain = viewerManager;
+        this.viewerManagers.push(this.viewerManagerVMain);
         const via = this.viaGL;
-        const { numericData } = this;
-        const { getAllFloat32Entries, features } = numericData;
-        const { idField, xCoordinate, yCoordinate } = features;
-        const fields = [ idField, xCoordinate, yCoordinate ];
-        const numFields = fields.length;
-        const getter = getAllFloat32Entries.bind(numericData);
-        const idsCenters = await getter(fields);
-        const isCenter = (_, i) => !!(i % numFields);
-        const centers = idsCenters.filter(isCenter);
-        const isId = (_, i) => !(i % numFields);
-        const ids = idsCenters.filter(isId);
-        via.texture_ids = via.gl.createTexture();
-        via.texture_mask = via.gl.createTexture();
-        via.texture_gatings = via.gl.createTexture();
-        via.texture_centers = via.gl.createTexture();
-        via.texture_picked = via.gl.createTexture();
         via.texture_mag = [
           via.gl.createTexture(),
           via.gl.createTexture(),
           via.gl.createTexture(),
           via.gl.createTexture(),
         ];
-        this.idCount = ids.length;
-        this.bindLabels(via, ids);
+        via.texture_ids = via.gl.createTexture();
+        via.texture_mask = via.gl.createTexture();
+        via.texture_picked = via.gl.createTexture();
+        via.texture_gatings = via.gl.createTexture();
+        via.texture_centers = via.gl.createTexture();
         this.bindCenters(via, centers);
+        this.bindLabels(via, ids);
+        this.idCount = ids.length;
         this.ready = true;
+        await this.forceRepaint();
     }
 
     /**
@@ -499,9 +490,10 @@ class ImageViewer {
      * @type {ModeFlags}
      */
     get modeFlags() {
-        const edge = this.viewerManagerVMain.sel_outlines;
-        const or = this.gatingList?.eval_mode == "or";
-        return { edge, or };
+        return {
+          edge: !!this.viewerManagerVMain?.sel_outlines,
+          or: this.gatingList?.eval_mode == "or"
+        };
     }
 
     /**

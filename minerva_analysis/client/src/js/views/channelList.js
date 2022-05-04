@@ -7,14 +7,13 @@ class ChannelList {
      * @constructor
      * @param config the cinfiguration file (json)
      * @param columns - all the channel names
-     * @param dd - database description
      * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
      * @param eventHandler - the event handler for distributing interface and data updates
      */
-    constructor(config, columns, dd, dataLayer, eventHandler) {
+    constructor(config, columns, dataLayer, eventHandler) {
         this.config = config;
         this.columns = [...columns];
-        this.databaseDescription = dd;
+        this.databaseDescription = {};
         this.maxSelections = config.maxSelections;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
@@ -90,7 +89,7 @@ class ChannelList {
         }
 
         if (!(name in this.hasChannelGMM)) {
-            let channelTrace = this.getAndDrawChannelGMM(name);
+            this.getAndDrawChannelGMM(name);
         }
 
         // Update selections
@@ -111,9 +110,11 @@ class ChannelList {
 
     /**
      * initializes the view (channel list)
+     * @param dd - database description
      * @returns {Promise<void>}
      */
-    init() {
+    init(dd) {
+        this.databaseDescription = dd;
         this.rainbow.hide();
         // Hide the Loader
         document.getElementById('channel_list_loader').style.display = "none";
@@ -206,11 +207,11 @@ class ChannelList {
 
             let autoBtn = document.createElement("button");
             autoBtn.classList.add('auto-btn');
+            autoBtn.classList.add('auto-loading');
             autoBtn.setAttribute('id', "auto-btn_" + channelID);
             autoBtn.textContent = "auto";
-            autoBtn.addEventListener("click", async () => {
-                return await this.auto_channel(column)
-            });
+            const clickHandler = this.auto_channel.bind(this, column);
+            autoBtn.addEventListener("click", clickHandler);
 
             autoCol.appendChild(autoBtn);
             autoBtn.addEventListener("click", e => e.stopPropagation());
@@ -332,8 +333,11 @@ class ChannelList {
     }
 
 
-     async auto_channel(name) {
+     auto_channel(name) {
         let fullName = this.dataLayer.getFullChannelName(name);
+        if (!(name in this.hasChannelGMM)) {
+          return
+        }
         let vmin = this.hasChannelGMM[name]['vmin'];
         let vmax = this.hasChannelGMM[name]['vmax'];
         this.sliders.get(name).value([vmin, vmax]);
@@ -581,6 +585,9 @@ class ChannelList {
     async getAndDrawChannelGMM(name) {
         const fullName = this.dataLayer.getFullChannelName(name);
         const packet = await this.dataLayer.getChannelGMM(fullName);
+        const channelID = this.channelIDs[name];
+        const autoBtn = document.getElementById(`auto-btn_${channelID}`);
+        autoBtn.classList.remove("auto-loading")
         this.hasChannelGMM[name] = packet;
 
         this.drawChannelGMM(name);
@@ -685,13 +692,13 @@ class ChannelList {
  */
 window.addEventListener("resize", function () {
     if (typeof channelList != "undefined" && channelList) {
-        channelList.sliders.forEach(function (slider, name) {
+      channelList.sliders.forEach((slider, name) => {
             d3.select('div#channel-slider_' + name).select('svg').remove();
             const channelListEl = document.getElementById("channel_list");
             const swidth = channelListEl.getBoundingClientRect().width;
             channelList.addSlider(name, swidth, slider.value());
             if (channelList.hasChannelGMM[name]) {
-                let channelTrace = channelList.drawChannelGMM(name);
+                channelList.drawChannelGMM(name);
             }
         });
     }

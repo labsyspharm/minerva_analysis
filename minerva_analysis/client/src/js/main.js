@@ -61,30 +61,36 @@ async function init(conf) {
     //initialize metadata
     dataLayer = new DataLayer(config, imageChannels);
     const numericData = new NumericData(config, dataLayer);
-    const dd = await dataLayer.getDatabaseDescription();
     const columns = await dataLayer.getChannelNames(true);
-    const imgMetadata = await numericData.metadata;
+    const imgMetadata = await dataLayer.getMetadata(); 
 
     //Create channel panels
-    channelList = new ChannelList(config, columns, dd, dataLayer, eventHandler);
-    csv_gatingList = new CSVGatingList(config, columns, dd, dataLayer, eventHandler);
-    csv_gatingList.init();
-    channelList.init();
+    channelList = new ChannelList(config, columns, dataLayer, eventHandler);
+    csv_gatingList = new CSVGatingList(config, columns, dataLayer, eventHandler);
 
     //Create image viewer
-    const imageArgs = [
-      imgMetadata,
-      numericData,
-      channelList,
-      csv_gatingList,
-      eventHandler,
-      colorScheme
-    ]
+    const imageArgs = [ imgMetadata, numericData, eventHandler ];
     seaDragonViewer = new ImageViewer(config, ...imageArgs);
+    viewerManager = new ViewerManager(seaDragonViewer, channelList);
 
-    //Initialize 
-    await dataLayer.init();
-    await seaDragonViewer.init();
+    //Initialize with database description
+    const [dd, {ids, centers}] = await Promise.all([
+        dataLayer.getDatabaseDescription(),
+        numericData.loadCells()
+    ])
+    channelList.init(dd);
+    csv_gatingList.init(dd);
+    const imageInit = [
+        viewerManager,
+        channelList,
+        csv_gatingList,
+        centers,
+        ids
+    ];
+    await Promise.all([
+        dataLayer.init(),
+        seaDragonViewer.init(...imageInit)
+    ]);
 }
 
 //EVENT HANDLING
