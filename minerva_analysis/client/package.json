@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack",
-    "watch": "webpack --watch"
+    "watch": "webpack --watch",
+    "format": "prettier --ignore-path .eslintignore --write ."
   },
   "license": "MIT",
   "dependencies": {
@@ -27,6 +28,7 @@
     "node-fetch": "^2.6.1",
     "pngjs": "^5.0.0",
     "popper.js": "^1.16.1",
+    "prettier": "^2.6.2",
     "regenerator-runtime": "^0.13.7",
     "sortablejs": "^1.10.2",
     "style-loader": "^1.2.1",

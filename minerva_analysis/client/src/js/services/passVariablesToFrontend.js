@@ -1,3 +1,3 @@
 function passVariablesToFrontend(vars) {
-    return vars
+    return vars;
 }

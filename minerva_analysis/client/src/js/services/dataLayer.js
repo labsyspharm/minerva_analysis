@@ -1,7 +1,6 @@
 //todo add crossfilter stuff here... build some lensingFilters and sorters for individual and combined dimensions
 
 class DataLayer {
-
     constructor(config, imageChannels) {
         var that = this;
         //vars and consts
@@ -20,10 +19,12 @@ class DataLayer {
 
     async init() {
         try {
-            await fetch('/init_database?' + new URLSearchParams({
-                datasource: datasource
-            }))
-
+            await fetch(
+                "/init_database?" +
+                    new URLSearchParams({
+                        datasource: datasource,
+                    })
+            );
         } catch (e) {
             console.log("Error Initializing Dataset", e);
         }
@@ -44,9 +45,12 @@ class DataLayer {
 
     async getUploadedGatingCsvValues() {
         try {
-            let response = await fetch('/get_uploaded_gating_csv_values?' + new URLSearchParams({
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_uploaded_gating_csv_values?" +
+                    new URLSearchParams({
+                        datasource: datasource,
+                    })
+            );
             let response_data = await response.json();
             return response_data;
         } catch (e) {
@@ -56,9 +60,12 @@ class DataLayer {
 
     async getSavedGatingList() {
         try {
-            let response = await fetch('/get_saved_gating_list?' + new URLSearchParams({
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_saved_gating_list?" +
+                    new URLSearchParams({
+                        datasource: datasource,
+                    })
+            );
             let response_data = await response.json();
             return response_data;
         } catch (e) {
@@ -68,9 +75,12 @@ class DataLayer {
 
     async getUploadedChannelCsvValues() {
         try {
-            let response = await fetch('/get_uploaded_channel_csv_values?' + new URLSearchParams({
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_uploaded_channel_csv_values?" +
+                    new URLSearchParams({
+                        datasource: datasource,
+                    })
+            );
             let response_data = await response.json();
             return response_data;
         } catch (e) {
@@ -80,9 +90,12 @@ class DataLayer {
 
     async getSavedChannelList() {
         try {
-            let response = await fetch('/get_saved_channel_list?' + new URLSearchParams({
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_saved_channel_list?" +
+                    new URLSearchParams({
+                        datasource: datasource,
+                    })
+            );
             let response_data = await response.json();
             return response_data;
         } catch (e) {
@@ -96,11 +109,11 @@ class DataLayer {
 
         form.method = "post";
 
-        let filename = '';
+        let filename = "";
         if (!fullCsv) {
-            filename = document.getElementById('download_input1').value;
-        }else{
-            filename = document.getElementById('download_input2').value;
+            filename = document.getElementById("download_input1").value;
+        } else {
+            filename = document.getElementById("download_input2").value;
         }
         let fileNameElemment = document.createElement("input");
         fileNameElemment.type = "hidden";
@@ -114,7 +127,7 @@ class DataLayer {
         fullCsvElemment.name = "fullCsv";
         form.appendChild(fullCsvElemment);
 
-        let encoding = document.getElementById('encoding').value;
+        let encoding = document.getElementById("encoding").value;
         let encodingElement = document.createElement("input");
         encodingElement.type = "hidden";
         encodingElement.value = _.toString(encoding);
@@ -139,26 +152,23 @@ class DataLayer {
         datasourceElement.name = "datasource";
         form.appendChild(datasourceElement);
         document.body.appendChild(form);
-        form.submit()
-
+        form.submit();
     }
 
     async saveGatingList(channels, selections) {
         const self = this;
         try {
-            let response = await fetch('/save_gating_list', {
-                method: 'POST',
+            let response = await fetch("/save_gating_list", {
+                method: "POST",
                 headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(
-                    {
-                        datasource: datasource,
-                        filter: selections,
-                        channels: channels
-                    }
-                )
+                body: JSON.stringify({
+                    datasource: datasource,
+                    filter: selections,
+                    channels: channels,
+                }),
             });
             let response_data = await response.json();
             return response_data;
@@ -173,7 +183,7 @@ class DataLayer {
 
         form.method = "post";
 
-        let filename = datasource + '_channel_list';
+        let filename = datasource + "_channel_list";
         let fileNameElemment = document.createElement("input");
         fileNameElemment.type = "hidden";
         fileNameElemment.value = _.toString(filename);
@@ -216,28 +226,26 @@ class DataLayer {
         datasourceElement.name = "datasource";
         form.appendChild(datasourceElement);
         document.body.appendChild(form);
-        form.submit()
+        form.submit();
     }
 
     async saveChannelList(map_channels, active_channels, list_colors, list_ranges, list_channels) {
         const self = this;
         try {
-            let response = await fetch('/save_channel_list', {
-                method: 'POST',
+            let response = await fetch("/save_channel_list", {
+                method: "POST",
                 headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(
-                    {
-                        datasource: datasource,
-                        map_channels: map_channels,
-                        active_channels: active_channels,
-                        list_colors: list_colors,
-                        list_ranges: list_ranges,
-                        list_channels: list_channels
-                    }
-                )
+                body: JSON.stringify({
+                    datasource: datasource,
+                    map_channels: map_channels,
+                    active_channels: active_channels,
+                    list_colors: list_colors,
+                    list_ranges: list_ranges,
+                    list_channels: list_channels,
+                }),
             });
             let response_data = await response.json();
             return response_data;
@@ -261,11 +269,11 @@ class DataLayer {
 
     async submitGatingUpload(formData) {
         try {
-            formData.append('datasource', datasource);
-            let response = await fetch('/upload_gates', {
+            formData.append("datasource", datasource);
+            let response = await fetch("/upload_gates", {
                 method: "POST",
-                body: formData
-            })
+                body: formData,
+            });
             let cell = await response.json();
             return cell;
         } catch (e) {
@@ -275,11 +283,11 @@ class DataLayer {
 
     async submitChannelUpload(formData) {
         try {
-            formData.append('datasource', datasource);
-            let response = await fetch('/upload_channels', {
+            formData.append("datasource", datasource);
+            let response = await fetch("/upload_channels", {
                 method: "POST",
-                body: formData
-            })
+                body: formData,
+            });
             let cell = await response.json();
             return cell;
         } catch (e) {
@@ -288,18 +296,22 @@ class DataLayer {
     }
 
     async getAllCells(start_keys, use_integer) {
-        const dtype = use_integer ? 'integer' : 'float'
-        const base_url = `/get_all_cells/${dtype}/?`
+        const dtype = use_integer ? "integer" : "float";
+        const base_url = `/get_all_cells/${dtype}/?`;
         try {
             const headers = new Headers();
-            headers.append("Content-Type","application/octet-stream");
-            headers.append("Content-Encoding","gzip");
-            const response = await fetch(base_url + new URLSearchParams({
-                start_keys: start_keys,
-                datasource: datasource
-            }), {
-                headers: headers
-            })
+            headers.append("Content-Type", "application/octet-stream");
+            headers.append("Content-Encoding", "gzip");
+            const response = await fetch(
+                base_url +
+                    new URLSearchParams({
+                        start_keys: start_keys,
+                        datasource: datasource,
+                    }),
+                {
+                    headers: headers,
+                }
+            );
             return response.arrayBuffer();
         } catch (e) {
             console.log("Error Getting Gated Cell Ids", e);
@@ -340,9 +352,12 @@ class DataLayer {
 
     async getDatabaseDescription() {
         try {
-            let response = await fetch('/get_database_description?' + new URLSearchParams({
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_database_description?" +
+                    new URLSearchParams({
+                        datasource: datasource,
+                    })
+            );
             let description = await response.json();
             return description;
         } catch (e) {
@@ -352,10 +367,13 @@ class DataLayer {
 
     async getChannelGMM(channel) {
         try {
-            let response = await fetch('/get_channel_gmm?' + new URLSearchParams({
-                channel: channel,
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_channel_gmm?" +
+                    new URLSearchParams({
+                        channel: channel,
+                        datasource: datasource,
+                    })
+            );
             let packet_gmm = await response.json();
             return packet_gmm;
         } catch (e) {
@@ -365,10 +383,13 @@ class DataLayer {
 
     async getGatingGMM(channel) {
         try {
-            let response = await fetch('/get_gating_gmm?' + new URLSearchParams({
-                channel: channel,
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_gating_gmm?" +
+                    new URLSearchParams({
+                        channel: channel,
+                        datasource: datasource,
+                    })
+            );
             let packet_gmm = await response.json();
             return packet_gmm;
         } catch (e) {
@@ -391,10 +412,13 @@ class DataLayer {
 
     async getChannelNames(shortNames = true) {
         try {
-            let response = await fetch('/get_channel_names?' + new URLSearchParams({
-                datasource: datasource,
-                shortNames: shortNames
-            }))
+            let response = await fetch(
+                "/get_channel_names?" +
+                    new URLSearchParams({
+                        datasource: datasource,
+                        shortNames: shortNames,
+                    })
+            );
             let response_data = await response.json();
             return response_data;
         } catch (e) {
@@ -417,11 +441,14 @@ class DataLayer {
 
     async getNearestCell(point_x, point_y) {
         try {
-            let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
-                point_x: point_x,
-                point_y: point_y,
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_nearest_cell?" +
+                    new URLSearchParams({
+                        point_x: point_x,
+                        point_y: point_y,
+                        datasource: datasource,
+                    })
+            );
             let cell = await response.json();
             return cell;
         } catch (e) {
@@ -535,9 +562,12 @@ class DataLayer {
 
     async getMetadata() {
         try {
-            let response = await fetch('/get_ome_metadata?' + new URLSearchParams({
-                datasource: datasource
-            }))
+            let response = await fetch(
+                "/get_ome_metadata?" +
+                    new URLSearchParams({
+                        datasource: datasource,
+                    })
+            );
             let response_data = await response.json();
             return response_data;
         } catch (e) {
@@ -549,12 +579,10 @@ class DataLayer {
      * whether the current data is log transformed or not
      * @returns {boolean}
      */
-    isTransformed(){
-      if (this.config["featureData"][0]["isTransformed"]  !== undefined &&
-          this.config["featureData"][0]["isTransformed"] == true){
-          return true;
-      }
-      return false;
+    isTransformed() {
+        if (this.config["featureData"][0]["isTransformed"] !== undefined && this.config["featureData"][0]["isTransformed"] == true) {
+            return true;
+        }
+        return false;
     }
-
 }
