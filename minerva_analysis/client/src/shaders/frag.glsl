@@ -274,7 +274,7 @@ int count_gated_keys(int cell_index) {
   return gated_total;
 }
 
-float distance (vec2 v) {
+float dist (vec2 v) {
   return sqrt(pow2(v.x) + pow2(v.y));
 }
 
@@ -305,7 +305,7 @@ float to_chart_angle(int cell_index, float radius) {
   vec2 pos = screen_to_tile(uv);
   vec2 delta = pos - center;
 
-  if (distance(delta) > pie_radius) {
+  if (dist(delta) > pie_radius) {
     return -1.;
   }
   float rad = atan(delta.y, delta.x);
