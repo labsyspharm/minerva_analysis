@@ -359,16 +359,14 @@ bool near_cell_edge(int cell_index, float one, bvec2 mode) {
     int edge_index = sample_cell_index(vec2(ex, ey));
     if (cell_index != edge_index) {
       int edge_key = to_gate(edge_index, mode, no_radius);
-      if (cell_key > -1 || edge_key > -1) {
-        if (one > 1.0) {
-          if (cell_index <= -1) {
-            return true;
-          }
+      if (one > 1.0) {
+        if (cell_index <= -1 && edge_key > -1) {
+          return true;
         }
-        else {
-          if (cell_index > -1) {
-            return true;
-          }
+      }
+      else {
+        if (cell_index > -1 && cell_key > -1) {
+          return true;
         }
       }
     }
