@@ -5,14 +5,20 @@ precision highp usampler2D;
 
 uniform usampler2D u_ids;
 uniform usampler2D u_tile;
+uniform usampler2D u_picked;
 uniform sampler2D u_gatings;
-uniform usampler2D u_centers;
-uniform sampler2D u_magnitudes;
+uniform sampler2D u_centers;
+uniform sampler2D u_mag_0;
+uniform sampler2D u_mag_1;
+uniform sampler2D u_mag_2;
+uniform sampler2D u_mag_3;
 uniform ivec2 u_ids_shape;
 uniform vec2 u_tile_shape;
+uniform ivec2 u_picked_shape;
 uniform ivec2 u_gating_shape;
 uniform ivec3 u_center_shape;
-uniform ivec3 u_magnitude_shape;
+uniform ivec2 u_magnitude_shape;
+uniform ivec4 u_marker_sample;
 
 uniform float u_tile_fraction;
 uniform float u_tile_scale;
@@ -24,6 +30,7 @@ uniform bvec2 u_draw_mode;
 uniform vec2 u_x_bounds;
 uniform vec2 u_y_bounds;
 uniform int u_tile_fmt;
+uniform int u_picked_end;
 uniform int u_id_end;
 
 in vec2 uv;
@@ -36,7 +43,7 @@ const uint bMAX = uint(ceil(log2(float(MAX))));
 const vec2 TAU = vec2(0., 6.2831853);
 const float PI = 3.14159265;
 // Fixed maximum number of channels
-const int kMAX = 99;
+const int kMAX = 4;
 
 // square given float
 float pow2(float v) {
@@ -108,34 +115,49 @@ vec2 to_texture_xy(vec2 s, float x, float y) {
 
 // Turn 2D integers to coordinates for wrapped texture
 // Note: needed for 2D textures larger than normal limits
-vec2 to_flat_texture_xy(ivec3 shape, int cell_index, int d) {
-  uint idx = uint(cell_index * shape.z + d);
-  float idx_x = modulo(idx, uint(shape.x));
-  float idx_y = floor(division(int(idx), shape.x));
-  return to_texture_xy(vec2(shape.xy), idx_x, idx_y);
+vec2 to_flat_texture_xy(ivec3 size, int cell_index, int d) {
+  uint idx = uint(cell_index * size.z + d);
+  float idx_x = modulo(idx, uint(size.x));
+  float idx_y = floor(division(int(idx), size.x));
+  return to_texture_xy(vec2(size.xy), idx_x, idx_y);
 }
 
 // Access cell center at cell index
 vec2 sample_center(int cell_index) {
-  ivec3 shape = u_center_shape;
-  vec2 center_x = to_flat_texture_xy(shape, cell_index, 0);
-  vec2 center_y = to_flat_texture_xy(shape, cell_index, 1);
-  uint cx = unpack(texture(u_centers, center_x));
-  uint cy = unpack(texture(u_centers, center_y));
+  ivec3 size = u_center_shape;
+  vec2 center_x = to_flat_texture_xy(size, cell_index, 0);
+  vec2 center_y = to_flat_texture_xy(size, cell_index, 1);
+  float cx = texture(u_centers, center_x).r;
+  float cy = texture(u_centers, center_y).r;
   return vec2(cx, cy);
 }
 
 // Access marker key magnitude at cell index
 float sample_magnitude(int cell_index, int key) {
-  ivec3 shape = u_magnitude_shape;
-  vec2 idx_2d = to_flat_texture_xy(shape, cell_index, key);
-  return texture(u_magnitudes, idx_2d).r;
+  ivec3 size = ivec3(u_magnitude_shape, 1);
+  vec2 idx_2d = to_flat_texture_xy(size, cell_index, 0);
+  // Use any of available samplers
+  if (u_marker_sample[0] == key) {
+    return texture(u_mag_0, idx_2d).r;
+  }
+  else if (u_marker_sample[1] == key) {
+    return texture(u_mag_1, idx_2d).r;
+  }
+  else if (u_marker_sample[2] == key) {
+    return texture(u_mag_2, idx_2d).r;
+  }
+  else if (u_marker_sample[3] == key) {
+    return texture(u_mag_3, idx_2d).r;
+  }
+  else {
+    return -1.;
+  }
 }
 
 // Access marker key gating parameter
 float sample_gating(float param, float key) {
-  vec2 shape = vec2(u_gating_shape);
-  vec2 idx_2d = to_texture_xy(shape, param, key);
+  vec2 size = vec2(u_gating_shape);
+  vec2 idx_2d = to_texture_xy(size, param, key);
   return texture(u_gatings, idx_2d).r;
 }
 
@@ -155,20 +177,19 @@ vec3 sample_gating_color(float key) {
 }
 
 // Check if angle is within one evenly divided slice
-bool match_angle(int count, int total, float rad) {
+bool match_angle(int count, int total, float angle) {
   float rad_min = linear(TAU, float(total), float(count) - 1.);
   float rad_max = linear(TAU, float(total), float(count));
   vec2 rad_range = vec2(rad_min, rad_max);
-  return check_range(mod(rad + PI, TAU.y), rad_range);
+  return check_range(angle, rad_range);
 }
 
 // Access cell id at cell index
-uint sample_id(uint idx) {
-  vec2 shape = vec2(u_ids_shape);
-  float idx_x = modulo(idx, uint(shape.x));
-  float idx_y = floor(division(int(idx), int(shape.x)));
-  vec2 ids_idx = to_texture_xy(shape, idx_x, idx_y);
-  uvec4 m_value = texture(u_ids, ids_idx);
+uint sample_id(usampler2D sam, ivec2 size, uint idx) {
+  float idx_x = modulo(idx, uint(size.x));
+  float idx_y = floor(division(int(idx), int(size.x)));
+  vec2 ids_idx = to_texture_xy(vec2(size), idx_x, idx_y);
+  uvec4 m_value = texture(sam, ids_idx);
   return unpack(m_value);
 }
 
@@ -181,26 +202,14 @@ uvec4 offset(usampler2D sam, vec2 size, vec2 pos, vec2 off) {
   return texture(sam, vec2(x, y));
 }
 
-// Sample index of cell at given offset
-// Note: will be -1 if cell not in cell list
-int sample_cell_index(vec2 off) {
-  // Find cell id at given offset 
-  uint ikey = unpack(offset(u_tile, u_tile_shape, uv, off));
-
-  // Array size
+// Generic binary search of ids
+int binary_search(usampler2D sam, ivec2 size, uint last, uint ikey) {
   uint first = uint(0);
-  uint last = uint(u_id_end);
-
-  // Return -1 if background
-  if (ikey == uint(0)) {
-    return -1;
-  }
-
   // Search within log(n) runtime
   for (uint i = uint(0); i <= bMAX; i++) {
     // Evaluate the midpoint
     uint mid = (first + last) / uint(2);
-    uint here = sample_id(mid);
+    uint here = sample_id(sam, size, mid);
 
     // Break if list gone
     if (first == last && ikey != here) {
@@ -220,12 +229,30 @@ int sample_cell_index(vec2 off) {
   return -1;
 }
 
+// Sample index of cell at given offset
+// Note: will be -1 if cell not in cell list
+int sample_cell_index(vec2 off) {
+  // Find cell id at given offset 
+  uint ikey = unpack(offset(u_tile, u_tile_shape, uv, off));
+
+  // Array size
+  // Return -1 if background
+  if (ikey == uint(0)) {
+    return -1;
+  }
+
+  int picked_idx = binary_search(u_picked, u_picked_shape, uint(u_picked_end), ikey);
+  // Use any available externally picked ids
+  if (u_picked_end < 0 || picked_idx > -1) {
+    // Return index in main id list
+    return binary_search(u_ids, u_ids_shape, uint(u_id_end), ikey);
+  }
+  return -1;
+}
+
 // Limit to available marker keys
 bool catch_key(int key) {
-  if (key >= u_gating_shape.y) {
-    return true;
-  }
-  if (key >= u_magnitude_shape.z) {
+  if (key >= u_gating_shape.x) {
     return true;
   }
   return false;
@@ -251,22 +278,8 @@ float distance (vec2 v) {
   return sqrt(pow2(v.x) + pow2(v.y));
 }
 
-// Colorize OR-mode pie chart slices 
-vec4 to_chart_color(vec4 empty_pixel, int cell_index) {
-  float pie_radius = u_pie_radius * u_tile_fraction;
-  vec2 global_center = sample_center(cell_index);
-  vec2 center = global_to_tile(global_center);
-  vec2 pos = screen_to_tile(uv);
-  vec2 delta = pos - center;
-
-  if (distance(delta) > pie_radius) {
-    return empty_pixel;
-  }
-  float rad = atan(delta.y, delta.x);
-
-  int gated_count = 0;
-  int gated_total = count_gated_keys(cell_index);
-
+// Match channel to cell index
+int to_and_gate(int cell_index) {
   // Check each possible key for color
   for (int key = 0; key <= kMAX; key++) {
     if (catch_key(key)) {
@@ -274,29 +287,90 @@ vec4 to_chart_color(vec4 empty_pixel, int cell_index) {
     }
     float scale = sample_magnitude(cell_index, key);
     vec2 range = sample_gating_range(float(key));
+    if (scale >= 0. && !check_range(scale, range)) {
+      return -1;
+    }
+  }
+  return 1;
+}
+
+// Return angle within pie chart
+float to_chart_angle(int cell_index, float radius) {
+  if (cell_index < 0) {
+    return -1.;
+  }
+  float pie_radius = radius * u_tile_fraction;
+  vec2 global_center = sample_center(cell_index);
+  vec2 center = global_to_tile(global_center);
+  vec2 pos = screen_to_tile(uv);
+  vec2 delta = pos - center;
+
+  if (distance(delta) > pie_radius) {
+    return -1.;
+  }
+  float rad = atan(delta.y, delta.x);
+  float angle = mod(rad + PI, TAU.y);
+  return angle;
+}
+
+// Match channel to cell index
+int to_or_gate(int cell_index, float radius) {
+  int gated_count = 0;
+  int gated_total = count_gated_keys(cell_index);
+  float angle = to_chart_angle(cell_index, radius);
+  // Check each possible key for color
+  for (int key = 0; key <= kMAX; key++) {
+    if (catch_key(key)) {
+      return -1;
+    }
+    float scale = sample_magnitude(cell_index, key);
+    vec2 range = sample_gating_range(float(key));
     if (check_range(scale, range)) {
       gated_count = gated_count + 1;
-      if (match_angle(gated_count, gated_total, rad)) {
-        vec3 color = sample_gating_color(float(key));
-        return vec4(color, 1.0);
+      if (match_angle(gated_count, gated_total, angle)) {
+        return key;
       }
     }
   }
-  return empty_pixel;
+}
+
+// Match channel to cell index
+int to_gate(int cell_index, bvec2 mode, float radius) {
+  int n_gates = u_gating_shape.y;
+  if (n_gates < 1) {
+    return -1;
+  }
+  bool or_mode = mode.y;
+  if (or_mode) {
+    return to_or_gate(cell_index, radius);
+  }
+  else {
+    return to_and_gate(cell_index);
+  }
 }
 
 // Check if pixel is on a border
-bool near_cell_edge(float one) {
-  int cell_index = sample_cell_index(vec2(0, 0));
+bool near_cell_edge(int cell_index, float one, bvec2 mode) {
+  float no_radius = pow(2., 24.);
+  int cell_key = to_gate(cell_index, mode, no_radius);
   for (int i = 0; i < 4; i++) {
     float ex = vec4(0, 0, 1, -1)[i] * one;
     float ey = vec4(1, -1, 0, 0)[i] * one;
     int edge_index = sample_cell_index(vec2(ex, ey));
     if (cell_index != edge_index) {
-      if (one > 1.0 && cell_index > -1) {
-        return false;
+      int edge_key = to_gate(edge_index, mode, no_radius);
+      if (cell_key > -1 || edge_key > -1) {
+        if (one > 1.0) {
+          if (cell_index <= -1) {
+            return true;
+          }
+        }
+        else {
+          if (cell_index > -1) {
+            return true;
+          }
+        }
       }
-      return true;
     }
   }
   return false;
@@ -307,29 +381,23 @@ vec4 u32_rgba_map(bvec2 mode) {
   int cell_index = sample_cell_index(vec2(0, 0));
   vec4 empty_pixel = vec4(0., 0., 0., 0.);
   vec4 white_pixel = vec4(1., 1., 1., 1.);
-  bool use_chart = mode.y;
-  bool use_edge = mode.x;
+  bool or_mode = mode.y;
+  bool edge_mode = mode.x;
 
-  if(any(mode)) {
-    // Charts (top layer)
-    if (use_chart && cell_index != -1) {
-      vec4 chart_color = to_chart_color(empty_pixel, cell_index);
-      if (!all(equal(chart_color, empty_pixel))) {
-        return chart_color;
-      }
+  int key = to_gate(cell_index, mode, u_pie_radius);
+  if (cell_index > -1 && key > -1) {
+    if (or_mode) {
+      return vec4(sample_gating_color(float(key)), 1.0);
     }
-    // Borders (bottom layer)
-    if (use_edge) {
-      float one = 1.0 / u_tile_fraction;
-      if (near_cell_edge(one)) {
-        return white_pixel;
-      }
-      return empty_pixel;
+    else if (!edge_mode) {
+      return white_pixel;
     }
   }
-  else {
-    // Fill (bottom layer)
-    if (cell_index > -1) {
+
+  // Borders (bottom layer)
+  float one = 1.0 / u_tile_fraction;
+  if (edge_mode) {
+    if (near_cell_edge(cell_index, one, mode)) {
       return white_pixel;
     }
   }

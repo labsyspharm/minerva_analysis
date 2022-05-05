@@ -146,6 +146,10 @@ body {
     margin-left: 33px;
 }
 
+.auto-loading {
+    opacity: 50%;
+}
+
 .auto-btn {
     float: right;
     padding-top: 0;

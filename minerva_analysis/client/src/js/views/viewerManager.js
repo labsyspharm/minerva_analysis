@@ -36,8 +36,8 @@ function toRealTile(fullScale, v, useY) {
  */
 function toTileBoundary(fullScale, v, useY) {
     const start = v * this.toIdealTile(fullScale, useY);
-    const size = this.toRealTile(fullScale, v, useY)
-    return {start, size};
+    const size = this.toRealTile(fullScale, v, useY);
+    return { start, size };
 }
 
 /**
@@ -76,12 +76,12 @@ function toMagnifiedBounds(_level, _x, _y) {
  * @param x - openseadragon tile x index
  * @param y - openseadragon tile y index
  * @typedef {object} TileLevels
- * @property {number} inputFullScale - full scale of source tile 
+ * @property {number} inputFullScale - full scale of source tile
  * @property {number} outputFullScale - full scale of renedered tile
  * @property {number} relativeImageScale - scale relative to image pixels
  * @property {object} inputTile - level, x, and y of source tile
  * @property {object} outputTile - level, x, and y of rendered tile
- * @returns TileLevels 
+ * @returns TileLevels
  */
 function toTileLevels(level, x, y) {
     const { extraZoomLevels } = this;
@@ -133,6 +133,19 @@ function getTileKey(level, x, y) {
 }
 
 /**
+ * @function getImagePixel -- return image pixel for screen position
+ * @param tiledImage - openseadragon tiled image
+ * @param position - screen position
+ * @returns array
+ */
+function getImagePixel(tiledImage, position) {
+    const tileScale = 2 ** this.extraZoomLevels;
+    const frac = tiledImage.viewport.pointFromPixel(position);
+    const zoomed = tiledImage.viewportToImageCoordinates(frac);
+    return [zoomed.x, zoomed.y].map((v) => v / tileScale);
+}
+
+/**
  * @class ViewerManager
  */
 export class ViewerManager {
@@ -145,14 +158,13 @@ export class ViewerManager {
     /**
      * Constructs a ColorManager instance before delegating initialization.
      *
-     * @param _imageViewer - ImageViewer instance
-     * @param _viewer - Openseadragon instance
+     * @param imageViewer - ImageViewer instance
+     * @param channelList - ChannelList instance
      */
-    constructor(_imageViewer, _viewer) {
-        this.viewer = _viewer;
-        this.imageViewer = _imageViewer;
-        this.viewer_channels = new Map();
-
+    constructor(imageViewer, channelList) {
+        this.viewer = imageViewer.viewer;
+        this.imageViewer = imageViewer;
+        this.channelList = channelList;
         this.init();
     }
 
@@ -172,23 +184,27 @@ export class ViewerManager {
      */
     channel_add(srcIdx) {
         // If already exists
-        if (this.viewer_channels.has(srcIdx)) {
+        if (srcIdx in this.channelList.currentChannels) {
             return;
-        }
-
-        // Find name
-        let name = "";
-        let short_name = "";
-        for (let k in imageChannels) {
-            if (imageChannels.hasOwnProperty(k) && imageChannels[k] === srcIdx) {
-                name = k;
-                short_name = dataLayer.getShortChannelName(k);
-            }
         }
 
         const url = this.imageViewer.config["imageData"][srcIdx]["src"];
         const { maxLevel, extraZoomLevels } = this.imageViewer.config;
         const magnification = 2 ** extraZoomLevels;
+
+        // Define url and suburl
+        const group = url.split("/");
+        const sub_url = group[group.length - 2];
+        const range = this.channelList.rangeConnector[srcIdx];
+        const { color } = this.channelList.colorConnector[srcIdx] || {};
+        const viewerChannel = {
+            url: url,
+            sub_url: sub_url,
+            color: color || d3.color("white"),
+            range: range || this.imageViewer.numericData.bitRange,
+        };
+        this.channelList.currentChannels[srcIdx] = viewerChannel;
+
         this.viewer.addTiledImage({
             tileSource: {
                 height: this.imageViewer.config.height * magnification,
@@ -200,6 +216,7 @@ export class ViewerManager {
                 toMagnifiedBounds: toMagnifiedBounds,
                 extraZoomLevels: extraZoomLevels,
                 toTileBoundary: toTileBoundary,
+                getImagePixel: getImagePixel,
                 toTileLevels: toTileLevels,
                 toIdealTile: toIdealTile,
                 toRealTile: toRealTile,
@@ -212,17 +229,6 @@ export class ViewerManager {
             // index: 0,
             opacity: 1,
             preload: true,
-            success: () => {
-                // Define url and suburl
-                const group = url.split("/");
-                const sub_url = group[group.length - 2];
-                const itemidx = this.viewer.world.getItemCount() - 1;
-                this.viewer.world.getItemAt(itemidx).source["channelUrl"] = url;
-                // Attach channel selection
-                const viewerChannel = { url, sub_url, name, short_name };
-                this.imageViewer.addChannelSelection(srcIdx, viewerChannel);
-                this.viewer_channels.set(srcIdx, viewerChannel);
-            },
         });
     }
 
@@ -234,14 +240,13 @@ export class ViewerManager {
         const img_count = this.viewer.world.getItemCount();
 
         // remove channel
-        if (this.viewer_channels.has(srcIdx)) {
+        if (srcIdx in this.channelList.currentChannels) {
             // remove channel - first find it
             for (let i = 0; i < img_count; i = i + 1) {
-                const url = this.viewer.world.getItemAt(i).source["channelUrl"];
-                if (url === this.viewer_channels.get(srcIdx)?.url) {
+                const url = this.viewer.world.getItemAt(i).source.src;
+                if (url === this.channelList.currentChannels[srcIdx]?.url) {
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
-                    this.imageViewer.removeChannelSelection(srcIdx);
-                    this.viewer_channels.delete(srcIdx);
+                    delete this.channelList.currentChannels[srcIdx];
                     break;
                 }
             }
@@ -300,6 +305,7 @@ export class ViewerManager {
                     toMagnifiedBounds: toMagnifiedBounds,
                     extraZoomLevels: extraZoomLevels,
                     toTileBoundary: toTileBoundary,
+                    getImagePixel: getImagePixel,
                     toTileLevels: toTileLevels,
                     toIdealTile: toIdealTile,
                     toRealTile: toRealTile,
@@ -312,14 +318,8 @@ export class ViewerManager {
                 index: 0,
                 opacity: 1,
                 success: (e) => {
-                    const url0 = url;
-                    this.viewer.world.getItemAt(0).source["channelUrl"] = url;
-                    this.imageViewer.labelChannel["url"] = url0;
-                    const group = url0.split("/");
-                    this.imageViewer.labelChannel["sub_url"] = group[group.length - 2];
-                    let source = e.item.source;
                     // Open Event is Necessary for ViaWebGl to init
-                    self.viewer.raiseEvent("open", { source: source });
+                    self.viewer.raiseEvent("open", e.item);
                 },
             });
         } else {

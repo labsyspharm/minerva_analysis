@@ -6,21 +6,21 @@ class CSVGatingList {
     /**
      * @constructor
      * @param config the cinfiguration file (json)
+     * @param columns - all the channel names
      * @param dataLayer - the data layer (stub) that executes server requests and holds client side data
      * @param eventHandler - the event handler for distributing interface and data updates
      */
-    constructor(config, dataLayer, eventHandler) {
+    constructor(config, columns, dataLayer, eventHandler) {
         this.config = config;
-        this.waiting = Promise.resolve(true);
+        this.columns = [...columns];
+        this.databaseDescription = {};
         this.maxSelections = config.maxSelections;
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.selections = {};
-        this.ranges = {};
         this.hasGatingGMM = {};
         this.gatingIDs = {};
         this.sliders = new Map();
-        // this.imageBitRange = [0, 65536];
         this.container = d3.select("#csv_gating_list");
         // Gating vars
         this.global_channel_list = channelList;
@@ -41,10 +41,11 @@ class CSVGatingList {
      * @param name - the channel to set and display as selected
      */
     selectChannel(name) {
-        this.awaitGatingGMM(name).then(() => {
-          const fullName = this.dataLayer.getFullChannelName(name);
-          this.selections[fullName] = this.sliders.get(name).value();
-          this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+        const fullName = this.dataLayer.getFullChannelName(name);
+        this.selections[fullName] = this.sliders.get(name).value();
+        this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_MOVE, this.selections);
+        this.getAndDrawGatingGMM(name).then(() => {
+            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         });
     }
 
@@ -53,11 +54,9 @@ class CSVGatingList {
      * @param name - the name of the channel to remove
      */
     removeChannel(name) {
-        // For overlay (and query incrementor)
-        // seaDragonViewer.csvGatingOverlay.run_balancer++;
-
         // Delete
-        delete this.selections[this.dataLayer.getFullChannelName(name)];
+        const fullName = this.dataLayer.getFullChannelName(name);
+        delete this.selections[fullName];
 
         // Trigger
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
@@ -65,34 +64,33 @@ class CSVGatingList {
 
      /**
      * initializes the view (channel list)
+     * @param dd - database description
      * @returns {Promise<void>}
      */
-    async init() {
-        // this.rainbow.hide();
-        const self = this;
-        self.columns = await self.dataLayer.getChannelNames(true);
-        self.databaseDescription = await self.dataLayer.getDatabaseDescription();
+    init(dd) {
+        this.databaseDescription = dd;
         document.getElementById('drag-and-drop-info').style.display = "none";
         // Hide the Loader
         document.getElementById('csv_gating_list_loader').style.display = "none";
-        self.gating_list = document.getElementById("csv_gating_list");
+        this.gating_list = document.getElementById("csv_gating_list");
         let list = document.createElement("ul");
         list.classList.add("list-group")
         list.setAttribute("id", "gating_list_ul")
-        self.gating_list.appendChild(list)
-        self.sliderWidth = document.getElementById("csv_gating_list").getBoundingClientRect().width;
+        this.gating_list.appendChild(list)
+        const gatingListEl = document.getElementById("csv_gating_list");
+        const swidth = gatingListEl.getBoundingClientRect().width;
         // Will show the picker when you click on a color rect
         let showPicker = () => {
-            self.colorTransfrHandle = d3.select(d3.event.target);
-            let color = self.colorTransferHandle.style('fill');
+            this.colorTransfrHandle = d3.select(d3.event.target);
+            let color = this.colorTransferHandle.style('fill');
             let hsl = d3.hsl(color);
-            self.rainbow.show(d3.event.clientX, d3.event.clientY);
+            this.rainbow.show(d3.event.clientX, d3.event.clientY);
         };
         // Draws rows in the gating list
-        self.columns.push('Area'); // Add 'Area' to Gating List
-        _.each(self.columns, column => {
+        this.columns.push('Area'); // Add 'Area' to Gating List
+        _.each(this.columns, column => {
             let channelID = column.replace(/[ ,.]/g, '');
-            self.gatingIDs[column] = channelID;
+            this.gatingIDs[column] = channelID;
             // div for each row in gating list
             let listItemParentDiv = document.createElement("div");
             listItemParentDiv.classList.add("list-group-item");
@@ -140,14 +138,18 @@ class CSVGatingList {
             gatingName.classList.add('gating-name');
             gatingName.textContent = column;
             nameCol.appendChild(gatingName);
-            listItemParentDiv.addEventListener("click", e => self.toggleChannelPanel(e, svgCol));
+            listItemParentDiv.addEventListener("click", e => {
+                return this.toggleChannelPanel(e, svgCol);
+            })
             list.appendChild(listItemParentDiv);
 
             //add and hide gating sliders (will be visible when gating is active)
-            const fullName = self.dataLayer.getFullChannelName(column);
-            const sliderRange = [self.databaseDescription[fullName].min, self.databaseDescription[fullName].max];
-            self.gating_channels[fullName] = sliderRange;
-            self.addSlider(column, self.sliderWidth, sliderRange, sliderRange);
+            const fullName = this.dataLayer.getFullChannelName(column);
+            const sliderRange = [this.databaseDescription[fullName].min, this.databaseDescription[fullName].max];
+            this.gating_channels[fullName] = sliderRange;
+            const gatingListEl = document.getElementById("csv_gating_list");
+            const swidth = gatingListEl.getBoundingClientRect().width;
+            this.addSlider(column, swidth, sliderRange, sliderRange);
             d3.select('div#csv_gating-slider_' + channelID).style('display', "none");
 
             let autoCol = document.createElement("div");
@@ -161,12 +163,12 @@ class CSVGatingList {
 
             let autoBtn = document.createElement("button");
             autoBtn.classList.add('auto-btn');
-            autoBtn.setAttribute('id', "auto-btn_" + channelID);
+            autoBtn.classList.add('auto-loading');
+            autoBtn.setAttribute('id', "auto-btn-gating_" + channelID);
             autoBtn.textContent = "auto";
             autoBtn.addEventListener("click", async () => {
-                const shortName = self.dataLayer.getShortChannelName(fullName);
-                await self.awaitGatingGMM(shortName);
-                self.autoGate(shortName);
+                const shortName = this.dataLayer.getShortChannelName(fullName);
+                await this.autoGate(shortName);
             });
 
             autoCol.appendChild(autoBtn);
@@ -174,23 +176,22 @@ class CSVGatingList {
             d3.select(autoCol).style('display', "none");
         });
 
-
         var dropzone = new Dropzone("#csv_gating_list", {
             url: "/upload_gates",
             clickable: false,
             disablePreview: true,
             createImageThumbnails: false
         });
-        dropzone.on("sending", function (file, xhr, formData) {
+        dropzone.on("sending", (file, xhr, formData) => {
             formData.append("datasource", datasource);
         });
-        dropzone.on("queuecomplete", function (file, xhr, formData) {
-            return self.applyGates()
+        dropzone.on("queuecomplete", (file, xhr, formData) => {
+            return this.applyGates()
         });
 
         // Adding upload when you press on the up arrow
         let arrow = document.getElementById('gating_upload_icon')
-        arrow.onclick = function () {
+        arrow.onclick = () => {
             let elem = document.getElementById('gating-upload-from-arrow');
             if (elem && document.createEvent) {
                 let evt = document.createEvent("MouseEvents");
@@ -198,20 +199,20 @@ class CSVGatingList {
                 elem.dispatchEvent(evt);
             }
         }
-        document.getElementById("gating-upload-from-arrow").onchange = async function () {
+        document.getElementById("gating-upload-from-arrow").onchange = async () => {
             if (document.getElementById("gating-upload-from-arrow").files) {
                 let file = document.getElementById("gating-upload-from-arrow").files[0]
                 let formData = new FormData();
                 formData.append("file", file);
-                await self.dataLayer.submitGatingUpload(formData);
+                await this.dataLayer.submitGatingUpload(formData);
                 document.getElementById("gating-upload-from-arrow").value = []
-                await self.applyGates('file')
+                await this.applyGates('file')
             }
         }
 
         let arrow_db = document.getElementById('gating_upload_icon_db')
-        arrow_db.onclick = async function () {
-            await self.applyGates('db')
+        arrow_db.onclick = async () => {
+            await this.applyGates('db')
         }
 
 
@@ -235,8 +236,8 @@ class CSVGatingList {
         })
 
         // Add events
-        self.addDownloadEvents();
-        self.addEventsLinked();
+        this.addDownloadEvents();
+        this.addEventsLinked();
     }
 
      /**
@@ -245,42 +246,41 @@ class CSVGatingList {
      * @parms {String} source Whether it is from new file upload or saved
      */
     async applyGates(source) {
-        const self = this;
         let gates;
         if (source === 'file'){
-            gates = await self.dataLayer.getUploadedGatingCsvValues();
+            gates = await this.dataLayer.getUploadedGatingCsvValues();
         } else {
-            gates = await self.dataLayer.getSavedGatingList();
+            gates = await this.dataLayer.getSavedGatingList();
         }
 
         _.each(gates, col => {
-            let shortName = self.dataLayer.getShortChannelName(col.channel);
-            let channelID = self.gatingIDs[shortName];
-            if (self.selections[col.channel]) {
+            let shortName = this.dataLayer.getShortChannelName(col.channel);
+            let channelID = this.gatingIDs[shortName];
+            if (this.selections[col.channel]) {
                 let selector = `#csv_gating-slider_${channelID}`;
                 document.querySelector(selector).click();
             }
         })
 
         _.each(gates, col => {
-            let shortName = self.dataLayer.getShortChannelName(col.channel);
-            let channelID = self.gatingIDs[shortName];
-            if (self.sliders.get(shortName)) {
-                self.sliders.get(shortName).value([col.gate_start, col.gate_end]);
+            let shortName = this.dataLayer.getShortChannelName(col.channel);
+            let channelID = this.gatingIDs[shortName];
+            if (this.sliders.get(shortName)) {
+                this.sliders.get(shortName).value([col.gate_start, col.gate_end]);
                 this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
                 if (col.gate_active) {
                     // IF the channel isn't active, make it so
-                    if (!self.selections[col.channel]) {
+                    if (!this.selections[col.channel]) {
                         let selector = `#csv_gating-slider_${channelID}`;
                         document.querySelector(selector).click();
                     }
-                    self.selections[col.channel] = [col.gate_start, col.gate_end];
+                    this.selections[col.channel] = [col.gate_start, col.gate_end];
 
                     // For records
 
                 } else {
                     // If channel is currently active, but shouldn't be, update it
-                    if (self.selections[col.channel]) {
+                    if (this.selections[col.channel]) {
                         let selector = `#csv_gating-slider_${channelID}`;
                         document.querySelector(selector).click();
                     }
@@ -288,35 +288,25 @@ class CSVGatingList {
                 }
             }
         })
-
-        // For overlay (and query incrementor)
-        // seaDragonViewer.csvGatingOverlay.run_balancer++;
-
         // Trigger brush
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
-
     }
 
     /**
      * @function autoGate - applies thresholds based on Gaussian Mixture Model
      * @param name - the name of the channel to apply it to
      */
-    autoGate(shortName) {
-        const self = this;
-        let gate = this.hasGatingGMM[shortName].gate;
-        if (!this.dataLayer.isTransformed()) {
-            gate = parseInt(gate)
-        } else {
-            gate = gate.toFixed(7);
+    async autoGate(shortName) {
+        const transformed = this.dataLayer.isTransformed();
+        const input = (await this.getGatingGMM(shortName)).gate.toFixed(7);
+        const gate = transformed ? parseFloat(input) : parseInt(input);
+        const fullName = this.dataLayer.getFullChannelName(shortName);
+        if (fullName in this.selections) {
+            const gate_end = this.selections[fullName][1];
+            const slider = this.sliders.get(shortName);
+            const values = [gate, gate_end];
+            this.moveSliderHandles(slider, values, shortName, 'GATING_BRUSH_END');
         }
-        // For interaction
-        self.selections[shortName][0] = gate;
-        let gate_end = self.selections[shortName][1]
-        self.sliders.get(shortName).value([gate, gate_end]);
-        // For records
-        this.gating_channels[shortName] = [gate, gate_end];
-
-        this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, self.selections);
     }
 
     /**
@@ -345,9 +335,6 @@ class CSVGatingList {
      */
     toggleChannelPanel(event, svgCol) {
 
-        // Define this
-        const self = this;
-
         // If you clicked on the svg, ignore this behavior
         if (event.target.closest("svg")) {
             return;
@@ -356,7 +343,7 @@ class CSVGatingList {
         // Get info
         let parent = event.target.closest(".list-group-item");
         let name = parent.querySelector('.gating-name').textContent;
-        let channelID = self.gatingIDs[name];
+        let channelID = this.gatingIDs[name];
         let status = !parent.classList.contains("active");
 
         // If active - else inactive
@@ -391,25 +378,8 @@ class CSVGatingList {
             svgCol.style.display = "none";
             d3.select('div#csv_gating-slider_' + channelID).style('display', "none")
             d3.select('div#csv_gating-auto_' + channelID).style('display', "none");
-
-            // Trigger viewer cleanse
-            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         }
 
-        // Abstracted clearing
-        /*
-        function clearOut() {
-
-            // Delete from active selections and deactivate
-            self.selections = {};
-            d3.select(self.gating_list).selectAll(".active")
-                .classed('active', false);
-            d3.selectAll('.gating-svg-wrapper').style('display', "none");
-            d3.selectAll('.csv_gating-slider').style('display', "none");
-        }
-        */
-
-        //
         let selectionsHeaderDiv = document.getElementById("csv_selected-gatings-header-div");
         if (selectionsHeaderDiv) {
             if (_.size(this.selections) >= this.maxSelections) {
@@ -417,11 +387,10 @@ class CSVGatingList {
             } else {
                 selectionsHeaderDiv.classList.remove('bold-selections-header');
             }
-            let packet = {selections: this.selections, name, status};
-            // console.log('gatings_change', packet);
             document.getElementById("csv_num-selected-gatings").textContent = _.size(this.selections);
 
             // Trigger event
+            const packet = {selections: this.selections, name, status};
             this.eventHandler.trigger(CSVGatingList.events.GATING_CHANNELS_CHANGE, packet);
 
         }
@@ -431,8 +400,6 @@ class CSVGatingList {
      * @function addDownloadEvents - adds eventl listeners an functionality to the download buttons
      */
     addDownloadEvents() {
-
-        const self = this;
 
         // Els
         const gating_download_icon_db = document.querySelector('#gating_download_icon_db');
@@ -449,7 +416,7 @@ class CSVGatingList {
         // Events ::
 
         gating_download_icon_db.addEventListener('click', () => {
-            self.dataLayer.saveGatingList(this.gating_channels, this.selections, false);
+            this.dataLayer.saveGatingList(this.gating_channels, this.selections, false);
             alert("Saved Gating to Database");
         })
 
@@ -475,28 +442,12 @@ class CSVGatingList {
 
         // Download gated channel ranges
         download_gated_channel_ranges.addEventListener('click', () => {
-            let test = ''
-            self.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, false);
-            // // Format at csv
-            // const rows = [['channel_name', 'gated_min', 'gated_max']];
-            // for (let key in this.gating_channels) {
-            //     rows.push([key, this.gating_channels[key][0], this.gating_channels[key][1]]);
-            // }
-            // const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-            //
-            // // Download - ref. https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
-            // const encodedUri = encodeURI(csvContent);
-            // const link = document.createElement("a");
-            // link.setAttribute("href", encodedUri);
-            // link.setAttribute("download", download_input1.value);
-            // document.body.appendChild(link);
-            // link.click();
-
+            this.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, false);
         })
 
         // Download gated channel ranges
         download_gated_cell_encodings.addEventListener('click', () => {
-            self.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, true);
+            this.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, true);
         })
 
         // Toggle outlined / filled cell selections
@@ -575,20 +526,17 @@ class CSVGatingList {
      */
     addSlider(name, swidth, data, activeRange) {
 
-        let that = this;
-
-        // If no data
         if (!data) return;
 
-        const self = this;
-        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram']
+        const fullName = this.dataLayer.getFullChannelName(name);
+        const { xDomain, yDomain, histogramData} = this.histogramData(fullName); 
         let channelID = this.gatingIDs[name];
 
         let data_min
         let data_max
         let handle_min
         let handle_max
-        if (that.dataLayer.isTransformed()) {
+        if (this.dataLayer.isTransformed()) {
             data_min = d3.min(data)
             data_max = d3.max(data)
             handle_min = activeRange[0]
@@ -602,7 +550,7 @@ class CSVGatingList {
 
         let f = d3.format("d")
         //add range slider row content
-        var sliderSimple = d3.sliderBottom()
+        const sliderSimple = d3.sliderBottom()
             .min(data_min)
             .max(data_max)
             .width(swidth - 75)
@@ -615,30 +563,22 @@ class CSVGatingList {
                     .type(d3.symbolCircle)
                     .size(100))
             .tickValues([])
-            .on('end', range => {
-                // For interaction
-                self.selections[self.dataLayer.getFullChannelName(name)] = range;
-                let packet = self.selections;
-                this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, packet);
-                // For records
-                this.gating_channels[self.dataLayer.getFullChannelName(name)] = range;
-            }).on('onchange', range => {
-                  //lower range value
-                  d3.select('#gating_slider-input' + channelID + 0).attr('value', function(){
-                      if (that.dataLayer.isTransformed()) { return range[0]}; return Math.round(range[0]);
-                  })
-                  d3.select('#gating_slider-input' + channelID + 0).property('value', function(){
-                      if (that.dataLayer.isTransformed()) { return range[0]}; return Math.round(range[0]);
-                  });
-                  //upper range value
-                  d3.select('#gating_slider-input' + channelID + 1).attr('value', function(){
-                      if (that.dataLayer.isTransformed()) { return range[1]}; return Math.round(range[1]);
-                  });
-                  d3.select('#gating_slider-input' + channelID + 1).property('value', function(){
-                     if (that.dataLayer.isTransformed()) { return range[1]}; return Math.round(range[1]);
-                  });
-                  that.moveSliderHandles(sliderSimple, range, name);
+            .on('end', (range) => {
+                const transformed = this.dataLayer.isTransformed();
+                const v0 = transformed ? range[0] : Math.round(range[0]);
+                const v1 = transformed ? range[1] : Math.round(range[1]);
+                this.moveSliderHandles(sliderSimple, [v0, v1], name, "GATING_BRUSH_END");
+            }).on('onchange', (range) => {
+                const transformed = this.dataLayer.isTransformed();
+                const v0 = transformed ? range[0] : Math.round(range[0]);
+                const v1 = transformed ? range[1] : Math.round(range[1]);
+                d3.select('#gating_slider-input' + channelID + 0).attr('value', v0)
+                d3.select('#gating_slider-input' + channelID + 0).property('value', v0);
+                d3.select('#gating_slider-input' + channelID + 1).attr('value', v1);
+                d3.select('#gating_slider-input' + channelID + 1).property('value', v1);
+                this.moveSliderHandles(sliderSimple, [v0, v1], name, "GATING_BRUSH_MOVE");
             });
+
         this.sliders.set(name, sliderSimple);
 
         //create the slider svg and call the slider
@@ -652,126 +592,127 @@ class CSVGatingList {
             .append('g')
             .attr('transform', 'translate(20,40)');
 
-
         let xScale = d3.scaleLinear()
-            .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
+            .domain(xDomain)
             .range([0, swidth - 73])
 
         let yScale = d3.scaleLinear()
-            .domain([_.max(_.map(histogramData, e => e.y)), 0])
+            .domain(yDomain)
             .range([0, 25])
 
         let line = d3.line()
-            .x(d => {
-                return xScale(d.x)
-            })
-            .y(d => {
-                return yScale(d.y)
-            })
+            .x(d => xScale(d.x))
+            .y(d => yScale(d.y))
             .curve(d3.curveMonotoneX)
 
-        gSimple.selectAll('.distribution_line')
-            .data([histogramData])
-            .enter()
-            .append('path')
-            .attr('d', line)
-            .attr('class', 'distribution_line')
-            .attr('transform', 'translate(0,-31)')
-            .attr('fill', 'none')
+        const lines = gSimple.selectAll('.distribution_line');
+        const paths = lines.data([histogramData]).enter().append('path');
+        paths
+        .append('path')
+        .attr('d', line)
+        .attr('class', 'distribution_line')
+        .attr('transform', 'translate(0,-31)')
+        .attr('fill', 'none')
 
         gSimple.call(sliderSimple);
-
 
         //slider value to be displayed closer to the slider than default
         d3.selectAll('.parameter-value').select('text')
             .attr("y", 10);
 
         //both handles
-        d3.select('#csv_gating-slider_' + channelID).selectAll(".parameter-value").each(function(d, i) {
-        d3.select(this).append("foreignObject")
-                    .attr('id', 'c_foreignObject_' + channelID + i)
-                    .attr("width", 50)
-                    .attr("height", 40)
-                    .attr('x', -25)
-                    .attr( 'y', -17)
-                    .style('padding',"10px")
-                    .append("xhtml:body")
-                      .attr('xmlns','http://www.w3.org/1999/xhtml')
-                        .style('background', 'none')
-                      .append('input')
-                        .attr( 'y', -17)
-                        .attr('id', 'gating_slider-input' + channelID + i)
-                        .attr('type', 'text')
-                        .attr('class', 'input')
-                        .attr('value', function(){return csv_gatingList.sliders.get(name).value()[i]});
+        const { sliders } = this;
+        const handles = d3.select('#csv_gating-slider_' + channelID).selectAll(".parameter-value");
+        handles.each(function (d, i) {
+            d3.select(this).append("foreignObject")
+            .attr('id', 'c_foreignObject_' + channelID + i)
+            .attr("width", 50)
+            .attr("height", 40)
+            .attr('x', -25)
+            .attr( 'y', -17)
+            .style('padding',"10px")
+            .append("xhtml:body")
+            .attr('xmlns','http://www.w3.org/1999/xhtml')
+            .style('background', 'none')
+            .append('input')
+            .attr( 'y', -17)
+            .attr('id', 'gating_slider-input' + channelID + i)
+            .attr('type', 'text')
+            .attr('class', 'input')
+            .attr('value', () => {
+                return sliders.get(name).value()[i]
+            });
             //remove the previous text label
             d3.select(this).select('text').remove();
         });
 
-        //entering a value in the input field of a slider handle will set this value and move the slider to this position
-        d3.select('#csv_gating-slider_' + channelID).selectAll(".parameter-value").selectAll('.input').on('keydown', function(event, d){
-          if(event.key == "Enter"){
-            // if (d.index = d3.select(this).attr('id')){
-              let val = parseFloat(this.value.replace("%", ""));
-              let handleVals = sliderSimple.silentValue();
-              handleVals[d.index] = val;
-              that.moveSliderHandles(sliderSimple, handleVals, name)
-
-              that.selections[self.dataLayer.getFullChannelName(name)] = handleVals;
-              let packet = that.selections;
-              that.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, packet);
-              // For records
-              that.gating_channels[self.dataLayer.getFullChannelName(name)] = handleVals;
-          }
+        //entering a value in the input field of a slider handle
+        const moveSliderHandles = this.moveSliderHandles.bind(this);
+        handles.selectAll('.input').on('keydown', function (event, d) {
+            if(event.key == "Enter"){
+                const val = parseFloat(this.value.replace("%", ""));
+                const vals = sliderSimple.silentValue();
+                vals[d.index] = val;
+                moveSliderHandles(sliderSimple, vals, name, "GATING_BRUSH_END");
+            }
         })
-
 
         return sliderSimple;
     };
 
-    async getAndDrawGatingGMM(name){
-        let fullname = this.dataLayer.getFullChannelName(name);
-        let packet = await this.dataLayer.getGatingGMM(fullname);
-        this.hasGatingGMM[name] = packet;
+    histogramData(fullName) {
+        const histogramData = this.databaseDescription[fullName].histogram;
+        const xMin = Math.min(...histogramData.map(e => e.x));
+        const xMax = Math.max(...histogramData.map(e => e.x));
+        const yMax = Math.max(...histogramData.map(e => e.y));
+        return {
+            histogramData,
+            xDomain: [xMin, xMax],
+            yDomain: [yMax, 0],
+        };
+    }
 
+    async getGatingGMM(name) {
+        let packet = this.hasGatingGMM[name];
+        if (!(name in this.hasGatingGMM)) {
+            const fullName = this.dataLayer.getFullChannelName(name);
+            packet = await this.dataLayer.getGatingGMM(fullName);
+            this.hasGatingGMM[name] = packet;
+        }
+        const channelID = this.gatingIDs[name];
+        const autoBtn = document.getElementById(`auto-btn-gating_${channelID}`);
+        autoBtn.classList.remove("auto-loading")
+        return packet;
+    }
+
+    async getAndDrawGatingGMM(name) {
+        const fullName = this.dataLayer.getFullChannelName(name);
+        await this.getGatingGMM(name);
         this.drawGatingGMM(name);
     }
 
-    awaitGatingGMM(name) {
-        if (!(name in this.hasGatingGMM)) {
-            const waiting = this.getAndDrawGatingGMM(name)
-            this.waiting = Promise.all([this.waiting, waiting]);
-        }
-        return this.waiting;
-    }
-
-    drawGatingGMM(name){
-        let fullname = this.dataLayer.getFullChannelName(name);
+    drawGatingGMM(name) {
         let channelID = this.gatingIDs[name];
-
-        let packet = this.hasGatingGMM[name];
-
-        let histogramData = this.databaseDescription[this.dataLayer.getFullChannelName(name)]['histogram'];
+        const fullName = this.dataLayer.getFullChannelName(name);
+        const { xDomain, yDomain } = this.histogramData(fullName); 
+        const packet = this.hasGatingGMM[name];
         let gmm1Data = packet['gmm_1'];
         let gmm2Data = packet['gmm_2'];
 
-        let swidth = document.getElementById("csv_gating_list").getBoundingClientRect().width;
+        const gatingListEl = document.getElementById("csv_gating_list");
+        const swidth = gatingListEl.getBoundingClientRect().width;
 
         let xScale = d3.scaleLinear()
-            .domain([_.min(_.map(histogramData, e => e.x)), _.max(_.map(histogramData, e => e.x))]) // input
+            .domain(xDomain)
             .range([0, swidth - 73])
 
         let yScale = d3.scaleLinear()
-            .domain([_.max(_.map(histogramData, e => e.y)), 0])
+            .domain(yDomain)
             .range([0, 25])
 
         let line = d3.line()
-            .x(d => {
-                return xScale(d.x)
-            })
-            .y(d => {
-                return yScale(d.y)
-            })
+            .x(d => xScale(d.x))
+            .y(d => yScale(d.y))
             .curve(d3.curveMonotoneX)
 
         let gSimple = d3.select('#csv_gating-slider_svg_' + channelID + ' g')
@@ -803,30 +744,40 @@ class CSVGatingList {
      * @function resetGatingList - resets all channels in the list to its initial range
      */
     resetGatingList() {
-        const self = this;
-        let gatingList = Object.keys(self.selections);
+        let gatingList = Object.keys(this.selections);
         _.each(gatingList, col => {
-            let shortName = self.dataLayer.getShortChannelName(col);
-            let channelID = self.gatingIDs[shortName];
+            let shortName = this.dataLayer.getShortChannelName(col);
+            let channelID = this.gatingIDs[shortName];
             let gating_selector = `#csv_gating-slider_${channelID}`;
             document.querySelector(gating_selector).click();
         });
     };
 
     /**
-     * @function moveSliderHandle - move the slider handles and input fields so that input fields don't overlap when handles are close
+     * @function moveSliderHandles - move the slider handles and input fields so that input fields don't overlap when handles are close
+     *
+     * @param slider - the slider affected
+     * @param vals - holds the new positions
+     * @param name - the name of the slider
+     * @param eventName - the name of the event
      */
-    moveSliderHandles(slider, valArray, name){
-        const self = this;
-        let channelID = self.gatingIDs[name];
-        slider.silentValue(valArray);
-        let percentage = (Math.abs(valArray[1] - valArray[0])/(Math.abs(slider.max()-slider.min())));
+    moveSliderHandles(slider, vals, name, eventName) {
+        const fullName = this.dataLayer.getFullChannelName(name);
+        const channelID = this.gatingIDs[name];
+        this.gating_channels[fullName] = vals;
+        this.selections[fullName] = vals;
+        slider.silentValue(vals);
+        const diff = Math.abs(vals[1] - vals[0]);
+        const total = Math.abs(slider.max() - slider.min());
+        const percentage = diff / total;
         if (percentage < 0.15){
             console.log('slider handles overlap..do something');
             d3.select('#c_foreignObject_'  + channelID + 1).attr('x', 5);
         }else{
             d3.select('#c_foreignObject_'  + channelID + 1).attr('x', -25);
         }
+        const packet = this.selections;
+        this.eventHandler.trigger(CSVGatingList.events[eventName], packet);
     }
 
     /**
@@ -844,14 +795,15 @@ class CSVGatingList {
 }
 
 //resize sliders, etc on window change
-window.addEventListener("resize", function () {
+window.addEventListener("resize", () => {
     if (typeof csv_gatingList != "undefined" && csv_gatingList) {
-        csv_gatingList.sliders.forEach(function (slider, name) {
+        csv_gatingList.sliders.forEach((slider, name) => {
             d3.select('div#csv_gating-slider_' + name).select('svg').remove();
             let fullName = csv_gatingList.dataLayer.getFullChannelName(name);
             let sliderRange = [csv_gatingList.databaseDescription[fullName].min, csv_gatingList.databaseDescription[fullName].max];
-            csv_gatingList.addSlider(name, document.getElementById("csv_gating_list").getBoundingClientRect().width,
-                sliderRange, slider.value());
+            const gatingListEl = document.getElementById("csv_gating_list");
+            const swidth = gatingListEl.getBoundingClientRect().width;
+            csv_gatingList.addSlider(name, swidth, sliderRange, slider.value());
             if (csv_gatingList.hasGatingGMM[name]) {
                 csv_gatingList.drawGatingGMM(name);
             }
@@ -875,8 +827,7 @@ window.addEventListener("resize", function () {
 // });
 
 //static vars: events introduced in this class and used across the app
-CSVGatingList
-    .events = {
+CSVGatingList.events = {
     GATING_BRUSH_MOVE: "GATING_BRUSH_MOVE",
     GATING_BRUSH_END: "GATING_BRUSH_END",
     GATING_COLOR_TRANSFER_CHANGE_MOVE: "GATING_TRANSFER_CHANGE_MOVE",
