@@ -802,10 +802,12 @@ window.addEventListener("resize", () => {
             let fullName = csv_gatingList.dataLayer.getFullChannelName(name);
             let sliderRange = [csv_gatingList.databaseDescription[fullName].min, csv_gatingList.databaseDescription[fullName].max];
             const gatingListEl = document.getElementById("csv_gating_list");
-            const swidth = gatingListEl.getBoundingClientRect().width;
-            csv_gatingList.addSlider(name, swidth, sliderRange, slider.value());
-            if (csv_gatingList.hasGatingGMM[name]) {
-                csv_gatingList.drawGatingGMM(name);
+            if (gatingListEl) {
+                const swidth = gatingListEl.getBoundingClientRect().width;
+                csv_gatingList.addSlider(name, swidth, sliderRange, slider.value());
+                if (csv_gatingList.hasGatingGMM[name]) {
+                    csv_gatingList.drawGatingGMM(name);
+                }
             }
         });
     }
