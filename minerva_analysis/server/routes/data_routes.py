@@ -36,62 +36,11 @@ def get_nearest_cell():
     return serialize_and_submit_json(resp)
 
 
-# Gets a row based on the index
-@app.route('/get_database_row', methods=['GET'])
-def get_database_row():
-    datasource = request.args.get('datasource')
-    row = int(request.args.get('row'))
-    resp = data_model.get_row(row, datasource)
-    return serialize_and_submit_json(resp)
-
-
 @app.route('/get_channel_names', methods=['GET'])
 def get_channel_names():
     datasource = request.args.get('datasource')
     shortnames = bool(request.args.get('shortNames'))
     resp = data_model.get_channel_names(datasource, shortnames)
-    return serialize_and_submit_json(resp)
-
-
-@app.route('/get_phenotypes', methods=['GET'])
-def get_phenotypes():
-    datasource = request.args.get('datasource')
-    resp = data_model.get_phenotypes(datasource)
-    return serialize_and_submit_json(resp)
-
-
-@app.route('/get_color_scheme', methods=['GET'])
-def get_color_scheme():
-    datasource = request.args.get('datasource')
-    refresh = request.args.get('refresh') == 'true'
-    resp = data_model.get_color_scheme(datasource, refresh)
-    return serialize_and_submit_json(resp)
-
-
-@app.route('/get_neighborhood', methods=['GET'])
-def get_neighborhood():
-    x = float(request.args.get('point_x'))
-    y = float(request.args.get('point_y'))
-    max_distance = float(request.args.get('max_distance'))
-    datasource = request.args.get('datasource')
-    resp = data_model.get_neighborhood(x, y, datasource, r=max_distance)
-    return serialize_and_submit_json(resp)
-
-@app.route('/get_naive_states', methods=['GET'])
-def get_naive_states():
-    # test of triggering docker module
-    dirname = os.path.dirname(__file__)
-    os.system('docker run --rm -v' + dirname + '/data:/data labsyspharm/naivestates:1.7.0 /app/main.R -i /data/unmicst-163.csv')
-    os.path.join(os.getcwd() / data_path / "data"  / "umicst-162-models.csv")
-
-
-@app.route('/get_num_cells_in_circle', methods=['GET'])
-def get_num_cells_in_circle():
-    datasource = request.args.get('datasource')
-    x = float(request.args.get('point_x'))
-    y = float(request.args.get('point_y'))
-    r = float(request.args.get('radius'))
-    resp = data_model.get_number_of_cells_in_circle(x, y, datasource, r=r)
     return serialize_and_submit_json(resp)
 
 
@@ -107,32 +56,6 @@ def get_all_cells(dtype):
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
     return response
-
-
-@app.route('/get_gated_cell_ids', methods=['GET'])
-def get_gated_cell_ids():
-    datasource = request.args.get('datasource')
-    filter = json.loads(request.args.get('filter'))
-    start_keys = list(request.args.get('start_keys').split(','))
-    resp = data_model.get_gated_cells(datasource, filter, start_keys)
-    return serialize_and_submit_json(resp)
-
-
-@app.route('/get_gated_cell_ids_custom', methods=['GET'])
-def get_gated_cell_ids_custom():
-    datasource = request.args.get('datasource')
-    filter = json.loads(request.args.get('filter'))
-    start_keys = list(request.args.get('start_keys').split(','))
-    resp = data_model.get_gated_cells_custom(datasource, filter, start_keys)
-    return serialize_and_submit_json(resp)
-
-@app.route('/get_channel_cell_ids', methods=['GET'])
-def get_channel_cell_ids():
-    datasource = request.args.get('datasource')
-    filter = json.loads(request.args.get('filter'))
-    resp = data_model.get_channel_cells(datasource, filter)
-    return serialize_and_submit_json(resp)
-
 
 @app.route('/get_database_description', methods=['GET'])
 def get_database_description():
@@ -172,6 +95,7 @@ def upload_gates():
     resp = jsonify(success=True)
     return resp
 
+
 @app.route('/upload_channels', methods=['POST'])
 def upload_channels():
     file = request.files['file']
@@ -186,18 +110,6 @@ def upload_channels():
     file.save(Path(save_path / filename))
     resp = jsonify(success=True)
     return resp
-
-@app.route('/get_rect_cells', methods=['GET'])
-def get_rect_cells():
-    # Parse (rect - [x, y, r], channels [string])
-    datasource = request.args.get('datasource')
-    rect = [float(x) for x in request.args.get('rect').split(',')]
-    channels = request.args.get('channels')
-
-    # Retrieve cells - FIXME: Too slow - jam is stalling image loading
-    resp = data_model.get_rect_cells(datasource, rect, channels)
-    print('Neighborhood size:', len(resp))
-    return serialize_and_submit_json(resp)
 
 
 @app.route('/get_ome_metadata', methods=['GET'])
