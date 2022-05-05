@@ -88,7 +88,7 @@ class ImageViewer {
         const markerOffset = otherOffset - nMarkers;
         const nTiles = markerOffset;
         const tileTextureKeys = [...Array(nTiles).keys()];
-        const markerTextureKeys = [...Array(nTiles).keys()];
+        const markerTextureKeys = [...Array(nMarkers).keys()];
         seaGL.viaGL._otherOffset = otherOffset;
         seaGL.viaGL._markerOffset = markerOffset;
         seaGL.viaGL._tileTextures = tileTextureKeys.map(() => "");
