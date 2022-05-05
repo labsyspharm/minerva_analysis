@@ -1,6 +1,5 @@
 # Via https://raw.githubusercontent.com/labsyspharm/ome-tiff-pyramid-tools/master/pyramid_assemble.py
 from __future__ import print_function, division
-import warnings
 import sys
 import os
 import re

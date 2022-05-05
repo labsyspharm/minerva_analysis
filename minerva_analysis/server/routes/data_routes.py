@@ -1,17 +1,14 @@
 from minerva_analysis import app
-from flask import make_response, render_template, request, Response, jsonify, abort, send_file
+from flask import make_response, request, Response, jsonify, abort, send_file
 import io
 from PIL import Image
 from minerva_analysis import data_path, get_config
 from minerva_analysis.server.models import data_model
 from pathlib import Path
-from time import time
 import pandas as pd
 import gzip
 import json
 import orjson
-import os
-from flask_sqlalchemy import SQLAlchemy
 
 
 @app.route('/init_database', methods=['GET'])
@@ -229,7 +226,6 @@ def get_saved_channel_list():
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
-    now = time()
     png = data_model.generate_zarr_png(datasource, channel, level, tile)
     file_object = io.BytesIO()
     # write PNG in file-object
