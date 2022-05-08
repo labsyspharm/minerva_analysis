@@ -127,28 +127,12 @@ eventHandler.bind(ChannelList.events.CHANNELS_CHANGE, actionChannelsToRenderChan
 const actionImageClickedMultiSel = (d) => {
     d3.select("body").style("cursor", "progress");
     // add newly clicked item to selection
-    if (!Array.isArray(d.item)) {
-        dataLayer.addToCurrentSelection(d.item, true, d.clearPriors);
-        updateSeaDragonSelection([d.item]);
-    } else {
-        dataLayer.addAllToCurrentSelection(d.item);
-        updateSeaDragonSelection(d.item);
-    }
+    const isArray = Array.isArray(d.item);
+    const items = isArray ? d.item : [d.item];
+    updateSeaDragonSelection(items);
     d3.select("body").style("cursor", "default");
 };
 eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
-
-/**
- * Listen to Channel Select Click Events.
- *
- * @param sels - The selected/deselected channels
- */
-const channelSelect = async (sels) => {
-    updateSeaDragonSelection();
-    let channelCells = await dataLayer.getChannelCellIds(sels);
-    dataLayer.addAllToCurrentSelection(channelCells);
-};
-eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
 
 /**
  * Listens to and updates based on selection changes (specific for seadragon).
@@ -162,6 +146,7 @@ function updateSeaDragonSelection(ids = []) {
 }
 
 const handler = () => updateSeaDragonSelection();
+eventHandler.bind(ChannelList.events.CHANNEL_SELECT, handler);
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, handler);
 eventHandler.bind(CSVGatingList.events.GATING_BRUSH_MOVE, handler);
 

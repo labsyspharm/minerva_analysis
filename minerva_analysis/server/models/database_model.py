@@ -1,9 +1,4 @@
-from minerva_analysis import app, db
-from sqlalchemy.orm import relationship
-from sqlalchemy import func
-
-import io
-import numpy as np
+from minerva_analysis import db
 
 
 # Via https://stackoverflow.com/questions/2546207/does-sqlalchemy-have-an-equivalent-of-djangos-get-or-create

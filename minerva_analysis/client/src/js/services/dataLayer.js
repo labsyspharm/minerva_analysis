@@ -8,10 +8,8 @@ class DataLayer {
         this.config = config;
         //all image channels
         this.imageChannels = imageChannels;
-
         this.imageBitRange = [0, 65536];
-        //selections
-        this.currentSelection = new Map();
+
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
@@ -26,19 +24,6 @@ class DataLayer {
 
         } catch (e) {
             console.log("Error Initializing Dataset", e);
-        }
-    }
-
-    async getRow(row) {
-        try {
-            let response = await fetch('/get_database_row?' + new URLSearchParams({
-                row: row,
-                datasource: datasource
-            }))
-            let response_data = await response.json();
-            return response_data;
-        } catch (e) {
-            console.log("Error Getting Row", e);
         }
     }
 
@@ -246,19 +231,6 @@ class DataLayer {
         }
     }
 
-    async getColumnDistributions(columns) {
-        try {
-            let response = await fetch('/get_column_distributions?' + new URLSearchParams({
-                columns: columns,
-                datasource: datasource
-            }))
-            let distributions = await response.json();
-            return distributions;
-        } catch (e) {
-            console.log("Error Getting Nearest Cell", e);
-        }
-    }
-
     async submitGatingUpload(formData) {
         try {
             formData.append('datasource', datasource);
@@ -306,38 +278,6 @@ class DataLayer {
         }
     }
 
-    async getGatedCellIds(filter, start_keys) {
-        try {
-            let response = await fetch('/get_gated_cell_ids?' + new URLSearchParams({
-                filter: JSON.stringify(filter),
-                start_keys: start_keys,
-                datasource: datasource
-            }))
-            let cellIds = await response.json();
-            return cellIds;
-        } catch (e) {
-            console.log("Error Getting Gated Cell Ids", e);
-        }
-    }
-
-    async getGatedCellIdsCustom(filter, start_keys) {
-        try {
-            // const start = performance.now()
-            let response = await fetch('/get_gated_cell_ids_custom?' + new URLSearchParams({
-                filter: JSON.stringify(filter),
-                start_keys: start_keys,
-                datasource: datasource
-            }))
-            let cellIds = await response.json();
-            // const end = performance.now()
-            // console.log(end - start)
-            // console.log(cellIds)
-            return cellIds;
-        } catch (e) {
-            console.log("Error Getting Gated Cell Ids", e);
-        }
-    }
-
     async getDatabaseDescription() {
         try {
             let response = await fetch('/get_database_description?' + new URLSearchParams({
@@ -376,37 +316,11 @@ class DataLayer {
         }
     }
 
-    async getChannelCellIds(sels) {
-        try {
-            let response = await fetch('/get_channel_cell_ids?' + new URLSearchParams({
-                filter: JSON.stringify(sels),
-                datasource: datasource
-            }))
-            let cellIds = await response.json();
-            return cellIds;
-        } catch (e) {
-            console.log("Error Getting Channel Cell Ids", e);
-        }
-    }
-
     async getChannelNames(shortNames = true) {
         try {
             let response = await fetch('/get_channel_names?' + new URLSearchParams({
                 datasource: datasource,
                 shortNames: shortNames
-            }))
-            let response_data = await response.json();
-            return response_data;
-        } catch (e) {
-            console.log("Error Getting Sample Row", e);
-        }
-    }
-
-    async getColorScheme(refresh = false) {
-        try {
-            let response = await fetch('/get_color_scheme?' + new URLSearchParams({
-                datasource: datasource,
-                refresh: refresh
             }))
             let response_data = await response.json();
             return response_data;
@@ -429,34 +343,6 @@ class DataLayer {
         }
     }
 
-    async getNeighborhood(maxDistance, x, y) {
-        try {
-            let response = await fetch('/get_neighborhood?' + new URLSearchParams({
-                point_x: x,
-                point_y: y,
-                max_distance: maxDistance,
-                datasource: datasource
-            }))
-            let neighborhood = await response.json();
-            return neighborhood;
-        } catch (e) {
-            console.log("Error Getting Nearest Cell", e);
-        }
-    }
-
-    async getNeighborhoodForCell(maxDistance, selectedCell) {
-        return this.getNeighborhood(maxDistance, selectedCell[this.x], selectedCell[this.y]);
-    }
-
-
-    getCurrentSelection() {
-        return this.currentSelection;
-    }
-
-    clearCurrentSelection() {
-        this.currentSelection.clear();
-    }
-
     getImageBitRange(float = false) {
         const self = this;
         if (!float) {
@@ -464,53 +350,6 @@ class DataLayer {
         } else {
             return [0.0, 1.0];
         }
-    }
-
-    addToCurrentSelection(item, allowDelete, clearPriors) {
-
-        // delete item on second click
-        if (allowDelete && this.currentSelection.has(item)) {
-            this.currentSelection.delete(item);
-            if (clearPriors) {
-                this.currentSelection.clear();
-            }
-
-            // console.log('current selection size:', this.currentSelection.size);
-            if (this.currentSelection.size > 0) {
-                // console.log('id: ', this.currentSelection.values().next().value.id);
-            }
-            return;
-        }
-
-        // clear previous items
-        if (clearPriors) {
-            this.currentSelection.clear();
-        }
-
-        // add new item
-        this.currentSelection.set(item[config.featureData[0].idField], item);
-
-        // console.log('current selection size:', this.currentSelection.size);
-        if (this.currentSelection.size > 0) {
-            // console.log('id: ', this.currentSelection.values().next().value.id);
-        }
-    }
-
-
-    addAllToCurrentSelection(items, allowDelete, clearPriors) {
-        // console.log("update current selection")
-        var that = this;
-        let idField = this.config.featureData[0].idField
-        that.currentSelection = new Map(items.map(i => [(i[idField]), i]));
-        // console.log("update current selection done")
-    }
-
-    isImageFeature(key) {
-        if (this.imageChannels.hasOwnProperty(key)
-            && key != 'CellId' && key != 'id' && key != 'CellID' && key != 'ID' && key != 'Area') {
-            return true;
-        }
-        return false;
     }
 
     getShortChannelName(fullname) {

@@ -1,7 +1,6 @@
 from waitress import serve
 from minerva_analysis import app
 import multiprocessing
-import sys
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
