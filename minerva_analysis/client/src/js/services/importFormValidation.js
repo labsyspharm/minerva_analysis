@@ -1,5 +1,4 @@
 
-
 // Example starter JavaScript for disabling form submissions if there are invalid fields
 (function () {
   'use strict'
@@ -60,14 +59,9 @@ try {
         if (response_data == true){
             inputField.attr("class", "form-control is-valid");
             inputField.node().setCustomValidity('');
-            // inputField.node().setCustomValidity('Valid');
-            // inputField.validity.valid = true;
-            // inputField.classed("is-invalid", false)
-            // inputField.classed("is-valid", true)
         }else{
              inputField.attr("class", "form-control is-invalid");
              inputField.node().setCustomValidity('Invalid');
-             // inputField.classed("is-valid", false)
         }
         return response_data;
     } catch (e) {
@@ -232,6 +226,4 @@ function displayHeader(text, isError, hide = false) {
             $('#upload-message').append("<span class='success'>" + text + "</span>");
         }
     }
-
-
 }
