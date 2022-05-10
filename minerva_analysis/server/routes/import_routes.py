@@ -224,7 +224,7 @@ def upload_file_page():
                         datasetName = request.form['mcmicro_name']
 
                     labelName = request.form['masks']
-                    labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.tif'))
+                    labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.ome.tif'))
                     labelFile = PurePath(directory, 'segmentation', labelFolder)
 
                     csvName = 'unmicst-' + mcmicroDirName + '_' + labelName + '.csv'
