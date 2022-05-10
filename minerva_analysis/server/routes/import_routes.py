@@ -8,12 +8,16 @@ from flask import render_template, request, Response, jsonify
 from pathlib import Path
 from pathlib import PurePath
 
+import werkzeug.datastructures as wz
 import numpy as np
 import pandas as pd
 import shutil
 import csv
 import json
+import orjson
 import os
+from os import walk
+import io
 
 total_tasks = 100
 completed_task = 0
@@ -173,44 +177,34 @@ def upload_file_page():
     if request.method == 'POST':
         try:
             if request.form['action'] == 'Upload':
-                if request.form.get('name') is None or not request.form.get('name'):
-                    raise Exception("Please Name Dataset")
-                else:
+                # if we have a fully user specified data upload
+                if request.form.get('mcmicro_name') is None:
+                    #dataset name
                     datasetName = request.form['name']
-
-                    # old os.path way:
-                    # file_path = str(Path(os.path.join(os.getcwd())) / data_path / datasetName)
-                    # if not os.path.exists(file_path):
-                    #     os.makedirs(file_path)
-
-
-                    file_path = str(PurePath(Path.cwd(), data_path, datasetName))
-                    if not Path(file_path).exists():
-                        Path(file_path).mkdir()
-
-                    csvFile = request.files.getlist("csv_file")
-                    if len(csvFile) > 1:
-                        raise Exception("Please only Upload Only 1 CSV")
-                    elif len(csvFile) == 0:
-                        raise Exception("Please Upload a CSV")
-
-                    celltypeFile = request.files.getlist("celltype_file")
-                    if len(celltypeFile) > 1:
-                        raise Exception("Please only Upload Only 1 Cell Type File")
-                    elif len(celltypeFile) == 1:
-                        channelFileNames.extend(['Cell Type'])
-
-                    # labelFile = request.files.getlist("label_file")
+                    #label file
                     labelFile = request.form.get('label_file')
                     if labelFile.startswith('"'):
                         labelFile = labelFile[1:]
                     if labelFile.endswith('"'):
                         labelFile = labelFile[:-1]
                     labelFile = Path(labelFile)
-
                     labelName = os.path.splitext(labelFile.name)[0]
-                    #labelName = labelFile.name.split('.')[0]
 
+                    #cell type file
+                    celltypeFile = request.files.getlist("celltype_file")
+                    if len(celltypeFile) > 1:
+                        raise Exception("Please only Upload Only 1 Cell Type File")
+                    elif len(celltypeFile) == 1:
+                        channelFileNames.extend(['Cell Type'])
+
+                    #csv file
+                    csvFile = request.files.getlist("csv_file")
+                    if len(csvFile) > 1:
+                        raise Exception("Please only Upload Only 1 CSV")
+                    elif len(csvFile) == 0:
+                        raise Exception("Please Upload a CSV")
+
+                    #channel file
                     channelFile = request.form.get('channel_file')
                     if channelFile.startswith('"'):
                         channelFile = channelFile[1:]
@@ -218,82 +212,119 @@ def upload_file_page():
                         channelFile = channelFile[:-1]
                     channelFile = Path(channelFile)
 
-                    total_tasks = 2
-                    # Process CSV
-                    for file in csvFile:
-                        # Upload CSV
+                # if a mcmicro output structure is used
+                else:
+                    directory = request.form['mcmicro_output_folder']
+                    pathsSplit = PurePath(directory).parts
+                    mcmicroDirName = pathsSplit[len(pathsSplit)-1]
+
+                    #dataset name is optional, if not provided mcmicro name is used
+                    datasetName = mcmicroDirName
+                    if request.form.get('mcmicro_name') != '':
+                        datasetName = request.form['mcmicro_name']
+
+                    labelName = 'cellRing'
+                    labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.tif'))
+                    labelFile = PurePath(directory, 'segmentation', labelFolder)
+
+                    csvName = 'Unmicst-' + mcmicroDirName + '_cell.csv'
+                    csvPath = str(PurePath(directory, 'quantification', csvName))
+                    csvFile = [open(csvPath)]
+
+                    channelFile = PurePath(directory, 'registration', mcmicroDirName + '.ome.tif')
+
+                    celltypeFile = request.files.getlist("celltype_file")
+
+
+                #further processing
+                file_path = str(PurePath(Path.cwd(), data_path, datasetName))
+                if not Path(file_path).exists():
+                    Path(file_path).mkdir()
+
+                total_tasks = 2
+                # Process CSV
+                for file in csvFile:
+                    # Upload CSV
+
+                    #single files upload (has name stored in uplod structure)
+                    if hasattr(file,'filename'):
                         csvName = file.filename
                         csvPath = str(Path(file_path) / csvName)
                         file.save(csvPath)
-                        with open(csvPath, 'r') as infile:
-                            reader = csv.DictReader(infile)
-                            csvHeader = reader.fieldnames
-
-                    # # Process Cell Type File
-                    if len(celltypeFile) == 1 and celltypeFile[0].filename != '':
-                        for file in celltypeFile:
-                            # Upload Cell Type File
-                            celltypeName = file.filename
-                            celltypePath = str(Path(file_path) / celltypeName)
-                            file.save(celltypePath)
-
-                    # Process Channel File
-
-                    current_task = "Converting OME-TIFF Channels (This Will Take a While)"
-                    channel_info = data_model.convertOmeTiff(channelFile, isLabelImg=False)
-                    channelFileNames.extend(channel_info['channel_names'])
-                    completed_task += 1
-
-                    current_task = "Converting Segmentation Mask"
-                    label_info = data_model.convertOmeTiff(labelFile, channelFilePath=channelFile,
-                                                           dataDirectory=file_path,
-                                                           isLabelImg=True)
-                    completed_task += 1
-
-                    current_task = total_tasks
-                    current_task = 'Complete'
-                    config_data = {}
-                    full_csv_header = []
-                    for header in csvHeader:
-                        elem = {}
-                        elem['fullName'] = header
-                        full_csv_header.append(elem)
-
-                    config_data['csvHeader'] = full_csv_header
-                    header_full_names = [elem['fullName'] for elem in full_csv_header]
-                    config_data['substring'] = mostFrequentLongestSubstring.find_substring(header_full_names)
-                    config_data['datasetName'] = datasetName
-
-                    config_data['maxLevel'] = channel_info['maxLevel']
-                    config_data['height'] = channel_info['height']
-                    config_data['width'] = channel_info['width']
-                    config_data['segmentation'] = label_info['segmentation']
-
-                    config_data['num_channels'] = channel_info['num_channels']
-                    config_data['tileHeight'] = channel_info['tileHeight']
-                    config_data['tileWidth'] = channel_info['tileWidth']
-
-                    config_data['datasetName'] = datasetName
-                    config_data['channelFileNames'] = channelFileNames
-                    config_data['csvName'] = csvName
-                    if len(celltypeFile) == 1:
-                        config_data['celltypeData'] = celltypeName
-                    config_data['channelFile'] = str(channelFile)
-                    config_data['new'] = True
-                    config_data['labelName'] = labelName
-                    config_data['datasources'] = get_config_names()
-                    config_data['datasources'].append(datasetName)
-
-                    datasource = pd.read_csv(csvPath)
-                    listNotMarkers = ['CellID', 'X_centroid', 'Y_centroid', 'Area', 'MajorAxisLength', 'MinorAxisLength', 'Eccentricity', 'Solidity', 'Extent', 'Orientation', 'column_centroid', 'row_centroid', 'phenotype']
-                    listImageData = [name for name in header_full_names if name not in listNotMarkers]
-                    datasourceImageData = datasource[[*listImageData]]
-                    if np.mean(np.mean(datasourceImageData)) < 15:
-                        config_data["isTransformed"] = True
                     else:
-                        config_data["isTransformed"] = False
+                        f = open(str(Path(file_path) / csvName), 'w')
+                        f.write(csvFile[0].read())
 
-                    return render_template('channel_match.html', data=config_data)
+                    with open(csvPath, 'r') as infile:
+                        reader = csv.DictReader(infile)
+                        csvHeader = reader.fieldnames
+
+                # Process Cell Type File
+                if len(celltypeFile) == 1 and celltypeFile[0].filename != '':
+                    for file in celltypeFile:
+                        # Upload Cell Type File
+                        celltypeName = file.filename
+                        celltypePath = str(Path(file_path) / celltypeName)
+                        file.save(celltypePath)
+
+                # Process Channel File
+                current_task = "Converting OME-TIFF Channels (This Will Take a While)"
+                channel_info = data_model.convertOmeTiff(channelFile, isLabelImg=False)
+                channelFileNames.extend(channel_info['channel_names'])
+                completed_task += 1
+
+                #Process Segmentation File
+                current_task = "Converting Segmentation Mask"
+                label_info = data_model.convertOmeTiff(labelFile, channelFilePath=channelFile,
+                                                       dataDirectory=file_path,
+                                                       isLabelImg=True)
+                completed_task += 1
+                current_task = total_tasks
+                current_task = 'Complete'
+                config_data = {}
+                full_csv_header = []
+
+                # now iterate fields for the config overview
+                for header in csvHeader:
+                    elem = {}
+                    elem['fullName'] = header
+                    full_csv_header.append(elem)
+
+                config_data['csvHeader'] = full_csv_header
+                header_full_names = [elem['fullName'] for elem in full_csv_header]
+                config_data['substring'] = mostFrequentLongestSubstring.find_substring(header_full_names)
+                config_data['datasetName'] = datasetName
+
+                config_data['maxLevel'] = channel_info['maxLevel']
+                config_data['height'] = channel_info['height']
+                config_data['width'] = channel_info['width']
+                config_data['segmentation'] = label_info['segmentation']
+
+                config_data['num_channels'] = channel_info['num_channels']
+                config_data['tileHeight'] = channel_info['tileHeight']
+                config_data['tileWidth'] = channel_info['tileWidth']
+
+                config_data['datasetName'] = datasetName
+                config_data['channelFileNames'] = channelFileNames
+                config_data['csvName'] = csvName
+                if len(celltypeFile) == 1:
+                    config_data['celltypeData'] = celltypeName
+                config_data['channelFile'] = str(channelFile)
+                config_data['new'] = True
+                config_data['labelName'] = labelName
+                config_data['datasources'] = get_config_names()
+                config_data['datasources'].append(datasetName)
+
+                datasource = pd.read_csv(csvPath)
+                listNotMarkers = ['CellID', 'X_centroid', 'Y_centroid', 'Area', 'MajorAxisLength', 'MinorAxisLength', 'Eccentricity', 'Solidity', 'Extent', 'Orientation', 'column_centroid', 'row_centroid', 'phenotype']
+                listImageData = [name for name in header_full_names if name not in listNotMarkers]
+                datasourceImageData = datasource[[*listImageData]]
+                if np.mean(np.mean(datasourceImageData)) < 15:
+                    config_data["isTransformed"] = True
+                else:
+                    config_data["isTransformed"] = False
+
+                return render_template('channel_match.html', data=config_data)
         except Exception as e:
             completed_task = -1
             current_task = str(e)
@@ -457,7 +488,6 @@ def save_config():
                 'src'] = str(data_path / datasetName / csvName)
             # Adding the Label Channel as the First Label
             configData[datasetName]['imageData'] = [{}]
-            #
             configData[datasetName]['imageData'][0]['name'] = headerList[0][1]['value']
             configData[datasetName]['imageData'][0]['fullname'] = 'Area'
             if 'labelName' in originalData and originalData['labelName'] != '':
@@ -493,8 +523,48 @@ def save_config():
         resp = jsonify(success=False)
         return resp
 
+@app.route('/get_segmentation_file_list', methods=['POST'])
+def list_tif_files_in_dir():
+    files = []
 
-# End of Facetto code
+    #path and type information from upload
+    post_data = json.loads(request.data)
+    if 'path' in post_data:
+        path = post_data['path']
+
+        #for segmentation, mcmicro specifics
+        mask_types = ["cell", "cellRing", "cyto", "cytoRing", "nuclei", "nucleiRing"]
+        for (dirpath, dirnames, filenames) in walk(path):
+            for (file) in filenames:
+                file = file.split('.')
+                if file[0] in mask_types:
+                    files.append(file[0])
+        print(files)
+    else:
+        print('error in segmentation path');
+    return serialize_and_submit_json(files)
+
+@app.route('/check_file_existance', methods=['POST'])
+def check_file_existance():
+    # path and type information from upload
+    post_data = json.loads(request.data)
+    if 'path' in post_data:
+        path = Path(post_data['path'])
+        if path.is_file():
+            return serialize_and_submit_json(True)
+        return serialize_and_submit_json(False)
+
+
+@app.route('/check_path_existance', methods=['POST'])
+def check_path_existance():
+    # path and type information from upload
+    post_data = json.loads(request.data)
+    if 'path' in post_data:
+        path = Path(post_data['path'])
+        if path.is_dir():
+            return serialize_and_submit_json(True)
+        return serialize_and_submit_json(False)
+
 
 @app.route('/init_datasource', methods=['GET'])
 def init_datasource():
@@ -502,3 +572,12 @@ def init_datasource():
     data_model.init(datasource)
     resp = jsonify(success=True)
     return resp
+
+
+def serialize_and_submit_json(data):
+    response = app.response_class(
+        response=orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY),
+        mimetype='application/json'
+    )
+    return response
+

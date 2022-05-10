@@ -11,6 +11,7 @@ import gzip
 import json
 import orjson
 import os
+from os import walk
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -325,7 +326,6 @@ def generate_png(datasource, channel, level, tile):
     # move to beginning of file so `send_file()` it will read from start
     file_object.seek(0)
     return send_file(file_object, mimetype='image/PNG')
-
 
 def serialize_and_submit_json(data):
     response = app.response_class(
