@@ -1,4 +1,5 @@
 
+
 // Example starter JavaScript for disabling form submissions if there are invalid fields
 (function () {
   'use strict'
@@ -148,9 +149,6 @@ async function fillSegFileList() {
         console.log("Error Getting Segmentation File List", e);
     }
 }
-
-
-
 
 let uploadPercentage = 0;
 let ajaxForm = $('form').ajaxForm({
