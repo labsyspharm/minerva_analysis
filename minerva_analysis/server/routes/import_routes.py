@@ -223,16 +223,20 @@ def upload_file_page():
                     if request.form.get('mcmicro_name') != '':
                         datasetName = request.form['mcmicro_name']
 
+                    # get label file from user specified path
                     labelName = request.form['masks']
                     labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.ome.tif'))
                     labelFile = PurePath(directory, 'segmentation', labelFolder)
 
-                    csvName = 'unmicst-' + mcmicroDirName + '_' + labelName + '.csv'
+                    # get csv file from user specified path
+                    csvName = 'unmicst-' + mcmicroDirName + '_' + 'cell' + '.csv' # could use labelName to have dynamic csv but usually only cell available.
                     csvPath = str(PurePath(directory, 'quantification', csvName))
                     csvFile = [open(csvPath)]
 
+                    # get channel file from user specified path
                     channelFile = PurePath(directory, 'registration', mcmicroDirName + '.ome.tif')
 
+                    # get cell type file from user specified path
                     celltypeFile = request.files.getlist("celltype_file")
 
 
