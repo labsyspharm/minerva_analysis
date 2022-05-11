@@ -5,7 +5,6 @@ precision highp usampler2D;
 
 uniform usampler2D u_ids;
 uniform usampler2D u_tile;
-uniform usampler2D u_picked;
 uniform sampler2D u_gatings;
 uniform sampler2D u_centers;
 uniform sampler2D u_mag_0;
@@ -14,7 +13,6 @@ uniform sampler2D u_mag_2;
 uniform sampler2D u_mag_3;
 uniform ivec2 u_ids_shape;
 uniform vec2 u_tile_shape;
-uniform ivec2 u_picked_shape;
 uniform ivec2 u_gating_shape;
 uniform ivec3 u_center_shape;
 uniform ivec2 u_magnitude_shape;
@@ -30,7 +28,7 @@ uniform bvec2 u_draw_mode;
 uniform vec2 u_x_bounds;
 uniform vec2 u_y_bounds;
 uniform int u_tile_fmt;
-uniform int u_picked_end;
+uniform int u_picked_id;
 uniform int u_id_end;
 
 in vec2 uv;
@@ -62,8 +60,7 @@ uint unpack(uvec4 id) {
 
 // Check if value between min and max
 bool check_range(float value, vec2 range) {
-  float clamped = clamp(value, range.x, range.y);
-  return (abs(clamped - value) == 0.0);
+  return value >= range.x && value < range.y;
 }
 
 // Interpolate between domain and range
@@ -110,7 +107,7 @@ float modulo(uint ai, uint bi) {
 
 // Turn 2D ratios to coordinates for 2D texture
 vec2 to_texture_xy(vec2 s, float x, float y) {
-  return vec2(x / s.x, 1.0 - (y + 0.5) / s.y);
+  return vec2((x + 0.5) / s.x, 1.0 - (y + 0.5) / s.y);
 }
 
 // Turn 2D integers to coordinates for wrapped texture
@@ -241,9 +238,8 @@ int sample_cell_index(vec2 off) {
     return -1;
   }
 
-  int picked_idx = binary_search(u_picked, u_picked_shape, uint(u_picked_end), ikey);
-  // Use any available externally picked ids
-  if (u_picked_end < 0 || picked_idx > -1) {
+  // Use externally picked id
+  if (u_picked_id < 0 || u_picked_id == int(ikey)) {
     // Return index in main id list
     return binary_search(u_ids, u_ids_shape, uint(u_id_end), ikey);
   }
@@ -252,7 +248,7 @@ int sample_cell_index(vec2 off) {
 
 // Limit to available marker keys
 bool catch_key(int key) {
-  if (key >= u_gating_shape.x) {
+  if (key >= u_gating_shape.y) {
     return true;
   }
   return false;
@@ -263,7 +259,7 @@ int count_gated_keys(int cell_index) {
   int gated_total = 0;
   for (int key = 0; key <= kMAX; key++) {
     if (catch_key(key)) {
-      break;
+      return gated_total;
     }
     float scale = sample_magnitude(cell_index, key);
     vec2 range = sample_gating_range(float(key));
@@ -283,7 +279,7 @@ int to_and_gate(int cell_index) {
   // Check each possible key for color
   for (int key = 0; key <= kMAX; key++) {
     if (catch_key(key)) {
-      break;
+      return 0;
     }
     float scale = sample_magnitude(cell_index, key);
     vec2 range = sample_gating_range(float(key));
@@ -291,7 +287,7 @@ int to_and_gate(int cell_index) {
       return -1;
     }
   }
-  return 1;
+  return 0;
 }
 
 // Return angle within pie chart
@@ -315,9 +311,16 @@ float to_chart_angle(int cell_index, float radius) {
 
 // Match channel to cell index
 int to_or_gate(int cell_index, float radius) {
+  float angle = 0.0;
   int gated_count = 0;
   int gated_total = count_gated_keys(cell_index);
-  float angle = to_chart_angle(cell_index, radius);
+  // Outside of circle
+  if (radius > 0.0) {
+    angle = to_chart_angle(cell_index, radius);
+    if (angle < 0.0) {
+      return -1;
+    }
+  }
   // Check each possible key for color
   for (int key = 0; key <= kMAX; key++) {
     if (catch_key(key)) {
@@ -327,6 +330,9 @@ int to_or_gate(int cell_index, float radius) {
     vec2 range = sample_gating_range(float(key));
     if (check_range(scale, range)) {
       gated_count = gated_count + 1;
+      if (radius <= 0.0) {
+        return key;
+      }
       if (match_angle(gated_count, gated_total, angle)) {
         return key;
       }
@@ -337,7 +343,7 @@ int to_or_gate(int cell_index, float radius) {
 // Match channel to cell index
 int to_gate(int cell_index, bvec2 mode, float radius) {
   int n_gates = u_gating_shape.y;
-  if (n_gates < 1) {
+  if (n_gates < 1 || cell_index < 0) {
     return -1;
   }
   bool or_mode = mode.y;
@@ -351,21 +357,20 @@ int to_gate(int cell_index, bvec2 mode, float radius) {
 
 // Check if pixel is on a border
 bool near_cell_edge(int cell_index, float one, bvec2 mode) {
-  float no_radius = pow(2., 24.);
-  int cell_key = to_gate(cell_index, mode, no_radius);
+  int cell_key = to_gate(cell_index, mode, -1.);
   for (int i = 0; i < 4; i++) {
     float ex = vec4(0, 0, 1, -1)[i] * one;
     float ey = vec4(1, -1, 0, 0)[i] * one;
     int edge_index = sample_cell_index(vec2(ex, ey));
     if (cell_index != edge_index) {
-      int edge_key = to_gate(edge_index, mode, no_radius);
+      int edge_key = to_gate(edge_index, mode, -1.);
       if (one > 1.0) {
-        if (cell_index <= -1 && edge_key > -1) {
+        if (cell_index < 0 && edge_key >= 0) {
           return true;
         }
       }
       else {
-        if (cell_index > -1 && cell_key > -1) {
+        if (cell_index >= 0 && cell_key >= 0) {
           return true;
         }
       }
@@ -381,9 +386,9 @@ vec4 u32_rgba_map(bvec2 mode) {
   vec4 white_pixel = vec4(1., 1., 1., 1.);
   bool or_mode = mode.y;
   bool edge_mode = mode.x;
-
   int key = to_gate(cell_index, mode, u_pie_radius);
-  if (cell_index > -1 && key > -1) {
+
+  if (cell_index > 0 && key > -1) {
     if (or_mode) {
       return vec4(sample_gating_color(float(key)), 1.0);
     }
