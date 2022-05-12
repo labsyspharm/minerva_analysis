@@ -33,7 +33,7 @@ jobs:
         run: |
           cd minerva_analysis
           cd client
-          npm ci
+          npm install
           npm run start
           cd ..
           cd ..
