@@ -23,3 +23,5 @@ class SimpleEventHandler {
     }
 
 }
+
+export { SimpleEventHandler }

@@ -29,7 +29,10 @@ module.exports = {
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        plugins: ['@babel/plugin-proposal-class-properties'],
+                        plugins: [
+                          ["@babel/plugin-transform-runtime", { "corejs": 2 }],
+                          '@babel/plugin-proposal-class-properties'
+                        ],
                         presets: ['@babel/preset-env']
                     }
                 }

@@ -80,10 +80,10 @@ openSeadragonGL.prototype = {
     adder: function(e) {
         for (var key of this.and(this.defaults)) {
             var handler = this[key].bind(this);
-            var interface = this.interface[key].bind(this);
+            var _interface = this.interface[key].bind(this);
             // Add all openSeadragon event handlers
             this.openSD.addHandler(key, function(e) {
-                handler.call(this, interface, e);
+                handler.call(this, _interface, e);
             });
         }
     },

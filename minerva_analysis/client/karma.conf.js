@@ -1,3 +1,7 @@
+const webpackConfig = require('./webpack.config');
+delete webpackConfig.entry;
+delete webpackConfig.output;
+
 // Karma configuration
 // Generated on Thu May 12 2022 14:28:02 GMT-0400 (Eastern Daylight Time)
 
@@ -10,26 +14,53 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://www.npmjs.com/search?q=keywords:karma-adapter
-    frameworks: ['mocha'],
-
+    frameworks: ['mocha', 'chai', 'webpack', 'fixture', 'jquery-3.4.0'],
+    
+    plugins: ['karma-jquery', 'karma-webpack', 'karma-mocha', 'karma-chai', 'karma-fixture', 'karma-html2js-preprocessor', 'karma-chrome-launcher'],
 
     // list of files / patterns to load in the browser
     files: [
-      'src/js/**/*.js',
-      'src/js/**/*Spec.js'
+      {
+        pattern: 'test/includes/globals.js',
+        watch: false,
+      },
+      {
+        pattern: 'fixtures/main.html',
+      },
+      {
+        pattern: 'src/js/*.js',
+        included: false,
+        served: true,
+        watch: false
+      },
+      {
+        pattern: 'external/**/*.js',
+        included: false,
+        served: true,
+        watch: false
+      },
+      {
+        pattern: 'test/js/*.js',
+        watch: false,
+      }
     ],
 
+
+    proxies: {
+      "/js/": "/base/src/js/",
+      "/osd/": "/base/external/openseadragon-bin-2.4.0/"
+    },
 
     // list of files / patterns to exclude
     exclude: [
     ],
 
-
-    // preprocess matching files before serving them to the browser
-    // available preprocessors: https://www.npmjs.com/search?q=keywords:karma-preprocessor
     preprocessors: {
+      '*.html': ['html2js'],
+      '*.js': ['webpack'],
     },
 
+    webpack: webpackConfig,
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
@@ -58,10 +89,16 @@ module.exports = function(config) {
     // available browser launchers: https://www.npmjs.com/search?q=keywords:karma-launcher
     browsers: ['Chrome'],
 
+    client: {
+      mocha: {
+        reporter: 'html',
+        timeout: 4000
+      }
+    },
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false,
+    singleRun: true,
 
     // Concurrency level
     // how many browser instances should be started simultaneously
