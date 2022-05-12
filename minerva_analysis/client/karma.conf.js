@@ -16,8 +16,6 @@ module.exports = function(config) {
     // available frameworks: https://www.npmjs.com/search?q=keywords:karma-adapter
     frameworks: ['mocha', 'chai', 'webpack', 'fixture', 'jquery-3.4.0'],
     
-    plugins: ['karma-jquery', 'karma-webpack', 'karma-mocha', 'karma-chai', 'karma-fixture', 'karma-html2js-preprocessor', 'karma-chrome-launcher'],
-
     // list of files / patterns to load in the browser
     files: [
       {
