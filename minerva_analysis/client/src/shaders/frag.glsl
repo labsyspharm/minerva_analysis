@@ -355,28 +355,55 @@ int to_gate(int cell_index, bvec2 mode, float radius) {
   }
 }
 
-// Check if pixel is on a border
-bool near_cell_edge(int cell_index, float one, bvec2 mode) {
-  int cell_key = to_gate(cell_index, mode, -1.);
-  for (int i = 0; i < 4; i++) {
-    float ex = vec4(0, 0, 1, -1)[i] * one;
-    float ey = vec4(1, -1, 0, 0)[i] * one;
-    int edge_index = sample_cell_index(vec2(ex, ey));
-    if (cell_index != edge_index) {
-      int edge_key = to_gate(edge_index, mode, -1.);
-      if (one > 1.0) {
-        if (cell_index < 0 && edge_key >= 0) {
-          return true;
-        }
-      }
-      else {
-        if (cell_index >= 0 && cell_key >= 0) {
-          return true;
-        }
-      }
-    }
+int index_of_cell(usampler2D sam, vec2 off) {
+  uint id = unpack(offset(sam, u_tile_shape, uv, off));
+  return binary_search(u_ids, u_ids_shape, uint(u_id_end), id);
+}
+
+bool in_bg(usampler2D sam, vec2 pos) {
+  bool left_black = index_of_cell(sam, vec2(-1., 0.)) < 0;
+  bool right_black = index_of_cell(sam, vec2(1., 0.)) < 0;
+  bool is_black = index_of_cell(sam, vec2(0., 0.)) < 0;
+  bool down_black = index_of_cell(sam, vec2(0., -1.)) < 0;
+  bool top_black = index_of_cell(sam, vec2(0., 1.)) < 0;
+
+  if (is_black || left_black || right_black || down_black || top_black) {
+    return true;
   }
   return false;
+}
+
+bool in_diff(usampler2D sam, vec2 pos) {
+  int cell_idx = index_of_cell(sam, vec2(0., 0.));
+  bool left_black = index_of_cell(sam, vec2(-1., 0.)) != cell_idx;
+  bool right_black = index_of_cell(sam, vec2(1., 0.)) != cell_idx;
+  bool down_black = index_of_cell(sam, vec2(0., -1.)) != cell_idx;
+  bool top_black = index_of_cell(sam, vec2(0., 1.)) != cell_idx;
+
+  if (left_black || right_black || down_black || top_black) {
+    return true;
+  }
+  return false;
+}
+
+bool equals4(uvec4 id1, uvec4 id2) {
+  return all(equal(id1, id2));
+}
+
+// Check if pixel is on a border
+bool near_cell_edge(int cell_index, float one, bvec2 mode) {
+  uvec4 empty_val = uvec4(0., 0., 0., 0.);
+  uvec4 pixel = offset(u_tile, u_tile_shape, uv, vec2(0., 0.));
+  bool background = equals4(empty_val, pixel);
+
+  // If not border
+  if (background && !in_bg(u_tile, uv)) {
+    return true;
+  }
+  if (in_diff(u_tile, uv)) {
+    return true;
+  }
+  return false; 
 }
 
 // Colorize discrete u32 signal
