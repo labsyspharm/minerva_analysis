@@ -695,10 +695,12 @@ window.addEventListener("resize", function () {
       channelList.sliders.forEach((slider, name) => {
             d3.select('div#channel-slider_' + name).select('svg').remove();
             const channelListEl = document.getElementById("channel_list");
-            const swidth = channelListEl.getBoundingClientRect().width;
-            channelList.addSlider(name, swidth, slider.value());
-            if (channelList.hasChannelGMM[name]) {
-                channelList.drawChannelGMM(name);
+            if (channelListEl) {
+                const swidth = channelListEl.getBoundingClientRect().width;
+                channelList.addSlider(name, swidth, slider.value());
+                if (channelList.hasChannelGMM[name]) {
+                    channelList.drawChannelGMM(name);
+                }
             }
         });
     }
