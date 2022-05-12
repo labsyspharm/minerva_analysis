@@ -356,17 +356,17 @@ int to_gate(int cell_index, bvec2 mode, float radius) {
 }
 
 // Sample gating state of cell at given offset
-int sample_cell_gate(vec2 off, bvec2 mode) {
+int sample_cell_gate(vec2 off, bvec2 mode, float radius) {
   int cell_index = sample_cell_index(off);
-  return to_gate(cell_index, mode, u_pie_radius);
+  return to_gate(cell_index, mode, radius);
 }
 
 bool in_bg(usampler2D sam, vec2 pos, bvec2 mode) {
-  bool left_black = sample_cell_gate(vec2(-1., 0.), mode) < 0;
-  bool right_black = sample_cell_gate(vec2(1., 0.), mode) < 0;
-  bool is_black = sample_cell_gate(vec2(0., 0.), mode) < 0;
-  bool down_black = sample_cell_gate(vec2(0., -1.), mode) < 0;
-  bool top_black = sample_cell_gate(vec2(0., 1.), mode) < 0;
+  bool left_black = sample_cell_gate(vec2(-1., 0.), mode, -1.0) < 0;
+  bool right_black = sample_cell_gate(vec2(1., 0.), mode, -1.0) < 0;
+  bool is_black = sample_cell_gate(vec2(0., 0.), mode, -1.0) < 0;
+  bool down_black = sample_cell_gate(vec2(0., -1.), mode, -1.0) < 0;
+  bool top_black = sample_cell_gate(vec2(0., 1.), mode, -1.0) < 0;
 
   if (is_black || left_black || right_black || down_black || top_black) {
     return true;
@@ -375,11 +375,11 @@ bool in_bg(usampler2D sam, vec2 pos, bvec2 mode) {
 }
 
 bool in_diff(usampler2D sam, vec2 pos, bvec2 mode) {
-  int cell_idx = sample_cell_gate(vec2(0., 0.), mode);
-  bool left_black = sample_cell_gate(vec2(-1., 0.), mode) != cell_idx;
-  bool right_black = sample_cell_gate(vec2(1., 0.), mode) != cell_idx;
-  bool down_black = sample_cell_gate(vec2(0., -1.), mode) != cell_idx;
-  bool top_black = sample_cell_gate(vec2(0., 1.), mode) != cell_idx;
+  int cell_idx = sample_cell_gate(vec2(0., 0.), mode, -1.0);
+  bool left_black = sample_cell_gate(vec2(-1., 0.), mode, -1.0) != cell_idx;
+  bool right_black = sample_cell_gate(vec2(1., 0.), mode, -1.0) != cell_idx;
+  bool down_black = sample_cell_gate(vec2(0., -1.), mode, -1.0) != cell_idx;
+  bool top_black = sample_cell_gate(vec2(0., 1.), mode, -1.0) != cell_idx;
 
   if (left_black || right_black || down_black || top_black) {
     return true;
