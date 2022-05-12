@@ -379,33 +379,36 @@ bool equals4(uvec4 id1, uvec4 id2) {
 }
 
 // Check if pixel is on a border
-bool near_cell_edge(int cell_index, float one, bvec2 mode) {
+bool near_cell_edge(float one, bvec2 mode) {
   uvec4 empty_val = uvec4(0., 0., 0., 0.);
+  int cell_index = sample_cell_index(vec2(0, 0));
   uvec4 pixel = offset(u_tile, u_tile_shape, uv, vec2(0., 0.));
   bool background = equals4(empty_val, pixel);
 
-  // pixels are at different cells
-  if (in_diff(u_tile, uv, one, mode)) {
-    if (one == 1.0 && !background) {
-      return true;
-    }
-    else if (one > 1.0 && background) {
-      return true;
-    }
+  // Background not counted
+  if (one == 1.0 && background) {
+    return false;
   }
+  // Cells not counted
+  else if (one > 1.0 && !background) {
+    return false;
+  }
+  // pixels are at different cells
+  else if (in_diff(u_tile, uv, one, mode)) {
+    return true;
+  }
+  // Not an edge 
   return false; 
 }
 
 // Colorize discrete u32 signal
 vec4 u32_rgba_map(bvec2 mode) {
-  int cell_index = sample_cell_index(vec2(0, 0));
+  int key = sample_cell_gate(vec2(0, 0), mode, u_pie_radius);
   vec4 empty_pixel = vec4(0., 0., 0., 0.);
   vec4 white_pixel = vec4(1., 1., 1., 1.);
-  bool or_mode = mode.y;
   bool edge_mode = mode.x;
-  int key = to_gate(cell_index, mode, u_pie_radius);
-
-  if (cell_index > 0 && key > -1) {
+  bool or_mode = mode.y;
+  if (key > -1) {
     if (or_mode) {
       return vec4(sample_gating_color(float(key)), 1.0);
     }
@@ -415,9 +418,9 @@ vec4 u32_rgba_map(bvec2 mode) {
   }
 
   // Borders (bottom layer)
-  float one = 1.0 / u_tile_fraction;
   if (edge_mode) {
-    if (near_cell_edge(cell_index, one, mode)) {
+    float one = 1.0 / u_tile_fraction;
+    if (near_cell_edge(one, mode)) {
       return white_pixel;
     }
   }
