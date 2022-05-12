@@ -5,17 +5,17 @@ before(function(){
 	fixture.setBase('html')
 });
 
-beforeEach(async function(){
+beforeEach(function(){
   OpenSeadragon = window.OpenSeadragon;
 	this.result = fixture.load('main.html');
-	await new Promise((resolve) => {
-    $.getScript("/osd/openseadragon-scalebar.js", function() {
-      $.getScript("/js/main.js", function(){
+  return new Promise((resolve) => {
+    return fetch("/osd/openseadragon-scalebar.js").then((f1) => {
+      return fetch("/js/main.js").then((f2) => {
         console.log("Loaded main.js");
         resolve();
       });
     });
-	})
+  });
 });
 
 afterEach(function(){
