@@ -23,7 +23,7 @@ module.exports = function(config) {
         watch: false,
       },
       {
-        pattern: 'fixtures/main.html',
+        pattern: 'fixtures/*.html',
       },
       {
         pattern: 'src/js/*.js',
@@ -54,8 +54,13 @@ module.exports = function(config) {
     ],
 
     preprocessors: {
-      '*.html': ['html2js'],
+      'fixtures/*.html': ['html2js'],
       '*.js': ['webpack'],
+    },
+
+    html2JsPreprocessor: {
+      stripPrefix: 'fixtures/',
+      prependPrefix: 'html/',
     },
 
     webpack: webpackConfig,

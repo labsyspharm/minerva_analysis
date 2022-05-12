@@ -2,13 +2,11 @@ const expect = chai.expect;
 var OpenSeadragon;
 
 before(function(){
-  console.log({h: window.__html__})
-	fixture.setBase('./fixtures')
+	fixture.setBase('html')
 });
 
 beforeEach(async function(){
   OpenSeadragon = window.OpenSeadragon;
-  console.log(fixture.base)
 	this.result = fixture.load('main.html');
 	await new Promise((resolve) => {
     $.getScript("/osd/openseadragon-scalebar.js", function() {
