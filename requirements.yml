@@ -7,6 +7,7 @@ dependencies:
   - flask-sqlalchemy
   - hdbscan
   - nomkl
+  - numba
   - numpy
   - orjson
   - pandas
@@ -24,8 +25,6 @@ dependencies:
   - pip:
       - elementpath==2.3.2
       - KDEpy
-      - llvmlite
-      - numba
       - numpy-indexed
       - ome-types==0.2.0
       - opencv-python
