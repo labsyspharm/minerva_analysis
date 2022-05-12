@@ -355,17 +355,12 @@ int to_gate(int cell_index, bvec2 mode, float radius) {
   }
 }
 
-int index_of_cell(usampler2D sam, vec2 off) {
-  uint id = unpack(offset(sam, u_tile_shape, uv, off));
-  return binary_search(u_ids, u_ids_shape, uint(u_id_end), id);
-}
-
 bool in_bg(usampler2D sam, vec2 pos) {
-  bool left_black = index_of_cell(sam, vec2(-1., 0.)) < 0;
-  bool right_black = index_of_cell(sam, vec2(1., 0.)) < 0;
-  bool is_black = index_of_cell(sam, vec2(0., 0.)) < 0;
-  bool down_black = index_of_cell(sam, vec2(0., -1.)) < 0;
-  bool top_black = index_of_cell(sam, vec2(0., 1.)) < 0;
+  bool left_black = sample_cell_index(vec2(-1., 0.)) < 0;
+  bool right_black = sample_cell_index(vec2(1., 0.)) < 0;
+  bool is_black = sample_cell_index(vec2(0., 0.)) < 0;
+  bool down_black = sample_cell_index(vec2(0., -1.)) < 0;
+  bool top_black = sample_cell_index(vec2(0., 1.)) < 0;
 
   if (is_black || left_black || right_black || down_black || top_black) {
     return true;
@@ -374,11 +369,11 @@ bool in_bg(usampler2D sam, vec2 pos) {
 }
 
 bool in_diff(usampler2D sam, vec2 pos) {
-  int cell_idx = index_of_cell(sam, vec2(0., 0.));
-  bool left_black = index_of_cell(sam, vec2(-1., 0.)) != cell_idx;
-  bool right_black = index_of_cell(sam, vec2(1., 0.)) != cell_idx;
-  bool down_black = index_of_cell(sam, vec2(0., -1.)) != cell_idx;
-  bool top_black = index_of_cell(sam, vec2(0., 1.)) != cell_idx;
+  int cell_idx = sample_cell_index(vec2(0., 0.));
+  bool left_black = sample_cell_index(vec2(-1., 0.)) != cell_idx;
+  bool right_black = sample_cell_index(vec2(1., 0.)) != cell_idx;
+  bool down_black = sample_cell_index(vec2(0., -1.)) != cell_idx;
+  bool top_black = sample_cell_index(vec2(0., 1.)) != cell_idx;
 
   if (left_black || right_black || down_black || top_black) {
     return true;
