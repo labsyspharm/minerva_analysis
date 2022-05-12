@@ -361,25 +361,12 @@ int sample_cell_gate(vec2 off, bvec2 mode, float radius) {
   return to_gate(cell_index, mode, radius);
 }
 
-bool in_bg(usampler2D sam, vec2 pos, bvec2 mode) {
-  bool left_black = sample_cell_gate(vec2(-1., 0.), mode, -1.0) < 0;
-  bool right_black = sample_cell_gate(vec2(1., 0.), mode, -1.0) < 0;
-  bool is_black = sample_cell_gate(vec2(0., 0.), mode, -1.0) < 0;
-  bool down_black = sample_cell_gate(vec2(0., -1.), mode, -1.0) < 0;
-  bool top_black = sample_cell_gate(vec2(0., 1.), mode, -1.0) < 0;
-
-  if (is_black || left_black || right_black || down_black || top_black) {
-    return true;
-  }
-  return false;
-}
-
-bool in_diff(usampler2D sam, vec2 pos, bvec2 mode) {
+bool in_diff(usampler2D sam, vec2 pos, float one, bvec2 mode) {
   int cell_idx = sample_cell_gate(vec2(0., 0.), mode, -1.0);
-  bool left_black = sample_cell_gate(vec2(-1., 0.), mode, -1.0) != cell_idx;
-  bool right_black = sample_cell_gate(vec2(1., 0.), mode, -1.0) != cell_idx;
-  bool down_black = sample_cell_gate(vec2(0., -1.), mode, -1.0) != cell_idx;
-  bool top_black = sample_cell_gate(vec2(0., 1.), mode, -1.0) != cell_idx;
+  bool left_black = sample_cell_gate(vec2(-1. * one, 0.), mode, -1.0) != cell_idx;
+  bool right_black = sample_cell_gate(vec2(1. * one, 0.), mode, -1.0) != cell_idx;
+  bool down_black = sample_cell_gate(vec2(0., -1. * one), mode, -1.0) != cell_idx;
+  bool top_black = sample_cell_gate(vec2(0., 1. * one), mode, -1.0) != cell_idx;
 
   if (left_black || right_black || down_black || top_black) {
     return true;
@@ -397,12 +384,14 @@ bool near_cell_edge(int cell_index, float one, bvec2 mode) {
   uvec4 pixel = offset(u_tile, u_tile_shape, uv, vec2(0., 0.));
   bool background = equals4(empty_val, pixel);
 
-  // If not border
-  if (background && !in_bg(u_tile, uv, mode)) {
-    return true;
-  }
-  if (in_diff(u_tile, uv, mode)) {
-    return true;
+  // pixels are at different cells
+  if (in_diff(u_tile, uv, one, mode)) {
+    if (one == 1.0 && !background) {
+      return true;
+    }
+    else if (one > 1.0 && background) {
+      return true;
+    }
   }
   return false; 
 }
