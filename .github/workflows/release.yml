@@ -7,7 +7,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ macos-latest, windows-latest ]
+        os: [ windows-latest ]
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: 3.8
           environment-file: requirements.yml
-          activate-environment: minerva_analysis
+          activate-environment: visinity
       - name: Package Windows
         if: startsWith(matrix.os,'windows')
         shell: cmd /C CALL {0}
