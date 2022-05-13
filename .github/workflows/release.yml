@@ -30,7 +30,9 @@ jobs:
         with:
           token: ${{ secrets.REPO_PAT }}
           repository: labsyspharm/Visinity
-          event-type: visinity-publish
+          event-type: publish
+          client-payload: '{"ref": "${{ github.ref }}"}'
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
