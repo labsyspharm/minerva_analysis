@@ -14,8 +14,6 @@ These are executables for Windows and MacOS that can be run locally without any 
 #### 1. Checkout Project
 `git clone https://github.com/labsyspharm/minerva_analysis.git`
 #### 2. Checkout Necessary Branch
-* **For Gating, run** `git checkout gating`
-* Run `git pull` to make sure everything is up to date 
 
 
 
