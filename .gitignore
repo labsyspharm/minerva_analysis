@@ -4,7 +4,7 @@
 /node_modules
 */node_modules
 static/frontend/node_modules
-minerva_analysis/client/node_modules/
+*/client/node_modules/
 /.pnp
 .pnp.js
 *.sqlite3
@@ -12,6 +12,8 @@ minerva_analysis/client/node_modules/
 */.ipynb_checkpoints/
 .ipynb_checkpoints/
 minerva_analysis/data/
+visinity/data/
+
 # testing
 /coverage
 /dist
@@ -33,8 +35,11 @@ yarn-error.log*
 /data
 /data/
 minerva_analysis/data
+visinity/data
 
 /minerva_analysis//data
+/visinity//data
+
 /static/data
 /static/data/
 /__pycache__/
