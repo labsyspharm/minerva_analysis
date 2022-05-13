@@ -30,7 +30,7 @@ jobs:
         with:
           token: ${{ secrets.REPO_PAT }}
           repository: labsyspharm/Visinity
-          event-type: build
+          event-type: merge
           client-payload: '{"ref": "${{ github.ref }}"}'
 
       - name: Use Node.js ${{ matrix.node-version }}
