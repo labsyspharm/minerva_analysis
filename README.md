@@ -23,7 +23,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 * Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
-* Active environment: `conda activate minerva_analysis`
+* Active environment: `conda activate visinity`
 ##### Start the Server
 
 * `python run.py` - Runs the webserver
