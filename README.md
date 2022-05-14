@@ -24,8 +24,6 @@ These are executables for Windows and MacOS that can be run locally without any 
 
 ##### Activate Environment
 * Active environment: `conda activate minerva_analysis`
-
-
 ##### Start the Server
 
 * `python run.py` - Runs the webserver
