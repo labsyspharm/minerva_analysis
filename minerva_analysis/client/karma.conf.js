@@ -11,7 +11,6 @@ module.exports = function(config) {
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
-
     // frameworks to use
     // available frameworks: https://www.npmjs.com/search?q=keywords:karma-adapter
     frameworks: ['mocha', 'chai', 'webpack', 'fixture', 'jquery-3.4.0'],
@@ -19,14 +18,13 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       {
-        pattern: 'test/includes/globals.js',
-        watch: false,
+        pattern: 'test/fixtures/*',
       },
       {
-        pattern: 'fixtures/*.html',
+        pattern: 'src/css/**/*.css',
       },
       {
-        pattern: 'src/js/*.js',
+        pattern: 'src/js/**/*.js',
         included: false,
         served: true,
         watch: false
@@ -38,14 +36,23 @@ module.exports = function(config) {
         watch: false
       },
       {
+        pattern: 'dist/**/*.js',
+        included: false,
+        served: true,
+        watch: false
+      },
+      {
         pattern: 'test/js/*.js',
         watch: false,
       }
     ],
 
+    customContextFile: 'test/fixtures/context.html',
 
     proxies: {
+      "/dist/": "/base/dist/",
       "/js/": "/base/src/js/",
+      "/fixtures/": "/base/test/fixtures/",
       "/osd/": "/base/external/openseadragon-bin-2.4.0/"
     },
 
@@ -54,12 +61,12 @@ module.exports = function(config) {
     ],
 
     preprocessors: {
-      'fixtures/*.html': ['html2js'],
+      'test/fixtures/*.html': ['html2js'],
       '*.js': ['webpack'],
     },
 
     html2JsPreprocessor: {
-      stripPrefix: 'fixtures/',
+      stripPrefix: 'test/fixtures/',
       prependPrefix: 'html/',
     },
 
@@ -95,7 +102,7 @@ module.exports = function(config) {
     client: {
       mocha: {
         reporter: 'html',
-        timeout: 4000
+        timeout: 40000
       }
     },
 

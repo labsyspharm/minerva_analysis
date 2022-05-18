@@ -2,29 +2,26 @@ const expect = chai.expect;
 var OpenSeadragon;
 
 before(function(){
-	fixture.setBase('html')
+  fixture.setBase('html')
 });
 
 beforeEach(function(){
   OpenSeadragon = window.OpenSeadragon;
-	this.result = fixture.load('main.html');
-  return new Promise((resolve) => {
-    return fetch("/osd/openseadragon-scalebar.js").then((f1) => {
-      return fetch("/js/main.js").then((f2) => {
-        console.log("Loaded main.js");
-        resolve();
-      });
-    });
-  });
+  this.result = fixture.load('main.html');
 });
 
 afterEach(function(){
-	fixture.cleanup()
+  fixture.cleanup()
 });
+
+const sleeper = async (sec) => {
+  return await new Promise(r => setTimeout(r, sec * 1000));
+}
 
 describe('Array', function () {
   describe('.push()', function () {
-    it('should append a value', function () {
+    it('should append a value', async function () {
+      await sleeper(2)
       var arr = [];
       arr.push('foo');
       arr.push('bar');

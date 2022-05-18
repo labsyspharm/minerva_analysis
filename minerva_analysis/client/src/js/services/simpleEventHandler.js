@@ -23,5 +23,3 @@ class SimpleEventHandler {
     }
 
 }
-
-export { SimpleEventHandler }
