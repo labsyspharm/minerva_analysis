@@ -24,13 +24,19 @@ module.exports = function(config) {
         pattern: 'src/css/**/*.css',
       },
       {
+        pattern: 'src/shaders/**/*.glsl',
+        included: false,
+        served: true,
+        watch: false
+      },
+      {
         pattern: 'src/js/**/*.js',
         included: false,
         served: true,
         watch: false
       },
       {
-        pattern: 'external/**/*.js',
+        pattern: 'external/**/*',
         included: false,
         served: true,
         watch: false
@@ -53,8 +59,13 @@ module.exports = function(config) {
     proxies: {
       "/dist/": "/base/dist/",
       "/js/": "/base/src/js/",
+      "/client/src/": "/base/src/",
       "/fixtures/": "/base/test/fixtures/",
-      "/osd/": "/base/external/openseadragon-bin-2.4.0/"
+      "/client/external/": "/base/external/",
+      "/config": "http://localhost:8765/config",
+      "/get_ome_metadata": "http://localhost:8765/get_ome_metadata",
+      "/get_channel_names": "http://localhost:8765/get_channel_names",
+      "/get_database_description": "http://localhost:8765/get_database_description",
     },
 
     // list of files / patterns to exclude
