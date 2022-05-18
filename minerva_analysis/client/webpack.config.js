@@ -8,6 +8,9 @@ module.exports = {
     output: {
         filename: '[name]_bundle.js'
     },
+    node: {
+        fs: 'empty'
+    },
     module: {
         rules: [
             {
@@ -22,6 +25,21 @@ module.exports = {
                 use: [
                     'file-loader',
                 ],
+            },
+            {
+                test: /\.ts$/,
+                exclude: /(node_modules|bower_components)/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                      "presets": [
+                          "@babel/typescript"
+                      ],
+                      "plugins": [
+                          "dynamic-import-node"
+                      ],
+                    }
+                }
             },
             {
                 test: /\.m?js$/,

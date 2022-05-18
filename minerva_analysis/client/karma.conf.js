@@ -42,8 +42,9 @@ module.exports = function(config) {
         watch: false
       },
       {
-        pattern: 'test/js/*.js',
+        pattern: 'test/**/*.ts',
         watch: false,
+        type: 'js'
       }
     ],
 
@@ -62,7 +63,8 @@ module.exports = function(config) {
 
     preprocessors: {
       'test/fixtures/*.html': ['html2js'],
-      '*.js': ['webpack'],
+      'test/**/*.ts': ['webpack'],
+      'src/*.js': ['webpack']
     },
 
     html2JsPreprocessor: {
@@ -74,7 +76,7 @@ module.exports = function(config) {
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
-    // available reporters: https://www.npmjs.com/search?q=keywords:karma-reporter
+    // available reporters: https://www.npmjs.com/search?q=keywords:karma-$eporter
     reporters: ['progress'],
 
 
