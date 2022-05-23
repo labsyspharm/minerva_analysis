@@ -48,6 +48,11 @@ module.exports = function(config) {
         watch: false
       },
       {
+        pattern: 'test/data/*',
+        included: false,
+        watch: false
+      },
+      {
         pattern: 'test/**/*.ts',
         watch: false,
         type: 'js'
@@ -60,11 +65,15 @@ module.exports = function(config) {
       "/dist/": "/base/dist/",
       "/js/": "/base/src/js/",
       "/client/src/": "/base/src/",
+      "/data/": "/base/test/data/",
       "/fixtures/": "/base/test/fixtures/",
       "/client/external/": "/base/external/",
       "/config": "http://localhost:8765/config",
+      "/init_database": "http://localhost:8765/init_database",
+      "/generated/data/": "http://localhost:8765/generated/data/",
       "/get_ome_metadata": "http://localhost:8765/get_ome_metadata",
       "/get_channel_names": "http://localhost:8765/get_channel_names",
+      "/get_all_cells/integer/": "http://localhost:8765/get_all_cells/integer/",
       "/get_database_description": "http://localhost:8765/get_database_description",
     },
 
