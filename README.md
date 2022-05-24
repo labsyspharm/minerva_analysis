@@ -42,3 +42,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 Any tagged commit to a branch will trigger a build, where `tag == commit message`. This will appear under releases. Note building may take ~10 min.
 
 Tagging Conventions: All release tags should look like `v{version_number}_{branch_name}`.
+
+##Debugging
+npm ssh errors from `viawebgl` can be solved w/
+` npm cache clear --force && npm install --no-shrinkwrap --update-binary`

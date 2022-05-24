@@ -1,6 +1,7 @@
 from flask import Flask
 from pathlib import Path
 from flask_sqlalchemy import SQLAlchemy
+import webbrowser
 
 from numcodecs import compat_ext  # Needed for pyinstaller
 from numcodecs import blosc  # Needed for pyinstaller
@@ -53,3 +54,5 @@ def get_config_names():
 
 from minerva_analysis.server.routes import page_routes, data_routes, import_routes
 from minerva_analysis.server.models import data_model, database_model
+
+webbrowser.open_new('http://localhost:8000/')
