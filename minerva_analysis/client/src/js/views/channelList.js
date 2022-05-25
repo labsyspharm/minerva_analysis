@@ -59,7 +59,7 @@ class ChannelList {
      */
     removeChannel(name) {
         // Update selections
-        delete this.sel[dataLayer.getFullChannelName(name)];
+        delete this.sel[this.dataLayer.getFullChannelName(name)];
 
         // Trigger
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
@@ -94,7 +94,7 @@ class ChannelList {
 
         // Update selections
         this.selections.push(name);
-        this.sel[dataLayer.getFullChannelName(name)] = this.image_channels[name];
+        this.sel[fullName] = this.image_channels[name];
 
         // Trigger
         // this.eventHandler.trigger(ChannelList.events.CHANNEL_SELECT, this.sel);
@@ -691,6 +691,7 @@ class ChannelList {
  * on window resize we re-initialize (this should be better handled with an update pattern)
  */
 window.addEventListener("resize", function () {
+  const { channelList } = __minervaAnalysis;
     if (typeof channelList != "undefined" && channelList) {
       channelList.sliders.forEach((slider, name) => {
             d3.select('div#channel-slider_' + name).select('svg').remove();

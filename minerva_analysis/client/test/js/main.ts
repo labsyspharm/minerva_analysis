@@ -1,22 +1,47 @@
+const d3 = require('d3');
 const Stream = require('stream');
 const mockttp = require("mockttp");
 var configData = require('../data/config.json');
 var metaData = require('../data/get_ome_metadata.json');
 var databaseData = require('../data/get_database_description.json');
+var channelGMM0 = require('../data/get_channel_gmm/Hoechst0.json');
+var gatingGMM0 = require('../data/get_gating_gmm/Hoechst0.json');
 var shortData = require('../data/get_channel_names/short.json');
 
+// These are set in test/fixtures/context.html
+declare var __GLOBAL__RESET__FUNCTION__: () => void;
+declare var __GLOBAL__INITIALIZATION__FUNCTION__: () => void;
 // Types
 type StreamBuffer = (stream: ReadableStream<any>) => Promise<Uint8Array>
 type LoadBuffer = (url: string) => Promise<Uint8Array>
 
+// Types defined by application
+const OpenSeadragon = require("openseadragon");
+type Viewer = typeof OpenSeadragon.Viewer;
+type World = typeof OpenSeadragon.World;
+interface ViewerManager {
+  viewer: Viewer;
+}
+interface SeaDragonViewer {
+  viewerManagers: ViewerManager[];
+}
+interface CsvGatingList {
+  seaDragonViewer: SeaDragonViewer;
+}
+interface MinervaAnalysis {
+  csv_gatingList: CsvGatingList;
+}
+declare var __minervaAnalysis: MinervaAnalysis;
+
 const KARMA_DATASOURCE = "karma-test";
 const CLEAR_PREFIX = "crop-mask-crc01";
 const LOGO_PREFIX = "crop-crc01";
+const CHANNEL_ZERO = "Hoechst0";
 const KARMA_QUERY = {
   datasource: KARMA_DATASOURCE,
 }
 const toUrlCsv = (...items) => items.join(",");
-const CELL_ID_CENTER = toUrlCsv("CellID", "X_centroid", "Y_centroid")
+const CELL_ID_CENTER = toUrlCsv("CellID", "X_centroid", "Y_centroid");
 
 const toHeaders = (bytes: number, meaning: string) => {
   const extraHeaders = {
@@ -37,6 +62,7 @@ const toHeaders = (bytes: number, meaning: string) => {
 const expect = chai.expect;
 var mockServer; 
 var allCellBuffer;
+var c0CellBuffer;
 var clearBuffer;
 var logoBuffer;
 
@@ -44,8 +70,10 @@ var logoBuffer;
 before(async () => {
   mockServer = mockttp.getLocal();
   allCellBuffer = Buffer.from(await loadBuffer('/data/cell_id_center.bin.gz'));
+  c0CellBuffer = Buffer.from(await loadBuffer('/data/cell_hoechst.bin.gz'));
   clearBuffer = Buffer.from(await loadBuffer('/data/1024x1024_clear.png'));
   logoBuffer = Buffer.from(await loadBuffer('/data/1024x1024_logo.png'));
+  await __GLOBAL__INITIALIZATION__FUNCTION__();
   fixture.setBase('html')
 });
 
@@ -114,46 +142,136 @@ beforeEach(async () => {
     ...KARMA_QUERY,
     start_keys: CELL_ID_CENTER 
   });
+  // Load cell gating keys endpoint
+  const c0CellHeaders = toHeaders(c0CellBuffer.length, 'gzip');
+  const _c0CellMock = mockServer.forGet("/get_all_cells/float/");
+  const c0CellMock = _c0CellMock.withQuery({
+    ...KARMA_QUERY,
+    start_keys: CHANNEL_ZERO 
+  });
   // Load database init endpoint
   const _initMock = mockServer.forGet("/init_database");
   const initMock = _initMock.withQuery(KARMA_QUERY)
+  // Load channel data endpoints
+  const _channelGMM0Mock = mockServer.forGet("/get_channel_gmm");
+  const channelGMM0Mock = _channelGMM0Mock.withQuery({
+    ...KARMA_QUERY,
+    channel: CHANNEL_ZERO 
+  });
+  // Load gating data endpoints
+  const _gatingGMM0Mock = mockServer.forGet("/get_gating_gmm");
+  const gatingGMM0Mock = _gatingGMM0Mock.withQuery({
+    ...KARMA_QUERY,
+    channel: CHANNEL_ZERO 
+  });
   // Await all endpoints
   await Promise.all([
     configMock.thenJson(200, configData),
     shortMock.thenJson(200, shortData),
     metaMock.thenJson(200, metaData),
     databaseMock.thenJson(200, databaseData),
+    channelGMM0Mock.thenJson(200, channelGMM0),
+    gatingGMM0Mock.thenJson(200, gatingGMM0),
     initMock.thenJson(200, {success: true}),
     clearMock.thenReply(200, clearBuffer, clearHeaders),
     logoMock.thenReply(200, logoBuffer, logoHeaders),
+    c0CellMock.thenReply(200, c0CellBuffer, c0CellHeaders),
     allCellMock.thenReply(200, allCellBuffer, allCellHeaders)
   ])
   // Run the main entrypoint
   this.result = fixture.load('main.html');
-  var s = document.createElement("script");
-  s.type = "text/javascript";
-  s.src = "/js/main.js";
-  $("head").append(s);
+  __GLOBAL__RESET__FUNCTION__();
 });
 
 afterEach(function(){
-  fixture.cleanup()
+  fixture.cleanup();
+  const els = [
+    ...document.getElementsByClassName("picker-container")
+  ]
+  for (const el of els) {
+    el.remove();
+  }
   return mockServer.stop();
 });
 
-const sleeper = async (sec) => {
+const sleeper = async (sec: number) => {
   return await new Promise(r => setTimeout(r, sec * 1024));
+}
+
+const clickChannelZero = async (t: number) => {
+  const cList = document.getElementById("channel_list");
+  const cEl = cList.getElementsByClassName("list-group-item")[0];
+  $(cEl).click();
+  await sleeper(t);
+}
+
+const clickMaskZero = async (t: number) => {
+  const cList = document.getElementById("csv_gating_list");
+  const cEl = cList.getElementsByClassName("list-group-item")[0];
+  $(cEl).click();
+  await sleeper(t);
+}
+
+const toWorld = (): World => {
+  const { csv_gatingList } = __minervaAnalysis;
+  const { seaDragonViewer } = csv_gatingList;
+  const { viewerManagers } = seaDragonViewer;
+  return viewerManagers[0].viewer.world;
+}
+
+const toImageData = (): ImageData => {
+  const rootEl = document.getElementById("openseadragon");
+  const el = document.getElementsByTagName("canvas")[0];
+  const context = el.getContext("2d");
+  const width = context.canvas.clientWidth;
+  const height = context.canvas.clientHeight;
+  return context.getImageData(0, 0, width, height);
+}
+
+const toHexColor = (r, g, b) => {
+  return [r, g, b].map(n => {
+    return n.toString(16).padStart(2, 0);
+  }).join('')
 }
 
 describe('Load', function () {
   describe('load page', function () {
-    it('should load a test dataset', async function () {
-      const arr: string[] = [];
-      await sleeper(20)
-      arr.push('foo');
-      arr.push('bar');
-      expect(arr[0]).to.equal('foo');
-      expect(arr[1]).to.equal('bar');
+    it('must load a channel', async function () {
+      await sleeper(1);
+      const world = toWorld();
+      const itemCountBefore = world.getItemCount();
+      await clickChannelZero(0.5);
+      const itemCountAfter = world.getItemCount();
+      expect(itemCountBefore).to.equal(1);
+      expect(itemCountAfter).to.equal(2);
+    })
+  })
+  describe('load page', function () {
+    it('must load a mask', async function () {
+      await sleeper(1);
+      const world = toWorld();
+      await clickChannelZero(0.5);
+      await clickMaskZero(0.5);
+      // Disable outline mode
+      await $('#gating_controls_outlines').click();
+      await sleeper(3);
+      const hist = new Map();
+      const { data } = toImageData();
+      for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const hex = toHexColor(r, g, b);
+          const freq = hist.has(hex) ? hist.get(hex) : 0;
+          hist.set(hex, freq + 1);
+      }
+      const sorted = [...hist].sort((a, b) => b[1] - a[1])
+      const [color1, color2] = sorted.map(v => v[0]);
+      const [count1, count2] = sorted.map(v => v[1]);
+      const white_ratio = count1 / (count1 + count2);
+      white_ratio.should.be.approximately(0.5058, 0.0001);
+      expect(color1).to.equal('ffffff');
+      expect(color2).to.equal('000000');
     })
   })
 })

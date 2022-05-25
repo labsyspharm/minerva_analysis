@@ -2,8 +2,8 @@ const webpackConfig = require('./webpack.config');
 delete webpackConfig.entry;
 delete webpackConfig.output;
 
-// Karma configuration
-// Generated on Thu May 12 2022 14:28:02 GMT-0400 (Eastern Daylight Time)
+// Moccked test server of Mockttp
+const SERVER = "http://localhost:8765";
 
 module.exports = function(config) {
   config.set({
@@ -18,10 +18,10 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       {
-        pattern: 'test/fixtures/*',
+        pattern: 'src/css/**/*.css',
       },
       {
-        pattern: 'src/css/**/*.css',
+        pattern: 'test/fixtures/**',
       },
       {
         pattern: 'src/shaders/**/*.glsl',
@@ -50,6 +50,13 @@ module.exports = function(config) {
       {
         pattern: 'test/data/*',
         included: false,
+        served: true,
+        watch: false
+      },
+      {
+        pattern: 'test/globals/*.js',
+        included: false,
+        served: true,
         watch: false
       },
       {
@@ -66,15 +73,18 @@ module.exports = function(config) {
       "/js/": "/base/src/js/",
       "/client/src/": "/base/src/",
       "/data/": "/base/test/data/",
+      "/globals/": "/base/test/globals/",
       "/fixtures/": "/base/test/fixtures/",
       "/client/external/": "/base/external/",
-      "/config": "http://localhost:8765/config",
-      "/init_database": "http://localhost:8765/init_database",
-      "/generated/data/": "http://localhost:8765/generated/data/",
-      "/get_ome_metadata": "http://localhost:8765/get_ome_metadata",
-      "/get_channel_names": "http://localhost:8765/get_channel_names",
-      "/get_all_cells/integer/": "http://localhost:8765/get_all_cells/integer/",
-      "/get_database_description": "http://localhost:8765/get_database_description",
+      "/config": `${SERVER}/config`,
+      "/init_database": `${SERVER}/init_database`,
+      "/get_all_cells/": `${SERVER}/get_all_cells/`,
+      "/generated/data/": `${SERVER}/generated/data/`,
+      "/get_gating_gmm": `${SERVER}/get_gating_gmm`,
+      "/get_channel_gmm": `${SERVER}/get_channel_gmm`,
+      "/get_ome_metadata": `${SERVER}/get_ome_metadata`,
+      "/get_channel_names": `${SERVER}/get_channel_names`,
+      "/get_database_description": `${SERVER}/get_database_description`,
     },
 
     // list of files / patterns to exclude
@@ -124,7 +134,7 @@ module.exports = function(config) {
     client: {
       mocha: {
         reporter: 'html',
-        timeout: 40000
+        timeout: 60000
       }
     },
 

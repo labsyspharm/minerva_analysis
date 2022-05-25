@@ -23,6 +23,7 @@ class CSVGatingList {
         this.sliders = new Map();
         this.container = d3.select("#csv_gating_list");
         // Gating vars
+        const { channelList } = __minervaAnalysis;
         this.global_channel_list = channelList;
         this.global_image_channels = imageChannels;
         this.gating_default_range = [0, 65536];
@@ -65,10 +66,12 @@ class CSVGatingList {
      /**
      * initializes the view (channel list)
      * @param dd - database description
+     * @param seaDragonViewer - the ImageViewer instance
      * @returns {Promise<void>}
      */
-    init(dd) {
+    init(dd, seaDragonViewer) {
         this.databaseDescription = dd;
+        this.seaDragonViewer = seaDragonViewer; 
         document.getElementById('drag-and-drop-info').style.display = "none";
         // Hide the Loader
         document.getElementById('csv_gating_list_loader').style.display = "none";
@@ -452,15 +455,12 @@ class CSVGatingList {
 
         // Toggle outlined / filled cell selections
         gating_controls_outlines.addEventListener('change', e => {
-            seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
+            this.seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
             this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         })
 
         // Toggle outlined / filled cell selections
         gating_controls_centroids.addEventListener('change', e => {
-
-            // For overlay (and query incrementor)
-            // seaDragonViewer.csvGatingOverlay.run_balancer++;
 
             // Update logic mode for selection query
             if (e.target.checked) {
@@ -796,6 +796,7 @@ class CSVGatingList {
 
 //resize sliders, etc on window change
 window.addEventListener("resize", () => {
+    const { csv_gatingList } = __minervaAnalysis;
     if (typeof csv_gatingList != "undefined" && csv_gatingList) {
         csv_gatingList.sliders.forEach((slider, name) => {
             d3.select('div#csv_gating-slider_' + name).select('svg').remove();

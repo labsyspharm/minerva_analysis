@@ -48,6 +48,7 @@
     "@types/jquery": "^3.5.14",
     "@types/karma-fixture": "^0.2.5",
     "@types/mocha": "^9.1.1",
+    "@types/openseadragon": "^3.0.3",
     "babel-loader": "^8.1.0",
     "chai": "^4.3.6",
     "karma": "^6.3.19",
