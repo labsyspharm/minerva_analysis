@@ -6,7 +6,7 @@ class Heatmap {
         this.eventHandler = eventHandler;
         this.showOverall = true;
         this.showSelection = true;
-        this.fontSize = "0.8rem"
+        this.fontSize = "0.6rem"
     }
 
     init() {
@@ -31,7 +31,7 @@ class Heatmap {
     draw() {
         const self = this;
         // set the dimensions and margins of the graph
-        const margin = {top: 0, right: 100, bottom: 180, left: 180},
+        const margin = {top: 0, right: 100, bottom: 130, left: 130},
             width = document.getElementById(self.id).clientWidth - margin.left - margin.right,
             height = document.getElementById(self.id).clientHeight - margin.top - margin.bottom;
 
@@ -127,7 +127,7 @@ class Heatmap {
         let color_axis = d3.axisRight(self.color_scale)
             .tickValues([-1, 0, 1])
         svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 15},${0.5 * height})`)
+            .attr("transform", `translate(${2 * width / 3 + 15},${0.4 * height})`)
             .attr('class', 'heatmap_legend')
             .attr('id', 'heatmap_color_legend')
             .call(color_axis)
@@ -135,7 +135,7 @@ class Heatmap {
             .style("stroke", "white");
 
         let colorLegend = svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 5},${0.5 * height})`)
+            .attr("transform", `translate(${2 * width / 3 + 5},${0.4 * height})`)
         colorLegend.selectAll('rect')
             .data(_.range(-30, 31))
             .enter()

@@ -97,8 +97,8 @@
 }
 
 #neighborhood_wrapper {
-    margin-top: 5vh;
-    height: 95vh;
+
+    height: 100vh;
     padding: 0;
     margin-left: 0;
     margin-right: 0;
@@ -270,10 +270,10 @@
 }
 
 
-/*.scatter_canvas {*/
-/*    height: 100%;*/
-/*    width: 100%;*/
-/*}*/
+#viewer_scatter_canvas {
+    height: 100%;
+    width: 100%;
+}
 
 
 #neighborhood_similarity {

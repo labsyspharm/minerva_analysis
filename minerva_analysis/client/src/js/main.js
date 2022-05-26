@@ -62,26 +62,20 @@ async function init(conf) {
     heatmap.init();
     //image viewer
     if (mode === 'single') {
-        // if (config?.linkedDatasets) {
-        //     document.getElementById('related_image_list_wrapper').style.visibility = "visible";
-        // } else {
-        //     document.getElementById('related_image_list_wrapper').style.visibility = "hidden";
-        // }
-        // legend = new Legend(dataLayer, colorScheme, eventHandler);
         channelList = new ChannelList(config, dataLayer, eventHandler);
         seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-        // multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'related_image_container', true, null, 'image',
-        //     'related_images_dropdown');
         let compareToggle = new ColorToggle('recolor_related_images', [comparison]);
         // init synchronus methods
         seaDragonViewer.init();
         let viewerColorToggle = new ColorToggle('recolor_image_viewer', [seaDragonViewer], true);
         await channelList.init()
+        document.getElementById('cohort-button-col').style.visibility = "hidden";
 
     } else {
         document.getElementById('openseadragon_wrapper').style.display = "none"
         document.getElementById('multi_image_wrapper').style.display = "block"
         document.getElementById('channel_list_wrapper').style.visibility = "hidden";
+        document.getElementById('cohort-button-col').style.visibility = "visible";
 
         multiImage = new Comparison(config, colorScheme, dataLayer, eventHandler, 'multi_image_wrapper',
             true, 4, 'image', 'multi_image_dropdown');
@@ -212,7 +206,7 @@ const selectNeighborhood = async (d) => {
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     dataLayer.addAllToCurrentSelection(selection);
     parallelCoordinates.wrangle(selection);
-    if (mode=='multi'){
+    if (mode == 'multi') {
         scatterplot.recolor(selection['selection_ids']);
     } else {
         scatterplot.recolor(null, true);

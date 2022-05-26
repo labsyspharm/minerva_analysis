@@ -244,7 +244,7 @@ function serializeForm() {
 function submitForm() {
     console.log(channelData);
     let headerList = serializeForm();
-    document.getElementById('save').innerHTML += '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+    document.getElementById('save').innerHTML = '<span> Creating Embedding (Can Take a Few Minutes)</span>&nbsp;<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
 
     let postData = {
         originalData: combinedChannelData,

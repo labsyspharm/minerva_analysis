@@ -80,7 +80,7 @@ def load_datasource(datasource_name, reload=False):
         perm_data = get_perm_data(datasource_name, matrix_paths)
         print('Creating Matrix', datasource_name)
         matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
-                               perm_data['distances'], perm_data['lengths'])
+                               perm_data['distances'], numba.typed.List(perm_data['lengths']))
 
         matrix[np.isnan(matrix)] = 0
 
@@ -130,12 +130,14 @@ def load_csv(datasource_name, numpy=False):
 
     if 'CellType' in df.columns:
         df = df.rename(columns={'CellType': 'phenotype'})
+    if np.issubdtype(df['phenotype'].dtype, np.number) is False:
+        df['phenotype'] = df['phenotype'].apply(lambda x: x.strip())
 
     if 'celltypeData' in config[datasource_name]['featureData'][0]:
         cellTypePath = Path(config[datasource_name]['featureData'][0]['celltypeData'])
         type_list = pd.read_csv(cellTypePath).to_numpy().tolist()
         type_ids = [e[0] for e in type_list]
-        type_string = [e[1] for e in type_list]
+        type_string = [e[1].strip() for e in type_list]
         df['phenotype'] = df['phenotype'].replace(type_ids, type_string)
 
     df = df.replace(-np.Inf, 0)
@@ -931,6 +933,7 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, em
                                                        fields=fields)
         neighbor_points = pd.DataFrame(circle_neighbors).values
         path = mpltPath.Path(point_tuples)
+
         inside = path.contains_points(neighbor_points[:, [0, 1]].astype('float'))
         neighbor_ids = neighbor_points[np.where(inside == True), 3].flatten()
     obj = get_neighborhood_stats(datasource_name, neighbor_ids, np_datasource, fields=fields)
@@ -1786,6 +1789,7 @@ def fast_to_dict_records(np_df_obj, columns=None):
 
 def create_embedding(datasets):
     global config
+
     combined_neighborhoods = None
     for name in datasets:
         neighborhoods = np.load(Path(config[name]['neighborhoods']))
@@ -1793,6 +1797,7 @@ def create_embedding(datasets):
             combined_neighborhoods = neighborhoods
         else:
             combined_neighborhoods = np.vstack((combined_neighborhoods, neighborhoods))
+    print('Creating Umap Embedding', combined_neighborhoods.shape)
     fit = umap.UMAP(n_neighbors=50, min_dist=0.01)
     u = fit.fit_transform(combined_neighborhoods)
     normalized_embedding = normalize_scatterplot_data(u)

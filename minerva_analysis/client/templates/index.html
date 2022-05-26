@@ -256,7 +256,7 @@
                                            id="scatterplot-button"
                                            autocomplete="off" checked>
                                     <label class="btn btn-light" for="scatterplot-button">Specimen</label>
-                                    {% if data.config.linkedDatasets %}
+                                    {% if data.config.linkedDatasets and data.config.linkedDatasets|length > 1 %}
                                         <input type="radio" class="btn-check" name="options-outlined"
                                                id="image-button"
                                                autocomplete="off">
@@ -270,7 +270,7 @@
                     <div id="comparison_options" class="row">
                         <div class="col-md-12">
                             <div id="comparison_options_wrapper" class="row justify-content-end">
-                                <div class="col-auto align-self-start">
+                                <div class="col-auto align-self-start" id="cohort-button-col">
                                     <a href="/{{ data.datasource }}?applyPrevious=true&mode=multi"><i
                                             class="fas fa-layer-group"></i></a>
                                 </div>

@@ -282,7 +282,7 @@ class ParallelCoordinates {
 
 
         // const legendTextSize = '1.4vh'
-        const legendTextSize = '0.9rem'
+        const legendTextSize = '0.8rem'
 
 
         let reorderButton = self.svgGroup.selectAll('.reorder_button')
@@ -316,7 +316,7 @@ class ParallelCoordinates {
         overallLineLegend.enter()
             .append('line')
             .classed('overall_line', true)
-            .attr('x1', self.x(0.00))
+            .attr('x1', self.x(0.0))
             .attr('y1', -25)
             .attr('x2', self.x(-0.05))
             .attr('y2', -25)
@@ -336,7 +336,7 @@ class ParallelCoordinates {
         overallLineLabel.enter()
             .append('text')
             .classed('overall_line_label', true)
-            .attr('x', self.x(0.00))
+            .attr('x', self.x(0))
             .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', 'grey')
@@ -352,9 +352,9 @@ class ParallelCoordinates {
         avgLineLegend.enter()
             .append('line')
             .classed('average_line', true)
-            .attr('x1', self.x(0.5))
+            .attr('x1', self.x(0.6))
             .attr('y1', -25)
-            .attr('x2', self.x(0.45))
+            .attr('x2', self.x(0.55))
             .attr('y2', -25)
             .attr("stroke-width", 4)
             .attr('stroke', 'white')
@@ -365,7 +365,7 @@ class ParallelCoordinates {
         avgLineLabel.enter()
             .append('text')
             .classed('average_line_label', true)
-            .attr('x', self.x(0.5))
+            .attr('x', self.x(0.6))
             .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', 'white')
@@ -377,9 +377,9 @@ class ParallelCoordinates {
         selectionLineLegend.enter()
             .append('line')
             .classed('selection_line', true)
-            .attr('x1', self.x(0.95))
+            .attr('x1', self.x(1.05))
             .attr('y1', -25)
-            .attr('x2', self.x(1.0))
+            .attr('x2', self.x(1.10))
             .attr('y2', -25)
             .attr("stroke-width", 4)
             .attr('stroke', 'orange')
@@ -389,7 +389,7 @@ class ParallelCoordinates {
         selectionLineLabel.enter()
             .append('text')
             .classed('selection_line_label', true)
-            .attr('x', self.x(1))
+            .attr('x', self.x(1.1))
             .attr('y', -9)
             .attr('font-size', legendTextSize)
             .attr('fill', 'orange')

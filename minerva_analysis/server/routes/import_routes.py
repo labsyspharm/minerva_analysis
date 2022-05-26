@@ -463,7 +463,6 @@ def save_config():
         for name in datasets:
             data_model.load_datasource(name, reload=True)
         # Create Embedding
-        print('Creating Embedding')
         data_model.create_embedding(datasets)
 
         resp = jsonify(success=True)
