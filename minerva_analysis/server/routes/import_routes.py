@@ -229,7 +229,7 @@ def upload_file_page():
                     labelFile = PurePath(directory, 'segmentation', labelFolder)
 
                     # get csv file from user specified path
-                    csvName = 'unmicst-' + mcmicroDirName + '_' + 'cell' + '.csv' # could use labelName to have dynamic csv but usually only cell available.
+                    csvName = 'unmicst-' + mcmicroDirName + '_' + labelName + '.csv' # could use labelName to have dynamic csv but usually only cell available.
                     csvPath = str(PurePath(directory, 'quantification', csvName))
                     csvFile = [open(csvPath)]
 
@@ -238,7 +238,6 @@ def upload_file_page():
 
                     # get cell type file from user specified path
                     celltypeFile = request.files.getlist("celltype_file")
-
 
                 #further processing
                 file_path = str(PurePath(Path.cwd(), data_path, datasetName))
@@ -527,29 +526,71 @@ def save_config():
         resp = jsonify(success=False)
         return resp
 
-@app.route('/get_segmentation_file_list', methods=['POST'])
+@app.route('/get_mc_segmentation_file_list', methods=['POST'])
 def list_tif_files_in_dir():
     files = []
 
     #path and type information from upload
     post_data = json.loads(request.data)
     if 'path' in post_data:
-        path = post_data['path']
+        path = Path(post_data['path'], "segmentation");
 
         #for segmentation, mcmicro specifics
         mask_types = ["cell", "cellRing", "cyto", "cytoRing", "nuclei", "nucleiRing"]
-        for (dirpath, dirnames, filenames) in walk(path):
-            for (file) in filenames:
-                file = file.split('.')
-                if file[0] in mask_types:
-                    files.append(file[0])
-        print(files)
+
+        if path.is_dir():
+            for (dirpath, dirnames, filenames) in walk(path):
+                for (file) in filenames:
+                    file = file.split('.')
+                    if file[0] in mask_types:
+                        files.append(file[0])
+            print(files)
     else:
         print('error in segmentation path');
     return serialize_and_submit_json(files)
 
-@app.route('/check_file_existance', methods=['POST'])
-def check_file_existance():
+@app.route('/check_mc_csv_file_existence', methods=['POST'])
+def check_mc_csv_file_existence():
+    # path and type information from upload
+    post_data = json.loads(request.data)
+    if 'path' in post_data:
+        if 'mask' in post_data:
+            #get path and last bit which defines the dirname
+            mask = post_data['mask']
+            directory = Path(post_data['path'])
+            pathsSplit = PurePath(directory).parts
+            mcmicroDirName = pathsSplit[len(pathsSplit) - 1]
+
+            # check if csv file exists
+            csvName = 'unmicst-' + mcmicroDirName + '_' + mask + '.csv'
+            csvPath = Path(directory, 'quantification', csvName)
+
+            if csvPath.is_file():
+                return serialize_and_submit_json(True)
+    return serialize_and_submit_json(False)
+
+@app.route('/check_mc_channel_file_existence', methods=['POST'])
+def check_mc_channel_file_existence():
+    # path and type information from upload
+    post_data = json.loads(request.data)
+    if 'path' in post_data:
+            #get path and last bit which defines the dirname
+            directory = Path(post_data['path'])
+            try:
+                pathsSplit = PurePath(directory).parts
+                mcmicroDirName = pathsSplit[len(pathsSplit) - 1]
+
+                # check if channel file exists
+                channelFile = Path(directory, 'registration', mcmicroDirName + '.ome.tif')
+
+                if channelFile.is_file():
+                    return serialize_and_submit_json(True)
+            except Exception as e:
+                return serialize_and_submit_json(False)
+    return serialize_and_submit_json(False)
+
+@app.route('/check_file_existence', methods=['POST'])
+def check_file_existence():
     # path and type information from upload
     post_data = json.loads(request.data)
     if 'path' in post_data:
@@ -558,9 +599,8 @@ def check_file_existance():
             return serialize_and_submit_json(True)
         return serialize_and_submit_json(False)
 
-
-@app.route('/check_path_existance', methods=['POST'])
-def check_path_existance():
+@app.route('/check_path_existence', methods=['POST'])
+def check_path_existence():
     # path and type information from upload
     post_data = json.loads(request.data)
     if 'path' in post_data:

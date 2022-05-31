@@ -35,8 +35,102 @@ function update(){
     }
 }
 
-//get a list of available files in a folder (mcmicro naming specific)
-async function checkFileExistance(caller) {
+//check if path and channel file exist in the specified MCMICRO output foder
+async function checkMCOutputFolder(caller){
+    let path_res = await checkPathExistence(caller);
+    if (path_res == true){
+        let channel_res = await checkChannelExistence(caller)
+        if (channel_res == false){
+                d3.select("#" + 'mcmicro_path_validation_text').html('No image channel file found under this path.')
+            }
+    }else{
+         d3.select("#" + 'mcmicro_path_validation_text').html('Please provide a valid path.')
+    }
+}
+
+//check the existence of a CSV file (MCMICRO specific)
+async function checkCSVFileExistence(caller) {
+    const self = this;
+
+    //get folder path from the input text field
+    let maskSelectionField = d3.select('#'+ caller.id);
+    let mask = maskSelectionField.property("value");
+
+    //get selected mask type from the selection field
+    let pathInputField = d3.select('#'+ 'mcmicro_output_folder');
+    let path = pathInputField.property("value");
+
+    try {
+        //check if corresponsindg csv file exists
+        let response = await fetch('/check_mc_csv_file_existence', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(
+                {
+                    path: path,
+                    mask : mask
+                }
+            )
+        });
+        let response_data = await response.json();
+        if (response_data == true){
+            maskSelectionField.attr("class", "form-control is-valid");
+            maskSelectionField.node().setCustomValidity('');
+        }else{
+            d3.select("#" + 'mcmicro_mask_validation_text').html('No corresponding csv file found.')
+            maskSelectionField.attr("class", "form-control is-invalid");
+            maskSelectionField.node().setCustomValidity('Invalid');
+        }
+        return response_data;
+    } catch (e) {
+        console.log("Error While Checking for CSV File Existence", e);
+    }
+}
+
+//check the existence of the channel file (MCMICRO specific)
+async function checkChannelExistence(caller) {
+    const self = this;
+
+    //get folder path from the input text field
+    let pathInputField = d3.select('#'+ caller.id);
+    let path = pathInputField.property("value");
+
+    try {
+        //check if corresponsindg csv file exists
+        let response = await fetch('/check_mc_channel_file_existence', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(
+                {
+                    path: path,
+                }
+            )
+        });
+        let response_data = await response.json();
+        if (response_data == true){
+            pathInputField.attr("class", "form-control is-valid");
+            pathInputField.node().setCustomValidity('');
+        }else{
+            // d3.select("#" + 'mcmicro_path_validation_text').html('No image channel file found under this path.')
+            pathInputField.attr("class", "form-control is-invalid");
+            pathInputField.node().setCustomValidity('No image channel file found under this path.');
+        }
+        // pathInputField.node().reportValidity();
+        return response_data;
+    } catch (e) {
+        console.log("Error While Checking for Image Channel File Existence", e);
+    }
+}
+
+
+//check if path exists (mcmicro naming specific)
+async function checkFileExistence(caller) {
     const self = this;
     let inputField = d3.select('#'+ caller.id);
     //get segmentation folder path from the input text field
@@ -44,7 +138,7 @@ async function checkFileExistance(caller) {
 
 try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/check_file_existance', {
+        let response = await fetch('/check_file_existence', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -71,8 +165,8 @@ try {
 }
 
 
-//get a list of available files in a folder (mcmicro naming specific)
-async function checkPathExistance(caller) {
+//check if path exists (mcmicro naming specific)
+async function checkPathExistence(caller) {
     const self = this;
     let inputField = d3.select('#'+ caller.id);
     //get segmentation folder path from the input text field
@@ -80,7 +174,7 @@ async function checkPathExistance(caller) {
 
 try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/check_path_existance', {
+        let response = await fetch('/check_path_existence', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -98,8 +192,9 @@ try {
             inputField.node().setCustomValidity('');
         }else{
              inputField.attr("class", "form-control is-invalid");
-             inputField.node().setCustomValidity('Invalid');
+             inputField.node().setCustomValidity('Path does not exist.');
         }
+        // inputField.node().reportValidity();
         return response_data;
     } catch (e) {
         console.log("Error Getting Segmentation File List", e);
@@ -115,13 +210,13 @@ async function fillSegFileList() {
 
     //remove old selection options as soon as path changes
     var select_field = document.getElementById("mcmicro_masks");
-    select_field.options.forEach(function(d){
-        d.remove();
-    })
+    while (select_field.length > 0) {
+      select_field.remove(0);
+    }
 
     try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/get_segmentation_file_list', {
+        let response = await fetch('/get_mc_segmentation_file_list', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
