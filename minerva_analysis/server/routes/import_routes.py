@@ -528,6 +528,7 @@ def save_config():
 
 @app.route('/get_mc_segmentation_file_list', methods=['POST'])
 def list_tif_files_in_dir():
+    # return all seg files found in the seg subfolder (mc micro specific)
     files = []
 
     #path and type information from upload
