@@ -76,7 +76,7 @@ def load_datasource(datasource_name, reload=False):
     if 'neighborhood' not in config[datasource_name]:
         matrix_file_name = datasource_name + "_matrix.pk"
         matrix_paths = Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / matrix_file_name
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / matrix_file_name
         perm_data = get_perm_data(datasource_name, matrix_paths)
         print('Creating Matrix', datasource_name)
         matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
@@ -106,7 +106,7 @@ def load_datasource(datasource_name, reload=False):
     if 'linkedDatasets' not in config[datasource_name] or len(config[datasource_name]['linkedDatasets']) == 1:
         zarr_file_name = datasource_name + "_perm.zarr"
         zarr_path = Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / zarr_file_name
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / zarr_file_name
         zarr_perm_matrix = zarr.load(zarr_path)
 
 
@@ -115,7 +115,7 @@ def load_csv(datasource_name, numpy=False):
     global config
     numpy_file_name = datasource_name + "_np.npy"
     numpy_path = Path(
-        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "featureData" / numpy_file_name
+        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / numpy_file_name
     if numpy:
         if numpy_path.is_file():
             return np.load(numpy_path, allow_pickle=True)
@@ -1276,7 +1276,7 @@ def get_ome_metadata(datasource_name):
     try:
         metadata_file_name = datasource_name + "_metadata.pickle"
         metadata_path = Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "metadata" / metadata_file_name
+            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / metadata_file_name
         if metadata_path.is_file():
             image_metadata = pickle.load(open(metadata_path, "rb"))
 
@@ -1610,7 +1610,7 @@ def get_permuted_results(datasource_name, neighborhood_query):
 
     matrix_file_name = datasource_name + "_matrix.pk"
     matrix_paths = Path(
-        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / matrix_file_name
+        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / matrix_file_name
 
     test = time.time()
     if matrix_paths.is_file():
@@ -1622,7 +1622,7 @@ def get_permuted_results(datasource_name, neighborhood_query):
 
     zarr_file_name = datasource_name + "_perm.zarr"
     zarr_path = Path(
-        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / "perms" / zarr_file_name
+        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / zarr_file_name
     test = time.time()
     if zarr_path.is_dir():
         if zarr_perm_matrix is not None:

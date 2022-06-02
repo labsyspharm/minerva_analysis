@@ -371,6 +371,7 @@ body {
 }
 
 #normalize-row {
+    visibility: hidden;
     font-size: 14pt;
 }
 
