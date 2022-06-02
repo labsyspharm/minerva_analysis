@@ -21,7 +21,7 @@ It is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.j
 Visinity interface. a) Image viewer: multiplex whole-slide tissue images highlighting spatial cell arrangement. b) Cohort view: search, apply, compare spatial patterns across different specimens. c) Neighborhood composition view: visualizes cell types that make up cell neighborhoods; d) UMAP embedding view: encodes cells with similar neighborhood as dots close to each other; e) Correlation matrix: pairwise interactions between cells; f) Comparison \& summary view: different small multiple encodings of extracted patterns. g) Neighborhood search: finds cells with similar neighborhood; h) Interactive clustering: automated detection of neighborhood patterns; i) Annotation panel: save and name patterns;  j) Channel selection: color and combine image channels.
 
 ## Example Dataset
-###[https://www.synapse.org/#!Synapse:syn30919374/wiki/617796](https://www.synapse.org/#!Synapse:syn30919374/wiki/617796)
+### [https://www.synapse.org/#!Synapse:syn30919374/wiki/617796](https://www.synapse.org/#!Synapse:syn30919374/wiki/617796)
 ## Import
 Import requires an image,segmentation mask, single cell quantification, and cell types. See example dataset.
 
