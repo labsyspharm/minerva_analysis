@@ -1,5 +1,5 @@
-from minerva_analysis import app, get_config_names, get_config
-from flask import render_template, send_from_directory, request
+from minerva_analysis import app, get_config_names, get_config, config_json_path
+from flask import render_template, send_from_directory, request, send_file
 from pathlib import Path
 import json
 import os
@@ -8,6 +8,11 @@ import os
 @app.route("/")
 def my_index():
     return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
+
+
+@app.route("/data/config.json", methods=['GET'])
+def serve_config():
+    return send_file(config_json_path.resolve(), attachment_filename='config.json')
 
 
 @app.route('/<string:datasource>', methods=['GET'])
