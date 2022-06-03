@@ -71,9 +71,11 @@ def load_datasource(datasource_name, reload=False):
     load_config()
     source = datasource_name
     datasource = load_csv(datasource_name)
+    print('Loading')
 
     # Cell Types
     if 'neighborhood' not in config[datasource_name]:
+        print('No Neighborhood')
         matrix_file_name = datasource_name + "_matrix.pk"
         matrix_paths = Path(
             os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / matrix_file_name
