@@ -67,12 +67,11 @@ jobs:
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
-          ./package_mac.sh
+          ./package_mac.sh minerva_analysis_mac_${{ env.BRANCH }}
       - name: Rename Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
-          mv dist/minerva_analysis_mac "dist/minerva_analysis_mac_${{ env.BRANCH }}"
           cd dist
           zip "minerva_analysis_mac_${{ env.BRANCH }}.zip" "minerva_analysis_mac_${{ env.BRANCH }}"
           rm "minerva_analysis_mac_${{ env.BRANCH }}"
