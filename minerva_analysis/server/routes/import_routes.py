@@ -338,24 +338,16 @@ def save_config():
     global config_json_path
     # try:
     combinedOriginalData = request.json['originalData']
-    print(1)
     datasets = [e['datasetName'] for e in combinedOriginalData]
-    print(2)
     with open(config_json_path, "r+") as configJson:
         configData = json.load(configJson)
-        print(3)
         for originalData in combinedOriginalData:
             datasetName = originalData['datasetName']
-            print(3)
             csvName = originalData['csvName']
-            print(3)
             if 'celltypeData' in originalData:
                 celltypeName = originalData['celltypeData']
-            print(3)
             headerList = request.json['headerList']
-            print(3)
             normalizeCsv = request.json['normalizeCsv']
-            print(3)
             if normalizeCsv:
                 print("Normalizing CSV")
                 skip_columns = []
@@ -378,7 +370,6 @@ def save_config():
                 normCsvName = None
 
             headerList = [x for x in zip(headerList[1::3], headerList[0::3])]
-            print(3, headerList)
             channelList = originalData['channelFileNames']
             configData[datasetName] = {}
             configData[datasetName]['shapes'] = ''
@@ -389,7 +380,6 @@ def save_config():
             configData[datasetName]['featureData'] = [{}]
             configData[datasetName]['featureData'][0]['normalization'] = 'none'
             if 'celltypeData' in originalData:
-                print(3, 'celltype')
                 configData[datasetName]['featureData'][0]['celltypeData'] = str(
                     data_path / datasets[0] / celltypeName)
                 configData[datasetName]['featureData'][0]['celltype'] = headerList[2][1]['value']
@@ -439,7 +429,6 @@ def save_config():
             configData[datasetName]['featureData'][0][
                 'src'] = str(data_path / datasetName / csvName)
             # Adding the Label Channel as the First Label
-            print('conf')
             configData[datasetName]['imageData'] = [{}]
             #
             configData[datasetName]['imageData'][0]['name'] = 'Segmentation'
@@ -467,17 +456,13 @@ def save_config():
                 channelData['name'] = headerList[i + channelStart][0]['value']
                 channelData['fullname'] = headerList[i + channelStart][1]['value']
                 configData[datasetName]['imageData'].append(channelData)
-        print('saving configjson')
         configJson.seek(0)  # <--- should reset file position to the beginning.
         json.dump(configData, configJson, indent=4)
-        print('saved config')
         configJson.truncate()
-    print('Loading Datasource')
 
     for name in datasets:
         data_model.load_datasource(name, reload=True)
     # Create Embedding
-    print('Create Embedding')
     data_model.create_embedding(datasets)
 
     resp = jsonify(success=True)

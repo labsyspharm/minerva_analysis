@@ -20,7 +20,7 @@ import os
 import io
 from pathlib import Path
 from ome_types import from_xml
-from minerva_analysis import config_json_path
+from minerva_analysis import config_json_path, data_path
 from minerva_analysis.server.utils import pyramid_assemble
 import matplotlib.path as mpltPath
 import matplotlib.pyplot as plt
@@ -78,7 +78,7 @@ def load_datasource(datasource_name, reload=False):
         print('No Neighborhood')
         matrix_file_name = datasource_name + "_matrix.pk"
         matrix_paths = Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / matrix_file_name
+            data_path) / datasource_name / matrix_file_name
         perm_data = get_perm_data(datasource_name, matrix_paths)
         print('Creating Matrix', datasource_name)
         matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
@@ -88,7 +88,7 @@ def load_datasource(datasource_name, reload=False):
 
         print('Created Matrix', datasource_name)
         neighborhood_path = Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / 'neighborhood.npy'
+            data_path) / datasource_name / 'neighborhood.npy'
 
         np.save(neighborhood_path, matrix)
         config[datasource_name]['neighborhoods'] = str(neighborhood_path)
@@ -108,7 +108,7 @@ def load_datasource(datasource_name, reload=False):
     if 'linkedDatasets' not in config[datasource_name] or len(config[datasource_name]['linkedDatasets']) == 1:
         zarr_file_name = datasource_name + "_perm.zarr"
         zarr_path = Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / zarr_file_name
+            data_path) / datasource_name / zarr_file_name
         zarr_perm_matrix = zarr.load(zarr_path)
 
 
@@ -117,7 +117,7 @@ def load_csv(datasource_name, numpy=False):
     global config
     numpy_file_name = datasource_name + "_np.npy"
     numpy_path = Path(
-        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / numpy_file_name
+        data_path) / datasource_name / numpy_file_name
     if numpy:
         if numpy_path.is_file():
             return np.load(numpy_path, allow_pickle=True)
@@ -538,7 +538,7 @@ def load_ball_tree(datasource_name, reload=False):
     global config
     pickled_kd_tree_path = str(
         Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / "ball_tree.pickle")
+            data_path) / datasource_name / "ball_tree.pickle")
     try:
         if os.path.isfile(pickled_kd_tree_path) and reload is False:
             print("Pickled KD Tree Exists, Loading")
@@ -553,8 +553,7 @@ def load_ball_tree(datasource_name, reload=False):
     raw_data = pd.read_csv(csvPath)
     points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
     ball_tree = BallTree(points, metric='euclidean')
-    parent_directory_path = Path(
-        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name
+    parent_directory_path = Path(data_path) / datasource_name
     # Creates Directory if it doesn't exist
     parent_directory_path.mkdir(parents=True, exist_ok=True)
     pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
@@ -1277,8 +1276,7 @@ def get_ome_metadata(datasource_name):
 
     try:
         metadata_file_name = datasource_name + "_metadata.pickle"
-        metadata_path = Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / metadata_file_name
+        metadata_path = Path(data_path) / datasource_name / metadata_file_name
         if metadata_path.is_file():
             image_metadata = pickle.load(open(metadata_path, "rb"))
 
@@ -1466,7 +1464,7 @@ import gzip
 #
 
 # @profile
-# @numba.jit(nopython=True, parallel=True, cache=True)
+@numba.jit(nopython=True, parallel=True, cache=True)
 def create_perm_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
     chunk = 50
     __phenotypes_array = _phenotypes_array.flatten()
@@ -1487,7 +1485,7 @@ def create_perm_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _
     return z
 
 
-# @numba.jit(nopython=True, parallel=True)
+@numba.jit(nopython=True, parallel=True)
 def create_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
     __phenotypes_array = _phenotypes_array.flatten()
     matrix = np.zeros((_phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
@@ -1512,7 +1510,7 @@ def test_with_saved_perm(_perm_matrix, _vector, _threshold=0.8):
     return calculate_num_results(chunk, _vector, scores, _threshold)
 
 
-# @numba.jit(nopython=True, parallel=True, cache=True)
+@numba.jit(nopython=True, parallel=True, cache=True)
 def calculate_num_results(chunk, _vector, scores, _threshold):
     results = np.zeros(chunk, dtype=np.int32)
     for j in prange(chunk):
@@ -1521,7 +1519,7 @@ def calculate_num_results(chunk, _vector, scores, _threshold):
     return results
 
 
-# @numba.jit(nopython=True, parallel=True, cache=True)
+@numba.jit(nopython=True, parallel=True, cache=True)
 def euclidian_distance_score(y1, y2):
     return 1.0 / ((np.sqrt(np.sum((y1 - y2) ** 2, axis=1))) + 1.0)
 
@@ -1611,8 +1609,7 @@ def get_permuted_results(datasource_name, neighborhood_query):
     vector = np.array(neighborhood_query['query_vector'], dtype='float32')
 
     matrix_file_name = datasource_name + "_matrix.pk"
-    matrix_paths = Path(
-        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / matrix_file_name
+    matrix_paths = Path(data_path) / datasource_name / matrix_file_name
 
     test = time.time()
     if matrix_paths.is_file():
@@ -1623,8 +1620,7 @@ def get_permuted_results(datasource_name, neighborhood_query):
     test = time.time()
 
     zarr_file_name = datasource_name + "_perm.zarr"
-    zarr_path = Path(
-        os.path.join(os.getcwd())) / "minerva_analysis" / "data" / datasource_name / zarr_file_name
+    zarr_path = Path(data_path) / datasource_name / zarr_file_name
     test = time.time()
     if zarr_path.is_dir():
         if zarr_perm_matrix is not None:
@@ -1808,8 +1804,7 @@ def create_embedding(datasets):
         neighborhoods = np.load(Path(config[name]['neighborhoods']))
         next_sum = index_sum + len(neighborhoods)
         individual_embedding = normalized_embedding[index_sum:next_sum, :]
-        embedding_path = Path(
-            os.path.join(os.getcwd())) / "minerva_analysis" / "data" / name / 'embedding.npy'
+        embedding_path = Path(data_path) / name / 'embedding.npy'
 
         np.save(embedding_path, individual_embedding)
         config[name]['embedding'] = str(embedding_path)
