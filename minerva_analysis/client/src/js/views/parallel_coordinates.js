@@ -89,7 +89,7 @@ class ParallelCoordinates {
             this.margin = {top: 10, right: 55, bottom: 10, left: 100};
 
         } else {
-            this.margin = {top: 30, right: 55, bottom: 10, left: 150};
+            this.margin = {top: 30, right: 55, bottom: 10, left: 120};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -610,7 +610,7 @@ class ParallelCoordinates {
                 self.labelPositions[d.index] = position;
                 return position
             })
-            .attr("x", -5)
+            .attr("x", -10)
             .text(function (d) {
                 return d.key;
             })
@@ -731,4 +731,3 @@ ParallelCoordinates.events = {
 function path(d, ctx) {
 
 };
-

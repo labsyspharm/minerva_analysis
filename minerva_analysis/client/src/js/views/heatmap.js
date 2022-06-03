@@ -127,7 +127,7 @@ class Heatmap {
         let color_axis = d3.axisRight(self.color_scale)
             .tickValues([-1, 0, 1])
         svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 15},${0.4 * height})`)
+            .attr("transform", `translate(${2 * width / 3 + 15},${0.32 * height})`)
             .attr('class', 'heatmap_legend')
             .attr('id', 'heatmap_color_legend')
             .call(color_axis)
@@ -135,7 +135,7 @@ class Heatmap {
             .style("stroke", "white");
 
         let colorLegend = svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 5},${0.4 * height})`)
+            .attr("transform", `translate(${2 * width / 3 + 5},${0.32 * height})`)
         colorLegend.selectAll('rect')
             .data(_.range(-30, 31))
             .enter()
@@ -166,14 +166,14 @@ class Heatmap {
             .text('Interaction')
 
         let referenceTriangle = svg.append("g")
-            .attr("transform", `translate(330,${0.07 * height})`)
+            .attr("transform", `translate(300,${0.07 * height})`)
         referenceTriangle
             .append('polygon')
-            .attr('points', `-10,20, 20,20 20,50`)
+            .attr('points', `-10,20, 5,20 5,35`)
             .attr('id', 'overall-reference-triangle')
         referenceTriangle
             .append('polygon')
-            .attr('points', `-10,20, 20,50 -10,50`)
+            .attr('points', `-10,20, 5,35 -10,35`)
             .attr('id', 'selected-reference-triangle')
 
         referenceTriangle
@@ -190,7 +190,7 @@ class Heatmap {
             .append('text')
             .attr('id', 'heatmap-selection-label')
             .attr('x', 0)
-            .attr('y', 63)
+            .attr('y', 48)
             .attr('fill', 'orange')
             .attr('font-size', 'self.fontSize')
             .attr('text-anchor', 'middle')

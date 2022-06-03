@@ -13,7 +13,7 @@
     max-height: 95vh !important;
     min-height: 95vh !important;
     margin-left: 0;
-    padding-left:0 !important;
+    padding-left: 0 !important;
 }
 
 #search-col-wrapper, #related_image_wrapper {
@@ -488,7 +488,7 @@
 }
 
 .overall_line_label, .selection_line_label, .average_line_label {
-    font-weight: bold;
+    /*font-weight: bold;*/
 }
 
 #parallel_coordinates_display .parallel_axes text {
@@ -573,6 +573,7 @@
 }
 
 #heatmap-selection-label, #heatmap-overall-label {
+    font-size: 0.6rem;
     cursor: pointer;
 }
 
@@ -592,6 +593,6 @@
     font-size: 0.8rem;
 }
 
-#search-row .row{
+#search-row .row {
     margin-left: 5px !important;
 }
