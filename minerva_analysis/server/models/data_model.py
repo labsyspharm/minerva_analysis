@@ -1464,7 +1464,7 @@ import gzip
 #
 
 # @profile
-@numba.jit(nopython=True, parallel=True, cache=True)
+# @numba.jit(nopython=True, parallel=True, cache=True)
 def create_perm_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
     chunk = 50
     __phenotypes_array = _phenotypes_array.flatten()
@@ -1485,7 +1485,7 @@ def create_perm_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _
     return z
 
 
-@numba.jit(nopython=True, parallel=True)
+# @numba.jit(nopython=True, parallel=True)
 def create_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
     __phenotypes_array = _phenotypes_array.flatten()
     matrix = np.zeros((_phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
@@ -1510,7 +1510,7 @@ def test_with_saved_perm(_perm_matrix, _vector, _threshold=0.8):
     return calculate_num_results(chunk, _vector, scores, _threshold)
 
 
-@numba.jit(nopython=True, parallel=True, cache=True)
+# @numba.jit(nopython=True, parallel=True, cache=True)
 def calculate_num_results(chunk, _vector, scores, _threshold):
     results = np.zeros(chunk, dtype=np.int32)
     for j in prange(chunk):
@@ -1519,7 +1519,7 @@ def calculate_num_results(chunk, _vector, scores, _threshold):
     return results
 
 
-@numba.jit(nopython=True, parallel=True, cache=True)
+# @numba.jit(nopython=True, parallel=True, cache=True)
 def euclidian_distance_score(y1, y2):
     return 1.0 / ((np.sqrt(np.sum((y1 - y2) ** 2, axis=1))) + 1.0)
 
