@@ -62,7 +62,7 @@ class Heatmap {
         // Build X scales and axis:
         let x = d3.scaleBand()
             .range([0, width])
-            .domain(self.dataLayer.phenotypes)
+            .domain(self.dataLayer.phenotypes.slice(0, self.dataLayer.phenotypes.length-1))
             .padding(0.05);
         self.x = x;
         svg.append("g")
@@ -80,7 +80,7 @@ class Heatmap {
         // Build Y scales and axis:
         let y = d3.scaleBand()
             .range([0, height])
-            .domain(self.dataLayer.phenotypes)
+            .domain(self.dataLayer.phenotypes.slice(1,self.dataLayer.phenotypes.length))
             .padding(0.05);
         self.y = y;
 
