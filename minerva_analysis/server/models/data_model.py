@@ -1274,19 +1274,10 @@ def get_ome_metadata(datasource_name):
     if config is None:
         load_datasource(datasource_name)
 
-    try:
-        metadata_file_name = datasource_name + "_metadata.pickle"
-        metadata_path = Path(data_path) / datasource_name / metadata_file_name
-        if metadata_path.is_file():
-            image_metadata = pickle.load(open(metadata_path, "rb"))
+    channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+    xml = channel_io.pages[0].tags['ImageDescription'].value
+    image_metadata = from_xml(xml).images[0].pixels
 
-        else:
-            channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
-            xml = channel_io.pages[0].tags['ImageDescription'].value
-            image_metadata = from_xml(xml).images[0].pixels
-            pickle.dump(image_metadata, open(metadata_path, 'wb'))
-    except:
-        image_metadata = {}
     print('Metadata Time', time.time() - timer)
     return image_metadata
 
