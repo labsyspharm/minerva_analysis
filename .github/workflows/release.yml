@@ -44,6 +44,7 @@ jobs:
           cd client
           npm install
           npm run start
+          rm -rf node_modules/
           cd ..
           cd ..
       - uses: conda-incubator/setup-miniconda@v2
