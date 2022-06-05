@@ -57,10 +57,11 @@
                         </div>
                         <div class="row">
                             <div class="col-3">
-                                <label for="csv_file">CSV File:</label>
+                                <label for="csv_file">CSV File Path:</label>
                             </div>
                             <div class="col-auto">
-                                <input type="file" id="csv_file" name="csv_file" required>
+{#                                <input type="file" id="csv_file" name="csv_file" required>#}
+                                <input type="text" id="csv_file" class="form-control" name="csv_file" onkeyup="checkFileExistence(this)" required>
                                 <div class="valid-feedback">Valid.</div>
                                 <div class="invalid-feedback">
                                     Please provide a valid single cell csv file.

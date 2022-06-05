@@ -181,35 +181,23 @@ def upload_file_page():
                 if request.form.get('mcmicro_name') is None:
                     #dataset name
                     datasetName = request.form['name']
+
                     #label file
                     labelFile = request.form.get('label_file')
-                    if labelFile.startswith('"'):
-                        labelFile = labelFile[1:]
-                    if labelFile.endswith('"'):
-                        labelFile = labelFile[:-1]
+                    labelFile = labelFile.replace('"', '') # remove " characters
                     labelFile = Path(labelFile)
                     labelName = os.path.splitext(labelFile.name)[0]
 
-                    #cell type file
-                    celltypeFile = request.files.getlist("celltype_file")
-                    if len(celltypeFile) > 1:
-                        raise Exception("Please only Upload Only 1 Cell Type File")
-                    elif len(celltypeFile) == 1:
-                        channelFileNames.extend(['Cell Type'])
-
                     #csv file
-                    csvFile = request.files.getlist("csv_file")
-                    if len(csvFile) > 1:
-                        raise Exception("Please only Upload Only 1 CSV")
-                    elif len(csvFile) == 0:
-                        raise Exception("Please Upload a CSV")
+                    csvPath = request.form.get('csv_file');
+                    csvPath = csvPath.replace('"', '') # remove " characters
+                    csvPath = Path(csvPath)
+                    pathsSplit = PurePath(csvPath).parts
+                    csvName = pathsSplit[len(pathsSplit) - 1]
 
                     #channel file
                     channelFile = request.form.get('channel_file')
-                    if channelFile.startswith('"'):
-                        channelFile = channelFile[1:]
-                    if channelFile.endswith('"'):
-                        channelFile = channelFile[:-1]
+                    channelFile = channelFile.replace('"', '') # remove " characters
                     channelFile = Path(channelFile)
 
                 # if a mcmicro output structure is used
@@ -225,50 +213,35 @@ def upload_file_page():
 
                     # get label file from user specified path
                     labelName = request.form['masks']
-                    labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.ome.tif'))
+                    labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.tif'))
                     labelFile = PurePath(directory, 'segmentation', labelFolder)
 
                     # get csv file from user specified path
                     csvName = 'unmicst-' + mcmicroDirName + '_' + labelName + '.csv' # could use labelName to have dynamic csv but usually only cell available.
                     csvPath = str(PurePath(directory, 'quantification', csvName))
-                    csvFile = [open(csvPath)]
 
                     # get channel file from user specified path
                     channelFile = PurePath(directory, 'registration', mcmicroDirName + '.ome.tif')
-
-                    # get cell type file from user specified path
-                    celltypeFile = request.files.getlist("celltype_file")
 
                 #further processing
                 file_path = str(PurePath(Path.cwd(), data_path, datasetName))
                 if not Path(file_path).exists():
                     Path(file_path).mkdir()
-
                 total_tasks = 2
-                # Process CSV
-                for file in csvFile:
-                    # Upload CSV
 
-                    #single files upload (has name stored in uplod structure)
-                    if hasattr(file,'filename'):
-                        csvName = file.filename
-                        csvPath = str(Path(file_path) / csvName)
-                        file.save(csvPath)
-                    else:
-                        f = open(str(Path(file_path) / csvName), 'w')
-                        f.write(csvFile[0].read())
 
-                    with open(csvPath, 'r') as infile:
-                        reader = csv.DictReader(infile)
-                        csvHeader = reader.fieldnames
+                # Process CSV File
 
-                # Process Cell Type File
-                if len(celltypeFile) == 1 and celltypeFile[0].filename != '':
-                    for file in celltypeFile:
-                        # Upload Cell Type File
-                        celltypeName = file.filename
-                        celltypePath = str(Path(file_path) / celltypeName)
-                        file.save(celltypePath)
+                #open original csv location
+                csvFile = [open(csvPath)]
+                # file path to write to on server
+                f = open(str(Path(file_path) / csvName), 'w')
+                # write to new location on server
+                f.write(csvFile[0].read())
+                # read field names from new server location
+                with open(csvPath, 'r') as infile:
+                    reader = csv.DictReader(infile)
+                    csvHeader = reader.fieldnames
 
                 # Process Channel File
                 current_task = "Converting OME-TIFF Channels (This Will Take a While)"
@@ -278,9 +251,7 @@ def upload_file_page():
 
                 #Process Segmentation File
                 current_task = "Converting Segmentation Mask"
-                label_info = data_model.convertOmeTiff(labelFile, channelFilePath=channelFile,
-                                                       dataDirectory=file_path,
-                                                       isLabelImg=True)
+                label_info = data_model.convertOmeTiff(labelFile, channelFilePath=channelFile, dataDirectory=file_path, isLabelImg=True)
                 completed_task += 1
                 current_task = total_tasks
                 current_task = 'Complete'
@@ -310,8 +281,7 @@ def upload_file_page():
                 config_data['datasetName'] = datasetName
                 config_data['channelFileNames'] = channelFileNames
                 config_data['csvName'] = csvName
-                if len(celltypeFile) == 1:
-                    config_data['celltypeData'] = celltypeName
+
                 config_data['channelFile'] = str(channelFile)
                 config_data['new'] = True
                 config_data['labelName'] = labelName
