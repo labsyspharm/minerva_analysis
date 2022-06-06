@@ -84,6 +84,7 @@ module.exports = function(config) {
       "/get_channel_gmm": `${SERVER}/get_channel_gmm`,
       "/get_ome_metadata": `${SERVER}/get_ome_metadata`,
       "/get_channel_names": `${SERVER}/get_channel_names`,
+      "/download_channels_csv": `${SERVER}/download_channels_csv`,
       "/get_database_description": `${SERVER}/get_database_description`,
     },
 

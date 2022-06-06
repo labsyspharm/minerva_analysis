@@ -1,8 +1,10 @@
 const d3 = require('d3');
+const sinon = require('sinon');
 const Stream = require('stream');
 const mockttp = require("mockttp");
 var configData = require('../data/config.json');
 var metaData = require('../data/get_ome_metadata.json');
+var channelForm = require('../data/formData/download_channels.json');
 var databaseData = require('../data/get_database_description.json');
 var channelGMM0 = require('../data/get_channel_gmm/Hoechst0.json');
 var gatingGMM0 = require('../data/get_gating_gmm/Hoechst0.json');
@@ -14,6 +16,12 @@ declare var __GLOBAL__INITIALIZATION__FUNCTION__: () => void;
 // Types
 type StreamBuffer = (stream: ReadableStream<any>) => Promise<Uint8Array>
 type LoadBuffer = (url: string) => Promise<Uint8Array>
+type LoadText = (url: string) => Promise<string>
+declare var __minervaAnalysis: MinervaAnalysis;
+type TopColors = {
+  colors: string[],
+  counts: number[]
+}
 
 // Types defined by application
 const OpenSeadragon = require("openseadragon");
@@ -28,10 +36,18 @@ interface SeaDragonViewer {
 interface CsvGatingList {
   seaDragonViewer: SeaDragonViewer;
 }
+interface Rainbow {
+  show(x: number, y: number): void;
+  set(hsl: any): void;
+}
+interface ChannelList {
+  colorTransferHandle: any;
+  rainbow: Rainbow; 
+}
 interface MinervaAnalysis {
   csv_gatingList: CsvGatingList;
+  channelList: ChannelList;
 }
-declare var __minervaAnalysis: MinervaAnalysis;
 
 const KARMA_DATASOURCE = "karma-test";
 const CLEAR_PREFIX = "crop-mask-crc01";
@@ -61,6 +77,7 @@ const toHeaders = (bytes: number, meaning: string) => {
 
 const expect = chai.expect;
 var mockServer; 
+var channelsText;
 var allCellBuffer;
 var c0CellBuffer;
 var clearBuffer;
@@ -73,6 +90,7 @@ before(async () => {
   c0CellBuffer = Buffer.from(await loadBuffer('/data/cell_hoechst.bin.gz'));
   clearBuffer = Buffer.from(await loadBuffer('/data/1024x1024_clear.png'));
   logoBuffer = Buffer.from(await loadBuffer('/data/1024x1024_logo.png'));
+  channelsText = await loadText('/data/download_channels.csv');
   await __GLOBAL__INITIALIZATION__FUNCTION__();
   fixture.setBase('html')
 });
@@ -109,7 +127,34 @@ const loadBuffer: LoadBuffer = async (url) => {
   return await streamBuffer(stream);
 }
 
+const loadText: LoadText = async (url) => {
+  return (await fetch(url)).text();
+}
+
+const getProperty = (scope: any, k: string | symbol) => {
+  const v = scope[k];
+  return typeof v === "function" ? v.bind(scope) : v;
+};
+
 beforeEach(async () => {
+
+  const $reload = () => {
+    console.log('hi');
+  }
+  const $location = new Proxy(window.location, {
+    get: (_, prop) => {
+      const v = getProperty(window.location, prop);
+      return prop == "reload" ? $reload : v;
+    }
+  });
+  const $window = new Proxy(window, {
+    get: (_, prop) => {
+      const v = getProperty(window, prop);
+      return prop == "location" ? $location : v;
+    }
+  });
+  window.location.reload = sinon.spy();
+
   await mockServer.start(8765);
   // Load config endpoint
   const configString = JSON.stringify(configData);
@@ -164,6 +209,8 @@ beforeEach(async () => {
     ...KARMA_QUERY,
     channel: CHANNEL_ZERO 
   });
+  // Download channels
+  const channelsMock = mockServer.forPost("/download_channels_csv");
   // Await all endpoints
   await Promise.all([
     configMock.thenJson(200, configData),
@@ -176,11 +223,19 @@ beforeEach(async () => {
     clearMock.thenReply(200, clearBuffer, clearHeaders),
     logoMock.thenReply(200, logoBuffer, logoHeaders),
     c0CellMock.thenReply(200, c0CellBuffer, c0CellHeaders),
-    allCellMock.thenReply(200, allCellBuffer, allCellHeaders)
+    allCellMock.thenReply(200, allCellBuffer, allCellHeaders),
+    channelsMock.thenCallback(async ({body}) => {
+      const formData = await body.getFormData();
+      return channelsText;
+    })
   ])
   // Run the main entrypoint
   this.result = fixture.load('main.html');
   __GLOBAL__RESET__FUNCTION__();
+  // Prevent page reload
+  window.onpopstate = (e) => {
+    console.log(e)
+  };
 });
 
 afterEach(function(){
@@ -196,6 +251,25 @@ afterEach(function(){
 
 const sleeper = async (sec: number) => {
   return await new Promise(r => setTimeout(r, sec * 1024));
+}
+
+const setChannelColorZero = async (color: string) => {
+  const cList = document.getElementById("channel_list");
+  const cEl = cList.getElementsByClassName("list-group-item")[0];
+  const rect = cEl.getElementsByTagName("rect")[0];
+  const { x, y } = rect.getBoundingClientRect();
+  const { channelList } = __minervaAnalysis;
+  channelList.colorTransferHandle = d3.select(rect);
+  const { rainbow } = channelList;
+  const hsl = d3.hsl(color);
+  rainbow.show(x, y);
+  await sleeper(0.25);
+  rainbow.set(hsl);
+  await sleeper(0.25);
+  const pick = document.getElementsByClassName("picker-container")[0];
+  const checkmark = pick.getElementsByClassName("save")[0];
+  $(checkmark).click();
+  await sleeper(0.25);
 }
 
 const clickChannelZero = async (t: number) => {
@@ -234,8 +308,28 @@ const toHexColor = (r, g, b) => {
   }).join('')
 }
 
+const toTopColors = (): TopColors => {
+  const { data } = toImageData();
+  const hist = new Map();
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const hex = toHexColor(r, g, b);
+    const freq = hist.has(hex) ? hist.get(hex) : 0;
+    hist.set(hex, freq + 1);
+  }
+  const sorted = [...hist].sort((a, b) => b[1] - a[1])
+  const colors = sorted.map(v => v[0]);
+  const counts = sorted.map(v => v[1]);
+  return {
+    colors,
+    counts
+  }
+}
+
 describe('Load', function () {
-  describe('load page', function () {
+  describe('Ensure basic loading', function () {
     it('must load a channel', async function () {
       await sleeper(1);
       const world = toWorld();
@@ -246,32 +340,59 @@ describe('Load', function () {
       expect(itemCountAfter).to.equal(2);
     })
   })
-  describe('load page', function () {
+  describe('Ensure visual rendering', function () {
     it('must load a mask', async function () {
       await sleeper(1);
       const world = toWorld();
-      await clickChannelZero(0.5);
-      await clickMaskZero(0.5);
+      await clickChannelZero(1);
+      await clickMaskZero(1);
       // Disable outline mode
       await $('#gating_controls_outlines').click();
+      await sleeper(1);
+      // Ensure expected white/black ratio
+      (({ colors, counts }: TopColors) => {
+        const white_ratio = counts[0] / (counts[0] + counts[1]);
+        white_ratio.should.be.approximately(0.5058, 0.001);
+        expect(colors[0]).to.equal('ffffff');
+        expect(colors[1]).to.equal('000000');
+      })(toTopColors());
+      // Set channel color
+      await setChannelColorZero('#0000ff');
+      // Enable outline mode
+      await $('#gating_controls_outlines').click();
+      await sleeper(1);
+      // Ensure expected black/blue ratio
+      (({ colors, counts }: TopColors) => {
+        const blue_ratio = counts[0] / (counts[0] + counts[1]);
+        blue_ratio.should.be.approximately(0.5932, 0.001);
+        expect(colors[0]).to.equal('000000');
+        expect(colors[1]).to.equal('000093');
+      })(toTopColors());
+      await sleeper(1);
+    })
+  })
+  describe('Ensure download list', function () {
+    it('must download channel list', async function () {
+      await sleeper(1);
+      const cList = document.getElementById("channels_download_icon");
+      cList.dispatchEvent(new Event('click'));;
       await sleeper(3);
-      const hist = new Map();
-      const { data } = toImageData();
-      for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const hex = toHexColor(r, g, b);
-          const freq = hist.has(hex) ? hist.get(hex) : 0;
-          hist.set(hex, freq + 1);
-      }
-      const sorted = [...hist].sort((a, b) => b[1] - a[1])
-      const [color1, color2] = sorted.map(v => v[0]);
-      const [count1, count2] = sorted.map(v => v[1]);
-      const white_ratio = count1 / (count1 + count2);
-      white_ratio.should.be.approximately(0.5058, 0.0001);
-      expect(color1).to.equal('ffffff');
-      expect(color2).to.equal('000000');
+    })
+  })
+  describe('Ensure download ranges', function () {
+    it('must download channel ranges', async function () {
+      await sleeper(1);
+      const cList = document.getElementById("channels_download_icon");
+      cList.click();
+      await sleeper(3);
+    })
+  })
+  describe('Ensure download encodings', function () {
+    it('must download cell encodings', async function () {
+      await sleeper(1);
+      const cList = document.getElementById("channels_download_icon");
+      cList.click();
+      await sleeper(3);
     })
   })
 })
