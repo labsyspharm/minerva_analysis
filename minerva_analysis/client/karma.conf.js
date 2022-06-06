@@ -13,8 +13,12 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://www.npmjs.com/search?q=keywords:karma-adapter
-    frameworks: ['mocha', 'chai', 'webpack', 'fixture', 'jquery-3.4.0'],
+    frameworks: ['mocha', 'chai', 'sinon-chai', 'webpack', 'fixture', 'jquery-3.4.0'],
     
+    chai: {
+      includeStack: true
+    },
+
     // list of files / patterns to load in the browser
     files: [
       {

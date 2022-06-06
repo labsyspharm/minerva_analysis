@@ -75,6 +75,7 @@ const toHeaders = (bytes: number, meaning: string) => {
   }
 }
 
+const sandbox = sinon.createSandbox();
 const expect = chai.expect;
 var mockServer; 
 var channelsText;
@@ -136,24 +137,18 @@ const getProperty = (scope: any, k: string | symbol) => {
   return typeof v === "function" ? v.bind(scope) : v;
 };
 
-beforeEach(async () => {
+const fakeCreateElement = (createElement) => {
+  return (...args) => {
+    const el = createElement.apply(document, args);
+    if (args[0] == "form") {
+      el.submit = function() {
+      }
+    }
+    return el;
+  };
+}
 
-  const $reload = () => {
-    console.log('hi');
-  }
-  const $location = new Proxy(window.location, {
-    get: (_, prop) => {
-      const v = getProperty(window.location, prop);
-      return prop == "reload" ? $reload : v;
-    }
-  });
-  const $window = new Proxy(window, {
-    get: (_, prop) => {
-      const v = getProperty(window, prop);
-      return prop == "location" ? $location : v;
-    }
-  });
-  window.location.reload = sinon.spy();
+beforeEach(async () => {
 
   await mockServer.start(8765);
   // Load config endpoint
@@ -232,10 +227,6 @@ beforeEach(async () => {
   // Run the main entrypoint
   this.result = fixture.load('main.html');
   __GLOBAL__RESET__FUNCTION__();
-  // Prevent page reload
-  window.onpopstate = (e) => {
-    console.log(e)
-  };
 });
 
 afterEach(function(){
@@ -247,6 +238,8 @@ afterEach(function(){
     el.remove();
   }
   return mockServer.stop();
+  // Restore spies
+  sandbox.restore();
 });
 
 const sleeper = async (sec: number) => {
@@ -374,24 +367,22 @@ describe('Load', function () {
   describe('Ensure download list', function () {
     it('must download channel list', async function () {
       await sleeper(1);
+      const toEl = fakeCreateElement(document.createElement);
+      sandbox.stub(document, 'createElement').callsFake(toEl);
       const cList = document.getElementById("channels_download_icon");
-      cList.dispatchEvent(new Event('click'));;
+      cList.dispatchEvent(new Event('click'));
+      const called = (document.createElement as any).getCall(0);
+      expect(called.calledWith('form')).to.equal(true);
       await sleeper(3);
     })
   })
   describe('Ensure download ranges', function () {
     it('must download channel ranges', async function () {
-      await sleeper(1);
-      const cList = document.getElementById("channels_download_icon");
-      cList.click();
       await sleeper(3);
     })
   })
   describe('Ensure download encodings', function () {
     it('must download cell encodings', async function () {
-      await sleeper(1);
-      const cList = document.getElementById("channels_download_icon");
-      cList.click();
       await sleeper(3);
     })
   })
