@@ -184,14 +184,13 @@ const displayNeighborhoodSelection = async (selection) => {
     dataLayer.addAllToCurrentSelection(selection);
     document.getElementById('neighborhood_current_selection').textContent = 'Phenotype';
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
-    if (selection) {
-        if (mode == 'single') {
-            scatterplot.recolor();
-        } else if (mode == 'multi') {
-            scatterplot.recolor(selection['selection_ids']);
-        }
-        parallelCoordinates.wrangle(selection);
+    if (mode == 'single') {
+        scatterplot.recolor();
+    } else if (mode == 'multi') {
+        scatterplot.recolor(selection['selection_ids']);
     }
+    parallelCoordinates.wrangle(selection);
+    heatmap.rewrangle();
     updateSeaDragonSelection(false, false);
 }
 eventHandler.bind(ImageViewer.events.displayNeighborhoodSelection, displayNeighborhoodSelection);

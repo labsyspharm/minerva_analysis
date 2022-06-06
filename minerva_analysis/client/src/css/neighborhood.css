@@ -596,3 +596,7 @@
 #search-row .row {
     margin-left: 5px !important;
 }
+
+.heatmapHoverRect:active {
+    pointer-events: none;
+}

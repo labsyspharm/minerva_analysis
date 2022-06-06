@@ -62,7 +62,7 @@ class Heatmap {
         // Build X scales and axis:
         let x = d3.scaleBand()
             .range([0, width])
-            .domain(self.dataLayer.phenotypes.slice(0, self.dataLayer.phenotypes.length-1))
+            .domain(self.dataLayer.phenotypes.slice(0, self.dataLayer.phenotypes.length - 1))
             .padding(0.05);
         self.x = x;
         svg.append("g")
@@ -80,7 +80,7 @@ class Heatmap {
         // Build Y scales and axis:
         let y = d3.scaleBand()
             .range([0, height])
-            .domain(self.dataLayer.phenotypes.slice(1,self.dataLayer.phenotypes.length))
+            .domain(self.dataLayer.phenotypes.slice(1, self.dataLayer.phenotypes.length))
             .padding(0.05);
         self.y = y;
 
@@ -127,7 +127,7 @@ class Heatmap {
         let color_axis = d3.axisRight(self.color_scale)
             .tickValues([-1, 0, 1])
         svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 15},${0.32 * height})`)
+            .attr("transform", `translate(${3.2 * width / 3 + 15},${0.32 * height})`)
             .attr('class', 'heatmap_legend')
             .attr('id', 'heatmap_color_legend')
             .call(color_axis)
@@ -135,7 +135,7 @@ class Heatmap {
             .style("stroke", "white");
 
         let colorLegend = svg.append("g")
-            .attr("transform", `translate(${2 * width / 3 + 5},${0.32 * height})`)
+            .attr("transform", `translate(${3.2 * width / 3 + 5},${0.32 * height})`)
         colorLegend.selectAll('rect')
             .data(_.range(-30, 31))
             .enter()
@@ -153,7 +153,7 @@ class Heatmap {
             .attr('x', 0)
             .attr('y', 44)
             .attr('font-size', self.fontSize)
-            .attr('dominant-baseline', 'middle')
+            // .attr('dominant-baseline', 'middle')
             .style('fill', 'white')
             .text('Avoidance')
 
@@ -161,39 +161,42 @@ class Heatmap {
             .attr('x', 0)
             .attr('y', -42)
             .attr('font-size', self.fontSize)
-            .attr('dominant-baseline', 'middle')
+            // .attr('dominant-baseline', 'middle')
             .style('fill', 'white')
             .text('Interaction')
 
         let referenceTriangle = svg.append("g")
-            .attr("transform", `translate(300,${0.07 * height})`)
+            .attr("transform", `translate(${3.2 * width / 3 + 5},${.75 * height})`)
         referenceTriangle
             .append('polygon')
-            .attr('points', `-10,20, 5,20 5,35`)
+            .attr('points', `0,0, ${self.x.bandwidth()},0 ${self.x.bandwidth()},${self.y.bandwidth()}`)
             .attr('id', 'overall-reference-triangle')
         referenceTriangle
             .append('polygon')
-            .attr('points', `-10,20, 5,35 -10,35`)
+            .attr('points', `0,0, 0,${self.y.bandwidth()} ${self.x.bandwidth()},${self.y.bandwidth()}`)
             .attr('id', 'selected-reference-triangle')
 
         referenceTriangle
             .append('text')
             .attr('id', 'heatmap-overall-label')
             .attr('x', 0)
-            .attr('y', 16)
+            .attr('y', `-5`)
             .attr('fill', 'grey')
             .attr('font-size', 'self.fontSize')
-            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'text-top')
+
+            // .attr('text-anchor', 'middle')
             .text('Overall')
             .on('click', self.showHideOverall.bind(self))
         referenceTriangle
             .append('text')
             .attr('id', 'heatmap-selection-label')
             .attr('x', 0)
-            .attr('y', 48)
+            .attr('y', `${self.y.bandwidth() + 5}`)
             .attr('fill', 'orange')
+            .attr('dominant-baseline', 'hanging')
             .attr('font-size', 'self.fontSize')
-            .attr('text-anchor', 'middle')
+            // .attr('text-anchor', 'middle')
             .text('Selected')
             .on('click', self.showHideSelected.bind(self))
 
@@ -292,6 +295,27 @@ class Heatmap {
                 }
             })
             .style("opacity", 1)
+            .on("mousemove", (e, d) => {
+                self.tooltip
+                    .style("opacity", 1)
+                    .style("left", (d3.pointer(e)[0]) + "px")
+                    .style("top", (d3.pointer(e)[1] - 110) + "px")
+                    .html(`<span>${d.row} - ${d.col}</span><br/>
+                        <span>Pearson correlation coefficients: <br/> 
+                        <b>Selected: ${_.round(d.val.selected, 2)}</b><br/>
+                        <b>Overall: ${_.round(d.val?.overall, 2)}</b>
+                        </span>`)
+            })
+            .on("mouseleave", (e, d) => {
+                self.tooltip
+                    .style("opacity", 0)
+            })
+            .on("click", (e, d) => {
+                this.eventHandler.trigger(Heatmap.events.selectPhenotypePair, {
+                    ...d,
+                    plotName: 'overall',
+                });
+            })
 
 
         let heatmapTriangleSelected = svg.selectAll('.heatmapTriangleSelected')
@@ -333,42 +357,13 @@ class Heatmap {
                 }
             })
             .style("opacity", 1)
-
-        let hoverRects = svg.selectAll('.heatmapHoverRect')
-            .data(self.visData)
-        hoverRects.enter()
-            .append("rect")
-            .attr('class', 'heatmapHoverRect')
-            .attr("x", function (d) {
-                if (d.row === d.col) {
-                    return x(d.row) + 0.5;
-                } else {
-                    return x(d.row);
-                }
-            })
-            .attr("y", function (d) {
-                if (d.row === d.col) {
-                    return y(d.col) + 0.5;
-                } else {
-                    return y(d.col);
-                }
-            })
-            .attr("rx", 1)
-            .attr("ry", 1)
-            .attr("width", x.bandwidth())
-            .attr("height", y.bandwidth())
-            .merge(hoverRects)
-            .style("fill", "white")
-            .style("fill-opacity", "0.001")
-            .style("stroke-width", 1)
-            .style("stroke", 'none')
             .on("mousemove", (e, d) => {
                 self.tooltip
                     .style("opacity", 1)
                     .style("left", (d3.pointer(e)[0]) + "px")
                     .style("top", (d3.pointer(e)[1] - 110) + "px")
                     .html(`<span>${d.row} - ${d.col}</span><br/>
-                        <span>Pearson correlation coefficients: <br/> 
+                        <span>Pearson correlation coefficients: <br/>
                         <b>Selected: ${_.round(d.val.selected, 2)}</b><br/>
                         <b>Overall: ${_.round(d.val?.overall, 2)}</b>
                         </span>`)
@@ -378,8 +373,13 @@ class Heatmap {
                     .style("opacity", 0)
             })
             .on("click", (e, d) => {
-                this.eventHandler.trigger(Heatmap.events.selectPhenotypePair, {...d, plotName: self.plotName});
+                this.eventHandler.trigger(Heatmap.events.selectPhenotypePair, {
+                    ...d,
+                    plotName: 'selection'
+                });
             })
+
+
     }
 
     rewrangle() {

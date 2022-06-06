@@ -86,10 +86,10 @@ class ParallelCoordinates {
         this.totalWidth = this.parent.node().getBoundingClientRect().width;
         this.totalHeight = this.parent.node().getBoundingClientRect().height;
         if (this.small) {
-            this.margin = {top: 10, right: 55, bottom: 10, left: 100};
+            this.margin = {top: 10, right: 55, bottom: 10, left: 110};
 
         } else {
-            this.margin = {top: 30, right: 55, bottom: 10, left: 120};
+            this.margin = {top: 30, right: 55, bottom: 10, left: 125};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -492,32 +492,31 @@ class ParallelCoordinates {
 
         self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height);
 
-        // if (!self.editMode && !self.hideOverall) {
-        //     let opacity = 0.003;
-        //     let fullNeighborhood = _.get(dataLayer, 'allCells.full_neighborhoods', null);
-        //     _.forEach(fullNeighborhood, row => {
-        //         const color = `hsla(0,0%,100%,${opacity})`;
-        //         self.canvas.getContext('2d').strokeStyle = color;
-        //         self.canvas.getContext('2d').beginPath();
-        //         let orderedRow = _.cloneDeep(row);
-        //         self.phenotypes.map((d, i) => {
-        //             orderedRow[self.order[d]] = row[i]
-        //         })
-        //
-        //         orderedRow.map(function (p, i) {
-        //             if (i == 0) {
-        //                 self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
-        //             } else {
-        //                 self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
-        //             }
-        //         });
-        //         self.canvas.getContext('2d').stroke();
-        //     })
-        // }
+        if (!self.editMode && !self.hideOverall) {
+            let opacity = 0.008;
+            let fullNeighborhood = _.get(dataLayer, 'allCells.full_neighborhoods', null);
+            _.forEach(fullNeighborhood, row => {
+                const color = `hsla(0,0%,100%,${opacity})`;
+                self.canvas.getContext('2d').strokeStyle = color;
+                self.canvas.getContext('2d').beginPath();
+                let orderedRow = _.cloneDeep(row);
+                self.phenotypes.map((d, i) => {
+                    orderedRow[self.order[d]] = row[i]
+                })
+
+                orderedRow.map(function (p, i) {
+                    if (i == 0) {
+                        self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
+                    } else {
+                        self.canvas.getContext('2d').lineTo(self.lineX(p), self.lineY(i));
+                    }
+                });
+                self.canvas.getContext('2d').stroke();
+            })
+        }
 
         // if (self.selection_neighborhoods && !self.editMode) {
         if (self.selection_neighborhoods) {
-
             //Draw Selection
             let opacity = 0.01;
             if (_.size(self.selection_neighborhoods) < 1000) {

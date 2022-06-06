@@ -394,7 +394,7 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
     else:
         # cell_ids = datasource.loc[datasource['phenotype'].isin([phenotype, 'CD4 T cells', 'CD 8 T cells'])].index.values
         cell_ids = datasource.loc[datasource['phenotype'] == phenotype].index.values
-    if selection_ids is not None:
+    if selection_ids:
         cell_ids = np.intersect1d(np.array(selection_ids), cell_ids)
     obj = get_neighborhood_stats(datasource_name, cell_ids, np_datasource, fields=fields)
     return obj
@@ -655,8 +655,9 @@ def get_all_cells(datasource_name, mode, sample_size=400):
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     if mode == 'single':
         neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-        row_sums = neighborhoods.sum(axis=1)
-        neighborhoods = neighborhoods / row_sums[:, np.newaxis]
+        neighborhoods = np.nan_to_num(neighborhoods)
+        # row_sums = neighborhoods.sum(axis=1)
+        # neighborhoods = neighborhoods / row_sums[:, np.newaxis]
         indices = np.arange(neighborhoods.shape[0])
         selection_neighborhoods = neighborhoods[indices, :]
         sample_size = 5000
@@ -671,8 +672,9 @@ def get_all_cells(datasource_name, mode, sample_size=400):
             combined_neighborhoods = None
             for dataset in config[datasource_name]['linkedDatasets']:
                 neighborhoods = np.load(Path(config[dataset]['neighborhoods']))
-                row_sums = neighborhoods.sum(axis=1)
-                neighborhoods = neighborhoods / row_sums[:, np.newaxis]
+                neighborhoods = np.nan_to_num(neighborhoods)
+                # row_sums = neighborhoods.sum(axis=1)
+                # neighborhoods = neighborhoods / row_sums[:, np.newaxis]
                 indices = np.arange(neighborhoods.shape[0])
                 selection_neighborhoods = neighborhoods[indices, :]
                 sample_size = sample_size
@@ -1341,8 +1343,9 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
     else:
         cluster_cells = cluster_cells[default_fields]
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    row_sums = neighborhoods.sum(axis=1)
-    neighborhoods = neighborhoods / row_sums[:, np.newaxis]
+    neighborhoods = np.nan_to_num(neighborhoods)
+    # row_sums = neighborhoods.sum(axis=1)
+    # neighborhoods = neighborhoods / row_sums[:, np.newaxis]
     selection_neighborhoods = neighborhoods[indices, :]
     print('Loading Neighborhood Time', time.time() - time_neighborhood_stats)
 
@@ -1380,7 +1383,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         'phenotypes_list': phenotypes
     }
     # print('Computing Stats Time', time.time() - time_neighborhood_stats)
-    if compute_neighbors:
+    if compute_neighbors and len(cluster_cells) > 0:
 
         points = cluster_cells[:, [2, 3]]
         # Hardcoded to 30 um
