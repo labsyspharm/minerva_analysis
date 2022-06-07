@@ -5,6 +5,8 @@ const mockttp = require("mockttp");
 var configData = require('../data/config.json');
 var metaData = require('../data/get_ome_metadata.json');
 var channelForm = require('../data/formData/download_channels.json');
+var rangeForm = require('../data/formData/gated_channel_ranges.json');
+var encodingForm = require('../data/formData/gated_cell_encodings.json');
 var databaseData = require('../data/get_database_description.json');
 var channelGMM0 = require('../data/get_channel_gmm/Hoechst0.json');
 var gatingGMM0 = require('../data/get_gating_gmm/Hoechst0.json');
@@ -35,6 +37,7 @@ interface SeaDragonViewer {
 }
 interface CsvGatingList {
   seaDragonViewer: SeaDragonViewer;
+  download_panel_visible: boolean;
 }
 interface Rainbow {
   show(x: number, y: number): void;
@@ -49,6 +52,7 @@ interface MinervaAnalysis {
   channelList: ChannelList;
 }
 
+const MOCK_PORT = 8765;
 const KARMA_DATASOURCE = "karma-test";
 const CLEAR_PREFIX = "crop-mask-crc01";
 const LOGO_PREFIX = "crop-crc01";
@@ -75,10 +79,8 @@ const toHeaders = (bytes: number, meaning: string) => {
   }
 }
 
-const sandbox = sinon.createSandbox();
 const expect = chai.expect;
 var mockServer; 
-var channelsText;
 var allCellBuffer;
 var c0CellBuffer;
 var clearBuffer;
@@ -91,7 +93,6 @@ before(async () => {
   c0CellBuffer = Buffer.from(await loadBuffer('/data/cell_hoechst.bin.gz'));
   clearBuffer = Buffer.from(await loadBuffer('/data/1024x1024_clear.png'));
   logoBuffer = Buffer.from(await loadBuffer('/data/1024x1024_logo.png'));
-  channelsText = await loadText('/data/download_channels.csv');
   await __GLOBAL__INITIALIZATION__FUNCTION__();
   fixture.setBase('html')
 });
@@ -137,11 +138,17 @@ const getProperty = (scope: any, k: string | symbol) => {
   return typeof v === "function" ? v.bind(scope) : v;
 };
 
-const fakeCreateElement = (createElement) => {
+const fakeCreateElement = (formCallback) => {
+  const { createElement } = document;
   return (...args) => {
     const el = createElement.apply(document, args);
     if (args[0] == "form") {
       el.submit = function() {
+        const els = [...this.elements];
+        const formData = els.reduce((o, i) => {
+          return {...o, [i.name]: i.value};
+        }, {});
+        formCallback(formData);
       }
     }
     return el;
@@ -150,7 +157,7 @@ const fakeCreateElement = (createElement) => {
 
 beforeEach(async () => {
 
-  await mockServer.start(8765);
+  await mockServer.start(MOCK_PORT);
   // Load config endpoint
   const configString = JSON.stringify(configData);
   const configMock = mockServer.forGet("/config");
@@ -206,6 +213,7 @@ beforeEach(async () => {
   });
   // Download channels
   const channelsMock = mockServer.forPost("/download_channels_csv");
+  const gatingMock = mockServer.forPost("/download_gating_csv");
   // Await all endpoints
   await Promise.all([
     configMock.thenJson(200, configData),
@@ -219,11 +227,9 @@ beforeEach(async () => {
     logoMock.thenReply(200, logoBuffer, logoHeaders),
     c0CellMock.thenReply(200, c0CellBuffer, c0CellHeaders),
     allCellMock.thenReply(200, allCellBuffer, allCellHeaders),
-    channelsMock.thenCallback(async ({body}) => {
-      const formData = await body.getFormData();
-      return channelsText;
-    })
-  ])
+    channelsMock.thenCallback(() => ''),
+    gatingMock.thenCallback(() => '')
+])
   // Run the main entrypoint
   this.result = fixture.load('main.html');
   __GLOBAL__RESET__FUNCTION__();
@@ -239,7 +245,7 @@ afterEach(function(){
   }
   return mockServer.stop();
   // Restore spies
-  sandbox.restore();
+  sinon.restore();
 });
 
 const sleeper = async (sec: number) => {
@@ -367,22 +373,62 @@ describe('Load', function () {
   describe('Ensure download list', function () {
     it('must download channel list', async function () {
       await sleeper(1);
-      const toEl = fakeCreateElement(document.createElement);
-      sandbox.stub(document, 'createElement').callsFake(toEl);
-      const cList = document.getElementById("channels_download_icon");
-      cList.dispatchEvent(new Event('click'));
+      const formPath = '/data/formData/download_channels.json';
+      // Check form parameters
+      const formCallback = (formData) => {
+        expect(formData).to.deep.equal(channelForm);
+      }
+      const toEl = fakeCreateElement(formCallback);
+      sinon.stub(document, 'createElement').callsFake(toEl);
+      const cIcon = document.getElementById("channels_download_icon");
+      cIcon.dispatchEvent(new Event('click'));
       const called = (document.createElement as any).getCall(0);
       expect(called.calledWith('form')).to.equal(true);
+      sinon.restore();
       await sleeper(3);
     })
   })
   describe('Ensure download ranges', function () {
     it('must download channel ranges', async function () {
+      await sleeper(1);
+      const panel = document.getElementById('gating_download_panel');
+      const { csv_gatingList } = __minervaAnalysis;
+      csv_gatingList.download_panel_visible = true;
+      (panel as HTMLElement).style.visibility = 'visible';
+      // Check form parameters
+      const formCallback = (formData) => {
+        expect(formData).to.deep.equal(rangeForm);
+      }
+      const toEl = fakeCreateElement(formCallback);
+      sinon.stub(document, 'createElement').callsFake(toEl);
+      const gId = "download_gated_channel_ranges";
+      const gIcon = document.getElementById(gId);
+      gIcon.dispatchEvent(new Event('click'));
+      const called = (document.createElement as any).getCall(0);
+      expect(called.calledWith('form')).to.equal(true);
+      sinon.restore();
       await sleeper(3);
     })
   })
   describe('Ensure download encodings', function () {
     it('must download cell encodings', async function () {
+      await sleeper(1);
+      const panel = document.getElementById('gating_download_panel');
+      const { csv_gatingList } = __minervaAnalysis;
+      csv_gatingList.download_panel_visible = true;
+      (panel as HTMLElement).style.visibility = 'visible';
+      // Check form parameters
+      const formCallback = (formData) => {
+        expect(formData).to.deep.equal(encodingForm);
+      }
+      const toEl = fakeCreateElement(formCallback);
+      sinon.stub(document, 'createElement').callsFake(toEl);
+      const gId = "download_gated_cell_encodings";
+      const gIcon = document.getElementById(gId);
+      gIcon.dispatchEvent(new Event('click'));
+      const called = (document.createElement as any).getCall(0);
+      expect(called.calledWith('form')).to.equal(true);
+      sinon.restore();
       await sleeper(3);
     })
   })
