@@ -165,6 +165,43 @@ try {
 }
 
 
+//check if dataset already exists
+//check if path exists (mcmicro naming specific)
+async function checkDatasetExistence(caller) {
+    const self = this;
+    let inputField = d3.select('#'+ caller.id);
+    //get segmentation folder path from the input text field
+    let datasetName = inputField.property("value");
+
+try {
+        //get available segmentation masks in mcmicro directory from server
+        let response = await fetch('/dataset_existence', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(
+                {
+                    dataset_name: datasetName,
+                }
+            )
+        });
+        let response_data = await response.json();
+        if (response_data == false){
+            inputField.attr("class", "form-control is-valid");
+            inputField.node().setCustomValidity('');
+        }else{
+             inputField.attr("class", "form-control is-invalid");
+             inputField.node().setCustomValidity('Dataset name already exists. Choose a different name.');
+        }
+        // inputField.node().reportValidity();
+        return response_data;
+    } catch (e) {
+        console.log("Error Getting Segmentation File List", e);
+    }
+}
+
 //check if path exists (mcmicro naming specific)
 async function checkPathExistence(caller) {
     const self = this;

@@ -576,10 +576,23 @@ def check_path_existence():
     post_data = json.loads(request.data)
     if 'path' in post_data:
         path = Path(post_data['path'])
+        # if full path exists
         if path.is_dir():
             return serialize_and_submit_json(True)
+        # if path does not exist
         return serialize_and_submit_json(False)
 
+@app.route('/dataset_existence', methods=['POST'])
+def check_dataset_exists():
+    # path and type information from upload
+    post_data = json.loads(request.data)
+    if 'dataset_name' in post_data:
+        dataset_name = Path(post_data['dataset_name'])
+        # if path exists as a relative path inside the data folder
+        path = Path(Path.cwd(), data_path, dataset_name);
+        if not path.is_dir():
+            return serialize_and_submit_json(False)
+    return serialize_and_submit_json(True)
 
 @app.route('/init_datasource', methods=['GET'])
 def init_datasource():
