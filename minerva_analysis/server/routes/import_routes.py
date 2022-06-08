@@ -590,7 +590,7 @@ def check_dataset_exists():
         dataset_name = Path(post_data['dataset_name'])
         # if path exists as a relative path inside the data folder
         path = Path(Path.cwd(), data_path, dataset_name);
-        if not path.is_dir():
+        if not path.is_dir() or dataset_name.name == '':
             return serialize_and_submit_json(False)
     return serialize_and_submit_json(True)
 
