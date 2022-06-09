@@ -55,7 +55,7 @@ class Scatterplot {
                 pointColorHover: self.orangeMap,
                 xScale: d3.scaleLinear().domain([-1, 1]),
                 yScale: d3.scaleLinear().domain([-1, 1]),
-                // opacityBy: 'density',
+                opacityBy: 'density',
                 colorBy: 'valueB',
                 // opacityBy: 'density',
                 // opacityBy: 'density',

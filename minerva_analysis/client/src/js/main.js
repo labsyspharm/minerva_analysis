@@ -69,7 +69,6 @@ async function init(conf) {
         seaDragonViewer.init();
         let viewerColorToggle = new ColorToggle('recolor_image_viewer', [seaDragonViewer], true);
         await channelList.init()
-        document.getElementById('cohort-button-col').style.visibility = "hidden";
 
     } else {
         document.getElementById('openseadragon_wrapper').style.display = "none"
