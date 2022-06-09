@@ -25,10 +25,9 @@ class Scatterplot {
         const self = this;
         window.devicePixelRatio = 1;
         const canvas = document.querySelector(`#${self.canvasId}`);
-        let {width, height} = canvas.getBoundingClientRect();
         let ratio = window.devicePixelRatio;
-        width = self.width;
-        height = self.height;
+        const {width, height} = canvas.getBoundingClientRect();
+
         self.lassoActive = false;
         self.editMode = false;
         self.customClusterDiv = document.getElementById('custom_cluster');
@@ -51,8 +50,6 @@ class Scatterplot {
         if (self.image) {
             self.plot = createScatterplot({
                 canvas,
-                width,
-                height,
                 pointColor: self.greyMap,
                 pointColorActive: self.orangeMap,
                 pointColorHover: self.orangeMap,
@@ -72,8 +69,6 @@ class Scatterplot {
         } else {
             self.plot = createScatterplot({
                 canvas,
-                // width,
-                // height,
                 pointColor: self.greyMap,
                 pointColorActive: self.orangeMap,
                 pointColorHover: self.orangeMap,
@@ -91,9 +86,10 @@ class Scatterplot {
                 pointSizeSelected: 0
             });
         }
-        scatterplot.plot.subscribe('view', ({xScale, yScale}) => {
-            self.displayLabels(xScale, yScale);
-        });
+        self.plot.set({width, height});
+        // scatterplot.plot.subscribe('view', ({xScale, yScale}) => {
+        //     self.displayLabels(xScale, yScale);
+        // });
         // if (self.image) {
         //
         //
@@ -128,28 +124,28 @@ class Scatterplot {
 
 
         //   Add overlay canvas
-        self.textOverlayEl = document.createElement('canvas');
-        self.textOverlayEl.style.position = 'absolute';
-        self.textOverlayEl.style.top = 0;
-        self.textOverlayEl.style.right = 0;
-        self.textOverlayEl.style.bottom = 0;
-        self.textOverlayEl.style.left = 0;
-        self.textOverlayEl.style.pointerEvents = 'none';
-        document.getElementById(self.id).appendChild(self.textOverlayEl);
-        self.resizeTextOverlay = () => {
-            self.textOverlayEl.width = self.width * window.devicePixelRatio;
-            self.textOverlayEl.height = self.height * window.devicePixelRatio;
-            self.textOverlayEl.style.width = `${self.width}px`;
-            self.textOverlayEl.style.height = `${self.height}px`;
-        };
-        self.resizeTextOverlay();
-        window.addEventListener('resize', self.resizeTextOverlay);
-        self.overlayFontSize = 48;
-        self.textOverlayCtx = self.textOverlayEl.getContext('2d');
-        self.textOverlayCtx.font = `${
-            self.overlayFontSize * window.devicePixelRatio
-        }px sans-serif`;
-        self.textOverlayCtx.textAlign = 'center';
+        // self.textOverlayEl = document.createElement('canvas');
+        // self.textOverlayEl.style.position = 'absolute';
+        // self.textOverlayEl.style.top = 0;
+        // self.textOverlayEl.style.right = 0;
+        // self.textOverlayEl.style.bottom = 0;
+        // self.textOverlayEl.style.left = 0;
+        // self.textOverlayEl.style.pointerEvents = 'none';
+        // document.getElementById(self.id).appendChild(self.textOverlayEl);
+        // self.resizeTextOverlay = () => {
+        //     self.textOverlayEl.width = self.width * window.devicePixelRatio;
+        //     self.textOverlayEl.height = self.height * window.devicePixelRatio;
+        //     self.textOverlayEl.style.width = `${self.width}px`;
+        //     self.textOverlayEl.style.height = `${self.height}px`;
+        // };
+        // self.resizeTextOverlay();
+        // window.addEventListener('resize', self.resizeTextOverlay);
+        // self.overlayFontSize = 48;
+        // self.textOverlayCtx = self.textOverlayEl.getContext('2d');
+        // self.textOverlayCtx.font = `${
+        //     self.overlayFontSize * window.devicePixelRatio
+        // }px sans-serif`;
+        // self.textOverlayCtx.textAlign = 'center';
 
     }
 

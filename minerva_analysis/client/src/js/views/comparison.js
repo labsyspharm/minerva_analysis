@@ -232,7 +232,7 @@ class Comparison {
         self.wrangleSmallMultiples();
     }
 
-    createGrid(cols = 2, numElements) {
+    createGrid(cols = 1, numElements) {
         const self = this;
         //Clear previous
         d3.select(`#${self.containerId}`).selectAll('.compare_row').remove()
@@ -313,7 +313,7 @@ class Comparison {
 
     initSmallMultipleBarcharts() {
         const self = this;
-        self.createGrid(2, _.size(self.neighborhoods));
+        self.createGrid(1, _.size(self.neighborhoods));
         self.plots = _.map(self.neighborhoods, (d, i) => {
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`);
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
@@ -326,7 +326,7 @@ class Comparison {
 
     initSmallMultipleScatterplots() {
         const self = this;
-        self.createGrid(2, _.size(self.neighborhoods));
+        self.createGrid(1, _.size(self.neighborhoods));
         self.plots = _.map(self.neighborhoods, (d, i) => {
             let div = document.getElementById(`${self.containerId}_compare_col_${i}`)
             let header = div.querySelector('h5').innerHTML = d['neighborhood_name'];
