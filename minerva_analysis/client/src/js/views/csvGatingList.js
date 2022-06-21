@@ -266,6 +266,12 @@ class CSVGatingList {
             let shortName = this.dataLayer.getShortChannelName(col.channel);
             let channelID = this.gatingIDs[shortName];
             if (this.sliders.get(shortName)) {
+                let toggle_off
+                if (!col.gate_active && col.channel in this.selections) {
+                    toggle_off = true;
+                } else {
+                    toggle_off = false;
+                }
                 this.sliders.get(shortName).value([col.gate_start, col.gate_end]);
                 this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
                 if (col.gate_active) {
@@ -280,7 +286,7 @@ class CSVGatingList {
 
                 } else {
                     // If channel is currently active, but shouldn't be, update it
-                    if (this.selections[col.channel]) {
+                    if (toggle_off) {
                         let selector = `#csv_gating-slider_${channelID}`;
                         document.querySelector(selector).click();
                     }
