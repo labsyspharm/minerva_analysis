@@ -2,4 +2,3 @@ coverage/
 .editorconfig
 .eslintignore
 .eslintrc.json
-tsconfig.json
