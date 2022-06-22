@@ -22,6 +22,7 @@ class ParallelCoordinates {
         this.reorder = false;
         // this.order = this.dataLayer.defaultOrder;
         this.sliders = new Map();
+        this.brushes = {}
         this.dragHandler = d3.drag()
             .on('drag', (e, d) => {
                 if (self.reorder) {
@@ -121,7 +122,6 @@ class ParallelCoordinates {
 
         this.canvas = document.getElementById(self.id + '_canvas')
 
-
         this.svgSelector = document.getElementById(self.id + "_svg");
         // Parse the Data
         this.x = d3.scaleLinear()
@@ -180,7 +180,7 @@ class ParallelCoordinates {
         // })
     }
 
-    wrangle(rawData, order = null) {
+    wrangle(rawData, order = null, clearBrush = true) {
         const self = this;
         let chartData = rawData[datasource]?.['composition_summary']?.['weighted_contribution'] || _.get(rawData, 'composition_summary.weighted_contribution', null);
         if (chartData) {
@@ -218,6 +218,7 @@ class ParallelCoordinates {
         this.visData = _.sortBy(this.visData, ['index']);
 
         this.scale();
+        if (clearBrush) this.drawBrush();
         return self.draw()
     }
 
@@ -412,7 +413,6 @@ class ParallelCoordinates {
                     opacityBy: 'density',
                     pointColorActive: hexToRGBA('#ffa500', 0.2),
                     pointConnectionColor: hexToRGBA('#b2b2b2', 0.01),
-
                     pointSize: 3,
                     showPointConnections: true,
                     lassoColor: hexToRGBA('#ffa500', 0.2),
@@ -518,19 +518,30 @@ class ParallelCoordinates {
         // if (self.selection_neighborhoods && !self.editMode) {
         if (self.selection_neighborhoods) {
             //Draw Selection
-            let opacity = 0.01;
+            let opacity = 0.015;
             if (_.size(self.selection_neighborhoods) < 1000) {
                 opacity = 0.05;
             }
             _.forEach(self.selection_neighborhoods, row => {
                 if (Math.random() > 0.75) {
-                    const color = `hsla(39, 100%, 50%,${opacity})`;
-                    self.canvas.getContext('2d').strokeStyle = color;
-                    self.canvas.getContext('2d').beginPath();
                     let orderedRow = _.cloneDeep(row);
                     self.phenotypes.map((d, i) => {
                         orderedRow[self.order[d]] = row[i]
                     })
+                    // if (_.size(self.brushes) > 0) {
+                    //     let inBrush = Object.entries(self.brushes).map(([k, brushRange], i) => {
+                    //         let val = orderedRow[self.order[k]];
+                    //         console.log(orderedRow[6]);
+                    //         // console.log(val, brushRange[0], brushRange[1], row[i])
+                    //         return val >= brushRange[0] && val <= brushRange[1]
+                    //     });
+                    //     let allTrue = (inBrush.every(v => v == true))
+                    //     if (!allTrue) return;
+                    // }
+                    const color = `hsla(39, 100%, 50%,${opacity})`;
+                    self.canvas.getContext('2d').strokeStyle = color;
+                    self.canvas.getContext('2d').beginPath();
+
                     orderedRow.map(function (p, i) {
                         if (i == 0) {
                             self.canvas.getContext('2d').moveTo(self.lineX(p), self.lineY(i));
@@ -628,6 +639,35 @@ class ParallelCoordinates {
         // .on('click', self.enableOrDisablePhenotype.bind(self));
 
         labels.exit().remove()
+
+
+    }
+
+    drawBrush() {
+        const self = this;
+        self.brushes = {}
+        self.svgGroup.selectAll(".brush").remove();
+        self.svgGroup.selectAll(".dimension")
+            .data(self.visData)
+            .enter().append("g")
+            .attr("class", "brush")
+            .attr("transform", function (d) {
+                return "translate(0," + self.y(d.key) + ")";
+            })
+            .each(function (d) {
+                d3.select(this).call(d3.brushX()
+                    .extent([[0, -5], [self.width, 5]])
+                    .on("end", (e, d) => {
+                        if (e.selection) {
+                            self.brushes[d.key] = [self.x.invert(e.selection[0]), self.x.invert(e.selection[1])]
+                        } else {
+                            delete self.brushes[d.key];
+                        }
+                        self.eventHandler.trigger(ParallelCoordinates.events.brushParallelCoordinates, self.brushes);
+
+                    })
+                )
+            })
     }
 
     switchEditMode() {
@@ -724,7 +764,8 @@ class ParallelCoordinates {
 }
 
 ParallelCoordinates.events = {
-    selectPhenotype: 'selectPhenotype'
+    selectPhenotype: 'selectPhenotype',
+    brushParallelCoordinates: 'ParallelCoordinates'
 };
 
 function path(d, ctx) {

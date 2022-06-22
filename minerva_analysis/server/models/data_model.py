@@ -400,6 +400,31 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
     return obj
 
 
+def brush_selection(datasource_name, brush, selection_ids):
+    global datasource
+    global config
+    fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
+              config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
+    # Load if not loaded
+    selection_ids = np.array(selection_ids)
+    if datasource_name != source:
+        load_datasource(datasource_name)
+    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    phenotype_list = get_phenotypes(datasource_name)
+    valid_ids = selection_ids
+    for pheno, brush_range in brush.items():
+        pheno_col = phenotype_list.index(pheno)
+        these_ids = np.argwhere(
+            (neighborhoods[:, pheno_col] >= brush_range[0]) & (
+                        neighborhoods[:, pheno_col] <= brush_range[1])).flatten()
+        valid_ids = np.intersect1d(valid_ids, these_ids)
+    obj = get_neighborhood_stats(datasource_name, valid_ids, np_datasource, fields=fields)
+    return obj
+
+
+#
+
+
 def create_custom_clusters(datasource_name, num_clusters, mode='single'):
     global config
     global datasource
@@ -804,6 +829,7 @@ def get_color_scheme(datasource_name):
     colors = ["#44ea17", "#FF0000", "#dc31b0", "#bc3f3b", "#563cd3", "#040ee8", "#fff070", "#02531d", "#fbacf6",
               "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
               "#ead624"]  # Tonsil
+
     # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#2626ff", "#040ee8", "#02531d", "#fbacf6",
     #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
     #           "#ead624"]
@@ -1799,3 +1825,13 @@ def create_embedding(datasets):
         np.save(embedding_path, individual_embedding)
         config[name]['embedding'] = str(embedding_path)
     save_config()
+
+
+def jax_em_clustering():
+    import jax
+    import jax.numpy as jnp
+    import jax.scipy as jsp
+    import tensorflow_probability.substrates.jax as jaxp
+    jaxd = jaxp.distributions
+    from jax.config import config
+    config.update("jax_enable_x64", True)

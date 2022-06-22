@@ -179,8 +179,9 @@ const displaySelection = async (d) => {
 }
 eventHandler.bind(ImageViewer.events.displaySelection, displaySelection);
 
-const displayNeighborhoodSelection = async (selection) => {
+const displayNeighborhoodSelection = async (selection, clearBrush = true) => {
     dataLayer.addAllToCurrentSelection(selection);
+    if (clearBrush) dataLayer.brushSelection = null;
     document.getElementById('neighborhood_current_selection').textContent = 'Phenotype';
     // document.getElementById('neighborhood_current_selection_count').textContent = _.size(selection.cells);
     if (mode == 'single') {
@@ -188,7 +189,7 @@ const displayNeighborhoodSelection = async (selection) => {
     } else if (mode == 'multi') {
         scatterplot.recolor(selection['selection_ids']);
     }
-    parallelCoordinates.wrangle(selection);
+    parallelCoordinates.wrangle(selection, null, clearBrush);
     heatmap.rewrangle();
     updateSeaDragonSelection(false, false);
 }
@@ -280,6 +281,13 @@ const selectPhenotype = async (phenotype) => {
     await displayNeighborhoodSelection(cells);
 }
 eventHandler.bind(ParallelCoordinates.events.selectPhenotype, selectPhenotype);
+
+
+const brushParallelCoordinates = async (brush) => {
+    let cells = await dataLayer.brushParallelCoordinates(brush);
+    await displayNeighborhoodSelection(cells, false);
+}
+eventHandler.bind(ParallelCoordinates.events.brushParallelCoordinates, brushParallelCoordinates);
 
 const selectPhenotypePair = async (d) => {
     console.log(d);

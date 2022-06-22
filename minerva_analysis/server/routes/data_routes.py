@@ -251,6 +251,16 @@ def get_neighborhood_by_phenotype():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/brush_selection', methods=['POST'])
+def brush_selection():
+    post_data = json.loads(request.data)
+    selection_ids = post_data['selectionIds']
+    datasource = post_data['datasource']
+    brush = post_data['brush']
+    resp = data_model.brush_selection(datasource, brush, selection_ids)
+    return serialize_and_submit_json(resp)
+
+
 @app.route('/upload_gates', methods=['POST'])
 def upload_gates():
     file = request.files['file']

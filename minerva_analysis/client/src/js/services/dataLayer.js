@@ -13,6 +13,7 @@ class DataLayer {
         //selections
         this.currentSelection = new Map();
         this.currentRawSelection = {};
+        this.brushSelection = null;
         //x,z coords
         this.x = this.config["featureData"][dataSrcIndex]["xCoordinate"];
         this.y = this.config["featureData"][dataSrcIndex]["yCoordinate"];
@@ -517,6 +518,7 @@ class DataLayer {
         return this.currentSelection;
     }
 
+
     getCurrentRawSelection() {
         return this.currentRawSelection;
     }
@@ -631,7 +633,7 @@ class DataLayer {
     }
 
 
-    async getNeighborhoodByPhenotype(phenotype, selection = null) {
+    async getNeighborhoodByPhenotype(phenotype, selection) {
 
         try {
             searching = false;
@@ -656,6 +658,31 @@ class DataLayer {
             return response_data;
         } catch (e) {
             console.log("Error Getting Cells By Phenotype", e);
+        }
+    }
+
+    async brushParallelCoordinates(brush) {
+
+        try {
+            searching = false;
+            this.brushSelection = this.brushSelection || this.getCurrentRawSelection()
+            let response = await fetch('/brush_selection', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        brush: brush,
+                        selectionIds: _.map(this.brushSelection.cells, e => e.id)
+                    })
+            });
+            let response_data = await response.json();
+            return response_data;
+        } catch (e) {
+            console.log("Error Brushing", e);
         }
     }
 

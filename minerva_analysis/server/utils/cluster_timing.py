@@ -5,9 +5,12 @@ from numba import prange
 from sklearn.neighbors import BallTree
 import pandas as pd
 import pickle
+# from torchGMM import GaussianMixture
 from sklearn.mixture import GaussianMixture
+
 from pycave.bayes import gmm
 from tqdm import tqdm
+import torch
 import numcodecs
 import zarr
 
@@ -100,18 +103,17 @@ r = 10 / ton_scale_factor
 # lens = [len(l) for l in neighbors]
 times_dict = {}
 
-# for num_cells in np.linspace(100000, 10000000, 100, dtype=int):
+# num_cells_list = [100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000,
+#                   4000000, 5000000, 6000000, 7000000, 8000000, 9000000,
+#                   10000000]
 num_cells_list = [100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000,
-                  4000000, 5000000, 6000000, 7000000, 8000000, 9000000,
-                  10000000]
-# num_cells_list = [100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000]
-# num_cells_list = [100000]
+                  4000000, 5000000]
 num_cells_list.reverse()
 for k in tqdm(range(5)):
     for num_cells in num_cells_list:
         num_cells_str = str(num_cells)
         times_dict[num_cells_str] = {}
-        for radius in [50, 30, 10]:
+        for radius in [10]:
             radius_str = str(radius)
             size = 1000 / np.sqrt(5000 / num_cells)
             rand = (np.random.rand(num_cells, 2) * size)
@@ -147,7 +149,7 @@ for k in tqdm(range(5)):
             neighborhood_matrix = create_matrix(synthetic_phenotypes_array, len_phenos, synthetic_neighbors_matrix,
                                                 synthetic_distances_matrix,
                                                 np.array(synthetic_lens, dtype=int), vector, 0.8)
-            print('Made Matrix')
+            print('Made Matrix', neighborhood_matrix.shape)
             neighborhood_time = time.time() - timer
             times_dict[num_cells_str][radius_str]['neighborhood_time'] = neighborhood_time
             times_dict[num_cells_str][radius_str]['total_neighborhood_time'] = neighborhood_time + matrix_time + query_time
@@ -161,47 +163,33 @@ for k in tqdm(range(5)):
             times_dict[num_cells_str][radius_str]['search_time'] = search_time
             timer = time.time()
 
-            # g_mixtures = GaussianMixture(n_components=6)
-            # g_mixtures.fit(neighborhood_matrix)
-            # clusters = g_mixtures.predict(neighborhood_matrix)
-            # cluster_time = time.time() - timer
-            # times_dict[num_cells_str][radius_str]['cluster_time'] = cluster_time
-            # timer = time.time()
-
+            np.save('testmatrix.np', neighborhood_matrix)
+            timer = time.time()
+            torch_neighborhood_matrix = torch.tensor(neighborhood_matrix)
             g_mixtures = gmm.GaussianMixture(num_components=6)
-            g_mixtures.fit(neighborhood_matrix)
-            clusters = g_mixtures.predict(neighborhood_matrix)
+            g_mixtures.fit(torch_neighborhood_matrix)
+            fit_time = time.time() - timer
+            times_dict[num_cells_str][radius_str]['pycave_cluster_time_fit'] = fit_time
+            clusters = g_mixtures.predict(torch_neighborhood_matrix)
             cluster_time = time.time() - timer
+            times_dict[num_cells_str][radius_str]['pycave_cluster_time_predict'] = cluster_time - fit_time
             times_dict[num_cells_str][radius_str]['pycave_cluster_time'] = cluster_time
+
             timer = time.time()
-
-
             g_mixtures = GaussianMixture(n_components=6)
-            g_mixtures.fit(neighborhood_matrix[np.random.choice(neighborhood_matrix.shape[0], int(neighborhood_matrix.shape[0]*0.1), replace=False)])
-            g_mixtures.fit(neighborhood_matrix[np.random.choice(neighborhood_matrix.shape[0], int(neighborhood_matrix.shape[0]*0.1), replace=False)])
+            g_mixtures.fit(neighborhood_matrix)
+            fit_time = time.time() - timer
+            times_dict[num_cells_str][radius_str]['cluster_time_fit'] = fit_time
             clusters = g_mixtures.predict(neighborhood_matrix)
             cluster_time = time.time() - timer
-            times_dict[num_cells_str][radius_str]['cluster_time_small'] = cluster_time
+            times_dict[num_cells_str][radius_str]['cluster_time_predict'] = cluster_time - fit_time
+            times_dict[num_cells_str][radius_str]['cluster_time'] = cluster_time
             timer = time.time()
 
-            # umap = UMAP(n_components=2)
-            # train_test_2D = umap.fit_transform(neighborhood_matrix)
-            # print('UMAP TIME', time.time() - timer)
-            # times_dict[num_cells_str][radius_str]['total_neighborhood_time'] = time.time() - timer
-            # timer = time.time()
 
-            perm_matrix = create_perm_matrix(synthetic_phenotypes_array, len_phenos, synthetic_neighbors_matrix,
-                                             synthetic_distances_matrix,
-                                             np.array(synthetic_lens, dtype=int), vector, 0.8)
-            print('Create Perm Matrix Time', time.time() - timer)
-            times_dict[num_cells_str][radius_str]['create_perm_matrix'] = time.time() - timer
-            timer = time.time()
-            test_with_saved_perm(perm_matrix, vector, 0.8)
-            print('Perm Test Time', time.time() - timer)
-            times_dict[num_cells_str][radius_str]['perm_test'] = time.time() - timer
-            timer = time.time()
 
-    pickle.dump(times_dict, open('rev_dict_perm_'+str(k)+'.pk', 'wb'))
+
+    pickle.dump(times_dict, open('sun_dict_perm_'+str(k)+'.pk', 'wb'))
 
 #
 
