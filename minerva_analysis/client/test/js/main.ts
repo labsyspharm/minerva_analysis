@@ -351,7 +351,7 @@ describe('Load', function () {
       // Ensure expected white/black ratio
       (({ colors, counts }: TopColors) => {
         const white_ratio = counts[0] / (counts[0] + counts[1]);
-        white_ratio.should.be.approximately(0.5058, 0.001);
+        white_ratio.should.be.approximately(0.5058, 0.01);
         expect(colors[0]).to.equal('ffffff');
         expect(colors[1]).to.equal('000000');
       })(toTopColors());
@@ -363,7 +363,7 @@ describe('Load', function () {
       // Ensure expected black/blue ratio
       (({ colors, counts }: TopColors) => {
         const blue_ratio = counts[0] / (counts[0] + counts[1]);
-        blue_ratio.should.be.approximately(0.5932, 0.001);
+        blue_ratio.should.be.approximately(0.5932, 0.01);
         expect(colors[0]).to.equal('000000');
         expect(colors[1]).to.equal('000093');
       })(toTopColors());
