@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!--
+This is the execution context.
+Loaded within the iframe.
+Reloaded before every execution run.
+-->
+<html>
+<head>
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <!--
+  <script src="/js/services/simpleEventHandler.js"></script>
+  -->
+  <!-- Webpack -->
+  <script src="/dist/vendor_bundle.js"></script>
+
+  <!-- Scripts -->
+  <script src="../client/external/openseadragon-bin-2.4.0/openseadragon-scalebar.js"></script>
+  <script src="/js/services/colorScheme.js"></script>
+  <script src="/js/views/rainbow.js"></script>
+  <script src="/js/services/dataLayer.js"></script>
+  <script src="/js/services/numericData.js"></script>
+  <script src="/js/views/channelList.js"></script>
+  <script src="/js/views/csvGatingList.js"></script>
+  <script src="/js/views/imageViewer.js"></script>
+  <script src="/js/services/simpleEventHandler.js"></script>
+  <script>
+    /*
+      Allows full control of global variables.
+      __GLOBAL__RESET__FUNCTION__ resets between tests. 
+    */
+    __GLOBAL__INITIALIZATION__FUNCTION__ = async () => {
+      const [main, globals] = await Promise.all([
+        fetch("/js/main.js"),
+        fetch("/globals/set_globals.js")
+      ]);
+      const block = (await Promise.all([
+        main.text(),
+        globals.text()
+      ])).join('\n')
+      __GLOBAL__RESET__FUNCTION__ = () => {
+          eval.call(window, block);
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Required by Karma -->
+  <script src="context.js"></script>
+  <script type="text/javascript">
+    // Configure our Karma and set up bindings
+    %CLIENT_CONFIG%
+    window.__karma__.setupContext(window);
+    %MAPPINGS%
+  </script>
+  %SCRIPTS%
+  <script type="module">
+    window.__karma__.loaded();
+  </script>
+  <script nomodule>
+    window.__karma__.loaded();
+  </script>
+</body>
+</html>

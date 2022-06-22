@@ -8,6 +8,9 @@ module.exports = {
     output: {
         filename: '[name]_bundle.js'
     },
+    node: {
+        fs: 'empty'
+    },
     module: {
         rules: [
             {
@@ -24,12 +27,30 @@ module.exports = {
                 ],
             },
             {
+                test: /\.ts$/,
+                exclude: /(node_modules|bower_components)/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                      "presets": [
+                          "@babel/typescript"
+                      ],
+                      "plugins": [
+                          "dynamic-import-node"
+                      ],
+                    }
+                }
+            },
+            {
                 test: /\.m?js$/,
                 exclude: /(node_modules|bower_components)/,
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        plugins: ['@babel/plugin-proposal-class-properties'],
+                        plugins: [
+                          ["@babel/plugin-transform-runtime", { "corejs": 2 }],
+                          '@babel/plugin-proposal-class-properties'
+                        ],
                         presets: ['@babel/preset-env']
                     }
                 }

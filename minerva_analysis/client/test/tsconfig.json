@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "target": "es6",
+        "moduleResolution": "node",
+		    "esModuleInterop": true,
+        "noImplicitAny": false,
+        "module": "commonjs",
+        "strict": false,
+		    "noEmit": true
+    }
+}
