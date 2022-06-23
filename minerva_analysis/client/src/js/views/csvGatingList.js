@@ -43,7 +43,9 @@ class CSVGatingList {
      */
     selectChannel(name) {
         const fullName = this.dataLayer.getFullChannelName(name);
-        this.selections[fullName] = this.sliders.get(name).value();
+        const values = this.gating_channels[fullName];
+        this.selections[fullName] = values;
+        this.sliders.get(name).value(values);
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_MOVE, this.selections);
         this.getAndDrawGatingGMM(name).then(() => {
             this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
@@ -256,14 +258,7 @@ class CSVGatingList {
             gates = await this.dataLayer.getSavedGatingList();
         }
 
-        _.each(gates, col => {
-            let shortName = this.dataLayer.getShortChannelName(col.channel);
-            let channelID = this.gatingIDs[shortName];
-            if (this.selections[col.channel]) {
-                let selector = `#csv_gating-slider_${channelID}`;
-                document.querySelector(selector).click();
-            }
-        })
+        this.eventHandler.trigger(CSVGatingList.events.RESET_GATINGLIST)
 
         _.each(gates, col => {
             let shortName = this.dataLayer.getShortChannelName(col.channel);
@@ -275,7 +270,6 @@ class CSVGatingList {
                 } else {
                     toggle_off = false;
                 }
-                this.sliders.get(shortName).value([col.gate_start, col.gate_end]);
                 this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
                 if (col.gate_active) {
                     // IF the channel isn't active, make it so
@@ -841,5 +835,6 @@ CSVGatingList.events = {
     GATING_BRUSH_END: "GATING_BRUSH_END",
     GATING_COLOR_TRANSFER_CHANGE_MOVE: "GATING_TRANSFER_CHANGE_MOVE",
     GATING_COLOR_TRANSFER_CHANGE: "GATING_TRANSFER_CHANGE",
-    GATING_CHANNELS_CHANGE: "GATING_CHANNELS_CHANGE"
+    GATING_CHANNELS_CHANGE: "GATING_CHANNELS_CHANGE",
+    RESET_GATINGLIST: "RESET_GATINGLIST"
 };

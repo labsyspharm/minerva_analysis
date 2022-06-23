@@ -181,6 +181,12 @@ async function init(config) {
     };
     eventHandler.bind(ChannelList.events.RESET_LISTS, reset_lists);
 
+    const reset_gatinglist = () => {
+        csv_gatingList.resetGatingList();
+        seaDragonViewer.forceRepaint();
+    };
+    eventHandler.bind(CSVGatingList.events.RESET_GATINGLIST, reset_gatinglist);
+
     const add_scalebar = () => {
         seaDragonViewer.addScaleBar();
         seaDragonViewer.forceRepaint();
