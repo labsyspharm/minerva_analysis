@@ -35,6 +35,7 @@ import re
 import zarr
 from numcodecs import Blosc
 from scipy import spatial
+from pycave.bayes import gmm
 
 # from line_profiler_pycharm import profile
 
@@ -416,7 +417,7 @@ def brush_selection(datasource_name, brush, selection_ids):
         pheno_col = phenotype_list.index(pheno)
         these_ids = np.argwhere(
             (neighborhoods[:, pheno_col] >= brush_range[0]) & (
-                        neighborhoods[:, pheno_col] <= brush_range[1])).flatten()
+                    neighborhoods[:, pheno_col] <= brush_range[1])).flatten()
         valid_ids = np.intersect1d(valid_ids, these_ids)
     obj = get_neighborhood_stats(datasource_name, valid_ids, np_datasource, fields=fields)
     return obj
@@ -425,7 +426,7 @@ def brush_selection(datasource_name, brush, selection_ids):
 #
 
 
-def create_custom_clusters(datasource_name, num_clusters, mode='single'):
+def create_custom_clusters(datasource_name, num_clusters, mode='single', subsample=True):
     global config
     global datasource
     database_model.delete(database_model.Neighborhood, custom=True)
@@ -436,15 +437,18 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
 
     if mode == 'single':
 
-        g_mixtures = GaussianMixture(n_components=num_clusters)
         data = np.load(Path(config[datasource_name]['embedding']))
         # # TODO REMOVE CLUSTER HARDCODE
         # coords = data[:, 0:2]
         # neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
         # pcaed = PCA(n_components=2).fit_transform(neighborhoods)
         # data = np.hstack((data, pcaed))
+        if subsample:
+            g_mixtures = GaussianMixture(n_components=num_clusters)
+        else:
+            g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
         g_mixtures.fit(data)
-        clusters = g_mixtures.predict(data)
+        clusters = np.array(g_mixtures.predict(data))
         for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
             indices = np.argwhere(clusters == cluster).flatten()
             f = io.BytesIO()
@@ -486,8 +490,10 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single'):
         max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
         if max_cluster_id is None:
             max_cluster_id = 0
-
-        g_mixtures = GaussianMixture(n_components=num_clusters)
+        if subsample:
+            g_mixtures = GaussianMixture(n_components=num_clusters)
+        else:
+            g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
 
         pca = PCA(n_components=2).fit(combined_neighborhoods['full_neighborhoods'])
         pcaed = pca.transform(combined_neighborhoods['full_neighborhoods'])

@@ -419,13 +419,14 @@ class Scatterplot {
     async customCluster() {
         const self = this;
         let numberOfClusters = document.getElementById('custom_cluster_number')
+        let subsample = document.getElementById('subsample_cluster').checked;
         if (!numberOfClusters || !numberOfClusters.value) {
             return;
         }
         numberOfClusters = _.toInteger(numberOfClusters.value);
         // document.getElementById('custom_cluster_loading').innerHTML += '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
         try {
-            let updatedNeighborhoods = await self.dataLayer.customCluster(numberOfClusters)
+            let updatedNeighborhoods = await self.dataLayer.customCluster(numberOfClusters, subsample)
             self.neighborhoodTable.updateNeighborhoods(updatedNeighborhoods);
         } catch (e) {
         }

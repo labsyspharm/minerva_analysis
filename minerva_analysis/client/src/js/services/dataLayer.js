@@ -495,11 +495,12 @@ class DataLayer {
         }
     }
 
-    async customCluster(numClusters) {
+    async customCluster(numClusters, subsample=true) {
         try {
             let response = await fetch('/custom_cluster?' + new URLSearchParams({
                 datasource: datasource,
                 numClusters: numClusters,
+                subsample: subsample,
                 mode: mode
 
             }))

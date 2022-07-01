@@ -201,7 +201,7 @@ for k in tqdm(range(5)):
             times_dict[num_cells_str][radius_str]['perm_test'] = time.time() - timer
             timer = time.time()
 
-    pickle.dump(times_dict, open('rev_dict_perm_'+str(k)+'.pk', 'wb'))
+    pickle.dump(times_dict, open('mon_dict_perm_'+str(k)+'.pk', 'wb'))
 
 #
 

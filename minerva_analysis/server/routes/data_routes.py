@@ -295,8 +295,9 @@ def get_custom_clusters():
     # Parse (rect - [x, y, r], channels [string])
     datasource = request.args.get('datasource')
     num_clusters = int(request.args.get('numClusters'))
+    subsample = request.args.get('subsample') == 'true'
     mode = request.args.get('mode')
-    data_model.create_custom_clusters(datasource, num_clusters, mode)
+    data_model.create_custom_clusters(datasource, num_clusters, mode, subsample)
     resp = data_model.get_neighborhood_list(datasource)
     return serialize_and_submit_json(resp)
 

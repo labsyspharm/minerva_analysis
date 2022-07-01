@@ -619,6 +619,15 @@ polygon:hover {
     margin-bottom: 0;
 }
 
+
+.subsample_label {
+    font-size: 9pt;
+    color: white;
+    margin-bottom: 0;
+    margin-right:10px;
+}
+
+
 #similarity_val {
     font-size: 9pt;
     color: rgba(255, 165, 0);

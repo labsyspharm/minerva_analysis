@@ -13,6 +13,7 @@ static/frontend/node_modules
 .ipynb_checkpoints/
 minerva_analysis/data/
 visinity/data/
+testmatrix.npy
 
 # testing
 /coverage
