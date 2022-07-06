@@ -42,8 +42,9 @@ jobs:
         run: |
           cd minerva_analysis
           cd client
-          npm install
-          npm run start
+          npm i yarn
+          yarn install
+          yarn run start
           rm -r node_modules/
           cd ..
           cd ..
