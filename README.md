@@ -48,6 +48,9 @@ These are executables for Windows and MacOS that can be run locally without any 
 
 
 ## Packaging/Bundling Code as Executable (for Developers)
-Any tagged commit to a branch will trigger a build, where `tag == commit message`. This will appear under releases. Note building may take ~10 min.
 
-Tagging Conventions: All release tags should look like `v{version_number}_{branch_name}`.
+Any tagged commit to a branch will trigger a build. This will appear under releases. Note building may take ~10 min.
+
+**Tagging Conventions:** All release tags should look like `v{version_number}_{branch_name}`.
+
+* Tagging Example:  `git tag "vX.X_scope2screen"` (adds a tag) followed by `git push --tags` (pushes the tag)
