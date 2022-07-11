@@ -48,6 +48,7 @@ channels = None
 metadata = None
 np_datasource = None
 zarr_perm_matrix = None
+phenotype_list = None
 
 
 def init(datasource_name):
@@ -63,11 +64,13 @@ def load_datasource(datasource_name, reload=False):
     global metadata
     global zarr_perm_matrix
     global np_datasource
+    global phenotype_list
     if source == datasource_name and datasource is not None and reload is False:
         return
     load_config()
     source = datasource_name
     datasource = load_csv(datasource_name)
+    phenotype_list = get_phenotypes(datasource_name)
     print('Loading')
 
     # Cell Types
@@ -282,7 +285,7 @@ def get_all_neighborhood_stats(datasource_name):
 
     neighborhoods = database_model.get_all(database_model.Neighborhood, datasource=datasource_name)
     obj = [get_stats(neighborhood) for neighborhood in neighborhoods]
-    phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+    # phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
     # phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
     # for i in range(phenotypes_array.shape[0]):
     #     phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
@@ -310,6 +313,7 @@ def save_lasso(polygon, datasource_name):
 
 
 def save_neighborhood(selection, datasource_name, source="Cluster", mode='single'):
+    global phenotype_list
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
     if max_cluster_id is None:
         max_cluster_id = -1
@@ -325,7 +329,7 @@ def save_neighborhood(selection, datasource_name, source="Cluster", mode='single
         f = io.BytesIO()
         if 'p_value' not in selection:
             query_vector = []
-            for i, phenotype in enumerate(sorted(datasource.phenotype.unique().tolist())):
+            for i, phenotype in enumerate(phenotype_list):
                 query_vector.append(selection['composition_summary']['weighted_contribution'][i][1])
 
             neighborhood_query = {'query_vector': query_vector, 'disabled': [], 'threshold': 0.8}
@@ -404,6 +408,7 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
 def brush_selection(datasource_name, brush, selection_ids):
     global datasource
     global config
+    global phenotype_list
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     # Load if not loaded
@@ -411,7 +416,6 @@ def brush_selection(datasource_name, brush, selection_ids):
     if datasource_name != source:
         load_datasource(datasource_name)
     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
-    phenotype_list = get_phenotypes(datasource_name)
     valid_ids = selection_ids
     for pheno, brush_range in brush.items():
         pheno_col = phenotype_list.index(pheno)
@@ -429,6 +433,7 @@ def brush_selection(datasource_name, brush, selection_ids):
 def create_custom_clusters(datasource_name, num_clusters, mode='single', subsample=True):
     global config
     global datasource
+    global phenotype_list
     database_model.delete(database_model.Neighborhood, custom=True)
     database_model.delete(database_model.NeighborhoodStats, custom=True)
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
@@ -461,7 +466,7 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
 
             obj = get_neighborhood_stats(datasource_name, indices, np_datasource)
             query_vector = []
-            for i, phenotype in enumerate(sorted(datasource.phenotype.unique().tolist())):
+            for i, phenotype in enumerate(phenotype_list):
                 query_vector.append(obj['composition_summary']['weighted_contribution'][i][1])
 
             neighborhood_query = {'query_vector': query_vector, 'disabled': [], 'threshold': 0.8}
@@ -770,9 +775,15 @@ def get_phenotypes(datasource_name):
 
     if datasource_name != source:
         load_datasource(datasource_name)
+
     if phenotype_field in datasource.columns:
-        # return sorted(datasource[phenotype_field].unique().compute().tolist())
-        return sorted(datasource[phenotype_field].unique().tolist())
+        if 'linkedDatasets' not in config[datasource_name]:
+            return sorted(datasource.phenotype.unique().tolist())
+        else:
+            combined_list = []
+            for dataset in config[datasource_name]['linkedDatasets']:
+                combined_list = combined_list + (load_csv(dataset).phenotype.unique().tolist())
+            return sorted(list(set(combined_list)))
     else:
         return ['']
 
@@ -815,7 +826,8 @@ def get_number_of_cells_in_circle(x, y, datasource_name, r):
 
 
 def get_color_scheme(datasource_name):
-    labels = get_phenotypes(datasource_name)
+    global phenotype_list
+    labels = phenotype_list
     color_scheme = {}
     # http://godsnotwheregodsnot.blogspot.com/2013/11/kmeans-color-quantization-seeding.html
     # colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
@@ -864,11 +876,12 @@ def get_cluster_labels(datasource_name):
 def get_scatterplot_data(datasource_name, mode):
     global config
     global datasource
+    global phenotype_list
     this_time = time.time()
     if 'linkedDatasets' in config[datasource_name] and mode == 'multi':
 
         combined_embedding = None
-        phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+        phenotypes_dict = {val: idx for idx, val in enumerate(phenotype_list)}
 
         for dataset in config[datasource_name]['linkedDatasets']:
             embedding = np.load(Path(config[dataset]['embedding']))  # TODO Replace
@@ -892,7 +905,7 @@ def get_scatterplot_data(datasource_name, mode):
         # data[:, 0:2] = normalize_scatterplot_data(data[:, 0:2])
         # np.save(Path(config[datasource_name]['embedding']), data)
         np_df = load_csv(datasource_name, numpy=True)
-        phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+        phenotypes_dict = {val: idx for idx, val in enumerate(phenotype_list)}
         phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
         for i in range(phenotypes_array.shape[0]):
             phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
@@ -973,6 +986,7 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, em
 
 def get_similar_neighborhood_to_selection(datasource_name, selection_ids, similarity, mode='single'):
     global config
+    global phenotype_list
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     query_vector = None
@@ -996,7 +1010,7 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     # We expect query in the form of a dict with a bit more info
     query_vector = query_vector.flatten()
     query_vector_dict = {}
-    for i, phenotype in enumerate(sorted(datasource.phenotype.unique().tolist())):
+    for i, phenotype in enumerate(phenotype_list):
         query_vector_dict[phenotype] = {'value': query_vector[i], 'key': phenotype}
 
     obj = find_custom_neighborhood_wrapper(datasource_name, query_vector_dict, similarity, mode, calc_p_value)
@@ -1005,12 +1019,13 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
 
 def build_neighborhood_vector(neighborhood_composition):
     global datasource
-    phenos = sorted(datasource.phenotype.unique().tolist())
+    global phenotype_list
     disabled = []
-    neighborhood_vector = np.zeros((len(phenos)))
-    for i in range(len(phenos)):
-        neighborhood_vector[i] = neighborhood_composition[phenos[i]]['value']
-        if 'disabled' in neighborhood_composition[phenos[i]] and neighborhood_composition[phenos[i]]['disabled']:
+    neighborhood_vector = np.zeros((len(phenotype_list)))
+    for i in range(len(phenotype_list)):
+        neighborhood_vector[i] = neighborhood_composition[phenotype_list[i]]['value']
+        if 'disabled' in neighborhood_composition[phenotype_list[i]] and neighborhood_composition[phenotype_list[i]][
+            'disabled']:
             disabled.append(i)
     return neighborhood_vector, disabled
 
@@ -1339,13 +1354,16 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         return channel_info
     else:
         channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
-        channels = zarr.open(channel_io.series[0].aszarr())
-        directory = Path(dataDirectory + "/" + filePath.name)
-        args = {}
-        args['in_paths'] = [Path(filePath)]
-        args['out_path'] = directory
-        args['is_mask'] = True
-        pyramid_assemble.main(py_args=args)
+        label = zarr.open(channel_io.series[0].aszarr())
+        if isinstance(label, zarr.Group) is False:
+            directory = Path(dataDirectory + "/" + filePath.name)
+            args = {}
+            args['in_paths'] = [Path(filePath)]
+            args['out_path'] = directory
+            args['is_mask'] = True
+            pyramid_assemble.main(py_args=args)
+        else:
+            directory = Path(filePath)
 
         return {'segmentation': str(directory)}
 
@@ -1357,6 +1375,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
     global config
     global metadata
     global datasource
+    global phenotype_list
     default_fields = ['id', 'phenotype', config[datasource_name]['featureData'][0]['xCoordinate'],
                       config[datasource_name]['featureData'][0]['yCoordinate']]
     for field in fields:
@@ -1403,16 +1422,15 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
 
     summary_stats = {'weighted_contribution': {}, 'selection_neighborhoods': selection_neighborhoods,
                      'selection_ids': indices}
-    phenotypes = sorted(datasource.phenotype.unique().tolist())
     # phenotypes = sorted(df.phenotype.unique().tolist())
     # phenotypes = sorted(datasource.phenotype.unique().compute().tolist())
-    summary_stats['weighted_contribution'] = list(map(list, zip(phenotypes, composition_summary)))
+    summary_stats['weighted_contribution'] = list(map(list, zip(phenotype_list, composition_summary)))
 
     obj = {
         # 'cells': cluster_cells.to_dict(orient='records'),
         'cells': fast_to_dict_records(cluster_cells, default_fields),
         'composition_summary': summary_stats,
-        'phenotypes_list': phenotypes
+        'phenotypes_list': phenotype_list
     }
     # print('Computing Stats Time', time.time() - time_neighborhood_stats)
     if compute_neighbors and len(cluster_cells) > 0:
@@ -1555,6 +1573,7 @@ def p_val(val, perm_vals):
 # @profile
 def get_image_scatter(datasource_name, mode, all_results=True):
     results = {}
+    global phenotype_list
     if 'linkedDatasets' in config[datasource_name] and all_results:
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset != datasource_name or mode == 'multi' or mode == 'single':  # TODO:Remove
@@ -1564,7 +1583,7 @@ def get_image_scatter(datasource_name, mode, all_results=True):
                 column_indices = get_column_indices([x_field, y_field, 'id'])
                 data = np_df[:, column_indices].astype(int)
                 # Get Cell Types
-                phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+                phenotypes_dict = {val: idx for idx, val in enumerate(phenotype_list)}
                 phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
                 for i in range(phenotypes_array.shape[0]):
                     phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
@@ -1583,7 +1602,7 @@ def get_image_scatter(datasource_name, mode, all_results=True):
         column_indices = get_column_indices([x_field, y_field, 'id'])
         data = np_df[:, column_indices].astype(int)
         # Get Cell Types
-        phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+        phenotypes_dict = {val: idx for idx, val in enumerate(phenotype_list)}
         phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
         for i in range(phenotypes_array.shape[0]):
             phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
@@ -1677,6 +1696,8 @@ def get_permuted_results(datasource_name, neighborhood_query):
 
 def get_perm_data(datasource_name, matrix_paths):
     global config
+    global phenotype_list
+    print('phenotype_list', phenotype_list, len(phenotype_list))
     test = time.time()
     column_indices = get_column_indices([config[datasource_name]['featureData'][0]['xCoordinate'],
                                          config[datasource_name]['featureData'][0]['yCoordinate']])
@@ -1706,7 +1727,7 @@ def get_perm_data(datasource_name, matrix_paths):
     mask = np.arange(maxlen) < np.array(lengths)[:, None]
     neighbors_matrix[mask] = np.concatenate(neighbors)
     distances_matrix[mask] = np.concatenate(distances)
-    phenotypes_dict = {val: idx for idx, val in enumerate(sorted(datasource.phenotype.unique()))}
+    phenotypes_dict = {val: idx for idx, val in enumerate(phenotype_list)}
     phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
     for i in range(phenotypes_array.shape[0]):
         phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
@@ -1760,8 +1781,9 @@ def apply_neighborhood_query(datasource_name, neighborhood_query, mode):
 def calculate_axis_order(datasource_name, mode):
     global datasource
     global config
+    global phenotype_list
+    phenotypes = phenotype_list
     correlation_matrix = np.absolute(get_pearsons_correlation(datasource_name, mode))
-    phenotypes = get_phenotypes(datasource_name)
     order = [None for e in range(len(phenotypes))]
     starting_index = math.ceil(len(phenotypes) / 2.0)
     above_index = starting_index - 2

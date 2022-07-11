@@ -18,8 +18,7 @@ function channelMatch(combined) {
     _.each(channelFiles, (channel, i) => {
         if (i === 0 && idField && channel == 'ID') {
             leftList.innerHTML += `<div class="list-group-item tinted destination optional">${channel} (Optional)<span class="fa fa-times remove" aria-hidden="true"></span></div>`
-        }
-        else {
+        } else {
             leftList.innerHTML += `<div class="list-group-item tinted destination">${channel}</div>`
         }
     });
@@ -39,22 +38,22 @@ function channelMatch(combined) {
         let val;
 
         // Celltype Position
-        if (celltypeUploaded) {
-            let celltypeIndex = _.findIndex(headers, e => {
-                let str = _.get(e, 'fullName') || e;
-                return str == 'cellType' || str == 'phenotype'
-            });
-            if (celltypeIndex != -1) {
-                val = headers[celltypeIndex]
-                _.pullAt(headers, [celltypeIndex])
-                headers = _.concat(val, headers)
-            }
+        // if (celltypeUploaded) {
+        let celltypeIndex = _.findIndex(headers, e => {
+            let str = _.get(e, 'fullName') || e;
+            return str == 'cellType' || str == 'phenotype'
+        });
+        if (celltypeIndex != -1) {
+            val = headers[celltypeIndex]
+            _.pullAt(headers, [celltypeIndex])
+            headers = _.concat(val, headers)
         }
+        // }
 
         // Y Position
         let yIndex = _.findIndex(headers, e => {
             let str = _.get(e, 'fullName') || e;
-            return str == 'CellPosition_Y' || str == 'Y_centroid' ||  str == 'Y_position'||  str == 'Y'
+            return str == 'CellPosition_Y' || str == 'Y_centroid' || str == 'Y_position' || str == 'Y'
         });
         if (yIndex != -1) {
             val = headers[yIndex]
@@ -65,14 +64,13 @@ function channelMatch(combined) {
         // X Position
         let xIndex = _.findIndex(headers, e => {
             let str = _.get(e, 'fullName') || e;
-            return str == 'CellPosition_X' || str == 'X_centroid' ||  str == 'X_position'||  str == 'X'
+            return str == 'CellPosition_X' || str == 'X_centroid' || str == 'X_position' || str == 'X'
         });
         if (xIndex != -1) {
             val = headers[xIndex]
             _.pullAt(headers, [xIndex])
             headers = _.concat(val, headers)
         }
-
 
 
         // CellId Position
@@ -302,7 +300,8 @@ function swapNodes(n1, n2) {
     i2 = index(n2);
 
     if (p1.isEqualNode(p2) && i1 < i2) {
-        i2++;celltypeUploaded
+        i2++;
+        celltypeUploaded
     }
     p1.insertBefore(n2, p1.children[i1]);
     p2.insertBefore(n1, p2.children[i2]);
