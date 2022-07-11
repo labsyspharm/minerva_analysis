@@ -213,8 +213,13 @@ def upload_file_page():
 
                     # get label file from user specified path
                     labelName = request.form['masks']
-                    labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.tif'))
+                    labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.ome.tif'))
                     labelFile = PurePath(directory, 'segmentation', labelFolder)
+
+                    # also check for older seg file format (.tif)
+                    if not Path(directory, 'segmentation', labelFolder).is_file():
+                        labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.tif'))
+                        labelFile = PurePath(directory, 'segmentation', labelFolder)
 
                     # get csv file from user specified path
                     csvName = 'unmicst-' + mcmicroDirName + '_' + labelName + '.csv' # could use labelName to have dynamic csv but usually only cell available.
