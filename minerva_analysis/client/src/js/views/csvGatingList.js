@@ -23,6 +23,7 @@ class CSVGatingList {
         this.sliders = new Map();
         this.container = d3.select("#csv_gating_list");
         // Gating vars
+        const { channelList } = __minervaAnalysis;
         this.global_channel_list = channelList;
         this.global_image_channels = imageChannels;
         this.gating_default_range = [0, 65536];
@@ -42,7 +43,9 @@ class CSVGatingList {
      */
     selectChannel(name) {
         const fullName = this.dataLayer.getFullChannelName(name);
-        this.selections[fullName] = this.sliders.get(name).value();
+        const values = this.gating_channels[fullName];
+        this.selections[fullName] = values;
+        this.sliders.get(name).value(values);
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_MOVE, this.selections);
         this.getAndDrawGatingGMM(name).then(() => {
             this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
@@ -65,10 +68,12 @@ class CSVGatingList {
      /**
      * initializes the view (channel list)
      * @param dd - database description
+     * @param seaDragonViewer - the ImageViewer instance
      * @returns {Promise<void>}
      */
-    init(dd) {
+    init(dd, seaDragonViewer) {
         this.databaseDescription = dd;
+        this.seaDragonViewer = seaDragonViewer; 
         document.getElementById('drag-and-drop-info').style.display = "none";
         // Hide the Loader
         document.getElementById('csv_gating_list_loader').style.display = "none";
@@ -253,20 +258,18 @@ class CSVGatingList {
             gates = await this.dataLayer.getSavedGatingList();
         }
 
-        _.each(gates, col => {
-            let shortName = this.dataLayer.getShortChannelName(col.channel);
-            let channelID = this.gatingIDs[shortName];
-            if (this.selections[col.channel]) {
-                let selector = `#csv_gating-slider_${channelID}`;
-                document.querySelector(selector).click();
-            }
-        })
+        this.eventHandler.trigger(CSVGatingList.events.RESET_GATINGLIST)
 
         _.each(gates, col => {
             let shortName = this.dataLayer.getShortChannelName(col.channel);
             let channelID = this.gatingIDs[shortName];
             if (this.sliders.get(shortName)) {
-                this.sliders.get(shortName).value([col.gate_start, col.gate_end]);
+                let toggle_off
+                if (!col.gate_active && col.channel in this.selections) {
+                    toggle_off = true;
+                } else {
+                    toggle_off = false;
+                }
                 this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
                 if (col.gate_active) {
                     // IF the channel isn't active, make it so
@@ -280,7 +283,7 @@ class CSVGatingList {
 
                 } else {
                     // If channel is currently active, but shouldn't be, update it
-                    if (this.selections[col.channel]) {
+                    if (toggle_off) {
                         let selector = `#csv_gating-slider_${channelID}`;
                         document.querySelector(selector).click();
                     }
@@ -452,15 +455,12 @@ class CSVGatingList {
 
         // Toggle outlined / filled cell selections
         gating_controls_outlines.addEventListener('change', e => {
-            seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
+            this.seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
             this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         })
 
         // Toggle outlined / filled cell selections
         gating_controls_centroids.addEventListener('change', e => {
-
-            // For overlay (and query incrementor)
-            // seaDragonViewer.csvGatingOverlay.run_balancer++;
 
             // Update logic mode for selection query
             if (e.target.checked) {
@@ -796,6 +796,7 @@ class CSVGatingList {
 
 //resize sliders, etc on window change
 window.addEventListener("resize", () => {
+    const { csv_gatingList } = __minervaAnalysis;
     if (typeof csv_gatingList != "undefined" && csv_gatingList) {
         csv_gatingList.sliders.forEach((slider, name) => {
             d3.select('div#csv_gating-slider_' + name).select('svg').remove();
@@ -834,5 +835,6 @@ CSVGatingList.events = {
     GATING_BRUSH_END: "GATING_BRUSH_END",
     GATING_COLOR_TRANSFER_CHANGE_MOVE: "GATING_TRANSFER_CHANGE_MOVE",
     GATING_COLOR_TRANSFER_CHANGE: "GATING_TRANSFER_CHANGE",
-    GATING_CHANNELS_CHANGE: "GATING_CHANNELS_CHANGE"
+    GATING_CHANNELS_CHANGE: "GATING_CHANNELS_CHANGE",
+    RESET_GATINGLIST: "RESET_GATINGLIST"
 };

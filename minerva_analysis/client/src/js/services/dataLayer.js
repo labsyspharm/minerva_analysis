@@ -488,7 +488,7 @@ class DataLayer {
         }
 
         // add new item
-        this.currentSelection.set(item[config.featureData[0].idField], item);
+        this.currentSelection.set(item[this.config.featureData[0].idField], item);
 
         // console.log('current selection size:', this.currentSelection.size);
         if (this.currentSelection.size > 0) {

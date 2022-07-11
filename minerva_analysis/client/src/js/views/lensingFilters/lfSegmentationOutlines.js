@@ -14,6 +14,7 @@ export class LfSegmentationOutlines {
      */
     constructor(_imageViewer) {
         this.image_viewer = _imageViewer;
+        const { dataLayer, channelList } = __minervaAnalysis;
 
         // From global vars
         this.data_layer = dataLayer;
