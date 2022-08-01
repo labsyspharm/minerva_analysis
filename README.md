@@ -10,6 +10,18 @@ https://github.com/labsyspharm/minerva_analysis/releases
 These are executables for Windows and MacOS that can be run locally without any installations.
 
 
+## Running as a Docker container
+
+* Build image: `docker build -t gating .` 
+* Run image with mounted path: `docker run --rm -dp 8000:8000 -v [source path]:/[target path] gating`
+
+where
+* `--rm` cleans up the container after it finishes executing
+* `-v` mounts the "present working directory" (containing your data) to be `/data` inside the container. This is necessary in order to import your data via the import page.
+* `-dp` forwards the port 8000
+
+Once the container is running, go to `http://localhost:8000/` in your web browser.
+
 ## Clone and Run Codebase (for Developers)
 #### 1. Checkout Project
 `git clone https://github.com/labsyspharm/minerva_analysis.git`
