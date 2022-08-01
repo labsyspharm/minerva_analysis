@@ -20,7 +20,8 @@ where
 * `-v` mounts the "present working directory" (containing your data) to be `/data` inside the container. This is necessary in order to import your data via the import page.
 * `-dp` forwards the port 8000
 
-Once the container is running, go to `http://localhost:8000/` in your web browser. To import your imaging files in the import gui type in the mounted /data/..
+Once the container is running, go to `http://localhost:8000/` in your web browser. 
+To import your imaging files in the import gui type in the mounted `/data/..`
 
 ## Clone and Run Codebase (for Developers)
 #### 1. Checkout Project
