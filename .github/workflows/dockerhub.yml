@@ -1,7 +1,8 @@
 name: dockerhub
 
 on:
-  workflow_dispatch:
+  release:
+    types: [published]
 
 jobs:
   docker:
@@ -12,7 +13,7 @@ jobs:
         id: cleantag
         run: |
           tag=$(echo ${{ github.event.release.tag_name }} | tr -d v)
-          echo ${{ env.BRANCH }}:${tag%"_${{ env.BRANCH }}"} 
+          echo "minerva_analysis":${tag%_"minerva_analysis"}          
 #       -
 #         name: Set up QEMU
 #         uses: docker/setup-qemu-action@v1
