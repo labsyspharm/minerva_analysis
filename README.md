@@ -54,3 +54,6 @@ Any tagged commit to a branch will trigger a build. This will appear under relea
 **Tagging Conventions:** All release tags should look like `v{version_number}_{branch_name}`.
 
 * Tagging Example:  `git tag "vX.X_scope2screen"` (adds a tag) followed by `git push --tags` (pushes the tag)
+
+* Remove tags via: `git tag -d "vX.X_scope2screen"` (locally) `git push origin :refs/tags/"vX.X_scope2screen"` (remotelty)
+
