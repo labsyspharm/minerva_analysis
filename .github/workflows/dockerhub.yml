@@ -1,9 +1,7 @@
 name: dockerhub
 
 on:
-  push:
-    tags:
-      - '*'
+  workflow_dispatch:
 
 jobs:
   docker:
