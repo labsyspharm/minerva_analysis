@@ -13,7 +13,7 @@ jobs:
         name: Clean up the release tag test
         id: cleantag
         run: |
-          tag=$(echo ${{ github.event.release.tag_name }} | tr -d v)
+          tag=$(echo ${GITHUB_REF#refs/tags/} | tr -d v)
           echo "gating":${tag%"_gating"} 
 #       -
 #         name: Set up QEMU
