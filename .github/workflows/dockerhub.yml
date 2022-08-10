@@ -20,7 +20,7 @@ jobs:
         name: Clean up the release tag test
         id: cleantag
         run: |
-          tag= echo $SOURCE_TAG
+          tag= $SOURCE_TAG
           echo "gating":${tag%"_gating"} 
         env:
           SOURCE_NAME: ${{ steps.branch_name.outputs.SOURCE_NAME }}
