@@ -19,7 +19,8 @@ jobs:
         name: Clean up the release tag test
         id: cleantag
         run: |
-          tag= $(echo ${{ steps.branch_name.outputs.SOURCE_TAG }} | tr -d v)
+          run: echo "Source Tag is  ${{ steps.branch_name.outputs.SOURCE_TAG }}"
+          tag=$(echo ${{ steps.branch_name.outputs.SOURCE_TAG }} | tr -d v)
           echo "gating":${tag%"_gating"}
 #       -
 #         name: Set up QEMU
