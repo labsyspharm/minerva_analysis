@@ -7,7 +7,7 @@ on:
 
 jobs:
   docker:
-    if: github.repository == 'labsyspharm/gating'
+    if: github.repository != 'labsyspharm/minerva_analysis'
     runs-on: ubuntu-latest
     steps:
       - name: Branch name
