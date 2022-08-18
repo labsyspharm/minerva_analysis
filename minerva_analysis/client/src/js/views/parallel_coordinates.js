@@ -626,6 +626,7 @@ class ParallelCoordinates {
             })
             .classed("par_cor_label", true)
             .style("fill", d => {
+                console.log(d.key, self.colorScheme.colorMap[d.key])
                 return self.colorScheme.colorMap[d.key].hex;
             })
             .attr('fill-opacity', d => {
@@ -675,15 +676,15 @@ class ParallelCoordinates {
         console.log('switching')
         self.editMode = !self.editMode;
         self.draw();
-        // self.svgGroup.selectAll(".value-slider-group")
-        //     .classed("hidden", !self.editMode)
-        //     .classed("visible", self.editMode)
+        console.log('Edit Mode,', self.editMode)
+
         if (self.editMode) {
-            // self.svgGroup.selectAll(".average_path")
-            //     .attr("stroke-width", 0)
+            self.svgGroup.selectAll(".brush").remove();
             self.svgGroup.selectAll(".average_path")
                 .attr("stroke-width", 2)
             document.getElementById('neighborhood_current_selection').innerText = "Composition";
+        } else {
+            self.drawBrush();
         }
         _.each(document.querySelectorAll('.handler'), elem => {
             if (self.editMode) {
@@ -692,14 +693,6 @@ class ParallelCoordinates {
                 elem.style.cursor = 'default';
             }
         })
-        //
-        // _.each(document.querySelectorAll('.viewfinder_chart_label_g_g_text_g'), elem => {
-        //     if (self.editMode) {
-        //         elem.style.cursor = 'pointer';
-        //     } else {
-        //         elem.style.cursor = 'default';
-        //     }
-        // })
     }
 
     enableOrDisablePhenotype(e, d) {

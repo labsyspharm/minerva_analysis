@@ -13,6 +13,8 @@ import store from "store2";
 
 import {annotation} from 'd3-svg-annotation';
 import {legendColor} from 'd3-svg-legend'
+import {saveAs} from 'file-saver';
+
 import colorbrewer from 'colorbrewer';
 import 'lodash';
 import 'jquery-form';
@@ -27,6 +29,7 @@ import 'viawebgl'
 import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
 import concaveman from 'concaveman';
+
 window.d3 = Object.assign(d3base, {legendColor, sliderBottom, annotation});
 window.convert = convert;
 window.$ = $;
@@ -44,5 +47,6 @@ window.ViewerManager = ViewerManager;
 window.createScatterplot = createScatterplot;
 window.concaveman = concaveman;
 window.store = store;
+window.saveAs = saveAs;
 // window.GridStack = GridStack;
 

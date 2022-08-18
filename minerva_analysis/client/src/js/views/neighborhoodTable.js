@@ -75,7 +75,7 @@ class NeighborhoodTable {
 
         let enteredCol = nameCol.enter()
             .append('td')
-            .attr('class', 'name-col col-8');
+            .attr('class', 'name-col col-7');
         enteredCol
             .append('div')
             .attr('class', 'row')
@@ -130,7 +130,7 @@ class NeighborhoodTable {
 
         actionsCol.enter()
             .append('td')
-            .attr('class', 'actions-column col-4')
+            .attr('class', 'actions-column col-5')
             .append('div')
             .attr('class', 'row actions-row justify-content-end')
             .datum(d => d)
@@ -177,7 +177,21 @@ class NeighborhoodTable {
             .append('span')
             .attr('class', 'fas fa-trash delete_neighborhood neighborhood-table-icon');
 
-        trashIcon.exit().remove();
+        let downloadIcon = d3.select(self.table).selectAll('.actions-row').selectAll('.download_neighborhood_col')
+            .data(d => {
+                return [d];
+            });
+        downloadIcon.enter()
+            .append('div')
+            .attr('class', 'col-sm-auto neighborhood_icon_col download_neighborhood_col')
+            .on('click', (e, d) => {
+                return self.dataLayer.downloadNeighborhood(d);
+
+            })
+            .append('span')
+            .attr('class', 'fas fa-download download_neighborhood neighborhood-table-icon');
+
+        downloadIcon.exit().remove();
         self.eventHandler.trigger(NeighborhoodTable.events.updateSavedNeighborhoods, null);
     }
 

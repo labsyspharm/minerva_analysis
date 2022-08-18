@@ -234,6 +234,32 @@ class DataLayer {
         }
     }
 
+    async downloadNeighborhood(d) {
+        try {
+            let response = await fetch('/download_neighborhood', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/csv'
+
+                },
+                responseType: 'blob',
+
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        elem: {
+                            'id': d[0]
+                        }
+                    })
+            });
+            let response_data = await response.blob();
+            saveAs(response_data, `${datasource}_${d[2]}.csv`);
+
+        } catch (e) {
+            console.log("Error Downloading Neighborhood", e);
+        }
+    }
+
     async getNeighborhood(id) {
         try {
             let response = await fetch('/get_neighborhood', {
@@ -495,7 +521,7 @@ class DataLayer {
         }
     }
 
-    async customCluster(numClusters, subsample=true) {
+    async customCluster(numClusters, subsample = true) {
         try {
             let response = await fetch('/custom_cluster?' + new URLSearchParams({
                 datasource: datasource,

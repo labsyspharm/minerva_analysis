@@ -148,6 +148,19 @@ def delete_neighborhood():
     return serialize_and_submit_json(resp)
 
 
+@app.route('/download_neighborhood', methods=['POST'])
+def download_neighborhood():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    elem = post_data['elem']
+    resp_df = data_model.download_neighborhood(elem, datasource)
+    return Response(
+        resp_df.to_csv(index=False),
+        mimetype="text/csv",
+        headers={"Content-disposition":
+                     "attachment; filename=gating_csv.csv"})
+
+
 @app.route('/get_cluster_cells', methods=['GET'])
 def get_cluster_cells():
     datasource = request.args.get('datasource')

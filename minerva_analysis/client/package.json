@@ -22,6 +22,7 @@
     "d3-svg-legend": "^2.25.6",
     "expose-loader": "^1.0.0",
     "file-loader": "^6.0.0",
+    "file-saver": "^2.0.5",
     "ify-loader": "^1.1.0",
     "install": "^0.13.0",
     "jquery": "^3.5.1",

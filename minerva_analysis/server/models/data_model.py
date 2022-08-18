@@ -48,7 +48,6 @@ channels = None
 metadata = None
 np_datasource = None
 zarr_perm_matrix = None
-phenotype_list = None
 
 
 def init(datasource_name):
@@ -64,35 +63,45 @@ def load_datasource(datasource_name, reload=False):
     global metadata
     global zarr_perm_matrix
     global np_datasource
-    global phenotype_list
     if source == datasource_name and datasource is not None and reload is False:
         return
     load_config()
     source = datasource_name
     datasource = load_csv(datasource_name)
-    phenotype_list = get_phenotypes(datasource_name)
-    print('Loading')
+    timer = time.time()
+    print('Loading', time.time() - timer)
 
     # Cell Types
-    if 'neighborhood' not in config[datasource_name]:
-        print('No Neighborhood')
-        matrix_file_name = datasource_name + "_matrix.pk"
-        matrix_paths = Path(
-            data_path) / datasource_name / matrix_file_name
-        perm_data = get_perm_data(datasource_name, matrix_paths)
-        print('Creating Matrix', datasource_name)
-        matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
-                               perm_data['distances'], numba.typed.List(perm_data['lengths']))
+    if 'linkedDatasets' not in config[datasource_name]:
+        linked = [datasource_name]
+    else:
+        linked = config[datasource_name]['linkedDatasets']
+    for ds in linked:
+        if 'neighborhoods' not in config[ds]:
+            print('No Neighborhood')
+            matrix_file_name = ds + "_matrix.pk"
+            matrix_paths = Path(
+                data_path) / ds / matrix_file_name
+            perm_data = get_perm_data(ds, matrix_paths)
+            print('Creating Matrix', ds)
+            matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+                                   perm_data['distances'], numba.typed.List(perm_data['lengths']))
 
-        matrix[np.isnan(matrix)] = 0
+            matrix[np.isnan(matrix)] = 0
 
-        print('Created Matrix', datasource_name)
-        neighborhood_path = Path(
-            data_path) / datasource_name / 'neighborhood.npy'
+            print('Created Matrix', ds)
+            neighborhood_path = Path(
+                data_path) / ds / 'neighborhood.npy'
 
-        np.save(neighborhood_path, matrix)
-        config[datasource_name]['neighborhoods'] = str(neighborhood_path)
-        save_config()
+            np.save(neighborhood_path, matrix)
+            config[ds]['neighborhoods'] = str(neighborhood_path)
+            save_config()
+
+    if 'embedding' not in config[datasource_name]:
+        if 'linkedDatasets' not in config[datasource_name]:
+            create_embedding([datasource_name])
+        else:
+            create_embedding(config[datasource_name]['linkedDatasets'])
 
     np_datasource = load_csv(datasource_name, numpy=True)
     load_ball_tree(datasource_name, reload=reload)
@@ -313,7 +322,7 @@ def save_lasso(polygon, datasource_name):
 
 
 def save_neighborhood(selection, datasource_name, source="Cluster", mode='single'):
-    global phenotype_list
+    phenotype_list = get_phenotypes(datasource_name)
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
     if max_cluster_id is None:
         max_cluster_id = -1
@@ -386,6 +395,21 @@ def delete_neighborhood(elem, datasource_name):
             new_neighborhoods]
 
 
+def download_neighborhood(elem, datasource_name):
+    neighborhood = database_model.get(database_model.Neighborhood, id=elem['id'])
+    neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood)
+    if neighborhood_stats:
+        indices = np.load(io.BytesIO(neighborhood.cells))
+        np_df = load_csv(datasource_name, numpy=True)
+        column_index = get_column_indices([get_cell_id_field(datasource_name)])
+        cell_ids = np_df[indices, column_index]
+        cell_ids_df = pd.DataFrame(cell_ids)
+        cell_ids_df.columns = [get_cell_id_field(datasource_name)]
+        return cell_ids_df
+    else:
+        return  pd.DataFrame([])
+
+
 def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None):
     global datasource
     # Load if not loaded
@@ -408,7 +432,7 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
 def brush_selection(datasource_name, brush, selection_ids):
     global datasource
     global config
-    global phenotype_list
+    phenotype_list = get_phenotypes(datasource_name)
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     # Load if not loaded
@@ -433,7 +457,7 @@ def brush_selection(datasource_name, brush, selection_ids):
 def create_custom_clusters(datasource_name, num_clusters, mode='single', subsample=True):
     global config
     global datasource
-    global phenotype_list
+    phenotype_list = get_phenotypes(datasource_name)
     database_model.delete(database_model.Neighborhood, custom=True)
     database_model.delete(database_model.NeighborhoodStats, custom=True)
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
@@ -766,6 +790,13 @@ def get_phenotypes(datasource_name):
     global datasource
     global source
     global config
+
+    phenotype_list_path = Path(data_path) / datasource_name / 'phenotypes.pk'
+
+    if phenotype_list_path.is_file():
+        phenotype_lst = pickle.load(open(phenotype_list_path, "rb"))
+        return phenotype_lst
+
     try:
         phenotype_field = config[datasource_name]['featureData'][0]['phenotype']
     except KeyError:
@@ -778,14 +809,16 @@ def get_phenotypes(datasource_name):
 
     if phenotype_field in datasource.columns:
         if 'linkedDatasets' not in config[datasource_name]:
-            return sorted(datasource.phenotype.unique().tolist())
+            phenotype_lst = sorted(datasource.phenotype.unique().tolist())
         else:
             combined_list = []
             for dataset in config[datasource_name]['linkedDatasets']:
                 combined_list = combined_list + (load_csv(dataset).phenotype.unique().tolist())
-            return sorted(list(set(combined_list)))
+            phenotype_lst = sorted(list(set(combined_list)))
     else:
-        return ['']
+        phenotype_lst = ['']
+
+    pickle.dump(phenotype_lst, open(phenotype_list_path, "wb"))
 
 
 def get_individual_neighborhood(x, y, datasource_name, r=100, fields=None):
@@ -826,8 +859,7 @@ def get_number_of_cells_in_circle(x, y, datasource_name, r):
 
 
 def get_color_scheme(datasource_name):
-    global phenotype_list
-    labels = phenotype_list
+    labels = get_phenotypes(datasource_name)
     color_scheme = {}
     # http://godsnotwheregodsnot.blogspot.com/2013/11/kmeans-color-quantization-seeding.html
     # colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
@@ -876,7 +908,7 @@ def get_cluster_labels(datasource_name):
 def get_scatterplot_data(datasource_name, mode):
     global config
     global datasource
-    global phenotype_list
+    phenotype_list = get_phenotypes(datasource_name)
     this_time = time.time()
     if 'linkedDatasets' in config[datasource_name] and mode == 'multi':
 
@@ -986,7 +1018,7 @@ def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, em
 
 def get_similar_neighborhood_to_selection(datasource_name, selection_ids, similarity, mode='single'):
     global config
-    global phenotype_list
+    phenotype_list = get_phenotypes(datasource_name)
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     query_vector = None
@@ -1017,9 +1049,10 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
     return obj
 
 
-def build_neighborhood_vector(neighborhood_composition):
+def build_neighborhood_vector(neighborhood_composition, datasource_name):
     global datasource
-    global phenotype_list
+    phenotype_list = get_phenotypes(datasource_name)
+
     disabled = []
     neighborhood_vector = np.zeros((len(phenotype_list)))
     for i in range(len(phenotype_list)):
@@ -1032,7 +1065,7 @@ def build_neighborhood_vector(neighborhood_composition):
 
 def find_custom_neighborhood_wrapper(datasource_name, neighborhood_composition, similarity, mode='single',
                                      calc_p_value=True):
-    neighborhood_vector, disabled = build_neighborhood_vector(neighborhood_composition)
+    neighborhood_vector, disabled = build_neighborhood_vector(neighborhood_composition, datasource_name)
     return find_custom_neighborhood(datasource_name, neighborhood_vector, disabled, similarity, mode, calc_p_value)
 
 
@@ -1276,9 +1309,10 @@ def get_pearsons_correlation(datasource_name, mode='single'):
     heatmap = np.zeros((neighborhoods.shape[1], neighborhoods.shape[1]))
     for i in range(0, neighborhoods.shape[1]):
         for j in range(0, i):
-            p_cor = pearsonr(neighborhoods[:, i], neighborhoods[:, j])
-            heatmap[i, j] = p_cor[0]
-            heatmap[j, i] = p_cor[0]
+            p_cor = pearsonr(neighborhoods[:, i], neighborhoods[:, j])[0]
+            p_cor = np.nan_to_num(p_cor)
+            heatmap[i, j] = p_cor
+            heatmap[j, i] = p_cor
     return heatmap
 
 
@@ -1375,7 +1409,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
     global config
     global metadata
     global datasource
-    global phenotype_list
+    phenotype_list = get_phenotypes(datasource_name)
     default_fields = ['id', 'phenotype', config[datasource_name]['featureData'][0]['xCoordinate'],
                       config[datasource_name]['featureData'][0]['yCoordinate']]
     for field in fields:
@@ -1573,7 +1607,7 @@ def p_val(val, perm_vals):
 # @profile
 def get_image_scatter(datasource_name, mode, all_results=True):
     results = {}
-    global phenotype_list
+    phenotype_list = get_phenotypes(datasource_name)
     if 'linkedDatasets' in config[datasource_name] and all_results:
         for dataset in config[datasource_name]['linkedDatasets']:
             if dataset != datasource_name or mode == 'multi' or mode == 'single':  # TODO:Remove
@@ -1696,8 +1730,7 @@ def get_permuted_results(datasource_name, neighborhood_query):
 
 def get_perm_data(datasource_name, matrix_paths):
     global config
-    global phenotype_list
-    print('phenotype_list', phenotype_list, len(phenotype_list))
+    phenotype_list = get_phenotypes(datasource_name)
     test = time.time()
     column_indices = get_column_indices([config[datasource_name]['featureData'][0]['xCoordinate'],
                                          config[datasource_name]['featureData'][0]['yCoordinate']])
@@ -1781,8 +1814,7 @@ def apply_neighborhood_query(datasource_name, neighborhood_query, mode):
 def calculate_axis_order(datasource_name, mode):
     global datasource
     global config
-    global phenotype_list
-    phenotypes = phenotype_list
+    phenotypes = get_phenotypes(datasource_name)
     correlation_matrix = np.absolute(get_pearsons_correlation(datasource_name, mode))
     order = [None for e in range(len(phenotypes))]
     starting_index = math.ceil(len(phenotypes) / 2.0)
@@ -1840,7 +1872,8 @@ def create_embedding(datasets):
         else:
             combined_neighborhoods = np.vstack((combined_neighborhoods, neighborhoods))
     print('Creating Umap Embedding', combined_neighborhoods.shape)
-    fit = umap.UMAP(n_neighbors=50, min_dist=0.01)
+    # If slow undo low_memory
+    fit = umap.UMAP(n_neighbors=10, min_dist=0.01)
     u = fit.fit_transform(combined_neighborhoods)
     normalized_embedding = normalize_scatterplot_data(u)
     index_sum = 0
