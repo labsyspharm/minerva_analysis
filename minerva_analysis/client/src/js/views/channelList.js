@@ -132,7 +132,7 @@ class ChannelList {
         };
         // Draws rows in the channel list
         _.each(this.columns, column => {
-            let channelID = column.replace(/[ ,.]/g, '');
+            let channelID = column.replace(/[ ,.]/g, '').replace(/\//g, '');
             this.channelIDs[column] = channelID;
             // div for each row in channel list
             let listItemParentDiv = document.createElement("div");

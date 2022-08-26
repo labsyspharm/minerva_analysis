@@ -94,7 +94,7 @@ class CSVGatingList {
         // Draws rows in the gating list
         this.columns.push('Area'); // Add 'Area' to Gating List
         _.each(this.columns, column => {
-            let channelID = column.replace(/[ ,.]/g, '');
+            let channelID = column.replace(/[ ,.]/g, '').replace(/\//g, '');
             this.gatingIDs[column] = channelID;
             // div for each row in gating list
             let listItemParentDiv = document.createElement("div");
