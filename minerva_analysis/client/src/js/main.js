@@ -22,6 +22,7 @@ let dataLayer, colorScheme;
 let config;
 let dataSrcIndex = 0; // dataset id
 let k = 3;
+let logNormalization = false;
 let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
 
 //Disable right clicking on element
@@ -281,6 +282,14 @@ const selectPhenotype = async (phenotype) => {
     await displayNeighborhoodSelection(cells);
 }
 eventHandler.bind(ParallelCoordinates.events.selectPhenotype, selectPhenotype);
+
+const changeNormalization = async (normVal) => {
+    logNormalization = normVal;
+    let cells = await dataLayer.getCells({'points': _.map(dataLayer.getCurrentRawSelection().cells, e => e.id)}, self.dataset, self.image)
+    dataLayer.allCells = await dataLayer.getAllCells();
+    await displayNeighborhoodSelection(cells);
+}
+eventHandler.bind(ParallelCoordinates.events.changeNormalization, changeNormalization);
 
 
 const brushParallelCoordinates = async (brush) => {

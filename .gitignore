@@ -28,6 +28,7 @@ testmatrix.npy
 .env.development.local
 .env.test.local
 .env.production.local
+notebooks/
 
 npm-debug.log*
 yarn-debug.log*

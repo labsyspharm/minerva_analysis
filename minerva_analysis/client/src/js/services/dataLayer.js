@@ -57,6 +57,7 @@ class DataLayer {
                         mode: mode,
                         linkedDataset: linkedDataset,
                         isImage: isImage,
+                        'logNormalization': logNormalization
                     })
             });
             let response_data = await response.json();

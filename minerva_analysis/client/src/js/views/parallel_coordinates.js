@@ -20,6 +20,7 @@ class ParallelCoordinates {
             this.order[d] = i;
         })
         this.reorder = false;
+        this.logNormalize = false;
         // this.order = this.dataLayer.defaultOrder;
         this.sliders = new Map();
         this.brushes = {}
@@ -90,7 +91,7 @@ class ParallelCoordinates {
             this.margin = {top: 10, right: 55, bottom: 10, left: 110};
 
         } else {
-            this.margin = {top: 30, right: 55, bottom: 10, left: 125};
+            this.margin = {top: 30, right: 55, bottom: 10, left: 145};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
@@ -164,8 +165,6 @@ class ParallelCoordinates {
             })
             .on("end", () => {
                 if (self.editMode) {
-                    let test = '';
-                    // self.canvas.getContext('2d').clearRect(0, 0, self.canvas.width, self.canvas.height)
                 }
             })
         if (!this.visData) {
@@ -309,6 +308,29 @@ class ParallelCoordinates {
 
                 }
                 self.reorder = !self.reorder;
+            })
+
+        let normalizeButton = self.svgGroup.selectAll('.normalize_button')
+            .data([0])
+        normalizeButton.enter()
+            .append('text')
+            .classed('normalize_button', true)
+            .attr('x', -self.margin.left + 10)
+            .attr('y', 3)
+            .attr('font-size', legendTextSize)
+            .attr('fill', '#3870ce')
+            .attr('text-anchor', 'start')
+            .style('cursor', 'pointer')
+            .text('Log Norm.')
+            .on("click", (event, d) => {
+                if (self.logNormalize) {
+                    d3.selectAll('.normalize_button').text('Std. Norm.')
+
+                } else {
+                    d3.selectAll('.normalize_button').text('Log Norm.')
+                }
+                self.logNormalize = !self.logNormalize;
+                self.eventHandler.trigger(ParallelCoordinates.events.changeNormalization, self.logNormalize);
             })
 
 
@@ -758,6 +780,7 @@ class ParallelCoordinates {
 
 ParallelCoordinates.events = {
     selectPhenotype: 'selectPhenotype',
+    changeNormalization: 'changeNormalization',
     brushParallelCoordinates: 'ParallelCoordinates'
 };
 

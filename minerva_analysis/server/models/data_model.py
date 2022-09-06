@@ -48,6 +48,7 @@ channels = None
 metadata = None
 np_datasource = None
 zarr_perm_matrix = None
+log_norm_neighborhood = False
 
 
 def init(datasource_name):
@@ -407,7 +408,63 @@ def download_neighborhood(elem, datasource_name):
         cell_ids_df.columns = [get_cell_id_field(datasource_name)]
         return cell_ids_df
     else:
-        return  pd.DataFrame([])
+        return pd.DataFrame([])
+
+
+def load_neighborhood_matrix(datasource_name):
+    global config
+    global log_norm_neighborhood
+    if log_norm_neighborhood:
+        if 'log_neighborhoods' in config[datasource_name]:
+            log_neighborhood_path = Path(config[datasource_name]['log_neighborhoods'])
+            if log_neighborhood_path.exists():
+                matrix =  np.load(Path(config[datasource_name]['log_neighborhoods']))
+                matrix[np.isnan(matrix)] = 0
+                matrix[matrix < 0] = 0
+                matrix[matrix > 1] = 1
+                return matrix
+        matrix_file_name = datasource_name + "_matrix.pk"
+        matrix_paths = Path(
+            data_path) / datasource_name / matrix_file_name
+        perm_data = get_perm_data(datasource_name, matrix_paths)
+        matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+                               perm_data['distances'], numba.typed.List(perm_data['lengths']), False)
+        matrix[np.isnan(matrix)] = 0
+        log_matrix = np.log(matrix)
+        log_matrix[log_matrix < 0] = 0
+        row_sums = log_matrix.sum(axis=1)
+        log_matrix = log_matrix / row_sums[:, np.newaxis]
+        log_matrix[np.isnan(matrix)] = 0
+        log_matrix[log_matrix > 1] = 1
+
+        neighborhood_path = Path(
+            data_path) / datasource_name / 'log_neighborhood.npy'
+        np.save(neighborhood_path, log_matrix)
+        config[datasource_name]['log_neighborhoods'] = str(neighborhood_path)
+        save_config()
+        return np.load(Path(config[datasource_name]['log_neighborhoods']))
+    else:
+        neighborhood_path = Path(config[datasource_name]['neighborhoods'])
+        if neighborhood_path.exists() is False:
+            matrix_file_name = datasource_name + "_matrix.pk"
+            matrix_paths = Path(
+                data_path) / datasource_name / matrix_file_name
+            perm_data = get_perm_data(datasource_name, matrix_paths)
+            matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+                                   perm_data['distances'], numba.typed.List(perm_data['lengths']), True)
+
+            matrix[np.isnan(matrix)] = 0
+            neighborhood_path = Path(
+                data_path) / datasource_name / 'neighborhood.npy'
+            np.save(neighborhood_path, matrix)
+            config[datasource_name]['neighborhoods'] = str(neighborhood_path)
+            save_config()
+
+        matrix = np.load(Path(config[datasource_name]['neighborhoods']))
+        matrix[np.isnan(matrix)] = 0
+        matrix[matrix < 0] = 0
+        matrix[matrix > 1] = 1
+        return matrix
 
 
 def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None):
@@ -439,7 +496,7 @@ def brush_selection(datasource_name, brush, selection_ids):
     selection_ids = np.array(selection_ids)
     if datasource_name != source:
         load_datasource(datasource_name)
-    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    neighborhoods = load_neighborhood_matrix(datasource_name)
     valid_ids = selection_ids
     for pheno, brush_range in brush.items():
         pheno_col = phenotype_list.index(pheno)
@@ -469,7 +526,7 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
         data = np.load(Path(config[datasource_name]['embedding']))
         # # TODO REMOVE CLUSTER HARDCODE
         # coords = data[:, 0:2]
-        # neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+        # neighborhoods = load_neighborhood_matrix(datasource_name)
         # pcaed = PCA(n_components=2).fit_transform(neighborhoods)
         # data = np.hstack((data, pcaed))
         if subsample:
@@ -637,10 +694,12 @@ def query_for_closest_cell(x, y, datasource_name):
 
 
 # @profile
-def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False):
+def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False, log_normalization=False):
     global datasource
     global source
     global config
+    global log_norm_neighborhood
+    log_norm_neighborhood = log_normalization
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
 
@@ -714,7 +773,7 @@ def get_all_cells(datasource_name, mode, sample_size=400):
     fields = [config[datasource_name]['featureData'][0]['xCoordinate'],
               config[datasource_name]['featureData'][0]['yCoordinate'], 'phenotype', 'id']
     if mode == 'single':
-        neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+        neighborhoods = load_neighborhood_matrix(datasource_name)
         neighborhoods = np.nan_to_num(neighborhoods)
         # row_sums = neighborhoods.sum(axis=1)
         # neighborhoods = neighborhoods / row_sums[:, np.newaxis]
@@ -748,7 +807,7 @@ def get_all_cells(datasource_name, mode, sample_size=400):
             return {'full_neighborhoods': combined_neighborhoods}
             # 'selection_ids': indices}
 
-    #     neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    #     neighborhoods = load_neighborhood_matrix(datasource_name)
     #     row_sums = neighborhoods.sum(axis=1)
     #     neighborhoods = neighborhoods / row_sums[:, np.newaxis]
     #     selection_neighborhoods = neighborhoods[indices, :]
@@ -1036,7 +1095,7 @@ def get_similar_neighborhood_to_selection(datasource_name, selection_ids, simila
                     combined_selection = np.vstack((combined_selection, selected_rows))
         query_vector = np.mean(combined_selection, axis=0)
     else:
-        neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+        neighborhoods = load_neighborhood_matrix(datasource_name)
         query_vector = np.mean(neighborhoods[selection_ids[datasource_name], :], axis=0)
 
     # We expect query in the form of a dict with a bit more info
@@ -1119,7 +1178,7 @@ def find_custom_neighborhood(datasource_name, neighborhood_vector, disabled, sim
 def find_similarity(composition_summary, similarity, datasource_name, disabled=None, calc_p_value=True):
     global config
     neighborhood_query = {'query_vector': composition_summary, 'disabled': disabled, 'threshold': similarity}
-    # neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    # neighborhoods = load_neighborhood_matrix(datasource_name)
     greater_than, p_value = similarity_search(datasource_name, neighborhood_query, calc_p_value)
     return greater_than, neighborhood_query, p_value
 
@@ -1127,7 +1186,7 @@ def find_similarity(composition_summary, similarity, datasource_name, disabled=N
 def similarity_search(datasource_name, neighborhood_query, calc_p_value=True):
     global config
     timer = time.time()
-    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    neighborhoods = load_neighborhood_matrix(datasource_name)
     disabled = neighborhood_query['disabled']
     query_vector = neighborhood_query['query_vector']
     threshold = neighborhood_query['threshold']
@@ -1299,7 +1358,7 @@ def get_pearsons_correlation(datasource_name, mode='single'):
     neighborhoods = None
 
     if mode == 'single' or 'linkedDatasets' not in config[datasource_name]:
-        neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+        neighborhoods = load_neighborhood_matrix(datasource_name)
     else:
         for dataset in config[datasource_name]['linkedDatasets']:
             if neighborhoods is None:
@@ -1321,7 +1380,7 @@ def get_heatmap_pearson_correlation(datasource_name, selection_ids, mode='single
     global ball_tree
     global source
     global config
-    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    neighborhoods = load_neighborhood_matrix(datasource_name)
     # Load if not loaded
     if datasource_name != source:
         load_datasource(datasource_name)
@@ -1427,7 +1486,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         cluster_cells = np_df[indices, :][:, column_indices]
     else:
         cluster_cells = cluster_cells[default_fields]
-    neighborhoods = np.load(Path(config[datasource_name]['neighborhoods']))
+    neighborhoods = load_neighborhood_matrix(datasource_name)
     neighborhoods = np.nan_to_num(neighborhoods)
     # row_sums = neighborhoods.sum(axis=1)
     # neighborhoods = neighborhoods / row_sums[:, np.newaxis]
@@ -1458,7 +1517,11 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
                      'selection_ids': indices}
     # phenotypes = sorted(df.phenotype.unique().tolist())
     # phenotypes = sorted(datasource.phenotype.unique().compute().tolist())
-    summary_stats['weighted_contribution'] = list(map(list, zip(phenotype_list, composition_summary)))
+    try:
+        summary_stats['weighted_contribution'] = list(map(list, zip(phenotype_list, composition_summary)))
+    except TypeError:
+        phenotype_list = get_phenotypes(datasource_name)
+        summary_stats['weighted_contribution'] = list(map(list, zip(phenotype_list, composition_summary)))
 
     obj = {
         # 'cells': cluster_cells.to_dict(orient='records'),
@@ -1560,7 +1623,7 @@ def create_perm_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _
 
 
 @numba.jit(nopython=True, parallel=True)
-def create_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths):
+def create_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengths, normalize=True):
     __phenotypes_array = _phenotypes_array.flatten()
     matrix = np.zeros((_phenotypes_array.shape[0], _len_phenos), dtype=np.float32)
     for i in prange(len(_lengths)):
@@ -1571,7 +1634,9 @@ def create_matrix(_phenotypes_array, _len_phenos, _neighbors, _distances, _lengt
         result = np.zeros((_len_phenos), dtype=np.float32)
         for ind in prange(len(pheno_weight_indices)):
             result[pheno_weight_indices[ind]] += _distances[i][ind]
-        matrix[i] = result / result.sum()
+        if normalize:
+            result = result / result.sum()
+        matrix[i] = result
     return matrix
 
 
@@ -1687,10 +1752,8 @@ def get_permuted_results(datasource_name, neighborhood_query):
     matrix_paths = Path(data_path) / datasource_name / matrix_file_name
 
     test = time.time()
-    if matrix_paths.is_file():
-        perm_data = pickle.load(open(matrix_paths, "rb"))
-    else:
-        perm_data = get_perm_data(datasource_name, matrix_paths)
+    perm_data = get_perm_data(datasource_name, matrix_paths)
+
     # print('P Load Data,', time.time() - test)
     test = time.time()
 
@@ -1730,6 +1793,8 @@ def get_permuted_results(datasource_name, neighborhood_query):
 
 def get_perm_data(datasource_name, matrix_paths):
     global config
+    if matrix_paths.is_file():
+        return pickle.load(open(matrix_paths, "rb"))
     phenotype_list = get_phenotypes(datasource_name)
     test = time.time()
     column_indices = get_column_indices([config[datasource_name]['featureData'][0]['xCoordinate'],

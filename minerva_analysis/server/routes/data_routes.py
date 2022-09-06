@@ -40,7 +40,8 @@ def get_datasource_row():
     mode = post_data['mode']
     linked_dataset = post_data['linkedDataset']
     is_image = post_data['isImage']
-    resp = data_model.get_cells(elem, datasource, mode, linked_dataset, is_image)
+    log_normalization = post_data['logNormalization']
+    resp = data_model.get_cells(elem, datasource, mode, linked_dataset, is_image,log_normalization)
     return serialize_and_submit_json(resp)
 
 
