@@ -70,13 +70,6 @@ body {
 
 /*END OF LOADING SPINNER SECTION*/
 
-#openseadragon {
-    width: 75vh;
-    height: 80vh;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-
-}
-
 #cell_display {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     padding: 10px;
@@ -133,8 +126,11 @@ body {
 }
 
 #channel_list .active {
-    background-color: #bfbcbc;
-    border-color: #bfbcbc;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    border-left: none;
     height: 90px;
 }
 
@@ -142,7 +138,7 @@ body {
     border-radius: 0rem;
 }
 
-#openseadragon_loader, #channel_list_loader {
+#channel_list_loader {
     margin-left: 33px;
 }
 
@@ -192,6 +188,7 @@ nav {
 }
 
 .selected-channels-header {
+    color: white;
     font-size: 0.6rem;
 }
 
@@ -431,5 +428,4 @@ label {
 }
 
 .col-svg-wrapper {
-    padding-left: 30px !important;
 }
