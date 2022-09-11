@@ -1,30 +1,11 @@
 /* Bootstrap Overrides */
-#bodyDiv {
-    background-color: black !important;
-    height: 100%
-}
-
-#topBar {
+body {
     background-color: rgba(0, 0, 0, 1) !important;
-    height: 5vh;
-    max-height: 5vh;
-    left: 0;
-    padding: 0 16px;
-    position: relative;
-    margin: 0;
-    top: 0;
-    width: 100vw;
-    z-index: 101;
 }
 
-#title {
-    color: white;
-    font-size: 16px;
-}
-
-#navbarDropdown, #navbarUpload {
-    color: white;
-    font-size: 16px;
+#bodyDiv {
+    background-color: rgba(0, 0, 0, 1) !important;
+    height: 100%
 }
 
 #container, #row {
@@ -82,7 +63,7 @@
 }
 
 #boxHeading1, #boxHeading2 , #boxHeading3 {
-    color: white;
+    color: rgba(255, 255, 255, 1);
     font-size: 16px;
     position: relative;
 }
@@ -105,7 +86,7 @@
 }
 
 #download-channels-header-div {
-    color: white;
+    color: rgba(255, 255, 255, 1);
     /*position: absolute;*/
     /*right: 0;*/
     /*top: -3px;*/
@@ -117,7 +98,7 @@
 }
 
 #download-gating-header-div {
-    color: white;
+    color: rgba(255, 255, 255, 1);
     /*position: absolute;*/
     /*right: 0;*/
     /*top: -3px;*/
@@ -147,7 +128,7 @@
 }
 
 .list {
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 1);
     overflow-y: scroll;
     position: relative;
     width: 100%;
@@ -165,7 +146,7 @@
 }
 
 #gating_download_panel {
-    background-color: white;
+    background-color: rgba(255, 255, 255, 1);
     padding: 35px 10px 30px 10px;
     position: absolute;
     top: 19px;
@@ -196,8 +177,8 @@
 }
 
 #gating_download_panel .download_flex input[type=text] {
-    background-color: white;
-    border: 1px solid black;
+    background-color: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(0, 0, 0, 1);
     border-radius: 1px;
     color: darkblue;
     font-size: 10px;
@@ -206,7 +187,7 @@
 }
 
 #gating_download_panel .download_button {
-    color: black;
+    color: rgba(0, 0, 0, 1);
     cursor: pointer;
     font-size: 18px;
     margin: 0 0 0 7px;
@@ -216,7 +197,7 @@
 #gating_controls_panel {
     background-color: rgba(0, 0, 0, 0.75);
     border: 1px solid rgba(255, 255, 255, 0.75);
-    color: white;
+    color: rgba(255, 255, 255, 1);
     bottom: -49px;
     display: flex;
     flex-flow: row wrap;

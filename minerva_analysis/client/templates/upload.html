@@ -19,7 +19,7 @@
                         <div class="col-3">
                             <label for="name" >Dataset Name:</label>
                         </div>
-                        <div class="col-auto">
+                        <div class="col-9">
                             <input type="text" class="form-control" id="name" name="name" required>
                             <div class="valid-feedback">Valid.</div>
                             <div class="invalid-feedback">
@@ -33,7 +33,7 @@
                             <div class="col-3">
                                 <label for="channel_file">Channel File Path:</label>
                             </div>
-                            <div class="col-auto">
+                            <div class="col-9">
                                 <input type="text" id="channel_file" class="form-control" name="channel_file" onkeyup="checkFileExistence(this)" required>
                                 <div class="valid-feedback">Valid.</div>
                                 <div class="invalid-feedback">
@@ -46,7 +46,7 @@
                             <div class="col-3">
                                 <label for="label_file">Segmentation File Path:</label>
                             </div>
-                            <div class="col-auto">
+                            <div class="col-9">
                                 <input type="text" id="label_file" class="form-control" name="label_file" onkeyup="checkFileExistence(this)" required>
                                 <div class="valid-feedback">Valid.</div>
                                 <div class="invalid-feedback">
@@ -59,7 +59,7 @@
                             <div class="col-3">
                                 <label for="csv_file">CSV File Path:</label>
                             </div>
-                            <div class="col-auto">
+                            <div class="col-9">
 {#                                <input type="file" id="csv_file" name="csv_file" required>#}
                                 <input type="text" id="csv_file" class="form-control" name="csv_file" onkeyup="checkFileExistence(this)" required>
                                 <div class="valid-feedback">Valid.</div>
@@ -81,7 +81,7 @@
                         <div class="col-3">
                             <label for="name" >Dataset Name:</label>
                         </div>
-                        <div class="col-auto">
+                        <div class="col-9">
                             <input type="text" class="form-control" id="mcmicro_name" name="mcmicro_name" onkeyup="checkDatasetExistence(this)">
                             <div class="valid-feedback">Valid. (if no name chosen mcmicro project name is used.)</div>
                             <div class="invalid-feedback">
@@ -95,7 +95,7 @@
                             <div class="col-3">
                                 <label for="name" class="form-label">Path:</label>
                             </div>
-                            <div class="col-auto">
+                            <div class="col-9">
                                 <input type="text" class="form-control" id="mcmicro_output_folder" name="mcmicro_output_folder" required onkeyup="fillSegFileList(); checkMCOutputFolder(this)">
                                 <div class="valid-feedback">Valid.</div>
                                 <div class="invalid-feedback" id="mcmicro_path_validation_text">

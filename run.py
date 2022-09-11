@@ -4,7 +4,6 @@ import multiprocessing
 import sys
 
 if __name__ == '__main__':
-    print (len(sys.argv))
     multiprocessing.freeze_support()
     #use port 8000 if no port is specified via command line argument
     port = 8000 if len(sys.argv) < 2 or not str.isdigit(sys.argv[1]) else sys.argv[1]

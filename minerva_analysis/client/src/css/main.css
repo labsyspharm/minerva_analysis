@@ -1,5 +1,29 @@
 body {
+    background-color: rgba(0, 0, 0, 1) !important;
     font-family: 'Source Sans Pro', sans-serif;
+}
+
+#topBar {
+    background-color: rgba(0, 0, 0, 1) !important;
+    height: 5vh;
+    max-height: 5vh;
+    left: 0;
+    padding: 0 16px;
+    position: relative;
+    margin: 0;
+    top: 0;
+    width: 100vw;
+    z-index: 101;
+}
+
+#title {
+    color: rgba(255, 255, 255, 1);
+    font-size: 16px;
+}
+
+#navbarDropdown, #navbarUpload {
+    color: rgba(255, 255, 255, 1);
+    font-size: 16px;
 }
 
 /*LOADING SPINNER SECTION*/
@@ -117,7 +141,7 @@ body {
 
 #upload-container {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    padding: 30px;
+    padding: 20px;
 }
 
 #channel_list .list-group-item {
@@ -232,6 +256,8 @@ nav {
 
 #upload-parent {
     width: 800px;
+    background-color: rgba(255, 255, 255, 1);
+    padding: 10px;
 }
 
 #upload_button {
@@ -316,6 +342,7 @@ nav {
 }
 
 #normalize-row, #transform-row {
+    color: rgba(255, 255, 255, 1);
     font-size: 14pt;
 }
 
@@ -372,6 +399,9 @@ label {
     display: inline-block;
 }
 
+.left-title, .right-title {
+    color: rgba(255, 255, 255, 1);
+}
 
 .title {
     font-size: 14pt;
@@ -400,6 +430,7 @@ label {
 }
 
 .channel-match-title {
+    color: rgba(255, 255, 255, 1);
     padding-left: 0;
 }
 
