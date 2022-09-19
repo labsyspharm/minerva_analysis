@@ -361,17 +361,36 @@ int sample_cell_gate(vec2 off, bvec2 mode, float radius) {
   return to_gate(cell_index, mode, radius);
 }
 
-bool in_diff(usampler2D sam, vec2 pos, float one, bvec2 mode) {
-  int cell_idx = sample_cell_gate(vec2(0., 0.), mode, -1.0);
-  bool left_black = sample_cell_gate(vec2(-1. * one, 0.), mode, -1.0) != cell_idx;
-  bool right_black = sample_cell_gate(vec2(1. * one, 0.), mode, -1.0) != cell_idx;
-  bool down_black = sample_cell_gate(vec2(0., -1. * one), mode, -1.0) != cell_idx;
-  bool top_black = sample_cell_gate(vec2(0., 1. * one), mode, -1.0) != cell_idx;
-
-  if (left_black || right_black || down_black || top_black) {
-    return true;
+// Sample gated cell index at given offset
+int gate_cell_index(vec2 off, bvec2 mode, float radius) {
+  int cell_gate = sample_cell_gate(off, mode, radius);
+  if (cell_gate == -1) {
+    return -1;
   }
-  return false;
+  return sample_cell_index(off);
+}
+
+bool in_diff(usampler2D sam, vec2 pos, float one, bvec2 mode) {
+  int cell_idx = gate_cell_index(vec2(0., 0.), mode, -1.0);
+
+  int right = gate_cell_index(vec2(1. * one, 0.), mode, -1.0);
+  int left = gate_cell_index(vec2(-1. * one, 0.), mode, -1.0);
+  int down = gate_cell_index(vec2(0., -1. * one), mode, -1.0);
+  int top = gate_cell_index(vec2(0., 1. * one), mode, -1.0);
+
+  bool right_d = right != cell_idx;
+  bool left_d = left != cell_idx;
+  bool down_d = down != cell_idx;
+  bool top_d = top != cell_idx;
+
+  // Avoid double counting when zoomed in
+  if (one > 1.0 && cell_idx != -1) {
+    if (right == -1 || left == -1 || down == -1 || top == -1) {
+      return false;
+    }
+  }
+  // Count any border of gated cell
+  return (right_d || left_d || down_d || top_d);
 }
 
 bool equals4(uvec4 id1, uvec4 id2) {
@@ -389,16 +408,8 @@ bool near_cell_edge(float one, bvec2 mode) {
   if (one == 1.0 && background) {
     return false;
   }
-  // Cells not counted
-  else if (one > 1.0 && !background) {
-    return false;
-  }
   // pixels are at different cells
-  else if (in_diff(u_tile, uv, one, mode)) {
-    return true;
-  }
-  // Not an edge 
-  return false; 
+  return in_diff(u_tile, uv, one, mode);
 }
 
 // Colorize discrete u32 signal
