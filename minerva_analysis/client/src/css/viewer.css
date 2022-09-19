@@ -1,8 +1,4 @@
 /* Bootstrap Overrides */
-body {
-    background-color: rgba(0, 0, 0, 1) !important;
-}
-
 #bodyDiv {
     background-color: rgba(0, 0, 0, 1) !important;
     height: 100%

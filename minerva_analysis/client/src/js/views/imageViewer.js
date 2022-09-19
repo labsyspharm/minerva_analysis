@@ -89,8 +89,8 @@ class ImageViewer {
         const controlsAnchor = this.parent.select('img').node().parentElement.parentElement.parentElement.parentElement;
         controlsAnchor.style.right = 'unset';
         controlsAnchor.style.top = 'unset';
-        controlsAnchor.style.left = '5px';
-        controlsAnchor.style.bottom = '5px';
+        controlsAnchor.style.left = '40vh';
+        controlsAnchor.style.bottom = '2vh';
 
         // Flexible use of textures
         const constantTextures = ["ids", "centers", "gatings"];

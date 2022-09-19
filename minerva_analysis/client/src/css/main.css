@@ -1,5 +1,4 @@
 body {
-    background-color: rgba(0, 0, 0, 1) !important;
     font-family: 'Source Sans Pro', sans-serif;
 }
 
@@ -342,7 +341,7 @@ nav {
 }
 
 #normalize-row, #transform-row {
-    color: rgba(255, 255, 255, 1);
+    color: rgba(0, 0, 0, 1);
     font-size: 14pt;
 }
 
@@ -400,7 +399,7 @@ label {
 }
 
 .left-title, .right-title {
-    color: rgba(255, 255, 255, 1);
+    color: rgba(0, 0, 0, 1);
 }
 
 .title {
@@ -430,7 +429,7 @@ label {
 }
 
 .channel-match-title {
-    color: rgba(255, 255, 255, 1);
+    color: rgba(0, 0, 0, 1);
     padding-left: 0;
 }
 
