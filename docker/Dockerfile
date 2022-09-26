@@ -44,6 +44,9 @@ RUN python -m pip -v install \
 
 COPY . /app
 COPY index.html /var/www/html/
+COPY scope2screen.png /var/www/html/
+COPY visinity.png /var/www/html/
+COPY gating.png /var/www/html/
 EXPOSE 80
 CMD python scope2screen/run.py 8001 & python gating/run.py 8002 & python visinity/run.py 8003 & nginx -g 'daemon off;' & wait
 
