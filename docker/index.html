@@ -4,7 +4,24 @@
     <meta charset="UTF-8">
     <title>Minerva Analysis</title>
     <style>
-    .container { width: 960px; margin-top: margin-left: auto; margin-right: auto; height: 500px; }
+    img {
+        max-width: 100%;
+        max-height: 100%;
+    }
+    body {background-color: black; color: white;}
+    a:link {
+      color: white;
+    }
+    a:visited {
+      color: white;
+    }
+    a:hover {
+      color: white;
+    }
+    a:active {
+      color: white;
+    }
+    .container { width: 1200px; margin-left: auto; margin-right: auto; height: 500px; }
     .center {
       margin: 0;
       position: absolute;
@@ -13,10 +30,10 @@
       -ms-transform: translate(-50%, -50%);
       transform: translate(-50%, -50%);
     }
-    .container [class*='box'] { width:300px; height:200px; float: left; margin-right: 30px; margin-bottom: 30px; }
-    .container .box1 { background-color: #000; }
-    .container .box2 { background-color: #999; }
-    .container .box3 { background-color: #333; margin-right: 0; }
+    .container [class*='box'] { width:230px; height:150px; float: left; margin-right: 30px; margin-bottom: 30px; }
+    .container .box1 { background-color: #000; border: 1px solid white; text-align: center;}
+    .container .box2 { background-color: #000; border: 1px solid white; text-align: center;}
+    .container .box3 { background-color: #000; border: 1px solid white; text-align: center;}
     </style>
 </head>
 <body>
@@ -26,12 +43,15 @@
     <div class="container">
         <div class="center">
             <div class="box1">
+                <img src="scope2screen.png">
                 <a href="http://localhost:8001" target="_blank">Scope2Screen</a>
             </div>
             <div class="box2">
+                <img src="gating.png">
                 <a href="http://localhost:8002" target="_blank">Gating</a>
             </div>
             <div class="box3">
+                <img src="visinity.png">
                 <a href="http://localhost:8003" target="_blank">Visinity</a>
             </div>
         </div>
