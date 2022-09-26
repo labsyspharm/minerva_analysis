@@ -52,3 +52,4 @@ CMD python scope2screen/run.py 8001 & python gating/run.py 8002 & python visinit
 
 # run the docker container (execute in shell):
 # docker run --rm -v C:/Users/Rkrueger/Documents/lsp/data:/data -p 8001:8001 -p 8002:8002 -p 8003:8003 minervaanalysis
+# docker run --rm -v C:/Users/Rkrueger/Documents/lsp/data:/data -p 8001:8001 -p 8002:8002 -p 8003:8003 -p 8080:80 minervaanalysis
