@@ -418,7 +418,7 @@ def load_neighborhood_matrix(datasource_name):
         if 'log_neighborhoods' in config[datasource_name]:
             log_neighborhood_path = Path(config[datasource_name]['log_neighborhoods'])
             if log_neighborhood_path.exists():
-                matrix =  np.load(Path(config[datasource_name]['log_neighborhoods']))
+                matrix = np.load(Path(config[datasource_name]['log_neighborhoods']))
                 matrix[np.isnan(matrix)] = 0
                 matrix[matrix < 0] = 0
                 matrix[matrix > 1] = 1
@@ -878,6 +878,7 @@ def get_phenotypes(datasource_name):
         phenotype_lst = ['']
 
     pickle.dump(phenotype_lst, open(phenotype_list_path, "wb"))
+    return phenotype_lst
 
 
 def get_individual_neighborhood(x, y, datasource_name, r=100, fields=None):
