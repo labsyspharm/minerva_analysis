@@ -4,7 +4,13 @@
 Simon Warchol*, Robert Krueger*, Ajit Johnson Nirmal, Giorgio Gaglia, Jared Jessup, Cecily C. Ritch, John Hoffer, Jeremy Muhlich, Megan L. Burger, Tyler Jacks, Sandro Santagata, Peter K. Sorger, Hanspeter Pfister
 (* Indicates equal contribution)
 
-Pre-print [https://doi.org/10.1101/2022.05.09.490039](https://doi.org/10.1101/2022.05.09.490039)
+Published in IEEE Transactions on Visualization and Computer Graphics and presented at IEEE Vis 2022: 
+[10.1109/TVCG.2022.3209378](https://doi.org/10.1109/TVCG.2022.3209378)
+
+
+
+Pre-print [10.1109/TVCG.2022.3209378](https://doi.org/10.1101/2022.05.09.490039)
+
 
 
 
