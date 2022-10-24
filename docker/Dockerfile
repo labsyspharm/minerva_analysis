@@ -3,9 +3,10 @@ RUN apt-get update \
     && apt-get install python3-opencv nginx git -y \
     && rm -rf /var/lib/apt/lists/* \
 
-RUN git clone https://github.com/labsyspharm/visinity.git \
+RUN \
     && git clone https://github.com/labsyspharm/scope2screen.git \
-    && git clone https://github.com/labsyspharm/gating.git
+    && git clone https://github.com/labsyspharm/visinity.git \
+    && git clone https://github.com/labsyspharm/gater.git
 
 RUN python -m pip -v install \
     Flask==2.1.0 \
@@ -14,6 +15,7 @@ RUN python -m pip -v install \
     itsdangerous==2.0.1 \
     flask-sqlalchemy \
     numpy \
+    joblib==1.1.0 \
     opencv-python \
     orjson \
     pandas \
@@ -44,10 +46,9 @@ COPY . /app
 COPY index.html /var/www/html/
 COPY scope2screen.png /var/www/html/
 COPY visinity.png /var/www/html/
-COPY gating.png /var/www/html/
+COPY gater.png /var/www/html/
 #EXPOSE 8080
-CMD /app/entrypoint.sh
-
+ENTRYPOINT ["bash", "/app/entrypoint.sh"]
 # build the docker image (execute in shell):
 # docker build -t minervaanalysis .
 

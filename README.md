@@ -4,7 +4,7 @@
 
 
 ## About
-Minerva Analysis an [openseadragon](https://openseadragon.github.io/) based **Muliplex Image Data Visualization and Analysis Toolset**. Sharing a common image viewer codebase (data import, rendering, linkage to tabular data), we currently offer tools for [focus+context-based data exploration](https://github.com/labsyspharm/minerva_analysis/wiki/Scope2Screen), [interactive channel gating](https://github.com/labsyspharm/minerva_analysis/wiki/Gating), [cluster exploration](https://github.com/labsyspharm/minerva_analysis/wiki/ClusterExploration), and [spatial neighborhood analysis](https://github.com/labsyspharm/minerva_analysis/wiki/Neighborhood-Analysis).
+Minerva Analysis an [openseadragon](https://openseadragon.github.io/) based **Muliplex Image Data Visualization and Analysis Toolset**. Sharing a common image viewer codebase (data import, rendering, linkage to tabular data), we currently offer tools for [focus+context-based data exploration](https://github.com/labsyspharm/minerva_analysis/wiki/Scope2Screen), [interactive channel gating](https://github.com/labsyspharm/minerva_analysis/wiki/Gater), [cluster exploration](https://github.com/labsyspharm/minerva_analysis/wiki/ClusterExploration), and [spatial neighborhood analysis](https://github.com/labsyspharm/minerva_analysis/wiki/Neighborhood-Analysis).
 Minerva Analysis is built with a python [Flask](http://flask.pocoo.org/) backend and a [Node.js](https://nodejs.org/en/) javascript frontend.
 
 ## Executables (for Users)
@@ -18,8 +18,8 @@ These are executables for Windows and MacOS that can be run locally without any 
 `git clone https://github.com/labsyspharm/minerva_analysis.git`
 
 #### 2. Checkout Necessary Branch
-* Specific extensions (e.g., gating, scope2screen) are organized in the different branches of this repository (see [extensions in our wiki](https://github.com/labsyspharm/minerva_analysis/wiki/Extensions)).
-* **For Gating, run** `git checkout gating`
+* Specific extensions (e.g., gater, scope2screen) are organized in the different branches of this repository (see [extensions in our wiki](https://github.com/labsyspharm/minerva_analysis/wiki/Extensions)).
+* **For Gater, run** `git checkout gater`
 * Run `git pull` to make sure everything is up to date 
 
 
