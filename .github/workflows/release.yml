@@ -30,7 +30,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.GATING_PAT }}
-          repository: labsyspharm/gating
+          repository: labsyspharm/gater
           event-type: merge
           client-payload: '{"ref": "${{ github.ref }}"}'
       - name: Use Node.js ${{ matrix.node-version }}
