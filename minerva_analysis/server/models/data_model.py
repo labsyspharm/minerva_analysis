@@ -1431,6 +1431,9 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         if isinstance(channels, zarr.Array):
             channel_info['maxLevel'] = 1
             chunks = channels.chunks
+            if chunks[1] == 1 or chunks[2] == 1:
+                chunks = [1, channels.shape[1], channels.shape[2]]
+                channel_info['channels'] = channels.shape[0]
             shape = channels.shape
         else:
             channel_info['maxLevel'] = len(channels)
