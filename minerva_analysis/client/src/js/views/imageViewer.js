@@ -1042,27 +1042,29 @@ class ImageViewer {
 
     addScaleBar() {
         let pixelsPerMeter;
-        if (this.show_scalebar) {
-            let unitConvert;
-            if (this.imgMetadata.physical_size_x_unit === "µm" || this.imgMetadata.physical_size_x_unit === "um") {
-                unitConvert = 1000000;
-            } else if (this.imgMetadata.physical_size_x_unit === "nm") {
-                unitConvert = 1000000000;
-            } else if (this.imgMetadata.physical_size_x_unit === "cm") {
-                unitConvert = 100;
-            } else if (this.imgMetadata.physical_size_x_unit === "m") {
-                unitConvert = 1;
+        if(this.imgMetadata) {
+            if (this.show_scalebar) {
+                let unitConvert;
+                if (this.imgMetadata.physical_size_x_unit === "µm" || this.imgMetadata.physical_size_x_unit === "um") {
+                    unitConvert = 1000000;
+                } else if (this.imgMetadata.physical_size_x_unit === "nm") {
+                    unitConvert = 1000000000;
+                } else if (this.imgMetadata.physical_size_x_unit === "cm") {
+                    unitConvert = 100;
+                } else if (this.imgMetadata.physical_size_x_unit === "m") {
+                    unitConvert = 1;
+                } else {
+                    unitConvert = 0;
+                }
+                pixelsPerMeter = unitConvert * this.imgMetadata.physical_size_x;
             } else {
-                unitConvert = 0;
+                pixelsPerMeter = 0;
             }
-            pixelsPerMeter = unitConvert * this.imgMetadata.physical_size_x;
-        } else {
-            pixelsPerMeter = 0;
-        }
 
-        this.viewer.scalebar({
-            pixelsPerMeter: pixelsPerMeter,
-        });
+            this.viewer.scalebar({
+                pixelsPerMeter: pixelsPerMeter,
+            });
+        }
     }
 }
 

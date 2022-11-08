@@ -204,7 +204,9 @@ def get_rect_cells():
 @app.route('/get_ome_metadata', methods=['GET'])
 def get_ome_metadata():
     datasource = request.args.get('datasource')
-    resp = data_model.get_ome_metadata(datasource).json()
+    resp = data_model.get_ome_metadata(datasource)
+    if resp:
+        resp = resp.json()
     # OME-Types handles jsonify itself, so skip the orjson conversion
     response = app.response_class(
         response=resp,
