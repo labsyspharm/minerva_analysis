@@ -158,7 +158,13 @@ async function init(config) {
      */
     function updateSeaDragonSelection(props = {}) {
         const { idField } = config.featureData[0];
-        seaDragonViewer.pickedId = idField in props ? props[idField] : -1;
+        let picked = [];
+        if (idField in props) {
+          const id = props[idField];
+          picked = [id];
+          //picked = [...(new Array(500)).keys()].map(i => id + i); // Simulate Lasso
+        }
+        seaDragonViewer.pickedIds = picked;
         seaDragonViewer.forceRepaint();
     }
 
