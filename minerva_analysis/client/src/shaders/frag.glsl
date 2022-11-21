@@ -7,6 +7,7 @@ uniform usampler2D u_ids;
 uniform usampler2D u_tile;
 uniform sampler2D u_gatings;
 uniform sampler2D u_centers;
+uniform usampler2D u_pickings;
 uniform sampler2D u_mag_0;
 uniform sampler2D u_mag_1;
 uniform sampler2D u_mag_2;
@@ -15,6 +16,7 @@ uniform ivec2 u_ids_shape;
 uniform vec2 u_tile_shape;
 uniform ivec2 u_gating_shape;
 uniform ivec3 u_center_shape;
+uniform ivec2 u_picking_shape;
 uniform ivec2 u_magnitude_shape;
 uniform ivec4 u_marker_sample;
 
@@ -28,7 +30,7 @@ uniform bvec2 u_draw_mode;
 uniform vec2 u_x_bounds;
 uniform vec2 u_y_bounds;
 uniform int u_tile_fmt;
-uniform int u_picked_id;
+uniform int u_picked_end;
 uniform int u_id_end;
 
 in vec2 uv;
@@ -238,10 +240,17 @@ int sample_cell_index(vec2 off) {
     return -1;
   }
 
+  uint n_i = uint(u_id_end);
+  uint n_p = uint(max(u_picked_end, 0));
+
+  // Use any possible id
+  if (u_picked_end < 0) {
+    return binary_search(u_ids, u_ids_shape, n_i, ikey);
+  }
   // Use externally picked id
-  if (u_picked_id < 0 || u_picked_id == int(ikey)) {
-    // Return index in main id list
-    return binary_search(u_ids, u_ids_shape, uint(u_id_end), ikey);
+  int is_picked = binary_search(u_pickings, u_picking_shape, n_p, ikey);
+  if (is_picked > -1) {
+    return binary_search(u_ids, u_ids_shape, n_i, ikey);
   }
   return -1;
 }

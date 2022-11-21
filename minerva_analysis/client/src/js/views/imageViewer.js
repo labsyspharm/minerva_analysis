@@ -28,8 +28,9 @@ class ImageViewer {
         this.imgMetadata = imgMetadata;
         this.numericData = numericData;
         this.eventHandler = eventHandler;
+        this.pickingChanged = false;
         this._cacheKeys = {};
-        this.pickedId = -1;
+        this._picking = [];
 
         // Viewer
         this.viewer = {};
@@ -94,7 +95,7 @@ class ImageViewer {
         controlsAnchor.style.bottom = '2vh';
 
         // Flexible use of textures
-        const constantTextures = ["ids", "centers", "gatings"];
+        const constantTextures = ["ids", "centers", "gatings", "pickings"];
         const otherOffset = 32 - constantTextures.length;
         const seaGL = new viaWebGL.openSeadragonGL(this.viewer);
         const nMarkers = 4;
@@ -193,6 +194,7 @@ class ImageViewer {
                     ...centerProps,
                     centers: [],
                     id_end_1i: 0,
+                    picked_end_1i: 0,
                     color_3fv: new Float32Array(floatColor),
                     range_2fv: new Float32Array(range),
                     fmt_1i: 16,
@@ -230,7 +232,7 @@ class ImageViewer {
             this.gl.uniform1f(this.u_tile_fraction, args.tile_fraction_1f);
             this.gl.uniform1f(this.u_tile_scale, args.tile_scale_1f);
             this.gl.uniform1f(this.u_pie_radius, args.pie_radius_1f);
-            this.gl.uniform1i(this.u_picked_id, args.picked_id_1i);
+            this.gl.uniform1i(this.u_picked_end, args.picked_end_1i);
             this.gl.uniform2fv(this.u_tile_origin, args.origin_2fv);
             this.gl.uniform3fv(this.u_tile_color, args.color_3fv);
             this.gl.uniform2fv(this.u_tile_range, args.range_2fv);
@@ -247,6 +249,7 @@ class ImageViewer {
             this.u_tile_shape = this.gl.getUniformLocation(program, "u_tile_shape");
             this.u_gating_shape = this.gl.getUniformLocation(program, "u_gating_shape");
             this.u_center_shape = this.gl.getUniformLocation(program, "u_center_shape");
+            this.u_picking_shape = this.gl.getUniformLocation(program, "u_picking_shape");
             this.u_marker_sample = this.gl.getUniformLocation(program, "u_marker_sample");
             this.u_magnitude_shape = this.gl.getUniformLocation(program, "u_magnitude_shape");
             this.u_tile_fraction = this.gl.getUniformLocation(program, "u_tile_fraction");
@@ -259,16 +262,18 @@ class ImageViewer {
             this.u_x_bounds = this.gl.getUniformLocation(program, "u_x_bounds");
             this.u_y_bounds = this.gl.getUniformLocation(program, "u_y_bounds");
             this.u_tile_fmt = this.gl.getUniformLocation(program, "u_tile_fmt");
-            this.u_picked_id = this.gl.getUniformLocation(program, "u_picked_id");
+            this.u_picked_end = this.gl.getUniformLocation(program, "u_picked_end");
             this.u_id_end = this.gl.getUniformLocation(program, "u_id_end");
 
             // Texture for colormap
             const u_ids = this.gl.getUniformLocation(program, "u_ids");
             const u_gatings = this.gl.getUniformLocation(program, "u_gatings");
             const u_centers = this.gl.getUniformLocation(program, "u_centers");
+            const u_pickings = this.gl.getUniformLocation(program, "u_pickings");
             this.gl.uniform1i(u_ids, indexOfTexture("ids", null));
             this.gl.uniform1i(u_gatings, indexOfTexture("gatings", null));
             this.gl.uniform1i(u_centers, indexOfTexture("centers", null));
+            this.gl.uniform1i(u_pickings, indexOfTexture("pickings", null));
             for (const i of [0, 1, 2, 3]) {
                 const u_mag_i = this.gl.getUniformLocation(program, `u_mag_${i}`);
                 this.gl.uniform1i(u_mag_i, i + this._markerOffset);
@@ -394,7 +399,9 @@ class ImageViewer {
         via.texture_mask = via.gl.createTexture();
         via.texture_gatings = via.gl.createTexture();
         via.texture_centers = via.gl.createTexture();
+        via.texture_pickings = via.gl.createTexture();
         this.bindCenters(via, centers);
+        this.bindPickings(via, []);
         this.bindLabels(via, ids);
         this.idCount = ids.length;
         this.ready = true;
@@ -551,6 +558,21 @@ class ImageViewer {
     }
 
     /**
+     * Wrapper to set/get pickedIds
+     *
+     * @type {string}
+     */
+
+    get pickedIds() {
+        return this._picking;
+    }
+
+    set pickedIds(key) {
+        this._picking = key;
+        this.pickingChanged = true;
+    }
+
+    /**
      * Cache key for gating webGL buffer.
      *
      * @type {string}
@@ -587,6 +609,11 @@ class ImageViewer {
         const changes = this.updateCache(keys, gatingLists);
         const { markersChanged, gatingChanged } = changes;
 
+        // Bind picked ids 
+        if (this.pickingChanged || gatingChanged ) {
+            this.bindPickings(this.viaGL, this.pickedIds);
+            this.pickingChanged = false;
+        }
         // Bind buffers per-channel
         if (gatingChanged) {
             const gatings = [];
@@ -625,10 +652,10 @@ class ImageViewer {
      * @param tile - openseadragon tile
      * @param source - openseadragon tile source
      * @typedef {object} CenterProps
-     * @property {number} picked_id_1i - specific id to pick
      * @property {number} pie_radius_1f - radius of or-mode circles
      * @property {number} magnitude_2iv - the shape of each magnitude array
      * @property {number} id_end_1i - the last id in list of ids
+     * @property {number} picked_end_1i - the last picked id index
      * @property {number} marker_sample_4iv - indices of magnitudes
      * @property {number} modes_2i - the currently active mode flags
      * @property {number} tile_fraction_1f - subtile fraction <=1
@@ -644,6 +671,7 @@ class ImageViewer {
         const w = this.config.tileWidth;
         const h = this.config.tileHeight;
         const lastId = (this.idCount || 0) - 1;
+        const lastPick = this.pickedIds.length - 1;
         const tileArgs = [tile.level, tile.x, tile.y];
         const tl = source.toTileLevels(...tileArgs);
         const { outputTile, relativeImageScale } = tl;
@@ -657,9 +685,9 @@ class ImageViewer {
         });
         return {
             pie_radius_1f: 8.5,
-            picked_id_1i: this.pickedId,
             magnitude_2iv: magnitude_2iv,
             id_end_1i: Math.max(lastId, 0),
+            picked_end_1i: Math.max(lastPick, -1),
             modes_2i: [modes.edge, modes.or],
             key_end_1i: this.gatingKeys.length,
             marker_sample_4iv: markerSamples,
@@ -695,7 +723,7 @@ class ImageViewer {
      * @param keys - active marker channels
      * @param gatingLists - lists of min, max, r, g, b gating values
      * @typedef {object} Changes
-     * @property {boolean} markersChanged - if marke lists have changed
+     * @property {boolean} markersChanged - if marker lists have changed
      * @property {boolean} gatingChanged - if gating parameters changed
      * @returns Changes
      */
@@ -710,7 +738,6 @@ class ImageViewer {
         if (gatingChanged) {
             this.gatingCacheKey = gatingCacheKey;
         }
-
         return { markersChanged, gatingChanged };
     }
 
@@ -906,6 +933,19 @@ class ImageViewer {
         const gating_2iv = [width, height];
         via.gl.uniform2iv(via.u_gating_shape, gating_2iv);
         this.setFloatTexture(via.gl, idx, via.texture_gatings, values, width, height);
+    }
+
+    /**
+     * @function bindPickings - bind segmentation mask pickings
+     * @param via - the viaGL context
+     * @param values - the texture data as 2d array
+     */
+    bindPickings(via, values) {
+        // Add a mask gating map
+        const idx = this.indexOfTexture("pickings", null);
+        const picking_2iv = this.toTextureShape(via.gl, values.length);
+        via.gl.uniform2iv(via.u_picking_shape, picking_2iv);
+        this.setIntegerTexture(via.gl, idx, via.texture_pickings, values);
     }
 
     // =================================================================================================================

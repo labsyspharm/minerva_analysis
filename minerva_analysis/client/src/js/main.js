@@ -127,13 +127,16 @@ async function init(config) {
      */
     const actionImageClickedMultiSel = (d) => {
         d3.select("body").style("cursor", "progress");
+        const { idField } = config.featureData[0];
         // add newly clicked item to selection
         if (!Array.isArray(d.item)) {
             dataLayer.addToCurrentSelection(d.item, true, d.clearPriors);
-            updateSeaDragonSelection(d.item);
+            const picked = [d.item[idField]];
+            updateSeaDragonSelection({ picked });
         } else {
             dataLayer.addAllToCurrentSelection(d.item);
-            updateSeaDragonSelection(d.item[0]);
+            const picked = d.item.map(i => i[idField]);
+            updateSeaDragonSelection({ picked });
         }
         d3.select("body").style("cursor", "default");
     };
@@ -157,9 +160,17 @@ async function init(config) {
      * @param props - may contain cell id
      */
     function updateSeaDragonSelection(props = {}) {
-        const { idField } = config.featureData[0];
-        seaDragonViewer.pickedId = idField in props ? props[idField] : -1;
+        if ("picked" in props) {
+          seaDragonViewer.pickedIds = props.picked;
+        }
         seaDragonViewer.forceRepaint();
+    }
+
+    /**
+     * Remove currently selected picked cell ids
+     */
+    function clearSeaDragonSelection() {
+      updateSeaDragonSelection({ picked: [] });
     }
 
     const handler = () => updateSeaDragonSelection();
