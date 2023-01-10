@@ -53,6 +53,5 @@ ENTRYPOINT ["bash", "/app/entrypoint.sh"]
 # docker build -t minervaanalysis .
 
 # run the docker container (execute in shell):
-# docker run --rm -v C:/Users/Rkrueger/Documents/lsp/data:/data -p 8001:8001 -p 8002:8002 -p 8003:8003 minervaanalysis
 # docker run --rm -v C:/Users/Rkrueger/Documents/lsp/data:/data -p 8001:8001 -p 8002:8002 -p 8003:8003 -p 8080:8080 minervaanalysis
 # example for writing imported data to volume: docker run --rm -v C:/Users/Rkrueger/Documents/lsp/input:/input -v C:/Users/Rkrueger/Documents/lsp/output:/minerva_analysis/data -p 8001:8001 -p 8002:8002 -p 8003:8003 -p 8080:8080 minervaanalysis
