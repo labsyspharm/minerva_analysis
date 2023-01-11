@@ -41,7 +41,7 @@
     "sortablejs": "^1.10.2",
     "store2": "^2.13.1",
     "style-loader": "^1.2.1",
-    "viawebgl": "thejohnhoffer/viaWebGL#webgl2"
+    "viawebgl": " #webgl2"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
