@@ -44,27 +44,31 @@
                 </span>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     {% for datasource in data.datasources %}
-                    <div class="container flex-nowrap justify-content-start">
-                        <div class="col-auto">
-                            <div class="row">
-                                <a href="/edit_config/{{ datasource }}">
-                                    <span class="fas fa-pencil-alt"></span>
-                                </a>
-                                <a href="/delete/{{ datasource }}" class="delete-button"
-                                   onclick="return confirm('Are you sure you want to delete this dataset?');">
-                                    <span class="fas fa-trash"></span>
-                                </a>
+                        <div class="container flex-nowrap justify-content-start">
+                            <div class="col-auto">
+                                <div class="row">
+                                    <a href="/edit_config/{{ datasource }}">
+                                        <span class="fas fa-pencil-alt"></span>
+                                    </a>
+                                    <a href="/delete/{{ datasource }}" class="delete-button"
+                                       onclick="return confirm('Are you sure you want to delete this dataset?');">
+                                        <span class="fas fa-trash"></span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <a class href="/{{ datasource }}">{{ datasource }}</a>
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <a class href="/{{ datasource }}">{{ datasource }}</a>
-                        </div>
-                    </div>
                     {% endfor %}
                 </div>
             </li>
             <li class="nav-item">
-                <a id="navbarUpload" class="nav-link" href="/upload_page">Upload</a>
+                {% if is_docker %}
+                    <a id="navbarUpload" class="nav-link" href="http://localhost:8080/upload_page">Upload</a>
+                {% else %}
+                    <a id="navbarUpload" class="nav-link" href="/upload_page">Upload</a>
+                {% endif %}
             </li>
         </ul>
     </div>
