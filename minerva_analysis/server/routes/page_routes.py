@@ -29,7 +29,8 @@ def image_viewer(datasource):
 
     return render_template('index.html',
                            data={'datasource': datasource, 'datasources': datasources,
-                                 'applyPrevious': apply_previous, 'mode': mode, 'config': config})
+                                 'applyPrevious': apply_previous, 'mode': mode, 'config': config,
+                                 'is_docker': app.config['IS_DOCKER']})
 
 
 @app.route('/compare_neighborhoods/<string:datasource>')
@@ -38,12 +39,14 @@ def compare_neighborhoods(datasource):
     if datasource not in datasources:
         datasource = ''
 
-    return render_template('compare_neighborhoods.html', data={'datasource': datasource, 'datasources': datasources})
+    return render_template('compare_neighborhoods.html', data={'datasource': datasource, 'datasources': datasources,
+                                                               'is_docker': app.config['IS_DOCKER']})
 
 
 @app.route("/upload_page")
 def upload_page():
-    return render_template("upload.html", data={'datasource': '', 'datasources': get_config_names()})
+    return render_template("upload.html", data={'datasource': '', 'datasources': get_config_names(),
+                                                'is_docker': app.config['IS_DOCKER']})
 
 
 @app.route('/client/<path:filename>')
