@@ -1,16 +1,11 @@
-from flask import Flask
-from pathlib import Path
-from flask_sqlalchemy import SQLAlchemy
-import webbrowser
-
-from numcodecs import compat_ext  # Needed for pyinstaller
-from numcodecs import blosc  # Needed for pyinstaller
-import xmlschema  # Needed for pyinstaller
-
-import os
 import json
-import sys
 import multiprocessing
+import sys
+import webbrowser
+from pathlib import Path
+
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__, template_folder=Path('client/templates'))
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -55,4 +50,4 @@ def get_config_names():
 from minerva_analysis.server.routes import page_routes, data_routes, import_routes
 from minerva_analysis.server.models import data_model, database_model
 
-webbrowser.open_new('http://localhost:8000/')
+# webbrowser.open_new('http://localhost:8000/')

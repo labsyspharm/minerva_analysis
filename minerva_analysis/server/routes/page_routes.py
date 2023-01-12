@@ -1,13 +1,12 @@
-from minerva_analysis import app, get_config_names, get_config, config_json_path
 from flask import render_template, send_from_directory, request, send_file
-from pathlib import Path
-import json
-import os
+
+from minerva_analysis import app, get_config_names, get_config, config_json_path
 
 
 @app.route("/")
 def my_index():
-    return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
+    return render_template("index.html", data={'datasource': '', 'datasources': get_config_names(),
+                                               'is_docker': app.config['IS_DOCKER']})
 
 
 @app.route("/data/config.json", methods=['GET'])
