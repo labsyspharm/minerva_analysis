@@ -1,6 +1,7 @@
 from flask import Flask
 from pathlib import Path
 from flask_sqlalchemy import SQLAlchemy
+from appdirs import user_data_dir
 
 from numcodecs import compat_ext  # Needed for pyinstaller
 from numcodecs import blosc  # Needed for pyinstaller
@@ -17,11 +18,20 @@ import multiprocessing
 #centralizing path across app
 cwd_path = Path.cwd()
 
+## uncomment block if not on O2
 if getattr(sys, 'frozen', False):
     data_path = Path(Path(sys.executable).parent / 'data')
     multiprocessing.freeze_support()
 else:
     data_path = Path("minerva_analysis/data").resolve()
+
+## uncomment block if on O2
+# appname = "minerva_analysis"
+# appauthor = "lsp"
+# data_path = Path(user_data_dir(appname, appauthor)+'/data').resolve()
+# if getattr(sys, 'frozen', False):
+#     multiprocessing.freeze_support()
+
 # print('Data Path', str(data_path), str((data_path).resolve()))
 # Make the Data Path
 data_path.mkdir(parents=True, exist_ok=True)

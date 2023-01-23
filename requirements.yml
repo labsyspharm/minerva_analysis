@@ -7,6 +7,7 @@ dependencies:
   - jinja2==3.0.3
   - werkzeug==2.0.3
   - itsdangerous==2.0.1
+  - appdirs
   - flask-sqlalchemy
   - numpy
   - ome-types
@@ -24,6 +25,5 @@ dependencies:
   - pip
   - pip:
       - opencv-python==4.5.3.56
-
 
 
