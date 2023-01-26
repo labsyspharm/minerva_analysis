@@ -4,6 +4,7 @@ import pandas as pd
 from PIL import ImageColor
 import json
 import os
+import io
 from pathlib import Path
 from pathlib import PurePath
 from ome_types import from_xml
@@ -16,14 +17,17 @@ import pickle
 import tifffile as tf
 import re
 import zarr
-from dask import dataframe as dd
 import cv2
+from sklearn.mixture import GaussianMixture
+from scipy.stats import norm
+from skimage.measure import block_reduce
 
 ball_tree = None
 database = None
 source = None
 config = None
 seg = None
+zarray = None
 channels = None
 metadata = None
 
@@ -37,6 +41,7 @@ def load_datasource(datasource_name, reload=False):
     global source
     global config
     global seg
+    global zarray
     global channels
     global metadata
     if source is datasource_name and datasource is not None and reload is False:
@@ -64,6 +69,18 @@ def load_datasource(datasource_name, reload=False):
     except:
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
+
+    level_series = next(
+        level for level in reversed(channel_io.series[0].levels)
+        if all(d >= 200 for d in level.shape[1:])
+    )
+    zarray = zarr.open(level_series.aszarr())
+    if zarray.shape[1] > 400 or zarray.shape[2] > 400:
+        x_reduce = zarray.shape[1] // 200
+        y_reduce = zarray.shape[2] // 200
+        reduce = np.min([x_reduce, y_reduce])
+        zarray = block_reduce(zarray, (1, reduce, reduce), np.mean)
+
     print("Data loading done.")
 
 
@@ -83,6 +100,7 @@ def load_config(datasource_name):
         config[datasource_name]['featureData'][0]['src'] = str(Path(csvPath))
         if original != config[datasource_name]['featureData'][0]['src']:
             updated = True
+
         try:
             original = config[datasource_name]['segmentation']
             config[datasource_name]['segmentation'] = original.replace('static/data', 'minerva_analysis/data')
@@ -191,7 +209,7 @@ def get_channel_cells(datasource_name, channels):
     for c in channels:
         if query_string != '':
             query_string += ' and '
-        query_string += str(range[0]) + ' < ' + c + ' < ' + str(range[1])
+        query_string += str(range[0]) + ' < `' + c + '` < ' + str(range[1])
     if query_string == None or query_string == "":
         return []
     query = datasource.query(query_string)[['id']].to_dict(orient='records')
@@ -385,7 +403,7 @@ def get_rect_cells(datasource_name, rect, channels):
         return {}
 
 
-def get_gated_cells(datasource_name, gates):
+def get_gated_cells(datasource_name, gates, start_keys):
     global datasource
     global source
     global ball_tree
@@ -395,17 +413,62 @@ def get_gated_cells(datasource_name, gates):
         load_ball_tree(datasource_name)
 
     query_string = ''
+    query_keys = start_keys
     for key, value in gates.items():
         if query_string != '':
             query_string += ' and '
-        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
-    if query_string == None or query_string == "":
+        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
+        query_keys.append(key)
+    if query_string is None or query_string == "":
         return []
-    query = datasource.query(query_string)[['id']].to_dict(orient='records')
+    # query_keys[0] is the ID]
+    query = datasource.query(query_string)[[query_keys[0]]].to_dict(orient='records')
     return query
 
 
-def download_gating_csv(datasource_name, gates, channels):
+def get_gated_cells_custom(datasource_name, gates, start_keys):
+    global datasource
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+
+    # Query
+    query_string = ''
+    query_keys = start_keys
+    for key, value in gates.items():
+        if query_string != '':
+            query_string += ' or '
+        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
+        query_keys.append(key)
+    if query_string is None or query_string == "":
+        return []
+    query = datasource.query(query_string)[query_keys].to_dict(orient='records')
+
+    # TODO - likely lighter / less costly
+    # query = database.query(query_string)[query_keys].to_dict('split')
+    # del query['index']
+
+    return query
+
+
+def get_all_cells(datasource_name, start_keys, data_type=float):
+    global datasource
+    global source
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+
+    query = datasource[start_keys].values.flatten('C');
+    if np.issubdtype(data_type, int):
+        return query.astype(np.uint32)
+    return query.astype(np.float32)
+
+
+def download_gating_csv(datasource_name, gates, channels, encoding):
     global datasource
     global source
     global ball_tree
@@ -420,7 +483,7 @@ def download_gating_csv(datasource_name, gates, channels):
         columns.append(key)
         if query_string != '':
             query_string += ' and '
-        query_string += str(value[0]) + ' < ' + key + ' < ' + str(value[1])
+        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
     ids = datasource.query(query_string)[['id']].to_numpy().flatten()
     if 'idField' in config[datasource_name]['featureData'][0]:
         idField = config[datasource_name]['featureData'][0]['idField']
@@ -433,8 +496,9 @@ def download_gating_csv(datasource_name, gates, channels):
     csv[idField] = datasource['id']
     for channel in channels:
         if channel in gates:
-            csv.loc[csv[idField].isin(ids), key] = 1
-            csv.loc[~csv[idField].isin(ids), key] = 0
+            if encoding == 'binary':
+                csv.loc[csv[idField].isin(ids), channel] = 1
+            csv.loc[~csv[idField].isin(ids), channel] = 0
         else:
             csv[channel] = 0
 
@@ -462,7 +526,7 @@ def download_gates(datasource_name, gates, channels):
     return csv
 
 
-def get_datasource_description(datasource_name):
+def save_gating_list(datasource_name, gates, channels):
     global datasource
     global source
     global ball_tree
@@ -470,12 +534,99 @@ def get_datasource_description(datasource_name):
     # Load if not loaded
     if datasource_name != source:
         load_ball_tree(datasource_name)
-    description = datasource.describe(percentiles=[.005, .01, .25, .5, .75, .95, .99, .995]).to_dict()
+    arr = []
+    for key, value in channels.items():
+        arr.append([key, value[0], value[1]])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'gate_start', 'gate_end']
+    csv['gate_active'] = False
+    for channel in gates:
+        csv.loc[csv['channel'] == channel, 'gate_active'] = True
+        csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
+        csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
+
+    temp = csv.to_dict(orient='records')
+    f = pickle.dumps(temp, protocol=4)
+    database_model.save_list(database_model.GatingList, datasource=datasource_name, cells=f)
+
+
+def get_saved_gating_list(datasource_name):
+    gating_list = database_model.get(database_model.GatingList, datasource=datasource_name)
+    return pickle.loads(gating_list.cells)
+
+
+def download_channels(datasource_name, map_channels, active_channels, list_colors, list_ranges, list_channels):
+    global datasource
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    arr = []
+    for channel in map_channels:
+        channel_name = map_channels[channel]
+        arr.append([channel_name, list_channels[channel_name][0], list_channels[channel_name][1], 255, 255, 255, 1, False])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'start', 'end', 'r', 'g', 'b', 'opacity', 'channel_active']
+
+    for channel in list_colors:
+        csv.loc[csv['channel'] == map_channels[channel], 'r'] = list_colors[channel]['color']['r']
+        csv.loc[csv['channel'] == map_channels[channel], 'g'] = list_colors[channel]['color']['g']
+        csv.loc[csv['channel'] == map_channels[channel], 'b'] = list_colors[channel]['color']['b']
+        csv.loc[csv['channel'] == map_channels[channel], 'opacity'] = list_colors[channel]['color']['opacity']
+    for channel in active_channels:
+        csv.loc[csv['channel'] == map_channels[channel], 'channel_active'] = True
+
+    return csv
+
+
+def save_channel_list(datasource_name, map_channels, active_channels, list_colors, list_ranges, list_channels):
+    global datasource
+    global source
+    global ball_tree
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    arr = []
+    for channel in map_channels:
+        channel_name = map_channels[channel]
+        arr.append([channel_name, list_channels[channel_name][0], list_channels[channel_name][1], 255, 255, 255, 1, False])
+    csv = pd.DataFrame(arr)
+    csv.columns = ['channel', 'start', 'end', 'r', 'g', 'b', 'opacity', 'channel_active']
+
+    for channel in list_colors:
+        csv.loc[csv['channel'] == map_channels[channel], 'r'] = list_colors[channel]['color']['r']
+        csv.loc[csv['channel'] == map_channels[channel], 'g'] = list_colors[channel]['color']['g']
+        csv.loc[csv['channel'] == map_channels[channel], 'b'] = list_colors[channel]['color']['b']
+        csv.loc[csv['channel'] == map_channels[channel], 'opacity'] = list_colors[channel]['color']['opacity']
+    for channel in active_channels:
+        csv.loc[csv['channel'] == map_channels[channel], 'channel_active'] = True
+
+    temp = csv.to_dict(orient='records')
+    f = pickle.dumps(temp, protocol=4)
+    database_model.save_list(database_model.ChannelList, datasource=datasource_name, cells=f)
+
+
+def get_saved_channel_list(datasource_name):
+    channel_list = database_model.get(database_model.ChannelList, datasource=datasource_name)
+    return pickle.loads(channel_list.cells)
+
+
+def get_datasource_description(datasource_name):
+    global datasource
+    global source
+    global ball_tree
+    global config
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    description = datasource.describe().to_dict()
     for column in description:
-        col = datasource[column]
-        col = col[(col >= description[column]['1%']) & (col <= description[column]['99%'])]
-        col = col.to_numpy()
-        [hist, bin_edges] = np.histogram(col, bins=25, density=True)
+        column_data = datasource[column].to_numpy()
+        [hist, bin_edges] = np.histogram(column_data[~np.isnan(column_data)], bins=50, density=True)
         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
         description[column]['histogram'] = {}
         dat = []
@@ -485,96 +636,152 @@ def get_datasource_description(datasource_name):
             obj['y'] = hist[i]
             dat.append(obj)
         description[column]['histogram'] = dat
+
+    list_channels = config[datasource_name]['imageData']
+    image_layer = 0
+    for channel in list_channels:
+        if channel['name'] != 'Area':
+            fullName = channel['fullname']
+
+            image_data = zarray[image_layer]
+            img_log = np.log(image_data[image_data > 0])
+            [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
+            midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+            description[fullName]['image_histogram'] = {}
+
+            dat = []
+            for i in range(len(hist)):
+                obj = {}
+                obj['x'] = midpoints[i]
+                obj['y'] = hist[i]
+                dat.append(obj)
+
+            description[fullName]['image_histogram'] = dat
+            description[fullName]['image_min'] = np.ceil(np.exp(np.min(img_log)))
+            description[fullName]['image_max'] = np.ceil(np.exp(np.max(img_log)))
+
+            image_layer += 1
+        else:
+            continue
+
     return description
 
 
+def get_channel_gmm(channel_name, datasource_name):
+    global datasource
+    global source
+    global ball_tree
+    global config
 
-def spatial_corr (adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid',y_coordinate='Y_centroid',
-                  marker=None, k=500, label='spatial_corr'):
-    """
-    Parameters
-    ----------
-    adata : TYPE
-        DESCRIPTION.
-    raw : TYPE, optional
-        DESCRIPTION. The default is False.
-    log : TYPE, optional
-        DESCRIPTION. The default is False.
-    threshold : TYPE, optional
-        DESCRIPTION. The default is None.
-    x_coordinate : TYPE, optional
-        DESCRIPTION. The default is 'X_centroid'.
-    y_coordinate : TYPE, optional
-        DESCRIPTION. The default is 'Y_centroid'.
-    marker : TYPE, optional
-        DESCRIPTION. The default is None.
-    k : TYPE, optional
-        DESCRIPTION. The default is 500.
-    label : TYPE, optional
-        DESCRIPTION. The default is 'spatial_corr'.
-    Returns
-    -------
-    corrfunc : TYPE
-        DESCRIPTION.
-    Example
-    -------
-    adata = spatial_corr (adata, threshold=0.5, x_coordinate='X_position',y_coordinate='Y_position',marker=None)
-    """
-    # Start
-    bdata = adata.copy()
-    # Create a DataFrame with the necessary inforamtion
-    data = pd.DataFrame({'x': bdata.obs[x_coordinate], 'y': bdata.obs[y_coordinate]})
-    # user defined expression matrix
-    if raw is True:
-        exp =  pd.DataFrame(bdata.raw.X, index= bdata.obs.index, columns=bdata.var.index)
-    else:
-        exp =  pd.DataFrame(bdata.X, index= bdata.obs.index, columns=bdata.var.index)
-    # log the data if needed
-    if log is True:
-        exp = np.log1p(exp)
-    # set a threshold if needed
-    if threshold is not None:
-        exp[exp >= threshold] = 1
-        exp[exp < threshold] = 0
-    # subset markers if needed
-    if marker is not None:
-        if isinstance(marker, str):
-            marker = [marker]
-        exp = exp[marker]
-    # find the nearest neighbours
-    tree = BallTree(data, leaf_size= 2)
-    dist, ind = tree.query(data, k=k, return_distance= True)
-    neighbours = pd.DataFrame(ind, index = bdata.obs.index)
-    # find the mean dist
-    rad_approx = np.mean(dist, axis=0)
-    # Calculate the correlation
-    mean = np.mean(exp).values
-    std = np.std(exp).values
-    A = (exp - mean) / std
-    def corrfunc (marker, A, neighbours, ind):
-        print('Processing ' + str(marker))
-        # Map phenotype
-        ind_values = dict(zip(list(range(len(ind))), A[marker])) # Used for mapping
-        # Loop through (all functionized methods were very slow)
-        neigh = neighbours.copy()
-        for i in neigh.columns:
-            neigh[i] = neigh[i].dropna().map(ind_values, na_action='ignore')
-        # multiply the matrices
-        Y = neigh.T * A[marker]
-        corrfunc = np.mean(Y, axis=1)
-        # return
-        return corrfunc
-    # apply function to all markers    # Create lamda function
-    r_corrfunc = lambda x: corrfunc(marker=x,A=A, neighbours=neighbours, ind=ind)
-    all_data = list(map(r_corrfunc, exp.columns)) # Apply function
-    # Merge all the results into a single dataframe
-    df = pd.concat(all_data, axis=1)
-    df.columns = exp.columns
-    df['distance'] = rad_approx
-    # add it to anndata object
-    adata.uns[label] = df
-    # return
-    return adata
+    packet_gmm = {}
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+
+    image_channelIdx = next(
+        index for (index, d) in enumerate(config[datasource_name]['imageData']) if d["fullname"] == channel_name) - 1
+    image_data = zarray[image_channelIdx]
+    img_log = np.log(image_data[image_data > 0])
+    gmm = GaussianMixture(3, max_iter=1000, tol=1e-6)
+    gmm.fit(img_log.reshape((-1, 1)))
+
+    means = gmm.means_[:, 0]
+    i0, i1, i2 = np.argsort(means)
+    mean1, mean2 = means[[i1, i2]]
+    std1, std2 = gmm.covariances_[[i1, i2], 0, 0] ** 0.5
+
+    x = np.linspace(mean1, mean2, 50)
+    y1 = norm(mean1, std1).pdf(x) * gmm.weights_[i1]
+    y2 = norm(mean2, std2).pdf(x) * gmm.weights_[i2]
+
+    lmax = mean2 + 2 * std2
+    lmin = x[np.argmin(np.abs(y1 - y2))]
+    if lmin >= mean2:
+        lmin = mean2 - 2 * std2
+    vmin = max(np.exp(lmin), image_data.min(), 0)
+    vmax = min(np.exp(lmax), image_data.max())
+
+    packet_gmm['vmin'] = np.rint(vmin)
+    packet_gmm['vmax'] = np.rint(vmax)
+
+    [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
+    midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+
+    covars = gmm.covariances_[:, 0, 0]
+    weights = gmm.weights_
+    pdf_gmm1 = weights[i0] * norm.pdf(midpoints, means[i0], np.sqrt(covars[i0]))
+    pdf_gmm2 = weights[i1] * norm.pdf(midpoints, means[i1], np.sqrt(covars[i1]))
+    pdf_gmm3 = weights[i2] * norm.pdf(midpoints, means[i2], np.sqrt(covars[i2]))
+
+    dat_gmm1 = []
+    dat_gmm2 = []
+    dat_gmm3 = []
+    for i in range(len(hist)):
+        obj1 = {}
+        obj1['x'] = midpoints[i]
+        obj1['y'] = pdf_gmm1[i]
+        dat_gmm1.append(obj1)
+
+        obj2 = {}
+        obj2['x'] = midpoints[i]
+        obj2['y'] = pdf_gmm2[i]
+        dat_gmm2.append(obj2)
+
+        obj3 = {}
+        obj3['x'] = midpoints[i]
+        obj3['y'] = pdf_gmm3[i]
+        dat_gmm3.append(obj3)
+
+    packet_gmm['image_gmm_1'] = dat_gmm1
+    packet_gmm['image_gmm_2'] = dat_gmm2
+    packet_gmm['image_gmm_3'] = dat_gmm3
+
+    return packet_gmm
+
+
+def get_gating_gmm(channel_name, datasource_name):
+    global datasource
+    global source
+    global ball_tree
+    global config
+
+    packet_gmm = {}
+
+    # Load if not loaded
+    if datasource_name != source:
+        load_ball_tree(datasource_name)
+    description = datasource.describe().to_dict()
+
+    column_data = datasource[channel_name].to_numpy()
+    [hist, bin_edges] = np.histogram(column_data[~np.isnan(column_data)], bins=50, density=True)
+    midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+
+    gmm = GaussianMixture(n_components=2)
+    gmm.fit(column_data.reshape((-1, 1)))
+    i0, i1 = np.argsort(gmm.means_[:, 0])
+    packet_gmm['gate'] = np.mean(gmm.means_)
+
+    pdf_gmm1 = [gmm.weights_[i0] * norm.pdf(midpoints, gmm.means_[i0], np.sqrt(gmm.covariances_[i0]))][0][0]
+    pdf_gmm2 = [gmm.weights_[i1] * norm.pdf(midpoints, gmm.means_[i1], np.sqrt(gmm.covariances_[i1]))][0][0]
+
+    dat_gmm1 = []
+    dat_gmm2 = []
+    for i in range(len(hist)):
+        obj1 = {}
+        obj1['x'] = midpoints[i]
+        obj1['y'] = pdf_gmm1[i]
+        dat_gmm1.append(obj1)
+
+        obj2 = {}
+        obj2['x'] = midpoints[i]
+        obj2['y'] = pdf_gmm2[i]
+        dat_gmm2.append(obj2)
+
+    packet_gmm['gmm_1'] = dat_gmm1
+    packet_gmm['gmm_2'] = dat_gmm2
+
+    return packet_gmm
 
 
 def generate_zarr_png(datasource_name, channel, level, tile):
@@ -651,29 +858,24 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
     else:
         channel_io = tf.TiffFile(str(channelFilePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
+        write_path = None
         directory = Path(dataDirectory + "/" + filePath.name)
-        args = {}
-        args['in_paths'] = [Path(filePath)]
-        args['out_path'] = directory
-        args['is_mask'] = True
-        pyramid_assemble.main(py_args=args)
-        return {'segmentation': str(directory)}
+        segmentation_mask = tf.TiffFile(str(filePath), is_ome=False)
+        if segmentation_mask.series[0].aszarr().is_multiscales is False:
+            args = {}
+            args['in_paths'] = [Path(filePath)]
+            args['out_path'] = directory
+            args['is_mask'] = True
+            pyramid_assemble.main(py_args=args)
+            write_path = str(directory)
+        else:
+            write_path = str(filePath)
+        return {'segmentation': write_path}
 
 
-def save_dot(datasource_name, dot):
-    database_model.create_or_update(database_model.Dot, id=dot['id'], datasource=datasource_name, group=dot['group'],
-                                    name=dot['name'], description=dot['description'], shape_type=dot['shape_type'],
-                                    shape_info=dot['shape_info'], cell_ids=dot['cell_ids'],
-                                    date=dateutil.parser.parse(dot['date']), image_data=dot['image_data'],
-                                    viewer_info=dot['viewer_info'], channel_info=dot['channel_info'])
-
-
-def load_dots(datasource_name):
-    dots = database_model.get_all(database_model.Dot, datasource=datasource_name)
-    print(dots)
-    return dots
-
-
-def delete_dot(datasource_name, id):
-    database_model.edit(database_model.Dot, id, 'is_deleted', True)
-    return True
+def logTransform(csvPath, skip_columns=[]):
+    df = pd.read_csv(csvPath)
+    for column in df.columns:
+        if column not in skip_columns:
+            df[column] = np.log1p(df[column])
+    df.to_csv(csvPath, index=False)

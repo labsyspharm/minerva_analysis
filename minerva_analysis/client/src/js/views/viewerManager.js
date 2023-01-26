@@ -1,142 +1,265 @@
 import "regenerator-runtime/runtime.js";
 
 /**
+ * @function toIdealTile -- full tile dimension in full image pixels
+ * @param fullScale - scale factor to full image
+ * @param useY - 0 for x and 1 for y
+ * @returns Number
+ */
+function toIdealTile(fullScale, useY) {
+    const { _tileWidth, _tileHeight } = this;
+    return [_tileWidth, _tileHeight][useY] * fullScale;
+}
+
+/**
+ * @function toIdealTile -- clipped tile dimension in full image pixels
+ * @param fullScale - scale factor to full image
+ * @param v - x or y index of tile
+ * @param useY - x=0 and y=1
+ * @returns Number
+ */
+function toRealTile(fullScale, v, useY) {
+    const shape = [this.width, this.height][useY];
+    const tileShape = this.toIdealTile(fullScale, useY);
+    return Math.min(shape - v * tileShape, tileShape);
+}
+
+/**
+ * @function toTileBoundary -- tile start and size in full image pixels
+ * @param fullScale - scale factor to full image
+ * @param v - x or y index of tile
+ * @param useY - x=0 and y=1
+ * @typedef {object} Bound
+ * @property {number} start - full image pixel start of tile
+ * @property {number} size - full image pixel size of tile
+ * @returns Bound
+ */
+function toTileBoundary(fullScale, v, useY) {
+    const start = v * this.toIdealTile(fullScale, useY);
+    const size = this.toRealTile(fullScale, v, useY);
+    return { start, size };
+}
+
+/**
+ * @function toMagnifiedBounds -- return bounds of magnified tile
+ * @param _level - openseadragon tile level
+ * @param _x - openseadragon tile x index
+ * @param _y - openseadragon tile y index
+ * @typedef {object} Bounds
+ * @property {Array} x - start and end image x-coordinates
+ * @property {Array} y - start and end image y-coordinates
+ * @returns Bounds
+ */
+function toMagnifiedBounds(_level, _x, _y) {
+    const tl = this.toTileLevels(_level, _x, _y);
+    if (tl.relativeImageScale >= 1) {
+        return { x: [0, 1], y: [0, 1] };
+    }
+    const ownScale = tl.outputFullScale;
+    const parentScale = tl.inputFullScale;
+    const [x, y] = [tl.outputTile.x, tl.outputTile.y].map((parentOffset, i) => {
+        const hd = this.toTileBoundary(ownScale, [_x, _y][i], i);
+        const sd = this.toTileBoundary(parentScale, parentOffset, i);
+        const start = (hd.start - sd.start) / sd.size;
+        const end = start + hd.size / sd.size;
+        return [
+            [start, end],
+            [1 - end, 1 - start],
+        ][i];
+    });
+    return { x, y };
+}
+
+/**
+ * @function toTileLevels -- measure scaled/non-scaled tile details
+ * @param level - openseadragon tile level
+ * @param x - openseadragon tile x index
+ * @param y - openseadragon tile y index
+ * @typedef {object} TileLevels
+ * @property {number} inputFullScale - full scale of source tile
+ * @property {number} outputFullScale - full scale of renedered tile
+ * @property {number} relativeImageScale - scale relative to image pixels
+ * @property {object} inputTile - level, x, and y of source tile
+ * @property {object} outputTile - level, x, and y of rendered tile
+ * @returns TileLevels
+ */
+function toTileLevels(level, x, y) {
+    const { extraZoomLevels } = this;
+    const flipped = this.maxLevel - level;
+    const relativeLevel = flipped - extraZoomLevels;
+    const sourceLevel = Math.max(relativeLevel, 0);
+    const extraZoom = sourceLevel - relativeLevel;
+    const inputTile = {
+        x: Math.floor(x / 2 ** extraZoom),
+        y: Math.floor(y / 2 ** extraZoom),
+        level: sourceLevel,
+    };
+    const outputTile = {
+        ...inputTile,
+        level: level - extraZoom,
+    };
+    return {
+        inputFullScale: 2 ** (flipped + extraZoom),
+        relativeImageScale: 2 ** relativeLevel,
+        outputFullScale: 2 ** flipped,
+        inputTile,
+        outputTile,
+    };
+}
+
+/**
+ * @function getTileUrl -- return url for tile
+ * @param level - openseadragon tile level
+ * @param x - openseadragon tile x index
+ * @param y - openseadragon tile y index
+ * @returns string
+ */
+function getTileUrl(level, x, y) {
+    const s = this.toTileLevels(level, x, y).inputTile;
+    return `${this.src}${s.level}/${s.x}_${s.y}.png`;
+}
+
+/**
+ * @function getTileKey -- return string key for tile
+ * @param level - openseadragon tile level
+ * @param x - openseadragon tile x index
+ * @param y - openseadragon tile y index
+ * @returns string
+ */
+function getTileKey(level, x, y) {
+    const { srcIdx, tileFormat } = this;
+    const s = this.toTileLevels(level, x, y).inputTile;
+    return `${tileFormat}-${srcIdx}-${s.level}-${s.x}-${s.y}`;
+}
+
+/**
+ * @function getImagePixel -- return image pixel for screen position
+ * @param tiledImage - openseadragon tiled image
+ * @param position - screen position
+ * @returns array
+ */
+function getImagePixel(tiledImage, position) {
+    const tileScale = 2 ** this.extraZoomLevels;
+    const frac = tiledImage.viewport.pointFromPixel(position);
+    const zoomed = tiledImage.viewportToImageCoordinates(frac);
+    return [zoomed.x, zoomed.y].map((v) => v / tileScale);
+}
+
+/**
  * @class ViewerManager
  */
 export class ViewerManager {
+    colorConnector = {};
+    rangeConnector = {};
 
-    show_sel = false;
+    show_sel = true;
     sel_outlines = true;
 
     /**
-     * @constructor
      * Constructs a ColorManager instance before delegating initialization.
      *
-     * @param {Object} _viewer
+     * @param imageViewer - ImageViewer instance
+     * @param channelList - ChannelList instance
      */
-    constructor(_imageViewer, _viewer, _viewerName) {
-        this.viewer = _viewer;
-        this.imageViewer = _imageViewer;
-        this.viewer_name = _viewerName;
-        this.viewer_channels = {};
-
+    constructor(imageViewer, channelList) {
+        this.viewer = imageViewer.viewer;
+        this.imageViewer = imageViewer;
+        this.channelList = channelList;
         this.init();
     }
 
     /**
      * @function init
      * Setups up the color manager.
-     *
-     * @returns void
      */
     init() {
         // Load label image
         this.load_label_image();
-
-
     }
-
 
     /**
      * @function channel_add
      * Add channel to multi-channel rendering
-     *
-     * @param srcIdx
+     * @param srcIdx - integer id of channel to add
      */
     channel_add(srcIdx) {
-        const self = this;
-
         // If already exists
-        if ((srcIdx in this.imageViewer.currentChannels)) {
+        if (srcIdx in this.channelList.currentChannels) {
             return;
         }
 
-        // Get dzi path
-        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
+        const url = this.imageViewer.config["imageData"][srcIdx]["src"];
+        const { maxLevel, extraZoomLevels } = this.imageViewer.config;
+        const magnification = 2 ** extraZoomLevels;
 
-        // Find name
-        let name = '';
-        let name_short = '';
-        for (let k in imageChannels) {
-            if (imageChannels.hasOwnProperty(k) && imageChannels[k] === srcIdx) {
-                name = k;
-                name_short = dataLayer.getShortChannelName(k);
-            }
-        }
+        // Define url and suburl
+        const group = url.split("/");
+        const sub_url = group[group.length - 2];
+        const range = this.channelList.rangeConnector[srcIdx];
+        const { color } = this.channelList.colorConnector[srcIdx] || {};
+        const viewerChannel = {
+            url: url,
+            sub_url: sub_url,
+            color: color || d3.color("white"),
+            range: range || this.imageViewer.numericData.bitRange,
+        };
+        this.channelList.currentChannels[srcIdx] = viewerChannel;
 
-        let maxLevel = this.imageViewer.config['maxLevel'] - 1;
-        // Add tiled image
         this.viewer.addTiledImage({
             tileSource: {
-                height: this.imageViewer.config['height'],
-                width: this.imageViewer.config['width'],
-                maxLevel: maxLevel,
-                tileWidth: this.imageViewer.config['tileWidth'],
-                tileHeight: this.imageViewer.config['tileHeight'],
-                getTileUrl: function (level, x, y) {
-                    return `${src}${maxLevel - level}/${x}_${y}.png`
-                }
+                height: this.imageViewer.config.height * magnification,
+                width: this.imageViewer.config.width * magnification,
+                maxLevel: extraZoomLevels + maxLevel - 1,
+                compositeOperation: "lighter",
+                tileWidth: this.imageViewer.config.tileWidth,
+                tileHeight: this.imageViewer.config.tileHeight,
+                toMagnifiedBounds: toMagnifiedBounds,
+                extraZoomLevels: extraZoomLevels,
+                toTileBoundary: toTileBoundary,
+                getImagePixel: getImagePixel,
+                toTileLevels: toTileLevels,
+                toIdealTile: toIdealTile,
+                toRealTile: toRealTile,
+                getTileUrl: getTileUrl,
+                getTileKey: getTileKey,
+                tileFormat: 16,
+                srcIdx: srcIdx,
+                src: url,
             },
             // index: 0,
             opacity: 1,
             preload: true,
-            success: (e) => {
-                // Define url and suburl
-                const itemidx = this.viewer.world.getItemCount() - 1;
-                this.viewer.world.getItemAt(itemidx).source['channelUrl'] = src
-                const url = src;
-                const group = url.split("/");
-                const sub_url = group[group.length - 2];
-                // Attach
-                this.imageViewer.currentChannels[srcIdx] = {
-                    "url": url,
-                    "sub_url": sub_url,
-                    "color": d3.color("white"),
-                    "range": dataLayer.getImageBitRange(true)
-                };
-                this.viewer_channels[srcIdx] = {"url": url, "sub_url": sub_url, 'name': name, 'short_name': name_short};
-            }
         });
     }
 
     /**
-     * @function channel_remove
-     * Remove channel from multichannel rendering
-     *
-     * @param srcIdx
+     * @function channel_remove - remove channel from multichannel rendering
+     * @param srcIdx - integer id of channel to remove
      */
     channel_remove(srcIdx) {
-
-        const src = this.imageViewer.config["imageData"][srcIdx]["src"];
-
         const img_count = this.viewer.world.getItemCount();
 
         // remove channel
-        if ((srcIdx in this.imageViewer.currentChannels)) {
-
+        if (srcIdx in this.channelList.currentChannels) {
             // remove channel - first find it
             for (let i = 0; i < img_count; i = i + 1) {
-                const url = this.viewer.world.getItemAt(i).source['channelUrl'];
-                if (url === this.imageViewer.currentChannels[srcIdx]["url"]) {
+                const url = this.viewer.world.getItemAt(i).source.src;
+                if (url === this.channelList.currentChannels[srcIdx]?.url) {
                     this.viewer.world.removeItem(this.viewer.world.getItemAt(i));
-                    delete this.imageViewer.currentChannels[srcIdx];
-                    delete this.viewer_channels[srcIdx];
+                    delete this.channelList.currentChannels[srcIdx];
                     break;
                 }
             }
         }
     }
 
-
     /**
-     * @function evaluateTF
-     *
-     * @param val
-     * @param tf
-     * @returns {*}
+     * @function evaluateTF - finds color for value in transfer function
+     * @param val - input to transfer function
+     * @param tf - colors of transfer function
+     * @returns object
      */
     evaluateTF(val, tf) {
-
         let lerpFactor = Math.round(((val - tf.min) / (tf.max - tf.min)) * (tf.num_bins - 1));
 
         if (lerpFactor >= tf.num_bins) {
@@ -152,11 +275,8 @@ export class ViewerManager {
 
     /**
      * @function force_repaint
-     *
-     * @returns void
      */
     force_repaint() {
-
         // Refilter, redraw
         // this.viewer.forceRefilter();
         this.viewer.forceRedraw();
@@ -164,218 +284,46 @@ export class ViewerManager {
 
     /**
      * @function load_label_image
-     *
-     * @returns void
      */
     load_label_image() {
         const self = this;
 
         // Load label image in background if it exists
-        if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] !== '') {
+        if (this.imageViewer.config["imageData"][0]["src"] && this.imageViewer.config["imageData"][0]["src"] !== "") {
             let url = this.imageViewer.config["imageData"][0]["src"];
-            let maxLevel = this.imageViewer.config['maxLevel'] - 1;
+            const { maxLevel, extraZoomLevels } = this.imageViewer.config;
+            const magnification = 2 ** extraZoomLevels;
             this.viewer.addTiledImage({
                 tileSource: {
-                    height: this.imageViewer.config['height'],
-                    width: this.imageViewer.config['width'],
-                    maxLevel: maxLevel,
+                    height: this.imageViewer.config.height * magnification,
+                    width: this.imageViewer.config.width * magnification,
+                    maxLevel: extraZoomLevels + maxLevel - 1,
                     maxImageCacheCount: 50,
-                    tileWidth: this.imageViewer.config['tileWidth'],
-                    tileHeight: this.imageViewer.config['tileHeight'],
-                    getTileUrl: function (level, x, y) {
-                        return `${url}${maxLevel - level}/${x}_${y}.png`
-                    }
+                    compositeOperation: "source-over",
+                    tileWidth: this.imageViewer.config.tileWidth,
+                    tileHeight: this.imageViewer.config.tileHeight,
+                    toMagnifiedBounds: toMagnifiedBounds,
+                    extraZoomLevels: extraZoomLevels,
+                    toTileBoundary: toTileBoundary,
+                    getImagePixel: getImagePixel,
+                    toTileLevels: toTileLevels,
+                    toIdealTile: toIdealTile,
+                    toRealTile: toRealTile,
+                    getTileUrl: getTileUrl,
+                    getTileKey: getTileKey,
+                    tileFormat: 32,
+                    srcIdx: 0,
+                    src: url,
                 },
                 index: 0,
                 opacity: 1,
                 success: (e) => {
-                    const url0 = url
-                    this.viewer.world.getItemAt(0).source['channelUrl'] = url;
-                    this.imageViewer.labelChannel["url"] = url0;
-                    const group = url0.split("/");
-                    this.imageViewer.labelChannel["sub_url"] = group[group.length - 2];
-                    let source = e.item.source;
                     // Open Event is Necessary for ViaWebGl to init
-                    self.viewer.raiseEvent('open', {source: source});
-                }
+                    self.viewer.raiseEvent("open", e.item);
+                },
             });
         } else {
             this.imageViewer.noLabel = true;
         }
     }
-
-    /**
-     * @function renderTFWithLabelsMulti
-     * Apply TF on multi-channel tile, also accesses the label image
-     *
-     * @param context
-     * @param callback
-     * @param tile
-     * @returns {Promise<void>}
-     */
-    renderTFWithLabelsMulti(context, callback, tile) {
-        // console.log('L', tile.url);
-        //
-        // // Ck for tile
-        // if (tile == null) {
-        //     console.log("No Tile");
-        //     callback();
-        //     return;
-        // }
-        // // Render multi-channel image
-        // const group = tile.url.split("/");
-        // const somePath = group[group.length - 3];
-        // let isLabel = group[group.length - 3] == this.imageViewer.labelChannel.sub_url;
-        // if (isLabel) {
-        //     return;
-        // }
-        //
-        //
-        // // Label data
-        // let labelTileAdr = '';
-        // let labelTile = '';
-        // const labelPath = this.imageViewer.labelChannel["sub_url"];
-        // labelTileAdr = tile.url.replace(somePath, labelPath);
-        // labelTile = this.imageViewer.tileCache[labelTileAdr];
-        // let labelTileData = _.get(labelTile, 'data');
-        // // Get 24bit label data
-        // // If label tile has not loaded, asynchronously load it, waiting for it to load before proceeding
-        // if (labelTile == null && !this.imageViewer.noLabel) {
-        //     console.log("Missing Label");
-        //     await addTile(labelTileAdr);
-        //     labelTile = this.imageViewer.tileCache[labelTileAdr];
-        //     labelTileData = _.get(labelTile, 'data');
-        //     console.log("Loaded Label");
-        // }
-        // if (!labelTile.converted) {
-        //     let int32Array = new Int32Array(labelTile.data.buffer)
-        //     this.imageViewer.tileCache[labelTileAdr].data = int32Array;
-        //     this.imageViewer.tileCache[labelTileAdr].converted = true;
-        // }
-        //
-        //
-        // // Channel data
-        // const channelsTileData = [];
-        // const tfs = [];
-        // const tfs_min = [];
-        // const tileurl = tile.url;
-        //
-        // // Get tfs for channels
-        // for (const key in this.viewer_channels) {
-        //
-        //     const channelIdx = key;
-        //
-        //     // First check main
-        //     const channelPath = this.viewer_channels[channelIdx]["sub_url"];
-        //     const channelTileAdr = tileurl.replace(somePath, channelPath);
-        //     let channelTile = this.imageViewer.tileCache[channelTileAdr];
-        //
-        //     if (channelTile == null) {
-        //         console.log("Missing Channel")
-        //         await addTile(channelTileAdr);
-        //         channelTile = this.imageViewer.tileCache[channelTileAdr];
-        //         console.log("Loaded Channel")
-        //     }
-        //     if (!channelTile.converted) {
-        //         // Since my data is 32 bit, but the last 16 bits are all 0, view as 32 bit and then convert to 16 bit for size
-        //         let uInt16Array = new Uint16Array(new Int32Array(channelTile.data.buffer));
-        //         this.imageViewer.tileCache[channelTileAdr].data = uInt16Array;
-        //         this.imageViewer.tileCache[channelTileAdr].converted = true;
-        //     }
-        //     channelsTileData.push(channelTile.data);
-        //     tfs.push(this.imageViewer.channelTF[channelIdx]);
-        //     tfs_min.push(this.imageViewer.channelTF[channelIdx].min);
-        // }
-        //
-        // // get screen pixels to write into
-        // const screenData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
-        // const pixels = screenData.data;
-        //
-        //
-        // // Init
-        // let labelValue = -1;
-        // let channelValue = 0;
-        // // iterate over all tile pixels
-        // for (let i = 0, len = inputTile.width * inputTile.height * 4; i < len; i = i + 4) {
-        //     pixels[i] = 0;
-        //     pixels[i + 1] = 0;
-        //     pixels[i + 2] = 0;
-        //     pixels[i + 3] = 255;
-        //     // Iterate over all image channels
-        //     for (let channel = 0; channel < channelsTileData.length; channel++) {
-        //
-        //         // get 16 bit image data (stored in G and B channels)
-        //         //                channelValue = channelsTileData[channel][i] + (channelsTileData[channel][i + 1] << 8);
-        //         channelValue = channelsTileData[channel][i / 4];
-        //
-        //         // apply TF
-        //         const rgb = this.evaluateTF(channelValue, tfs[channel]);
-        //
-        //         // if (!this.imageViewer.show_subset) { // render everything with TF
-        //         if (channelValue >= tfs_min[channel]) {
-        //             pixels[i] += rgb[0];
-        //             pixels[i + 1] += rgb[1];
-        //             pixels[i + 2] += rgb[2];
-        //         }
-        //         // Render selection ids as highlighted
-        //         if ((this.imageViewer.show_selection || this.show_sel) && this.imageViewer.selection.size > 0) {
-        //
-        //             if (labelTileData) {
-        //                 labelValue = labelTileData[i / 4] - 1;
-        //             }
-        //             if (labelValue !== -1) {
-        //                 if (this.imageViewer.selection.has(labelValue)) {
-        //                     let color = [255, 255, 255]
-        //
-        //                     /************************ new */
-        //                         // Init grid and tests (4 pts v 8 working for now)
-        //                     const grid = [
-        //                             i - 4,
-        //                             i + 4,
-        //                             i - inputTile.width * 4,
-        //                             i + inputTile.width * 4
-        //                         ];
-        //                     const test = [
-        //                         i % (inputTile.width * 4) !== 0,
-        //                         i % (inputTile.width * 4) !== (inputTile.width - 1) * 4,
-        //                         i >= inputTile.width * 4,
-        //                         i < inputTile.width * 4 * (inputTile.height - 1)
-        //                     ];
-        //
-        //                     // If outline
-        //                     if (this.sel_outlines) {
-        //                         // Iterate grid
-        //                         for (let j = 0; j < grid.length; j++) {
-        //                             // if pass test (not on tile border)
-        //                             if (test[j]) {
-        //                                 // Neighbor label value
-        //                                 const altLabelValue = labelTileData[grid[j] / 4] - 1;
-        //                                 // Color
-        //                                 if (altLabelValue !== labelValue) {
-        //                                     pixels[i] = 255;
-        //                                     pixels[i + 1] = 255;
-        //                                     pixels[i + 2] = 255;
-        //                                     break;
-        //                                 }
-        //                             }
-        //                         }
-        //                     } else {
-        //                         pixels[i] = color[0];
-        //                         pixels[i + 1] = color[1];
-        //                         pixels[i + 2] = color[2];
-        //                     }
-        //                     /************************ newend */
-        //                 }
-        //             }
-        //         }
-        //
-        //     }
-        // }
-
-        // context.putImageData(screenData, 0, 0);
-        callback();
-
-    }
-
-
 }

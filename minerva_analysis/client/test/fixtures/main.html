@@ -1,0 +1,122 @@
+<div id="container" class="container">
+    <div id="row" class="row">
+        <div class="col-sm-3" id="channel_list_wrapper">
+            <div id="lowRow1" class="row">
+                <div id="boxHeading1" class="col-auto">
+                    <span class="box-heading">Channels</span>
+                </div>
+                <div class="" id="download-channels-header-div">
+                    <span id="channels_upload_icon_db" class="fas fa-upload" title="Load Channels from Database"></span>
+                    <span id="channels_download_icon_db" class="fas fa-download" title="Save Channels to Database"></span>
+                    <span id="channels_upload_icon" class="fas fa-file-upload" title="Load Channels from CSV"></span>
+                    <form id="channels_arrow-upload-form">
+                        <input id="channels-upload-from-arrow" class="hidden" type="file">
+                        <input type="hidden" id="channels_upload-arrow-datasource" name="channels_upload-arrow-datasource">
+                    </form>
+                    <span id="channels_download_icon" class="fas fa-file-download" title="Save Channels to CSV"></span>
+                </div>
+                <div class="col-auto" id="selected-channels-header-div">
+                    <span class="selected-channels-header" id="num-selected-channels">0</span>
+                    <span class="selected-channels-header">of 4 (Max) Selected</span>
+                </div>
+            </div>
+            <div id="channel_list">
+                <div class="row">
+                    <div class="col-auto">
+                        <div class="lds-ellipsis" id="channel_list_loader">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-7" id="openseadragon_wrapper">
+            <div id="lowRow2" class="row">
+                <div id="boxHeading2" class="col-auto mr-auto">
+                    <span class="box-heading">Viewer</span>
+                </div>
+                <div class="col-auto" id="scalebar-header-div">
+                    <span class="selected-channels-header">Scalebar
+                        <input id="controls_scalebar" type="checkbox" checked>
+                    </span>
+                </div>
+            </div>
+            <div id="openseadragon">
+                <div class="row">
+                    <div class="col-auto">
+                        <div class="lds-ellipsis" id="openseadragon_loader">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3" id="csv_channel_list_wrapper">
+            <div id="gating_download_panel">
+                <a id="gating_exit">&#10006;</a>
+                <label>Download gated channel ranges:
+                    <span class="download_flex">
+                            <input id="download_input1" type="text" autocomplete="false" spellcheck="false"
+                                   value="{{ data.datasource }}_gated_channel_ranges.csv">
+                            <a id="download_gated_channel_ranges" class="download_button">&#8679;</a>
+                        </span>
+                </label>
+                <label>Download gated cell encodings:
+                    <span class="download_flex">
+                            <input id="download_input2" type="text" autocomplete="false" spellcheck="false"
+                                   value="{{ data.datasource }}_gated_cell_encodings.csv">
+                            <a id="download_gated_cell_encodings" class="download_button">&#8679;</a>
+                        </span>
+                </label>
+                <label>Cell Encoding:
+                    <select id="encoding">
+                        <option value="binary" selected>Binary Values</option>
+                        <option value="intensity">Intensity Values</option>
+                    </select>
+                </label>
+            </div>
+            <div id="lowRow3" class="row">
+                <div id="boxHeading3" class="col-auto">
+                    <span class="box-heading">CSV Gating</span>
+                </div>
+
+                <div class="" id="download-gating-header-div">
+                    <span id="gating_upload_icon_db" class="fas fa-upload" title="Load Gating from Database"></span>
+                    <span id="gating_download_icon_db" class="fas fa-download" title="Save Gating to Database"></span>
+                    <span id="gating_upload_icon" class="fas fa-file-upload" title="Load Gating from CSV"></span>
+                    <form id="arrow-upload-form">
+                        <input id="gating-upload-from-arrow" class="hidden" type="file">
+                        <input type="hidden" id="upload-arrow-datasource" name="upload-arrow-datasource">
+                    </form>
+                    <span id="gating_download_icon" class="fas fa-file-download" title="Save Gating to CSV"></span>
+                </div>
+            </div>
+
+            <div id="csv_gating_list">
+                <div id="csv_gating_row" class="row">
+                    <div class="col-auto">
+                        <div class="lds-ellipsis" id="csv_gating_list_loader">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="drag-and-drop-info">
+                    <div class="d-flex justify-content-md-center align-items-center vh-100">
+                        <span id="drag-and-drop-text">Drag and Drop A Gating CSV File</span>
+                    </div>
+                </div>
+            </div>
+            <div id="gating_controls_panel">
+                <label>Outlines
+                    <input id="gating_controls_outlines" type="checkbox" checked>
+                </label>
+                <label>Centroids (OR-mode)
+                    <input id="gating_controls_centroids" type="checkbox">
+                </label>
+            </div>
+        </div>
+    </div>
+</div>

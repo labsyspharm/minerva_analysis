@@ -1,160 +1,195 @@
 /**
-
+ * main.js Initializes main client/interface setup, and distributes events to respective views
  */
+
 //EVENTHANDLER
-const eventHandler = new SimpleEventHandler(d3.select('body').node());
+const eventHandler = new SimpleEventHandler(d3.select("body").node());
 const datasource = flaskVariables.datasource;
 
-
 //VIEWS
-let seaDragonViewer;
-let channelList;
-let dataLayer;
-let config;
+const __minervaAnalysis = {
+  dataLayer: null,
+  channelList: null,
+  csv_gatingList: null
+}
 
-let cellInformation;
-let colorScheme;
-let dataSrcIndex = 0; // dataset id
-let k = 3;
-let imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
+//DATA MANAGEMENT
+const dataSrcIndex = 0;
 
-//Disable right clicking on element
-document.getElementById("openseadragon").addEventListener('contextmenu', event => event.preventDefault());
+//CHANNELS
+const imageChannels = {}; // lookup table between channel id and channel name (for image viewer)
+const imageChannelsIdx = {};
 
+//OTHER SETTINGS
+document.getElementById("openseadragon").addEventListener("contextmenu", (event) => event.preventDefault()); //Disable right clicking on element
 
 //LOAD DATA
-// console.log('loading config');
 // Data prevent caching on the config file, as it may have been modified
-//d3.json(`/data/config.json?t=${Date.now()}`).then(function (config) {
 d3.json(`/config?t=${Date.now()}`).then(function (config) {
-    this.config = config;
-    return init(config[datasource])
+    return init(config[datasource]);
 });
 
+//INITS
 
-// init all views (datatable, seadragon viewer,...)
-async function init(conf) {
-
-    // console.log('initialize system');
-    config = conf;
+/**
+ * Init all views.
+ *
+ * @param conf - The configuration json file
+ */
+async function init(config) {
+    //maximum selections
+    config.maxSelections = 4;
+    config.extraZoomLevels = 3;
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;
+        let name = config["imageData"][idx].name;
+        if (name !== "Area") {
+            imageChannelsIdx[idx] = name;
+        }
     }
-    //INIT DATA FILTER
-    dataLayer = new DataLayer(config, imageChannels);
-    await dataLayer.init();
-    // console.log("Data Loaded");
-    channelList = new ChannelList(config, dataLayer, eventHandler);
-    await channelList.init();
-    colorScheme = new ColorScheme(dataLayer);
-    await colorScheme.init();
-    cellInformation = new CellInformation(dataLayer.phenotypes, colorScheme);
-    cellInformation.draw();
-    //IMAGE VIEWER
-    seaDragonViewer = new ImageViewer(config, dataLayer, eventHandler, colorScheme);
-    seaDragonViewer.init();
-}
 
-//feature color map changed in ridge plot
-const actionColorTransferChange = (d) => {
+    //initialize metadata
+    const dataLayer = new DataLayer(config, imageChannels);
+    const numericData = new NumericData(config, dataLayer);
+    const columns = await dataLayer.getChannelNames(true);
+    const imgMetadata = await dataLayer.getMetadata();
 
-    //map to full name
-    d.name = dataLayer.getFullChannelName(d.name);
-    // d3.select('body').style('cursor', 'progress');
-    seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
-    // d3.select('body').style('cursor', 'default');
-}
-eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
+    //Create channel panels
+    channelList = new ChannelList(config, columns, dataLayer, eventHandler);
+    csv_gatingList = new CSVGatingList(config, columns, dataLayer, eventHandler);
+    __minervaAnalysis.csv_gatingList = csv_gatingList;
+    __minervaAnalysis.channelList = channelList;
+    __minervaAnalysis.dataLayer = dataLayer;
+    
 
-//feature color map changed in ridge plot
-const actionRenderingModeChange = (d) => {
-    seaDragonViewer.updateRenderingMode(d);
-}
-eventHandler.bind(ImageViewer.events.renderingMode, actionRenderingModeChange);
+    //Create image viewer
+    const imageArgs = [imgMetadata, numericData, eventHandler];
+    const seaDragonViewer = new ImageViewer(config, ...imageArgs);
+    const viewerManager = new ViewerManager(seaDragonViewer, channelList);
 
+    //Initialize with database description
+    const [dd, { ids, centers }] = await Promise.all([dataLayer.getDatabaseDescription(), numericData.loadCells()]);
+    channelList.init(dd);
+    csv_gatingList.init(dd, seaDragonViewer);
+    const imageInit = [viewerManager, channelList, csv_gatingList, centers, ids];
+    await Promise.all([dataLayer.init(), seaDragonViewer.init(...imageInit)]);
 
-//feature color map changed in ridge plot
-const actionChannelsToRenderChange = (d) => {
-    d3.select('body').style('cursor', 'progress');
+    //EVENT HANDLING
 
-    //map to full name
-    d.name = dataLayer.getFullChannelName(d.name);
+    /**
+     * Listen to Color Transfer Change Events and forwards it to respective views.
+     *
+     * @param d - The color map object
+     */
+    const actionColorTransferChange = (d) => {
+        //map to full name
+        d.name = dataLayer.getFullChannelName(d.name);
+        // d3.select('body').style('cursor', 'progress');
+        seaDragonViewer.updateChannelColors(d.name, d.color, d.type);
+        // d3.select('body').style('cursor', 'default');
+    };
+    eventHandler.bind(ChannelList.events.COLOR_TRANSFER_CHANGE, actionColorTransferChange);
 
-    //send to image viewer
-    seaDragonViewer.updateActiveChannels(d.name, d.selections, d.status);
+    /**
+     * Listen to Render Mode Events and forwards it to respective views.
+     *
+     * @param d - The render mode object
+     */
+    const actionRenderingModeChange = (d) => {
+        seaDragonViewer.updateRenderingMode(d);
+    };
+    eventHandler.bind(ImageViewer.events.renderingMode, actionRenderingModeChange);
 
-    d3.select('body').style('cursor', 'default');
-}
-eventHandler.bind(ChannelList.events.CHANNELS_CHANGE, actionChannelsToRenderChange);
+    /**
+     * Listen to Channels set for Rendering and forwards it to respective views.
+     *
+     * @param d - The channel package object
+     */
+    const actionChannelsToRenderChange = (d) => {
+        d3.select("body").style("cursor", "progress");
 
-//image region or single cell selection (may needs to be combined with other selection events)
-const actionImageClickedMultiSel = (d) => {
-    // console.log('actionImageClick3edMultSel');
-    d3.select('body').style('cursor', 'progress');
-    // add newly clicked item to selection
-    // console.log('add to selection');
-    if (!Array.isArray(d.selectedItem)) {
-        dataLayer.addToCurrentSelection(d.selectedItem, true, d.clearPriors);
-    } else {
-        // console.log(d.selectedItem.length);
-        dataLayer.addAllToCurrentSelection(d.selectedItem);
+        //map to full name
+        d.name = dataLayer.getFullChannelName(d.name);
+
+        //send to image viewer
+        const action = ["remove", "add"][+d.status];
+        seaDragonViewer.updateActiveChannels(d.name, action);
+
+        d3.select("body").style("cursor", "default");
+    };
+    eventHandler.bind(ChannelList.events.CHANNELS_CHANGE, actionChannelsToRenderChange);
+
+    /**
+     * Listen to regional or single cell selection.
+     *
+     * @param d - The selections
+     */
+    const actionImageClickedMultiSel = (d) => {
+        d3.select("body").style("cursor", "progress");
+        // add newly clicked item to selection
+        if (!Array.isArray(d.item)) {
+            dataLayer.addToCurrentSelection(d.item, true, d.clearPriors);
+            updateSeaDragonSelection(d.item);
+        } else {
+            dataLayer.addAllToCurrentSelection(d.item);
+            updateSeaDragonSelection(d.item[0]);
+        }
+        d3.select("body").style("cursor", "default");
+    };
+    eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
+
+    /**
+     * Listen to Channel Select Click Events.
+     *
+     * @param sels - The selected/deselected channels
+     */
+    const channelSelect = async (sels) => {
+        updateSeaDragonSelection();
+        let channelCells = await dataLayer.getChannelCellIds(sels);
+        dataLayer.addAllToCurrentSelection(channelCells);
+    };
+    eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
+
+    /**
+     * Listens to and updates based on selection changes (specific for seadragon).
+     *
+     * @param props - may contain cell id
+     */
+    function updateSeaDragonSelection(props = {}) {
+        const { idField } = config.featureData[0];
+        seaDragonViewer.pickedId = idField in props ? props[idField] : -1;
+        seaDragonViewer.forceRepaint();
     }
-    cellInformation.selectCell(d.selectedItem);
-    updateSeaDragonSelection();
-    d3.select('body').style('cursor', 'default');
-}
-eventHandler.bind(ImageViewer.events.imageClickedMultiSel, actionImageClickedMultiSel);
 
-const computeCellNeighborhood = async ({distance, selectedCell}) => {
-    let neighborhood = await dataLayer.getNeighborhood(distance, selectedCell);
-    displayNeighborhood(selectedCell, neighborhood);
-}
-eventHandler.bind(CellInformation.events.computeNeighborhood, computeCellNeighborhood);
+    const handler = () => updateSeaDragonSelection();
+    eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, handler);
+    eventHandler.bind(CSVGatingList.events.GATING_BRUSH_MOVE, handler);
 
-const drawNeighborhoodRadius = async ({distance, selectedCell, dragging}) => {
-    seaDragonViewer.drawCellRadius(distance, selectedCell, dragging);
-}
-eventHandler.bind(CellInformation.events.drawNeighborhoodRadius, drawNeighborhoodRadius);
-
-const refreshColors = async () => {
-    await colorScheme.getColorScheme(true);
-    cellInformation.draw();
-
-}
-eventHandler.bind(CellInformation.events.refreshColors, refreshColors);
-
-// For channel select click event
-const channelSelect = async (sels) => {
-
-    let channelCells = await dataLayer.getChannelCellIds(sels);
-
-    dataLayer.addAllToCurrentSelection(channelCells);
-
-    updateSeaDragonSelection(false);
-}
-eventHandler.bind(ChannelList.events.CHANNEL_SELECT, channelSelect);
-
-
-//current fast solution for seadragon updates
-//current fast solution for seadragon updates
-function updateSeaDragonSelection(repaint = true) {
-    seaDragonViewer.updateSelection(dataLayer.getCurrentSelection(), repaint);
-}
-
-//feature range selection changed in ridge plot
-const actionFeatureGatingChange = (d) => {
-    // console.log("gating event received");
-    seaDragonViewer.updateChannelRange(dataLayer.getFullChannelName(d.name), d.dataRange[0], d.dataRange[1]);
-}
-eventHandler.bind(ChannelList.events.BRUSH_END, actionFeatureGatingChange);
-
-
-function displayNeighborhood(selectedCell, neighborhood) {
-    dataLayer.addToCurrentSelection(selectedCell, true, true);
-    _.each(neighborhood, neighbor => {
-        dataLayer.addToCurrentSelection(neighbor, true, false);
+    eventHandler.bind(ChannelList.events.BRUSH_MOVE, (d) => {
+        const fullName = dataLayer.getFullChannelName(d.name);
+        seaDragonViewer.updateChannelRange(fullName, d.dataRange[0], d.dataRange[1]);
     });
-    updateSeaDragonSelection();
-}
 
+    /**
+     * Reset the gating list to inital values.
+     */
+    const reset_lists = () => {
+        csv_gatingList.resetGatingList();
+        channelList.resetChannelList();
+        seaDragonViewer.forceRepaint();
+    };
+    eventHandler.bind(ChannelList.events.RESET_LISTS, reset_lists);
+
+    const reset_gatinglist = () => {
+        csv_gatingList.resetGatingList();
+        seaDragonViewer.forceRepaint();
+    };
+    eventHandler.bind(CSVGatingList.events.RESET_GATINGLIST, reset_gatinglist);
+
+    const add_scalebar = () => {
+        seaDragonViewer.addScaleBar();
+        seaDragonViewer.forceRepaint();
+    };
+    eventHandler.bind(ImageViewer.events.addScaleBar, add_scalebar);
+}

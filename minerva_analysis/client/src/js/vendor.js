@@ -19,6 +19,7 @@ import convert from 'color-convert'
 import 'viawebgl'
 import * as viaWebGL from 'viawebgl';
 import {ViewerManager} from './views/viewerManager';
+import Dropzone from 'dropzone';
 
 window.convert = convert;
 window.$ = $;
@@ -29,6 +30,7 @@ window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
 window.OpenSeadragon = viaWebGL.OpenSeadragon;
+window.Dropzone = Dropzone;
 window.viaWebGL = viaWebGL;
 window.ViewerManager = ViewerManager;
 

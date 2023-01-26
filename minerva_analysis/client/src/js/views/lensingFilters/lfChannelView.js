@@ -33,13 +33,15 @@ export class LfChannelView {
                 const auxiManager = this.image_viewer.viewerManagerVAuxi;
 
                 // Get keys
-                const keys = Object.keys(mainManager.viewer_channels);
+                const keys = mainManager.viewer_channels.keys();
                 keys.forEach((k, i) => {
-                    if (+k === this.vars.currentChannel.index) {
+                    if (k === this.vars.currentChannel.index) {
                         if (i < keys.length - 1) {
-                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[i + 1]].short_name;
+                            const channel = mainManager.viewer_channels.get(keys[i + 1]);
+                            this.vars.currentChannel.name = channel.short_name;
                         } else {
-                            this.vars.currentChannel.name = mainManager.viewer_channels[keys[0]].short_name;
+                            const channel = mainManager.viewer_channels.get(keys[0]);
+                            this.vars.currentChannel.name = channel.short_name;
                         }
                         this.vars.forceUpdate = true;
                     }
@@ -53,6 +55,7 @@ export class LfChannelView {
      */
     constructor(_imageViewer) {
         this.image_viewer = _imageViewer;
+        const { dataLayer, channelList } = __minervaAnalysis;
 
         // From global vars
         this.data_layer = dataLayer;
@@ -210,18 +213,19 @@ export class LfChannelView {
                             const auxiManager = this.image_viewer.viewerManagerVAuxi;
 
                             // If multi channel
-                            if (Object.keys(auxiManager.viewer_channels).length > 1 || this.vars.forceUpdate) {
+                            if (auxiManager.viewer_channels.size > 1 || this.vars.forceUpdate) {
 
                                 // Undo force status
                                 this.vars.forceUpdate = false;
 
                                 // Update viewer channels
-                                for (let k in mainManager.viewer_channels) {
+                                for (const k in mainManager.viewer_channels.keys()) {
 
                                     // Reduce to single channel
-                                    if (mainManager.viewer_channels[k].short_name === this.vars.currentChannel.name) {
-                                        auxiManager.viewer_channels = {};
-                                        auxiManager.viewer_channels[`${k}`] = mainManager.viewer_channels[k];
+                                    const channel = mainManager.viewer_channels.get(k);
+                                    if (channel.short_name === this.vars.currentChannel.name) {
+                                        auxiManager.viewer_channels = new Map();
+                                        auxiManager.viewer_channels.set(k, channel);
                                         this.vars.currentChannel.index = +k;
                                         auxiManager.force_repaint();
                                         break;

@@ -1,86 +1,26 @@
 {% extends 'base.html' %}
 
 {% block style %}
-    <link rel="stylesheet" href="../client/src/css/viewer.css">
+    <link rel="stylesheet" href="../client/src/css/master_import.css">
+
 {% endblock %}
 
 {% block content %}
+    <div class="import-container">
+        <div class="center">
+            <div class="box1">
+                <img src="../client/src/img/scope2screen.png">
+                <a href="http://localhost:8001" target="_blank">Scope2Screen</a>
+            </div>
+            <div class="box2">
+                <img src="../client/src/img/gater.png">
+                <a href="http://localhost:8002" target="_blank">Gater</a>
+            </div>
+            <div class="box3">
 
-    {% if data.datasource %}
-        <div id="container" class="container">
-            <div id="row" class="row">
-                <div class="col-sm-3" id="channel_list_wrapper">
-                    <div id="lowRow1" class="row">
-                        <div id="boxHeading1" class="col-auto mr-auto">
-                            <span class="box-heading">Channels</span>
-                        </div>
-                        <div class="col-auto" id="selected-channels-header-div">
-                            <span class="selected-channels-header" id="num-selected-channels">0</span>
-                            <span class="selected-channels-header">of 4 (Max) Selected</span>
-                        </div>
-                    </div>
-                    <div id="channel_list">
-                        <div class="row">
-                            <div class="col-auto">
-                                <div class="lds-ellipsis" id="channel_list_loader">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-7" id="openseadragon_wrapper">
-                    <div id="lowRow2" class="row">
-                        <div id="boxHeading2" class="col-auto mr-auto">
-                            <span class="box-heading">Viewer</span>
-                        </div>
-                    </div>
-                    <div id="openseadragon">
-                        <div class="row">
-                            <div class="col-auto">
-                                <div class="lds-ellipsis" id="openseadragon_loader">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-2" id="cell_wrapper">
-                    <span id="cell_label">Cell Information</span>
-                    <div id="cell_display">
-                        <div class="row align-items-center">
-                            <div class="col">
-                                <span id="cell_icon" class="fas fa-disease"></span>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col">
-                                <span id="phenotype_label">Phenotype:</span>
-                                <span id="phenotype"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <form>
-                                <div class="form-group" id="neighborhood_form">
-                                    <label for="formControlRange">Max Distance:</label>
-                                    <span id="distance"></span>
-                                    <input type="range" min="1" max="100" value="30" class="form-control-range"
-                                           id="formControlRange">
-                                </div>
-                                <input id="compute_neighborhood_button" class="btn btn-dark" type="button"
-                                       value="Display Neighborhood">
-                            </form>
-                        </div>
-                        <svg width="100" height="100" id="cell_legend"></svg>
-                    </div>
-                    <svg width="150" height="0" id="cell_legend"></svg>
-                    <input id="refresh_colors" class="btn btn-secondary" type="button" value="Refresh Colors">
-                </div>
-
+                <img src="../client/src/img/visinity.png">
+                <a href="http://localhost:8003" target="_blank">Visinity</a>
             </div>
         </div>
-        <script src="../client/src/js/main.js" defer></script>
-    {% endif %}
+    </div>
 {% endblock %}

@@ -222,7 +222,7 @@
 				x:satScale.invert(hsl.s?hsl.s:sat),
 				y:lumScale.invert(hsl.l)
 			};
-			updateHueHandle(hueScale.invert(hsl.h?hsl.h:hue));
+			updateHueHandle(hueScale.invert(hsl.h?hsl.h:hue), true);
 			updateSlHandle(sl);
 
 	        // if (hsl.l==0){
@@ -243,6 +243,8 @@
 	    //     listeners.apply("handleend", this, [d3.hsl('black').toString(),null,...arguments]);
 		// }
 		function textChanged(value){
+			const inputVal = d3.select('.picker-container input').node().value;
+			const hsl = d3.hsl(d3.color(inputVal));
 			let sl = {
 				x:satScale.invert(hsl.s?hsl.s:sat),
 				y:lumScale.invert(hsl.l)
