@@ -222,7 +222,7 @@ def upload_file_page():
                         labelFile = PurePath(directory, 'segmentation', labelFolder)
 
                     # get csv file from user specified path
-                    csvName = 'unmicst-' + mcmicroDirName + '_' + labelName + '.csv' # could use labelName to have dynamic csv but usually only cell available.
+                    csvName = mcmicroDirName + '--unmicst_' + labelName + '.csv' # could use labelName to have dynamic csv but usually only cell available.
                     csvPath = str(PurePath(directory, 'quantification', csvName))
 
                     # get channel file from user specified path
@@ -505,6 +505,7 @@ def save_config():
 def list_tif_files_in_dir():
     # return all seg files found in the seg subfolder (mc micro specific)
     files = []
+    files.append('')
 
     #path and type information from upload
     post_data = json.loads(request.data)
@@ -538,7 +539,8 @@ def check_mc_csv_file_existence():
             mcmicroDirName = pathsSplit[len(pathsSplit) - 1]
 
             # check if csv file exists
-            csvName = 'unmicst-' + mcmicroDirName + '_' + mask + '.csv'
+            # csvName = 'nmicst-' + mcmicroDirName + '_' + mask + '.csv'
+            csvName = mcmicroDirName + '--unmicst_' + mask + '.csv'
             csvPath = Path(directory, 'quantification', csvName)
 
             if csvPath.is_file():
