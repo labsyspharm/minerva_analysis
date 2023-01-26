@@ -29,7 +29,7 @@
     "lensing": "^1.0.17",
     "lodash": "^4.17.19",
     "mark.js": "^8.11.1",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "pngjs": "^5.0.0",
     "popper.js": "^1.16.1",
     "regenerator-runtime": "^0.13.7",
