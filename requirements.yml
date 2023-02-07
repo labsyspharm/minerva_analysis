@@ -2,28 +2,29 @@ name: minerva_analysis
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
-  - Flask=1.1.2
-  - jinja2==3.0.3
-  - werkzeug==2.0.3
-  - itsdangerous==2.0.1
   - appdirs
-  - flask-sqlalchemy
+  - flask=2.2.2
+  - flask-sqlalchemy=3.0.2
+  - itsdangerous=2.1.2
+  - jinja2
   - numpy
   - ome-types
   - orjson
   - pandas
-  - pillow=8.1.1
+  - pillow=8.1
+  - pip
+  - pyinstaller
+  - python=3.9.15
   - requests
-  - scikit-learn
   - scikit-image
+  - scikit-learn
   - scipy
   - tifffile=2021.4.8
   - waitress
-  - zarr=2.10.3
-  - pyinstaller
-  - pip
+  - werkzeug=2.2.2
+  - zarr=2.10
+
   - pip:
-      - opencv-python==4.5.3.56
+      - opencv-python==4.7.0.68
 
 
