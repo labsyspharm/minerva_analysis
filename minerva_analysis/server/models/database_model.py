@@ -75,4 +75,5 @@ class GatingList(db.Model):
     is_deleted = db.Column(db.Boolean, default=False, nullable=False)
 
 
-db.create_all()
+with app.app_context():
+    db.create_all()
