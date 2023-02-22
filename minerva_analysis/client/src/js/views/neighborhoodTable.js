@@ -268,10 +268,10 @@ function
 
 findElementWithTag(e, tag) {
     let i = 0;
-    let elem = e.path[i]
+    let elem = e.composedPath()[i]
     while (elem.tagName !== tag && elem) {
         i++;
-        elem = e.path[i];
+        elem = e.composedPath()[i];
     }
     return elem;
 }
