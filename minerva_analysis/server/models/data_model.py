@@ -9,7 +9,7 @@ from pathlib import Path
 from pathlib import PurePath
 from ome_types import from_xml
 from minerva_analysis import config_json_path, data_path, cwd_path
-from minerva_analysis.server.utils import pyramid_assemble
+from minerva_analysis.server.utils import pyramid_assemble, pyramid_upgrade
 from minerva_analysis.server.models import database_model
 import dateutil.parser
 import time
@@ -868,6 +868,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
             args['out_path'] = directory
             args['is_mask'] = True
             pyramid_assemble.main(py_args=args)
+            pyramid_upgrade.main(py_args=args)
             write_path = str(directory)
         else:
             write_path = str(filePath)
