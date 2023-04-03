@@ -17,6 +17,7 @@ dependencies:
   - scikit-learn
   - scikit-image
   - scipy
+  - sqlalchemy=1.4.41
   - tifffile=2021.4.8
   - waitress
   - zarr=2.10.1
