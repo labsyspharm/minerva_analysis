@@ -4,9 +4,9 @@ channels:
 dependencies:
   - python=3.8
   - Flask=2.1.0
-  - flask-sqlalchemy
+  - flask-sqlalchemy=2.5.1
   - hdbscan
-  - llvmlite
+  - llvmlite=0.39.1
   - matplotlib
   - numba
   - numpy
