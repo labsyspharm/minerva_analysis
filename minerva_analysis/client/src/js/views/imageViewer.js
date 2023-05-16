@@ -20,9 +20,10 @@ class ImageViewer {
      * @param numericData - custom numeric data layer
      * @param eventHandler - the event handler for distributing interface and data updates
      */
-    constructor(config, imgMetadata, numericData, eventHandler) {
+    constructor(config, dataLayer, imgMetadata, numericData, eventHandler) {
         this.ready = false;
         this.config = config;
+        this.dataLayer = dataLayer;
         this.gatingList = null;
         this.channelList = null;
         this.imgMetadata = imgMetadata;
@@ -31,6 +32,12 @@ class ImageViewer {
         this.pickingChanged = false;
         this._cacheKeys = {};
         this._picking = [];
+        this.pickedId = -1;
+        this.lasso_toggle = false;
+        this.lasso_ids = {};
+        this.lasso_ids_subtact = {};
+        this.lasso_init = false;
+        this.toggle_bool = true;
 
         // Viewer
         this.viewer = {};
@@ -81,6 +88,7 @@ class ImageViewer {
         // Instantiate viewer with the ViaWebGL Version of OSD
         this.viewer = viaWebGL.OpenSeadragon(viewer_config);
         this.addScaleBar();
+        this.selectionPolygonToDraw = [];
 
         // Get and shrink all button images
         this.parent = d3.select(`#openseadragon`);
@@ -377,6 +385,164 @@ class ImageViewer {
                 });
             }
         });
+
+                //SELECTION POLYGON (LASSO)
+        let that = this;
+        that.svg_overlay = that.viewer.svgOverlay()
+        that.overlay = d3.select(that.svg_overlay.node())
+
+        that.polygonSelection = [];
+        that.renew = false;
+        that.numCalls = 0; //defines how fine-grained the polygon resolution is (0 = no subsampling, 10=high subsampling)
+        that.lassoing = false;
+        that.isSelectionToolActive = true;
+
+        that.lasso_draw = function (event) {
+            //add points to polygon and (re)draw
+            let webPoint = event.position;
+            if (that.numCalls % 5 == 0) {
+                // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+                let viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                // Convert from viewport coordinates to image coordinates.
+                let imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+                const zoomScale = 2**config.extraZoomLevels;
+                imagePoint = {x:imagePoint.x/zoomScale, y:imagePoint.y/zoomScale}
+                that.polygonSelection.push({'imagePoints': imagePoint, 'viewportPoints': viewportPoint});
+            }
+
+            d3.select('#selectionPolygon').remove();
+            var selPoly = that.overlay.selectAll("selectionPolygon").data([that.polygonSelection]);
+            selPoly.enter().append("polygon")
+                .attr('id', 'selectionPolygon')
+                .attr("points", function (d) {
+                    return d.map(function (d) {
+                        return [d.viewportPoints.x, d.viewportPoints.y].join(",");
+                    }).join(" ");
+                })
+
+            that.numCalls++;
+        }
+
+        that.lasso_end = function (event) {
+            that.renew = true;
+        }
+
+        let primaryTracker = new OpenSeadragon.MouseTracker({
+            element: that.viewer.canvas,
+            pressHandler: (event) => {
+                if (event.originalEvent.shiftKey) {
+                    this.viewer.setMouseNavEnabled(false);
+                    if (that.isSelectionToolActive) {
+                        that.lassoing = true;
+                    } else {
+                    }
+                    if (!that.isSelectionToolActive) {
+                        d3.select('#selectionPolygon').remove();
+
+                    }
+                    that.polygonSelection = [];
+                    that.numCalls = 0;
+                }
+            }, releaseHandler: (event) => {
+                this.viewer.setMouseNavEnabled(true);
+                if (that.lassoing) {
+                    that.lassoing = false;
+                    console.log('release');
+                    if (that.isSelectionToolActive) {
+                        that.lasso_end(event);
+                        if (_.size(that.polygonSelection) > 2) {
+                            // that.showLoader();
+                            return dataLayer.getCellsInPolygon(that.polygonSelection)
+                                .then(packet =>{
+                                    this.lasso_toggle = true;
+                                    this.lasso_ids = packet['list_ids'];
+                                    this.lasso_ids_subtact = packet['list_ids_subtract'];
+                                    this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids});
+                                    if(!this.lasso_init){
+                                        $('#gating_list_ul').prepend("<div id='lasso-btn' " +
+                                            "class='list-group-item container gating-list-content' " +
+                                            "style='color: orange; border-bottom: 1px solid rgba(255, 255, 255, 0.5);'>" +
+                                            "Lasso Selection" +
+                                            "<button id='lasso-toggle' >toggle</button>" +
+                                            "</div>"
+                                        );
+                                        document.getElementById('lasso-btn').addEventListener("click", e => {
+                                            return this.toggleLasso();
+                                        })
+                                        const toggle_lasso = document.querySelector("#lasso-toggle");
+                                        this.toggle_bool = true;
+                                        toggle_lasso.addEventListener("click", (e) => {
+                                            if(this.toggle_bool){
+                                                this.toggle_bool = false;
+                                                this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids_subtact});
+                                            } else{
+                                                this.toggle_bool = true;
+                                                this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids});
+                                            }
+                                        });
+                                        toggle_lasso.addEventListener("click", e => e.stopPropagation());
+                                        this.lasso_init = true;
+                                    }
+                                })
+                        }
+                    }
+                }
+            }, nonPrimaryReleaseHandler(event) {
+                if (that.selectButton.classList.contains('selected') && !that.lassoing) {
+                    const webPoint = event.position;
+                    // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+                    const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
+                    // Convert from viewport coordinates to image coordinates.
+                    let imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
+                    const zoomScale = 2**config.extraZoomLevels;
+                    imagePoint = {x:imagePoint.x/zoomScale, y:imagePoint.y/zoomScale}
+                    return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
+                        .then(selectedItem => {
+                            if (selectedItem !== null && selectedItem !== undefined) {
+                                // Check if user is doing multi-selection or not
+                                let clearPriors = true;
+                                if (event.originalEvent.ctrlKey) {
+                                    clearPriors = false;
+                                }
+                                // Trigger event
+                                that.eventHandler.trigger(ImageViewer.events.imageClickedMultiSel, {
+                                    selectedItem,
+                                    clearPriors
+                                });
+                            }
+                        })
+                }
+            }
+            , moveHandler: function (event) {
+                if (that.isSelectionToolActive && that.lassoing) {
+                    that.lasso_draw(event);
+                }
+            }
+        })
+
+        this.canvasOverlay = new OpenSeadragon.CanvasOverlayHd(this.viewer, {
+            onRedraw: function (opts) {
+                const context = opts.context;
+                //area selection polygon
+                if (that.selectionPolygonToDraw && that.selectionPolygonToDraw.length > 0) {
+                    var d = that.selectionPolygonToDraw;
+                    context.globalAlpha = 0.7;
+                    context.strokeStyle = 'orange';
+                    context.lineWidth = 10;
+                    context.beginPath();
+                    d.forEach(function (xVal, i) {
+                        if (i === 0) {
+                            context.moveTo(d[i].x, d[i].y);
+                        } else {
+                            context.lineTo(d[i].x, d[i].y);
+                        }
+                    });
+                    context.closePath();
+                    context.stroke();
+                    // context.globalAlpha = 1.0;
+                }
+            },
+        });
     }
 
     /**
@@ -406,6 +572,33 @@ class ImageViewer {
         this.idCount = ids.length;
         this.ready = true;
         await this.forceRepaint();
+    }
+
+    /**
+     * @function toggleLasso - Toggle on and off the lasso selection.
+     * @returns string
+     */
+     toggleLasso(){
+        if (this.lasso_toggle){
+            this.lasso_toggle = false;
+            this.eventHandler.trigger(ImageViewer.events.clearImageLasso);
+
+            d3.select('#selectionPolygon').style('stroke', 'none')
+            d3.select('#lasso-btn').style("color", "white")
+            d3.select('#lasso-toggle').style('visibility', 'hidden')
+
+        } else {
+            this.lasso_toggle = true;
+            if(this.toggle_bool){
+                this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids});
+            } else{
+                this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids_subtact});
+            }
+
+            d3.select('#selectionPolygon').style('stroke', 'orange')
+            d3.select('#lasso-btn').style("color", "orange")
+            d3.select('#lasso-toggle').style('visibility', 'visible')
+        }
     }
 
     /**
@@ -1113,6 +1306,8 @@ ImageViewer.events = {
     imageClickedMultiSel: "image_clicked_multi_selection",
     renderingMode: "renderingMode",
     addScaleBar: "addScaleBar",
+    imageLassoSel: "image_lasso_selection",
+    clearImageLasso: "clear_image_lasso"
 };
 
 /**

@@ -1,4 +1,5 @@
 from sklearn.neighbors import BallTree
+from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import pandas as pd
 from PIL import ImageColor
@@ -11,6 +12,9 @@ from ome_types import from_xml
 from minerva_analysis import config_json_path, data_path, cwd_path
 from minerva_analysis.server.utils import pyramid_assemble, pyramid_upgrade
 from minerva_analysis.server.models import database_model
+from minerva_analysis.server.utils import smallestenclosingcircle
+import matplotlib.path as mpltPath
+from itertools import chain
 import dateutil.parser
 import time
 import pickle
@@ -881,3 +885,34 @@ def logTransform(csvPath, skip_columns=[]):
         if column not in skip_columns:
             df[column] = np.log1p(df[column])
     df.to_csv(csvPath, index=False)
+
+# similar_neighborhood=False, embedding=False
+def get_cells_in_polygon(datasource_name, points):
+    global config
+    global datasource
+    global ball_tree
+
+    if datasource_name != source:
+        load_datasource(datasource_name)
+
+    point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
+    (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
+
+    index = ball_tree.query_radius([[x, y]], r)
+    neighbors = index[0]
+    circle_neighbors = datasource.iloc[neighbors].to_dict(orient='records')
+    neighbor_points = pd.DataFrame(circle_neighbors).values
+
+    path = mpltPath.Path(point_tuples)
+    inside = path.contains_points(neighbor_points[:, [1, 2]].astype('float'))
+    neighbor_ids = neighbor_points[np.where(inside == True), 0].astype('int').flatten().tolist()
+    neighbor_ids.sort()
+
+    neighbor_ids_subtract = list(set(datasource['CellID']) - set(neighbor_ids))
+    neighbor_ids_subtract.sort()
+
+    packet = {}
+    packet['list_ids'] = neighbor_ids
+    packet['list_ids_subtract'] = neighbor_ids_subtract
+
+    return packet

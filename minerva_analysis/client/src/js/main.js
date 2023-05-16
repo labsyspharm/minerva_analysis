@@ -65,7 +65,7 @@ async function init(config) {
 
     //Create image viewer
     const imageArgs = [imgMetadata, numericData, eventHandler];
-    const seaDragonViewer = new ImageViewer(config, ...imageArgs);
+    const seaDragonViewer = new ImageViewer(config, dataLayer, ...imageArgs);
     const viewerManager = new ViewerManager(seaDragonViewer, channelList);
 
     //Initialize with database description
@@ -167,11 +167,20 @@ async function init(config) {
     }
 
     /**
+     * Add picked cell ids from lasso selection
+     */
+    const imageLassoSel = (d) => {
+        updateSeaDragonSelection(d);
+    };
+    eventHandler.bind(ImageViewer.events.imageLassoSel, imageLassoSel);
+
+    /**
      * Remove currently selected picked cell ids
      */
     function clearSeaDragonSelection() {
       updateSeaDragonSelection({ picked: [] });
     }
+    eventHandler.bind(ImageViewer.events.clearImageLasso, clearSeaDragonSelection);
 
     const handler = () => updateSeaDragonSelection();
     eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, handler);

@@ -335,3 +335,11 @@ def serialize_and_submit_json(data):
         mimetype='application/json'
     )
     return response
+
+@app.route('/get_cells_in_polygon', methods=['POST'])
+def get_cells_in_polygon():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    points = post_data['points']
+    resp = data_model.get_cells_in_polygon(datasource, points)
+    return serialize_and_submit_json(resp)

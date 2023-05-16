@@ -557,4 +557,26 @@ class DataLayer {
       return false;
     }
 
+     async getCellsInPolygon(points) {
+        try {
+            let response = await fetch('/get_cells_in_polygon', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        points: points,
+                    }
+                )
+            });
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Polygon Cells", e);
+        }
+    }
+
 }

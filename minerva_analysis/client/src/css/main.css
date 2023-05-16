@@ -464,3 +464,17 @@ label {
 
 .col-svg-wrapper {
 }
+
+#selectionPolygon {
+    fill-opacity: 0;
+    stroke: orange;
+    stroke-width: 3px;
+    vector-effect: non-scaling-stroke;
+}
+
+#lasso-toggle {
+    float: right;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: 1px;
+}
