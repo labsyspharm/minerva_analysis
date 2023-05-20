@@ -450,7 +450,7 @@ class CSVGatingList {
 
         // Download gated channel ranges
         download_gated_cell_encodings.addEventListener('click', () => {
-            this.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, true);
+            this.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, this.seaDragonViewer.selection_ids, true);
         })
 
         // Toggle outlined / filled cell selections

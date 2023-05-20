@@ -90,7 +90,7 @@ class DataLayer {
         }
     }
 
-    downloadGatingCSV(channels, selections, fullCsv = false) {
+    downloadGatingCSV(channels, selections, selection_ids, fullCsv = false) {
         let form = document.createElement("form");
         form.action = "/download_gating_csv";
 
@@ -133,14 +133,20 @@ class DataLayer {
         channelsElement.name = "channels";
         form.appendChild(channelsElement);
 
+        let idsElement = document.createElement("input");
+        idsElement.type = "hidden";
+        idsElement.value = JSON.stringify(selection_ids);
+        idsElement.name = "selection_ids";
+        form.appendChild(idsElement);
+
         let datasourceElement = document.createElement("input");
         datasourceElement.type = "hidden";
         datasourceElement.value = datasource;
         datasourceElement.name = "datasource";
         form.appendChild(datasourceElement);
+
         document.body.appendChild(form);
         form.submit()
-
     }
 
     async saveGatingList(channels, selections) {

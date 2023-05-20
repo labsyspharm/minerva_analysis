@@ -472,7 +472,7 @@ def get_all_cells(datasource_name, start_keys, data_type=float):
     return query.astype(np.float32)
 
 
-def download_gating_csv(datasource_name, gates, channels, encoding):
+def download_gating_csv(datasource_name, gates, channels, selection_ids, encoding):
     global datasource
     global source
     global ball_tree
@@ -481,28 +481,33 @@ def download_gating_csv(datasource_name, gates, channels, encoding):
     if datasource_name != source:
         load_ball_tree(datasource_name)
 
-    query_string = ''
+    csv = datasource.copy()
+
     columns = []
-    for key, value in gates.items():
-        columns.append(key)
-        if query_string != '':
-            query_string += ' and '
-        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
-    ids = datasource.query(query_string)[['id']].to_numpy().flatten()
     if 'idField' in config[datasource_name]['featureData'][0]:
         idField = config[datasource_name]['featureData'][0]['idField']
     else:
         idField = "CellID"
     columns.append(idField)
 
-    csv = datasource.copy()
+    if selection_ids:
+        datasource = datasource[datasource[idField].isin(selection_ids)]
 
-    csv[idField] = datasource['id']
+    query_string = ''
+    for key, value in gates.items():
+        columns.append(key)
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
+    ids = datasource.query(query_string)[['id']].to_numpy().flatten()
+
+    if 'Area' in channels:
+        del channels['Area']
     for channel in channels:
         if channel in gates:
             if encoding == 'binary':
-                csv.loc[csv[idField].isin(ids), channel] = 1
-            csv.loc[~csv[idField].isin(ids), channel] = 0
+                csv.loc[csv.index.isin(ids), channel] = 1
+            csv.loc[~csv.index.isin(ids), channel] = 0
         else:
             csv[channel] = 0
 

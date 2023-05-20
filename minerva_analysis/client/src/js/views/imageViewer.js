@@ -36,6 +36,7 @@ class ImageViewer {
         this.lasso_toggle = false;
         this.lasso_ids = {};
         this.lasso_ids_subtact = {};
+        this.selection_ids = {};
         this.lasso_init = false;
         this.toggle_bool = true;
 
@@ -455,6 +456,7 @@ class ImageViewer {
                             return dataLayer.getCellsInPolygon(that.polygonSelection)
                                 .then(packet =>{
                                     this.lasso_toggle = true;
+                                    this.selection_ids = packet['list_ids'];
                                     this.lasso_ids = packet['list_ids'];
                                     this.lasso_ids_subtact = packet['list_ids_subtract'];
                                     this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids});
@@ -474,9 +476,11 @@ class ImageViewer {
                                         toggle_lasso.addEventListener("click", (e) => {
                                             if(this.toggle_bool){
                                                 this.toggle_bool = false;
+                                                this.selection_ids = this.lasso_ids_subtact;
                                                 this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids_subtact});
                                             } else{
                                                 this.toggle_bool = true;
+                                                this.selection_ids = this.lasso_ids;
                                                 this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids});
                                             }
                                         });
