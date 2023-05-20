@@ -47,9 +47,11 @@ class CSVGatingList {
         this.selections[fullName] = values;
         this.sliders.get(name).value(values);
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_MOVE, this.selections);
-        this.getAndDrawGatingGMM(name).then(() => {
-            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
-        });
+        if (!(name in this.hasGatingGMM)) {
+            this.getAndDrawGatingGMM(name).then(() => {
+                this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+            });
+        }
     }
 
      /**
