@@ -18,9 +18,9 @@ class CSVGatingList {
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.selections = {};
-        this.hasGatingGMM = {};
         this.gatingIDs = {};
         this.sliders = new Map();
+        this.hasGatingGMM = [];
         this.container = d3.select("#csv_gating_list");
         // Gating vars
         const { channelList } = __minervaAnalysis;
@@ -47,9 +47,12 @@ class CSVGatingList {
         this.selections[fullName] = values;
         this.sliders.get(name).value(values);
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_MOVE, this.selections);
-        this.getAndDrawGatingGMM(name).then(() => {
-            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
-        });
+        if (!this.hasGatingGMM.includes(name)){
+            this.hasGatingGMM.push(name);
+            this.getAndDrawGatingGMM(name).then(() => {
+                this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+            });
+        }
     }
 
      /**
