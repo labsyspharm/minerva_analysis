@@ -1,6 +1,5 @@
-# Gater | Minerva Analysis
+Minerva Analysis
 
-![](./minerva_analysis/client/src/img/logo_with_text.svg)
 
 ## About
 This is  an [openseadragon](https://openseadragon.github.io/) based **Cellular Image Viewing and Analysis Tool**. 
