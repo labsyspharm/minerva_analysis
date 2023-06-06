@@ -69,6 +69,18 @@
                                 <br>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-3">
+                                <label for="celltype_file">Cell Type File:</label>
+                            </div>
+                            <div class="col-9">
+                                <input type="text" id="celltype_file" class="form-control" name="celltype_file" onkeyup="checkFileExistence(this)">
+                                <div class="valid-feedback">Valid.</div>
+                                <div class="invalid-feedback">
+                                    Please provide a valid cell type csv file.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-3">

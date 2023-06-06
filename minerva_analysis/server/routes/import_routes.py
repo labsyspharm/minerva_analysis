@@ -195,6 +195,14 @@ def upload_file_page():
                     pathsSplit = PurePath(csvPath).parts
                     csvName = pathsSplit[len(pathsSplit) - 1]
 
+                    cellTypePath = request.form.get("celltype_file")
+                    if len(cellTypePath) > 0:
+                        cellTypePath = cellTypePath.replace('"', '')  # remove " characters
+                        cellTypePath = Path(cellTypePath)  # remove " characters
+                        cellTypePathsSplit = PurePath(cellTypePath).parts
+                        celltypeName = cellTypePathsSplit[len(cellTypePathsSplit) - 1]
+                        channelFileNames.extend(['Cell Type'])
+
                     #channel file
                     channelFile = request.form.get('channel_file')
                     channelFile = channelFile.replace('"', '') # remove " characters
@@ -248,6 +256,16 @@ def upload_file_page():
                     reader = csv.DictReader(infile)
                     csvHeader = reader.fieldnames
 
+                # Process Cell Type File
+
+                # open original csv location
+                if celltypeName is not None and celltypeName != '':
+                    cellTypeFile = [open(cellTypePath)]
+                    # file path to write to on server
+                    f = open(str(Path(file_path) / celltypeName), 'w')
+                    # write to new location on server
+                    f.write(cellTypeFile[0].read())
+
                 # Process Channel File
                 current_task = "Converting OME-TIFF Channels (This Will Take a While)"
                 channel_info = data_model.convertOmeTiff(channelFile, isLabelImg=False)
@@ -286,6 +304,9 @@ def upload_file_page():
                 config_data['datasetName'] = datasetName
                 config_data['channelFileNames'] = channelFileNames
                 config_data['csvName'] = csvName
+
+                if  celltypeName != '':
+                    config_data['celltypeData'] = celltypeName
 
                 config_data['channelFile'] = str(channelFile)
                 config_data['new'] = True
