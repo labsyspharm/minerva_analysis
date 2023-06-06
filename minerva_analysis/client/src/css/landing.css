@@ -1,0 +1,30 @@
+img {
+        max-width: 100%;
+        max-height: 100%;
+    }
+    body {background-color: black; color: white;}
+    a:link {
+      color: white;
+    }
+    a:visited {
+      color: white;
+    }
+    a:hover {
+      color: white;
+    }
+    a:active {
+      color: white;
+    }
+    .container { width: 1400px; margin-left: auto; margin-right: auto; height: 500px; }
+    .center {
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+    .container [class*='box'] { width:220px; height:150px; float: left; margin-right: 30px; margin-bottom: 30px; }
+    .container .box1 { background-color: #000; border: 1px solid white; text-align: center;}
+    .container .box2 { background-color: #000; border: 1px solid white; text-align: center;}
+    .container .box3 { background-color: #000; border: 1px solid white; text-align: center;}

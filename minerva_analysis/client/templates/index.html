@@ -3,6 +3,7 @@
 {% block style %}
 <link rel="stylesheet" href="../client/src/css/viewer.css">
 <link rel="stylesheet" href="../client/src/css/gating.css">
+<link rel="stylesheet" href="../client/src/css/landing.css">
 {% endblock %}
 
 {% block content %}
@@ -128,5 +129,24 @@
     </div>
 </div>
 <script src="../client/src/js/main.js" defer></script>
+{% else %}
+    <div id="container" class="container">
+        <div id="bodyDiv">
+            <div class="center">
+                <div class="box1">
+                    <img src="../client/src/img/scope2screen.png">
+                    <a href="http://localhost:8001" target="_blank">Scope2Screen</a>
+                </div>
+                <div class="box2">
+                    <img src="../client/src/img/gater.png">
+                    <a href="http://localhost:8002" target="_blank">Gater</a>
+                </div>
+                <div class="box3">
+                    <img src="../client/src/img/visinity.png">
+                    <a href="http://localhost:8003" target="_blank">Visinity</a>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endif %}
 {% endblock %}
