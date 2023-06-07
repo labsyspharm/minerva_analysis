@@ -707,12 +707,11 @@ class ImageViewer {
     }
 
     showLoader() {
-        // document.getElementById('openseadragon_loader').style.display = "block";
-
+        document.getElementById('loading_spinner').style.display = "block";
     }
 
     hideLoader() {
-        document.getElementById('openseadragon_loader').style.display = "none";
+        document.getElementById('loading_spinner').style.display = "none";
     }
 
     /**

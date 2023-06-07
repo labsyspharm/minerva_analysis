@@ -9,6 +9,9 @@
 
     {% if data.datasource %}
         <div id="container">
+            <div class="lds-ring" id="loading_spinner">
+                <div></div>
+            </div>
             <div id="absolute-col" class="row">
                 <div id="related_image_wrapper" class="col-auto related_image_wrapper_small">
                     <div id="search-col-wrapper" class="row">
@@ -64,7 +67,8 @@
                                         <div class="row" id="cluster-subsample">
                                             <label>
                                                 <span class="subsample_label">Subsample</span>
-                                                <input id="subsample_cluster" type="checkbox" class="checkbox style-2 " checked="checked">
+                                                <input id="subsample_cluster" type="checkbox" class="checkbox style-2 "
+                                                       checked="checked">
                                             </label>
 
                                         </div>
@@ -148,12 +152,6 @@
 
                 <div id="openseadragon_wrapper" class="col-auto openseadragon_wrapper_large viewer_col">
                     <div id="openseadragon">
-                        <div class="row">
-                            <div class="col-auto">
-                                <div class="lds-ellipsis" id="openseadragon_loader">
-                                </div>
-                            </div>
-                        </div>
                         <div id="legend"></div>
                         <div id="toolbox"></div>
                         <div id="tray">

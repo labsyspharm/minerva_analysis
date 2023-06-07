@@ -25,6 +25,7 @@ class DataLayer {
 
     async init() {
         try {
+            document.getElementById('loading_spinner').style.display = "block";
             let response = await fetch('/init_datasource?' + new URLSearchParams({
                 datasource: datasource
             }))
@@ -32,11 +33,11 @@ class DataLayer {
             this.phenotypes = await this.getPhenotypes();
             this.allCells = await this.getAllCells();
             this.defaultOrder = await this.getAxisOrder();
-
-
         } catch (e) {
             console.log("Error Initializing Dataset", e);
         }
+        document.getElementById('loading_spinner').style.display = "none";
+
     }
 
     async getCells(ids, linkedDataset = null, isImage = false) {

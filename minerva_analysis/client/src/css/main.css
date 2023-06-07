@@ -3,69 +3,47 @@ body {
 }
 
 /*LOADING SPINNER SECTION*/
-.lds-ellipsis {
-    display: inline-block;
-    position: relative;
-    width: 20px;
-    height: 20px;
+.lds-ring {
+    position: absolute;
+    top: 50%; /* position the top  edge of the element at the middle of the parent */
+    left: 50%;
+    width: 80px;
+    height: 80px;
+    transform: translate(-50%, -50%);
     z-index: 10;
 }
 
-.lds-ellipsis div {
+.lds-ring div {
+    box-sizing: border-box;
+    display: block;
     position: absolute;
-    top: 33px;
-    width: 13px;
-    height: 13px;
+    width: 64px;
+    height: 64px;
+    margin: 8px;
+    border: 8px solid #fff;
     border-radius: 50%;
-    background: #b8b8b8;
-    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    border-color: #fff transparent transparent transparent;
 }
 
-
-.lds-ellipsis div:nth-child(1) {
-    left: 8px;
-    animation: lds-ellipsis1 0.6s infinite;
+.lds-ring div:nth-child(1) {
+    animation-delay: -0.45s;
 }
 
-.lds-ellipsis div:nth-child(2) {
-    left: 8px;
-    animation: lds-ellipsis2 0.6s infinite;
+.lds-ring div:nth-child(2) {
+    animation-delay: -0.3s;
 }
 
-.lds-ellipsis div:nth-child(3) {
-    left: 32px;
-    animation: lds-ellipsis2 0.6s infinite;
+.lds-ring div:nth-child(3) {
+    animation-delay: -0.15s;
 }
 
-.lds-ellipsis div:nth-child(4) {
-    left: 56px;
-    animation: lds-ellipsis3 0.6s infinite;
-}
-
-@keyframes lds-ellipsis1 {
+@keyframes lds-ring {
     0% {
-        transform: scale(0);
+        transform: rotate(0deg);
     }
     100% {
-        transform: scale(1);
-    }
-}
-
-@keyframes lds-ellipsis3 {
-    0% {
-        transform: scale(1);
-    }
-    100% {
-        transform: scale(0);
-    }
-}
-
-@keyframes lds-ellipsis2 {
-    0% {
-        transform: translate(0, 0);
-    }
-    100% {
-        transform: translate(24px, 0);
+        transform: rotate(360deg);
     }
 }
 
@@ -217,7 +195,7 @@ body {
     border-radius: 0rem;
 }
 
-#openseadragon_loader {
+#loading_spinner {
     margin-left: 300px;
 }
 
@@ -624,7 +602,7 @@ polygon:hover {
     font-size: 9pt;
     color: white;
     margin-bottom: 0;
-    margin-right:10px;
+    margin-right: 10px;
 }
 
 
