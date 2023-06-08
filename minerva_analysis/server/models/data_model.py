@@ -142,6 +142,9 @@ def load_csv(datasource_name, numpy=False):
 
     if 'CellType' in df.columns:
         df = df.rename(columns={'CellType': 'phenotype'})
+    if config[datasource_name]['featureData'][0]['celltype'] is not None:
+        df = df.rename(columns={config[datasource_name]['featureData'][0]['celltype']: 'phenotype'})
+
     if np.issubdtype(df['phenotype'].dtype, np.number) is False:
         df['phenotype'] = df['phenotype'].apply(lambda x: x.strip())
 
