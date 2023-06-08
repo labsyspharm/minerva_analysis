@@ -1485,7 +1485,7 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
     time_neighborhood_stats = time.time()
     if indices.dtype.kind != 'i':
         indices = indices.astype(int)
-    if 'useCellID' in config[datasource_name]['featureData'][0]:
+    if 'useCellID' in config[datasource_name]['featureData'][0] or config[datasource_name]['featureData'][0]['idField'] == 'CellID':
         default_fields.append('CellID')
 
     column_indices = get_column_indices(default_fields)
