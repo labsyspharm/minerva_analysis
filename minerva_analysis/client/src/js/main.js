@@ -171,6 +171,7 @@ async function init(config) {
      */
     const imageLassoSel = (d) => {
         updateSeaDragonSelection(d);
+        csv_gatingList.updateGMM(d['picked']);
     };
     eventHandler.bind(ImageViewer.events.imageLassoSel, imageLassoSel);
 
@@ -179,6 +180,7 @@ async function init(config) {
      */
     function clearSeaDragonSelection() {
       updateSeaDragonSelection({ picked: [] });
+      csv_gatingList.updateGMM([]);
     }
     eventHandler.bind(ImageViewer.events.clearImageLasso, clearSeaDragonSelection);
 

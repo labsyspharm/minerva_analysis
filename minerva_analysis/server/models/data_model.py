@@ -482,6 +482,7 @@ def download_gating_csv(datasource_name, gates, channels, selection_ids, encodin
         load_ball_tree(datasource_name)
 
     csv = datasource.copy()
+    datasource_filter = datasource.copy()
 
     columns = []
     if 'idField' in config[datasource_name]['featureData'][0]:
@@ -491,7 +492,7 @@ def download_gating_csv(datasource_name, gates, channels, selection_ids, encodin
     columns.append(idField)
 
     if selection_ids:
-        datasource = datasource[datasource[idField].isin(selection_ids)]
+        datasource_filter = datasource_filter[datasource_filter[idField].isin(selection_ids)]
 
     query_string = ''
     for key, value in gates.items():
@@ -499,7 +500,7 @@ def download_gating_csv(datasource_name, gates, channels, selection_ids, encodin
         if query_string != '':
             query_string += ' and '
         query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
-    ids = datasource.query(query_string)[['id']].to_numpy().flatten()
+    ids = datasource_filter.query(query_string)[['id']].to_numpy().flatten()
 
     if 'Area' in channels:
         del channels['Area']
@@ -749,7 +750,7 @@ def get_channel_gmm(channel_name, datasource_name):
     return packet_gmm
 
 
-def get_gating_gmm(channel_name, datasource_name):
+def get_gating_gmm(channel_name, datasource_name, selection_ids):
     global datasource
     global source
     global ball_tree
@@ -762,12 +763,21 @@ def get_gating_gmm(channel_name, datasource_name):
         load_ball_tree(datasource_name)
     description = datasource.describe().to_dict()
 
+    datasource_filter = datasource.copy()
+    if 'idField' in config[datasource_name]['featureData'][0]:
+        idField = config[datasource_name]['featureData'][0]['idField']
+    else:
+        idField = "CellID"
+    if selection_ids:
+        datasource_filter = datasource_filter[datasource_filter[idField].isin(selection_ids)]
+
     column_data = datasource[channel_name].to_numpy()
     [hist, bin_edges] = np.histogram(column_data[~np.isnan(column_data)], bins=50, density=True)
     midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
 
+    column_data_filtered = datasource_filter[channel_name].to_numpy()
     gmm = GaussianMixture(n_components=2)
-    gmm.fit(column_data.reshape((-1, 1)))
+    gmm.fit(column_data_filtered.reshape((-1, 1)))
     i0, i1 = np.argsort(gmm.means_[:, 0])
     packet_gmm['gate'] = np.mean(gmm.means_)
 

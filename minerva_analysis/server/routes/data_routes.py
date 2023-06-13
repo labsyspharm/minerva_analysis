@@ -149,14 +149,14 @@ def get_channel_gmm():
     resp = data_model.get_channel_gmm(channel, datasource)
     return serialize_and_submit_json(resp)
 
-
-@app.route('/get_gating_gmm', methods=['GET'])
+@app.route('/get_gating_gmm', methods=['POST'])
 def get_gating_gmm():
-    channel = request.args.get('channel')
-    datasource = request.args.get('datasource')
-    resp = data_model.get_gating_gmm(channel, datasource)
+    post_data = json.loads(request.data)
+    channel = post_data['channel']
+    datasource = post_data['datasource']
+    selection_ids = post_data['selection_ids']
+    resp = data_model.get_gating_gmm(channel, datasource, selection_ids)
     return serialize_and_submit_json(resp)
-
 
 @app.route('/upload_gates', methods=['POST'])
 def upload_gates():

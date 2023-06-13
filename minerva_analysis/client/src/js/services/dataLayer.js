@@ -369,12 +369,22 @@ class DataLayer {
         }
     }
 
-    async getGatingGMM(channel) {
+    async getGatingGMM(channel, selection_ids) {
         try {
-            let response = await fetch('/get_gating_gmm?' + new URLSearchParams({
-                channel: channel,
-                datasource: datasource
-            }))
+            let response = await fetch('/get_gating_gmm', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        channel: channel,
+                        datasource: datasource,
+                        selection_ids: selection_ids
+                    }
+                )
+            });
             let packet_gmm = await response.json();
             return packet_gmm;
         } catch (e) {

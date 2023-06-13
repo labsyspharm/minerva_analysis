@@ -36,7 +36,7 @@ class ImageViewer {
         this.lasso_toggle = false;
         this.lasso_ids = {};
         this.lasso_ids_subtact = {};
-        this.selection_ids = {};
+        this.selection_ids = [];
         this.lasso_init = false;
         this.toggle_bool = true;
 

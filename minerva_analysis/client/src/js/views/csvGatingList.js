@@ -302,10 +302,10 @@ class CSVGatingList {
      * @param name - the name of the channel to apply it to
      */
     async autoGate(shortName) {
-        const transformed = this.dataLayer.isTransformed();
-        const input = (await this.getGatingGMM(shortName)).gate.toFixed(7);
-        const gate = transformed ? parseFloat(input) : parseInt(input);
         const fullName = this.dataLayer.getFullChannelName(shortName);
+        const input = (await this.getGatingGMM(fullName, this.seaDragonViewer.selection_ids)).gate.toFixed(7);
+        const transformed = this.dataLayer.isTransformed();
+        const gate = transformed ? parseFloat(input) : parseInt(input);
         if (fullName in this.selections) {
             const gate_end = this.selections[fullName][1];
             const slider = this.sliders.get(shortName);
@@ -531,7 +531,7 @@ class CSVGatingList {
         if (!data) return;
 
         const fullName = this.dataLayer.getFullChannelName(name);
-        const { xDomain, yDomain, histogramData} = this.histogramData(fullName); 
+        const { xDomain, yDomain, histogramData } = this.histogramData(fullName);
         let channelID = this.gatingIDs[name];
 
         let data_min
@@ -674,29 +674,17 @@ class CSVGatingList {
         };
     }
 
-    async getGatingGMM(name) {
-        let packet = this.hasGatingGMM[name];
-        if (!(name in this.hasGatingGMM)) {
-            const fullName = this.dataLayer.getFullChannelName(name);
-            packet = await this.dataLayer.getGatingGMM(fullName);
-            this.hasGatingGMM[name] = packet;
-        }
-        const channelID = this.gatingIDs[name];
-        const autoBtn = document.getElementById(`auto-btn-gating_${channelID}`);
-        autoBtn.classList.remove("auto-loading")
-        return packet;
-    }
-
-    async getAndDrawGatingGMM(name) {
+    async getGatingGMM(name, selection_ids = []) {
         const fullName = this.dataLayer.getFullChannelName(name);
-        await this.getGatingGMM(name);
-        this.drawGatingGMM(name);
+        let packet = await this.dataLayer.getGatingGMM(fullName, selection_ids);
+        this.hasGatingGMM[name] = packet;
+        return packet;
     }
 
     drawGatingGMM(name) {
         let channelID = this.gatingIDs[name];
         const fullName = this.dataLayer.getFullChannelName(name);
-        const { xDomain, yDomain } = this.histogramData(fullName); 
+        const { xDomain, yDomain } = this.histogramData(fullName);
         const packet = this.hasGatingGMM[name];
         let gmm1Data = packet['gmm_1'];
         let gmm2Data = packet['gmm_2'];
@@ -726,6 +714,7 @@ class CSVGatingList {
             .attr('d', line)
             .attr('class', 'gmm_line')
             .attr('class', 'gmm_line_'+name)
+            .attr('id', 'gmm1_line_'+name)
             .attr('transform', 'translate(0,-31)')
             .attr('fill', 'none')
             .attr('stroke', 'blue')
@@ -737,9 +726,57 @@ class CSVGatingList {
             .attr('d', line)
             .attr('class', 'gmm_line')
             .attr('class', 'gmm_line_'+name)
+            .attr('id', 'gmm2_line_'+name)
             .attr('transform', 'translate(0,-31)')
             .attr('fill', 'none')
             .attr('stroke', 'red')
+    }
+
+    async getAndDrawGatingGMM(name) {
+        await this.getGatingGMM(name);
+
+        const channelID = this.gatingIDs[name];
+        const autoBtn = document.getElementById(`auto-btn-gating_${channelID}`);
+        autoBtn.classList.remove("auto-loading")
+
+        this.drawGatingGMM(name);
+    }
+
+    async updateGMM(selection_ids) {
+        for (let name in this.hasGatingGMM) {
+            await this.getGatingGMM(name, selection_ids=selection_ids);
+
+            const fullName = this.dataLayer.getFullChannelName(name);
+            const { xDomain, yDomain } = this.histogramData(fullName);
+            const packet = this.hasGatingGMM[name];
+            let gmm1Data = packet['gmm_1'];
+            let gmm2Data = packet['gmm_2'];
+            const gmm1_yMax = Math.max(...gmm1Data.map(obj => obj.y));
+            const gmm2_yMax = Math.max(...gmm2Data.map(obj => obj.y));
+            const yMax = Math.max(gmm1_yMax, gmm2_yMax);
+            const gmm_yDomain = [yMax, 0]
+
+            const gatingListEl = document.getElementById("csv_gating_list");
+            const swidth = gatingListEl.getBoundingClientRect().width;
+
+            let xScale = d3.scaleLinear()
+                .domain(xDomain)
+                .range([0, swidth - 73])
+
+            let yScale = d3.scaleLinear()
+                .domain(gmm_yDomain)
+                .range([0, 25])
+
+            let line = d3.line()
+                .x(d => xScale(d.x))
+                .y(d => yScale(d.y))
+                .curve(d3.curveMonotoneX)
+
+            let channel_gmm1 = d3.select('#gmm1_line_'+name)
+            let channel_gmm2 = d3.select('#gmm2_line_'+name)
+            channel_gmm1.data([gmm1Data]).transition().duration(1000).attr('d', line)
+            channel_gmm2.data([gmm2Data]).transition().duration(1000).attr('d', line)
+        }
     }
 
     /**
