@@ -13,7 +13,12 @@ img {
         font-size:18px;
         color: white;
     }
-    . n_inner_box a:link {
+
+    .n_inner_box:hover {
+        box-shadow: 0 0 20px 2px greenyellow;
+    }
+
+    .n_inner_box a:link {
       color: white;
     }
     .n_inner_box a:visited {
