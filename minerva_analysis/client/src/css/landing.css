@@ -2,30 +2,62 @@ img {
         max-width: 100%;
         max-height: 100%;
     }
-    body {background-color: black; color: white;}
-    .cbox { width: 1400px; margin-left: auto; margin-right: auto; height: 500px; }
-    .center {
-      margin: 0;
-      position: absolute;
-      top: 25%;
-      left: 25%;
-      /*-ms-transform: translate(-50%, -50%);*/
-      /*transform: translate(-50%, -50%);*/
-    }
-    .cbox [class*='box'] { width:220px; height:150px; float: left; margin-right: 30px; margin-bottom: 30px; }
-    .cbox .box1 { background-color: #000; border: 1px solid white; text-align: center;}
-    .cbox .box2 { background-color: #000; border: 1px solid white; text-align: center;}
-    .cbox .box3 { background-color: #000; border: 1px solid white; text-align: center;}
+    body {background-color: black; color: white; height: 100%;}
+    html { height: 90%; }
 
-    . cbox a:link {
+    .n_inner_box{
+        text-align: center;
+        margin: 10px;
+        padding:10px;
+        border: 1px solid white;
+        font-size:18px;
+        color: white;
+    }
+    . n_inner_box a:link {
       color: white;
     }
-    .cbox a:visited {
+    .n_inner_box a:visited {
       color: white;
     }
-    .cbox a:hover {
+    .n_inner_box a:hover {
       color: white;
     }
-    .cbox a:active {
+    .n_inner_box a:active {
       color: white;
     }
+
+
+    /* Clear floats after the columns */
+    .n_row:after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+
+    .footer {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      padding: 1rem;
+      background-color: #100f0f;
+      text-align: center;
+      color: white;
+    }
+    .footer a:link {
+      color: greenyellow;
+    }
+    .footer a:visited {
+      color: greenyellow;
+    }
+    .footer a:hover {
+      color: greenyellow;
+    }
+    .footer a:active {
+      color: greenyellow;
+    }
+    .n_description {
+        padding-top: 5px;
+      font-size:12px;
+    }
+
