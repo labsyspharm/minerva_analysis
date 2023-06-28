@@ -347,7 +347,7 @@ def save_config():
             if 'celltypeData' in originalData:
                 celltypeName = originalData['celltypeData']
             headerList = request.json['headerList']
-            normalizeCsv = request.json['normalizeCsv']
+            normalizeCsv = request.json.get('normalizeCsv')
             if normalizeCsv:
                 print("Normalizing CSV")
                 skip_columns = []
@@ -365,7 +365,7 @@ def save_config():
                 pre_normalization.preNormalize(csvPath, normPath, skip_columns=skip_columns)
                 print("Finished Normalizing CSV")
             elif 'normalizeCsvName' in request.json:
-                normCsvName = request.json['normalizeCsvName']
+                normCsvName = request.json.get('normalizeCsvName')
             else:
                 normCsvName = None
 
