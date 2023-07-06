@@ -2,9 +2,9 @@ name: visinity
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.9
   - Flask=2.1.0
-  - flask-sqlalchemy=2.5.1
+  - flask-sqlalchemy=3.0.2
   - hdbscan
   - llvmlite=0.39.1
   - matplotlib
