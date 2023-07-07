@@ -1,9 +1,7 @@
-from minerva_analysis import app, db
-from sqlalchemy.orm import relationship
 from sqlalchemy import func
+from sqlalchemy.orm import relationship
 
-import io
-import numpy as np
+from minerva_analysis import app, db
 
 
 # Via https://stackoverflow.com/questions/2546207/does-sqlalchemy-have-an-equivalent-of-djangos-get-or-create
@@ -83,4 +81,5 @@ class NeighborhoodStats(db.Model):
     stats = db.Column(db.LargeBinary, nullable=False)
 
 
-db.create_all()
+with app.app_context():
+    db.create_all()

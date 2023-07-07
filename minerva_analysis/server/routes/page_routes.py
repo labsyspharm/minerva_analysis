@@ -11,7 +11,7 @@ def my_index():
 
 @app.route("/data/config.json", methods=['GET'])
 def serve_config():
-    return send_file(config_json_path.resolve(), attachment_filename='config.json')
+    return send_file(config_json_path.resolve(), download_name='config.json')
 
 
 @app.route('/<string:datasource>', methods=['GET'])
