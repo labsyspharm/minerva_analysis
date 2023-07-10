@@ -7,6 +7,7 @@ dependencies:
   - Flask=2.3.2
   - flask-sqlalchemy=3.0.2
   - hdbscan=0.8.28
+  - imagecodecs=2022.2.22
   - llvmlite=0.39.1
   - joblib=1.1.0
   - matplotlib
