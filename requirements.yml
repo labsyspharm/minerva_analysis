@@ -1,4 +1,4 @@
-name: import2
+name: minerva_analysis
 channels:
   - conda-forge
 dependencies:
@@ -33,7 +33,7 @@ dependencies:
   - werkzeug
   - xmlschema
   - zarr
-  - pydantic
+  - pydantic=1.10.8
 
   - pip:
     - opencv-python
