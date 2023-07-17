@@ -1,30 +1,40 @@
-name: import
+name: import2
 channels:
   - conda-forge
 dependencies:
   - appdirs
-  - flask=2.2.2
-  - flask-sqlalchemy=3.0.2
-  - itsdangerous=2.1.2
+  - dask
+  - elementpath
+  - flask=2.1
+  - flask-sqlalchemy=2.5.1
+  - hdbscan
+  - itsdangerous
   - jinja2
+  - joblib
+  - llvmlite
+  - matplotlib
+  - numba
   - numpy
+  - numpy-indexed
   - ome-types
   - orjson
   - pandas
-  - pillow=8.1
+  - pillow
   - pip
-  - pyinstaller
-  - python=3.9.15
+  - python=3.10
   - requests
   - scikit-image
   - scikit-learn
   - scipy
-  - tifffile=2021.4.8
+  - sqlalchemy=1.4.41
+  - tifffile
+  - umap-learn
   - waitress
-  - werkzeug=2.2.2
-  - zarr=2.10
+  - werkzeug
+  - xmlschema
+  - zarr
+  - pydantic
 
   - pip:
-      - opencv-python==4.7.0.68
-
-
+    - opencv-python
+    - pycave
