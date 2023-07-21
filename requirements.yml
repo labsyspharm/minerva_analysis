@@ -1,4 +1,4 @@
-name: gater_fix
+name: minerva_analysis
 channels:
   - conda-forge
 dependencies:
