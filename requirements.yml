@@ -1,4 +1,4 @@
-name: minerva_analysis
+name: gater_fix
 channels:
   - conda-forge
 dependencies:
@@ -26,5 +26,7 @@ dependencies:
 
   - pip:
       - opencv-python==4.7.0.68
+      - imagecodecs[all]
+      - xmlschema
 
 
