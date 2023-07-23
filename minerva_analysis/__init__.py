@@ -34,12 +34,15 @@ else:
 
 # print('Data Path', str(data_path), str((data_path).resolve()))
 # Make the Data Path
+
+context = 'visinity'
+
 data_path.mkdir(parents=True, exist_ok=True)
-app = Flask(__name__, template_folder=Path('client/templates'), static_folder='data')
+app = Flask(__name__, template_folder=Path(context + '/templates'), static_folder='data')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(data_path) + '/db.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['CLIENT_PATH'] = app.root_path + '/client/'
+app.config['CLIENT_PATH'] = app.root_path + '/' + context + '/'
 config_json_path = data_path / "config.json"
 db = SQLAlchemy(app)
 

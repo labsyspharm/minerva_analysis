@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block style %}
+<link rel="stylesheet" href="../src/css/neighborhood.css">
+{% endblock %}
+
+{% block content %}
+<title>Minerva Analysis - Neighborhood Comparison</title>
+<div class="container" id="comparison_container">
+    <div class="row justify-content-center" id="comparison_title">
+        <div class="col-4">
+            <div class="row justify-content-center">
+                <span class="label">Individual Views</span>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-check" id="small-multiple-toggle">
+                    <input type="radio" class="btn-check" name="options-outlined" id="parallel-coordinates-button"
+                           autocomplete="off"
+                           checked>
+                    <label class="btn btn-dark" for="parallel-coordinates-button">Parallel Coordinates</label>
+<!--                    <input type="radio" class="btn-check" name="options-outlined" id="barchart-button"-->
+<!--                           autocomplete="off">-->
+<!--                    <label class="btn btn-light" for="barchart-button">Barchart</label>-->
+                    <input type="radio" class="btn-check" name="options-outlined" id="scatterplot-button"
+                           autocomplete="off">
+                    <label class="btn btn-light" for="scatterplot-button">Scatterplot</label>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="row justify-content-center">
+                <h3>Neighborhood Comparison</h3>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="row justify-content-center">
+                <span class="label">Summary Views</span>
+            </div>
+            <div class="row justify-content-center">
+                <div class="form-check" id="summary-toggle">
+                    <input type="radio" class="btn-check" name="options-outlined" id="heatmap-button"
+                           autocomplete="off">
+                    <label class="btn btn-light" for="heatmap-button">Heatmap</label>
+                    <input type="radio" class="btn-check" name="options-outlined" id="stacked-button"
+                           autocomplete="off">
+                    <label class="btn btn-light" for="stacked-button">Stacked Barchart</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="row justify-content-center">
+                <div id="comparison_div_parent" class="row">
+                    <div id="comparison_div" class="col-8 align-self-center">
+                    </div>
+                    <div class="col-2" id="phenotype_list_div">
+                        <h5>Phenotypes</h5>
+                        <ul class="list-group" id="phenotype_list">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="summary_div" class="col-auto align-self-center"></div>
+                <div id="legend" class="col-auto"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script src="../visinity/src/js/views/neighborhoodComparison.js"></script>
+{% endblock %}
+

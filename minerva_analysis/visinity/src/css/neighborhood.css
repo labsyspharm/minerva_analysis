@@ -1,0 +1,603 @@
+#left-col-wrapper, #search-col-wrapper {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+#search-col {
+
+    position: absolute;
+    margin-top: 5vh !important;
+    height: 95vh !important;
+    max-height: 95vh !important;
+    min-height: 95vh !important;
+    margin-left: 0;
+    padding-left: 0 !important;
+    max-width: 20vw;
+}
+
+#search-col-wrapper, #related_image_wrapper {
+    position: absolute;
+}
+
+#relative-col {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+#absolute-col {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    position: absolute;
+}
+
+
+#openseadragon_wrapper, #multi_image_wrapper {
+    height: 100%;
+    position: relative;
+    z-index: 100;
+    padding: 0;
+    margin: 0;
+}
+
+#multi_image_wrapper {
+    padding-left: 20vw;
+    padding-top: 5vh;
+    display: none;
+    overflow-y: scroll;
+}
+
+#related_image_wrapper_wrapper {
+    height: 100%;
+    position: relative;
+    z-index: 100;
+    padding: 0;
+    margin: 0;
+}
+
+.related_image_wrapper_small {
+    position: absolute;
+    min-width: 20vw !important;
+    /*min-width: 14vw !important; TODO BIG SMALL SWITCH*/
+    /*max-width: 20vw !important;*/
+}
+
+.openseadragon_wrapper_small, .multi_image_wrapper_small {
+    width: 50vw !important;
+    /*min-width: 30vw !important;*/
+    /*max-width: 30vw !important;*/
+
+}
+
+.openseadragon_wrapper_large, .multi_image_wrapper_large {
+    width: 70vw !important;
+    min-width: 70vw !important;
+    max-width: 70vw !important;
+}
+
+
+.analysis_wrapper_large {
+    width: 30vw !important;
+    min-width: 30vw !important;
+    max-width: 30vw !important;
+}
+
+.analysis_wrapper_small {
+    width: 28vw !important;
+
+}
+
+
+#analysis_wrapper {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+#neighborhood_wrapper {
+
+    height: 100vh;
+    padding: 0;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+
+}
+
+.neighborhood_wrapper_small {
+    width: 0vw !important;
+    max-width: 0vw !important;
+    min-width: 0vw !important;
+    display: none;
+
+}
+
+.neighborhood_wrapper_large {
+    display: block;
+    width: 22vw !important;
+    /*width: 30vw !important;*/
+    /*max-width: 30vw !important;*/
+    /*min-width: 30vw !important;*/
+}
+
+#openseadragon_wrapper, #neighborhood_wrapper, #analysis_wrapper {
+    transition-property: width, max-width, min-width;
+    transition-duration: 0.5s;
+}
+
+#expand_wrapper {
+    transition-property: right;
+    transition-duration: 0.5s;
+}
+
+
+.viewer_col {
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.plot-label {
+    font-size: 1.1rem;
+    /*TODO: Figures*/
+    /*color: rgba(0, 0, 0, 0.95);*/
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+
+}
+
+.parallel_axes text {
+    font-size: 0.6rem;
+    fill: white;
+    text-anchor: start;
+
+}
+
+#custom_cluster_number::placeholder {
+    color: white;
+    opacity: 60%;
+}
+
+.legend {
+    position: absolute;
+    fill: #333333;
+    font-size: 6pt;
+    text-anchor: middle;
+}
+
+.legend text {
+    font: 12px sans-serif;
+}
+
+#legend {
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    width: 120px;
+    height: 160px;
+    z-index: 1;
+}
+
+
+#comparison_title {
+    margin-top: 5px;
+}
+
+
+#comparison_div .compare_col, #summary_div .compare_col {
+    padding: 0;
+    height: 100%;
+}
+
+.compare_col .row, .compare_row, .compare_col {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+/*.compare_row {*/
+/*    margin-bottom: 50px;*/
+/*}*/
+
+.compare_plot_body {
+    height: 90%;
+    width: 100%;
+}
+
+.compare_plot_title {
+    height: 10%;
+    width: 100%;
+}
+
+#comparison_div h5, #summary_div h5 {
+    font-size: 0.8rem;
+}
+
+#phenotype_list .list-group-item {
+    padding: 6px 3px;
+    font-size: 0.6rem;
+}
+
+#phenotype_list .material-icons {
+    font-size: 1rem;
+}
+
+#comparison_title .label {
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+#small-multiple-toggle .btn, #summary-toggle .btn {
+    padding: 3px 6px;
+    margin: 0;
+}
+
+#small-multiple-toggle *, #summary-toggle * {
+    font-size: 0.6rem;
+}
+
+#comparison_div .viewfinder_chart_area_path {
+    fill: rgba(255, 165, 0, 0.9)
+}
+
+.tooltip, .tooltip * {
+    font-size: 0.6rem;
+
+}
+
+#comparison_div, #summary_div {
+    width: 100%;
+    max-height: 100%;
+    overflow-y: scroll;;
+}
+
+#comparison_div_parent {
+    width: 100%;
+}
+
+.domain {
+    stroke-width: 0;
+}
+
+#comparison_container #legend {
+    margin-bottom: 40px;
+}
+
+#custom_search_col span {
+    color: white;
+}
+
+
+#viewer_scatter_canvas {
+    height: 100%;
+    width: 100%;
+}
+
+
+#neighborhood_similarity {
+    width: 60px;
+    height: 100%;
+}
+
+#current-selection-label, #current-selection-value {
+    color: orange;
+    font-size: 8pt;
+}
+
+#search-row, #cluster-row, #results-bar-row {
+    padding-left: 10px;
+    padding-right: 15px;
+    margin: 0;
+}
+
+.full_height {
+    height: 100%;
+}
+
+
+#expand_icon {
+    padding-top: 5px;
+    color: #3870ce;
+    font-size: 1rem;
+    font-weight: bolder;
+    cursor: pointer;
+}
+
+#neighborhood_table .table-darker {
+    background-color: #757575 !important;
+}
+
+#custom_cluster_number {
+    font-size: 0.8rem;
+    width: 100%;
+    background: transparent;
+    color: white;
+}
+
+#custom_cluster_number:focus {
+    outline-width: 0;
+}
+
+#custom_cluster_number::after {
+    position: absolute;
+    left: 5px;
+    top: 3px;
+    content: attr(data-placeholder);
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+
+.neighborhood-row, #neighborhood_table_header, #neighborhood_table_header tr, #neighborhood_table tbody, #neighborhood_table_card, .actions-row {
+    width: 100%;
+}
+
+.neighborhood-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    /*width: 310px !important;*/
+}
+
+.lowRow1 {
+    width: 100%;
+}
+
+.openseadragon-container {
+    border-top-right-radius: 50px;
+}
+
+#channel_list .row {
+    margin: 0;
+}
+
+#channel_list .channel-row {
+    margin: 0;
+    padding-left: 15px;
+    padding-right: 15px;
+
+}
+
+#channel_list .slider-row {
+    margin: 0;
+    padding: 0;
+}
+
+
+.grid-stack {
+    background: #FAFAD2;
+}
+
+.grid-stack-item-content {
+    background-color: #18BC9C;
+}
+
+#comparison_container {
+    margin-right: 0;
+    padding-right: 0;
+    height: 80vh;
+    max-height: 80vh;
+}
+
+#comparison_grid, #pinned_comparison_grid {
+    height: 100%;
+    width: 100%;
+}
+
+#comparison_grid {
+    margin-top: 30px;
+    overflow-y: scroll;
+}
+
+.compare_plot_title h5 {
+    color: #ffffff;
+    /*color: #000000;*/
+    font-size: 1.0rem;
+}
+
+.current_selection_comparison {
+    color: orange !important;
+}
+
+#number_selected_row {
+    height: 100%;
+
+}
+
+#cluster_display {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    padding: 5px;
+}
+
+.heatmap_legend text, .heatmap_legend line {
+    fill: white;
+    color: white;
+    font-weight: lighter;
+    font-size: 0.4rem;
+}
+
+.barchart text, .barchart text {
+    fill: white;
+    color: white;
+    /*TODO: Figure*/
+    /*fill: #000000;*/
+    /*color: #000000;*/
+    font-weight: bold;
+}
+
+#neighborhood_wrapper {
+    /*TODO: For Figures*/
+    /*background-color: white;*/
+    background-color: black;
+}
+
+#comparison_title, .compare_plot_title {
+    color: black !important;
+}
+
+/*#related_image_list_wrapper_container{*/
+/*    overflow-y: scroll;*/
+/*}*/
+
+/*#related_image_container {*/
+/*    !*height: 2000px;*!*/
+/*}*/
+
+.expand-contract-button {
+    margin-left: 10px;
+    margin-right: 5px;
+}
+
+.expand-contract-button:hover {
+    cursor: pointer;
+    color: #8f8f8f;
+
+}
+
+#related_image_list_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    left: 1vw;
+    /*width: 13vw;*/
+    z-index: 101;
+    /*min-height: 10vh;*/
+    padding: 5px;
+    overflow-y: scroll;
+'
+}
+
+.image_result_info {
+    position: absolute;
+}
+
+.image_result_info {
+    color: white;
+    font-size: 8pt;
+    font-weight: bold;
+}
+
+.image_result_value {
+    color: white;
+    font-size: 8pt;
+}
+
+.image_result_info {
+    width: 150px;
+}
+
+.overall_line_label, .selection_line_label, .average_line_label {
+    /*font-weight: bold;*/
+}
+
+#parallel_coordinates_display .parallel_axes text {
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.neighborhood-table-icon {
+    font-size: 18px;
+}
+
+#multi_image_wrapper .compare_row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+#multi_image_wrapper .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+#multi_sort_icon {
+    font-size: 20px;
+    color: white
+}
+
+#multi_sort_dropdown, #related_sort_dropdown {
+    padding: 2px 4px;
+    background-color: rgba(53, 54, 58, 0.75);
+    border-style: none;
+}
+
+.dropdown-col {
+    position: relative;
+}
+
+.sort-dropdown {
+    position: absolute !important;
+    padding: 2px 0px;
+    right: 0;
+}
+
+.grid-wrapper {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+#related_image_container .compare_plot_title {
+    padding-left: 10px;
+}
+
+.result-info-text {
+    font-size: 1.0rem;
+    fill: white;
+}
+
+
+/*#recolor_related_images_color_toggle {*/
+/*    display: none;*/
+/*}*/
+
+#related_expand_icon {
+    padding-bottom: 2px;
+    padding-left: 10px;
+    color: #3870ce !important;
+}
+
+.plot-label a {
+    color: white;
+}
+
+#heatmap_display {
+    height: 39vh;
+    position: relative;
+}
+
+#overall-reference-triangle, #selected-reference-triangle {
+    stroke: white;
+    fill: lightgrey;
+}
+
+#heatmap-selection-label, #heatmap-overall-label {
+    font-size: 0.6rem;
+    cursor: pointer;
+}
+
+#heatmap_color_legend .tick text {
+    font-size: 0.6rem;
+}
+
+/*TODO: Remove*/
+/*#related_image_list_wrapper {*/
+/*    display: none !important;*/
+/*}*/
+.barchart .yaxis text {
+    font-size: 0.6rem;
+}
+
+.barchart .xaxis text {
+    font-size: 0.8rem;
+}
+
+#search-row .row {
+    margin-left: 5px !important;
+}
+
+.heatmapHoverRect:active {
+    pointer-events: none;
+}

@@ -4,7 +4,7 @@
 /node_modules
 */node_modules
 static/frontend/node_modules
-minerva_analysis/client/node_modules/
+minerva_analysis/gater/node_modules/
 /.pnp
 .pnp.js
 *.sqlite3

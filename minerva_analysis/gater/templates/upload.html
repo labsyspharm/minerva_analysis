@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block content %}
+<title>Minerva Analysis - Data Upload</title>
+<div class="container" id="upload-parent">
+    <span>Upload Form</span>
+    <div class="sectionContent" id="upload-container">
+        <div class="row">
+            <div class="col">
+                    <div class="row">
+                        <div class="col-3">
+                            <label for="import_type">MCMICRO</label>
+                        </div>
+                        <div class="col-auto">
+                            <input type="checkbox" id="import_type" name="is_mc_micro" value="mcmicro">
+                        </div>
+                    </div>
+                <form action="/upload" id="custom_form" method="POST" class="needs-validation" enctype="multipart/form-data"  novalidate>
+                    <div class="row">
+                        <div class="col-3">
+                            <label for="name" >Dataset Name:</label>
+                        </div>
+                        <div class="col-9">
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="valid-feedback">Valid.</div>
+                            <div class="invalid-feedback">
+                                Please name the dataset.
+                            </div>
+                            <br>
+                        </div>
+                    </div>
+                    <div id="custom_import" style="display: inline;">
+                        <div class="row">
+                            <div class="col-3">
+                                <label for="channel_file">Channel File Path:</label>
+                            </div>
+                            <div class="col-9">
+                                <input type="text" id="channel_file" class="form-control" name="channel_file" onkeyup="checkFileExistence(this)" required>
+                                <div class="valid-feedback">Valid.</div>
+                                <div class="invalid-feedback">
+                                    Please provide a valid path to the channel image file.
+                                </div>
+                                <br>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-3">
+                                <label for="label_file">Segmentation File Path:</label>
+                            </div>
+                            <div class="col-9">
+                                <input type="text" id="label_file" class="form-control" name="label_file" onkeyup="checkFileExistence(this)" required>
+                                <div class="valid-feedback">Valid.</div>
+                                <div class="invalid-feedback">
+                                    Please provide a valid path to the segmentation mask.
+                                </div>
+                                <br>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-3">
+                                <label for="csv_file">CSV File Path:</label>
+                            </div>
+                            <div class="col-9">
+{#                                <input type="file" id="csv_file" name="csv_file" required>#}
+                                <input type="text" id="csv_file" class="form-control" name="csv_file" onkeyup="checkFileExistence(this)" required>
+                                <div class="valid-feedback">Valid.</div>
+                                <div class="invalid-feedback">
+                                    Please provide a valid single cell csv file.
+                                </div>
+                                <br>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-3">
+                                <label for="celltype_file">Cell Type File:</label>
+                            </div>
+                            <div class="col-9">
+                                <input type="text" id="celltype_file" class="form-control" name="celltype_file" onkeyup="checkFileExistence(this)">
+                                <div class="valid-feedback">Valid.</div>
+                                <div class="invalid-feedback">
+                                    Please provide a valid cell type csv file.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-3">
+                            <button id="upload_button" class="btn btn-primary" type="submit" name="action" value="Upload">Submit</button>
+                        </div>
+                    </div>
+                </form>
+                <form action="/upload" id="mcmicro_form" method="POST" a href="javascript:;" class="needs-validation" enctype="multipart/form-data" style="display:none" novalidate>
+                    <div class="row">
+                        <div class="col-3">
+                            <label for="name" >Dataset Name:</label>
+                        </div>
+                        <div class="col-9">
+                            <input type="text" class="form-control" id="mcmicro_name" name="mcmicro_name" onkeyup="checkDatasetExistence(this)">
+                            <div class="valid-feedback">Valid. (if no name chosen mcmicro project name is used.)</div>
+                            <div class="invalid-feedback">
+                                Dataset name already exists. Please choose a different name.
+                            </div>
+                            <br>
+                        </div>
+                    </div>
+                    <div id="mcmicro_import">
+                        <div class="row ">
+                            <div class="col-3">
+                                <label for="name" class="form-label">Path:</label>
+                            </div>
+                            <div class="col-9">
+                                <input type="text" class="form-control" id="mcmicro_output_folder" name="mcmicro_output_folder" required onkeyup="fillSegFileList(); checkMCOutputFolder(this)">
+                                <div class="valid-feedback">Valid.</div>
+                                <div class="invalid-feedback" id="mcmicro_path_validation_text">
+                                  Please provide a valid path.
+                                </div>
+                                <br>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-3">
+                                <label for="mcmicro_masks">Choose a mask:</label>
+                            </div>
+                            <div class="col-auto">
+                              <select id="mcmicro_masks" class="form-control" name="masks" required onchange="checkCSVFileExistence(this);">
+                              </select>
+                                <div class="valid-feedback">Valid.</div>
+                                <div class="invalid-feedback" id="mcmicro_mask_validation_text">
+                                    No mask files found under this path.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-3">
+                            <button id="upload_button_mcmicro" a href="javascript:;" class="btn btn-primary" type="submit" name="action" value="Upload">Submit</button>
+                        </div>
+                    </div>
+                </form>
+                <did class="row">
+                    <div class="col-8">
+                        <br>
+                        <div id="progress">
+                            <div class="progress-bar progress-bar-striped active">
+                                <span id="progress-bar-percentage" class="progress-bar-label">0%</span>
+                                <span id="progress-bar-current-task" class="progress-bar-label">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </did>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../gater/src/js/services/importFormValidation.js" defer></script>
+{% endblock %}

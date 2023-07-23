@@ -1,0 +1,266 @@
+/* Bootstrap Overrides */
+* {
+    border: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: rgba(0, 0, 0, 1) !important;
+}
+
+#topBar {
+    background-color: rgba(0, 0, 0, 0) !important;
+    height: 5vh;
+    max-height: 5vh;
+    left: 0;
+    position: absolute;
+    margin: 0;
+    top: 0;
+    z-index: 101;
+}
+
+
+#title {
+    color: white;
+    font-size: 16px;
+    font-weight: 300;
+}
+
+#navbarDropdown, #navbarUpload {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 13px;
+    font-weight: 300;
+    margin-top: 4px;
+}
+
+#container {
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    position: relative;
+    width: 100vw;
+    max-width: 100vw;
+    z-index: 100;
+}
+
+
+#openseadragon {
+    position: relative;
+    z-index: 100;
+    height: 100%;
+    transform: translate3d(0, 0, 0);
+    width: 100%;
+    will-change: width;
+}
+
+#channel_list_wrapper {
+    overflow-y: hidden;
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    left: 1vw;
+    z-index: 101;
+    max-height: 70vh;
+    padding: 5px;
+}
+
+#search_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    padding: 5px;
+    left: 1vw;
+    z-index: 101;
+    /*max-height: 8vh;*/
+}
+
+#cluster_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    padding: 5px;
+    left: 1vw;
+    z-index: 101;
+    max-height: 8vh;
+}
+
+#cluster-number-input {
+    width: 90%;
+}
+
+#neighborhood_list_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    left: 1vw;
+    /*width: 13vw;*/
+    z-index: 101;
+    /*min-height: 10vh;*/
+    max-height: 38vh;
+    padding: 5px;
+}
+
+.left-col-row {
+    margin-top: 0.5vh;
+    margin-bottom: 0.5vh;
+}
+
+#expand_wrapper {
+    background-color: rgba(53, 54, 58, 0.75);
+    border-radius: 17px;
+    padding: 5px;
+    position: absolute;
+    bottom: 1vh;
+    /*width: 8vw;*/
+    z-index: 101;
+}
+
+.expand_wrapper_right {
+    right: 0.5vw;
+}
+
+.expand_wrapper_left {
+    right: 20.5vw;
+}
+
+.lowRow1 {
+    color: rgba(255, 255, 255, 0.75);
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 15px !important;
+}
+
+#boxHeading1 {
+    font-size: 12px;
+    position: relative;
+}
+
+
+#search-neighborhoods-header-div {
+    padding-top: 0;
+}
+
+#selected-channels-header-div, #search-neighborhoods-header-div {
+    margin-right: 10px;
+
+}
+
+.list {
+    font-size: 0.9rem;
+    overflow-y: scroll;
+    position: relative;
+    width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.list .list-group {
+    padding: 0 0 20px 0;
+    width: 100%;
+}
+
+.list .list-group-item {
+    background-color: transparent;
+    border: 0;
+    color: rgba(255, 255, 255, 1);
+    padding: 5px 2px 3px 2px;
+    width: 100%;
+}
+
+.list .list-group-item.active {
+    background-color: rgba(0, 0, 0, 0.75);
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    border-left: none;
+    height: 70px;
+}
+
+.list .list-group-item .row {
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0 10px;
+    width: 100%;
+}
+
+.list .list-group-item .channel-col {
+    display: block;
+    flex: unset;
+    margin: 0;
+    padding: 0;
+    width: unset;
+}
+
+.list .list-group-item .channel-slider {
+    display: block;
+    flex: unset;
+    margin: 0;
+    transform: translateX(-5px);
+    padding: 0;
+    width: 100%;
+}
+
+#boxChannels1A, #boxChannels1B {
+    font-size: 10px;
+}
+
+.slider .track {
+    stroke-width: 3;
+}
+
+.slider .track-inset {
+    stroke-width: 3;
+}
+
+.slider .track-fill {
+    stroke-width: 3;
+}
+
+.slider .parameter-value text {
+    fill: white;
+}
+
+/* width */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#neighborhood_table_header {
+    padding: 5px;
+}
+
+
+.lowRow1 .col-auto {
+    padding: 0 !important;
+}
+
+#comparison_options {
+    height: 30px;
+    width: 100%;
+}
+
+#comparison_options_wrapper {
+    height: 100%;
+    width: 100%;
+}
+
+#recolor_related_images {
+    height: 100%;
+}
