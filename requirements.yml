@@ -1,4 +1,4 @@
-name: minerva_analysis
+name: ma
 channels:
   - conda-forge
 dependencies:
