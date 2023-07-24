@@ -16,7 +16,7 @@ def my_index():
 def serve_config_visinity():
     return send_file(config_json_path.resolve(), download_name='config.json')
 
-#gater
+#gater and scope2screen
 # @app.route('/<string:datasource>', methods=['GET'])
 # def image_viewer(datasource):
 #     datasources = get_config_names()
@@ -59,6 +59,12 @@ def serveGater(filename):
 @app.route('/visinity/<path:filename>')
 def serveVisinity(filename):
     return send_from_directory(app.config['CLIENT_PATH'], filename, conditional=True)
+
+@app.route('/scope2screen/<path:filename>')
+def serveClient(filename):
+    return send_from_directory(app.config['CLIENT_PATH'], filename, conditional=True)
+
+
 
 #visinity
 @app.route('/static/<path:filename>')
