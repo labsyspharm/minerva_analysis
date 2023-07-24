@@ -4,6 +4,7 @@ import io
 from PIL import Image
 from minerva_analysis import data_path, get_config
 from minerva_analysis.server.models import data_model
+from minerva_analysis.server.analytics import comparison
 from pathlib import Path
 from time import time
 import numpy as np
@@ -43,6 +44,29 @@ def get_channel_cell_ids():
     datasource = request.args.get('datasource')
     filter = json.loads(request.args.get('filter'))
     resp = data_model.get_channel_cells(datasource, filter)
+    return serialize_and_submit_json(resp)
+
+#scope2screen
+@app.route('/get_cell_ids_phenotype', methods=['GET'])
+def get_cell_ids_phenotype():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_cells_phenotype(datasource)
+    return serialize_and_submit_json(resp)
+
+#scope2screen
+# Gets a row based on the index
+@app.route('/get_phenotype_column_name', methods=['GET'])
+def get_phenotype_column_name():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_phenotype_column_name(datasource)
+    return serialize_and_submit_json(resp)
+
+#scope2screen
+# Gets a row based on the index
+@app.route('/get_phenotype_description', methods=['GET'])
+def get_phenotype_description():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_phenotype_description(datasource)
     return serialize_and_submit_json(resp)
 
 # Gets a row based on the index
@@ -152,6 +176,27 @@ def save_neighborhood():
     mode = post_data['mode']
     source = post_data['source']
     resp = data_model.save_neighborhood(selection, datasource, source, mode)
+    return serialize_and_submit_json(resp)
+
+#scope2screen
+@app.route('/get_neighborhood_for_spat_corr', methods=['GET'])
+def get_neighborhood_for_spat_corr():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    resp = data_model.get_neighborhood_for_spat_corr(x, y, datasource, r=max_distance)
+    return serialize_and_submit_json(resp)
+
+#scope2screen
+@app.route('/get_k_results_for_spat_corr', methods=['GET'])
+def get_k_results_for_spat_corr():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    channels = request.args.get('channels').split()[0].split(',')
+    datasource = request.args.get('datasource')
+    resp = data_model.get_k_results_for_spat_corr(x, y, datasource, r=max_distance, channels=channels)
     return serialize_and_submit_json(resp)
 
 
@@ -564,6 +609,52 @@ def get_gating_csv_values():
 #     obj = csv.to_dict(orient='records')
 #     return serialize_and_submit_json(obj)
 
+#scope2screen
+@app.route('/histogram_comparison', methods=['GET'])
+def histogram_comparison():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    viewport = request.args.getlist('viewport')[0]
+    zoomlevel = int(float(request.args.get('zoomlevel')))
+    sensitivity = float(request.args.get('sensitivity'))
+
+    # for which channels to compute? (currently only the first)
+    channels = []
+    if request.args.get('channels') != '':
+        channels = request.args.get('channels').split()[0].split(',')
+
+    # call functionality
+    resp = comparison.histogramComparison(x, y, datasource, max_distance, channels, viewport, zoomlevel, sensitivity)
+    return serialize_and_submit_json(resp)
+
+#visinity
+@app.route('/histogram_comparison_simmap', methods=['GET'])
+def histogram_comparison_simmap():
+    x = float(request.args.get('point_x'))
+    y = float(request.args.get('point_y'))
+    max_distance = float(request.args.get('max_distance'))
+    datasource = request.args.get('datasource')
+    viewport = request.args.getlist('viewport')[0]
+    zoomlevel = int(float(request.args.get('zoomlevel')))
+    sensitivity = float(request.args.get('sensitivity'))
+
+    # for which channels to compute? (currently only the first)
+    channels = []
+    if request.args.get('channels') != '':
+        channels = request.args.get('channels').split()[0].split(',')
+
+    # call functionality
+    resp = comparison.histogramComparisonSimMap(x, y, datasource, max_distance, channels, viewport, zoomlevel,
+                                                sensitivity)
+    # file_object = io.BytesIO()
+    # # write PNG in file-object
+    # Image.fromarray(png).save(file_object, 'PNG', compress_level=0)
+    # # move to beginning of file so `send_file()` it will read from start
+    # file_object.seek(0)
+    return serialize_and_submit_json(resp)
+
 @app.route('/get_uploaded_channel_csv_values', methods=['GET'])
 def get_channel_csv_values():
     datasource = request.args.get('datasource')
@@ -624,6 +715,38 @@ def get_axis_order():
     resp = data_model.calculate_axis_order(datasource, mode)
     return serialize_and_submit_json(resp)
 
+
+#scope2screen
+@app.route('/save_dot', methods=['POST'])
+def save_dot():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    dot = post_data['dot']
+    resp = data_model.save_dot(datasource, dot)
+    return serialize_and_submit_json(resp)
+
+#scope2screen
+@app.route('/load_dots', methods=['GET'])
+def load_dots():
+    datasource = request.args.get('datasource')
+    dots = data_model.load_dots(datasource)
+    dots_dict = [to_dict(dot) for dot in dots]
+    return serialize_and_submit_json(dots_dict)
+
+#scope2screen
+@app.route('/delete_dot', methods=['GET'])
+def delete_dot():
+    datasource = request.args.get('datasource')
+    id = int(request.args.get('id'))
+    dots = data_model.delete_dot(datasource, id)
+    return serialize_and_submit_json(True)
+
+#scope2screen
+def to_dict(row):
+    return {column.name: getattr(row, row.__mapper__.get_property_by_column(column).key) for column in
+            row.__table__.columns}
+
+
 # E.G /generated/data/melanoma/channel_00_files/13/16_18.png
 @app.route('/generated/data/<string:datasource>/<string:channel>/<string:level>/<string:tile>')
 def generate_png(datasource, channel, level, tile):
@@ -642,6 +765,12 @@ def generate_png(datasource, channel, level, tile):
 #         mimetype='application/json'
 #     )
 #     return response
+
+#scope2screen
+@app.route('/start_spatial_correlation')
+def start_spatial_correlation():
+    data_model.spatial_corr([])
+    return 'hi'
 
 
 #visinity

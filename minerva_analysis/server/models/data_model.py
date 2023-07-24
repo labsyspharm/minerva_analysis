@@ -877,6 +877,8 @@ def get_channel_cells(datasource_name, channels):
     if datasource_name != source:
         load_ball_tree(datasource_name)
 
+    origId = config[datasource_name]['featureData'][0]['idField']
+
     query_string = ''
     for c in channels:
         if query_string != '':
@@ -925,6 +927,7 @@ def get_cells_phenotype(datasource_name):
         load_ball_tree(datasource_name)
 
     try:
+        id_field = config[datasource_name]['featureData'][0]['idField']
         phenotype_field = config[datasource_name]['featureData'][0]['celltype']
     except KeyError:
         phenotype_field = 'celltype'
@@ -991,6 +994,7 @@ def get_phenotypes(datasource_name):
 
 def get_neighborhood(x, y, datasource_name, r=100, fields=None):
     global database
+    global datasource
     global source
     global ball_tree
     if datasource_name != source:
@@ -1031,6 +1035,74 @@ def get_individual_neighborhood(x, y, datasource_name, r=100, fields=None):
         neighborhood = datasource.iloc[neighbors].to_dict(orient='records')
 
     return neighborhood
+
+#scope2screen (simiar to whats above)
+def get_neighborhood_for_spat_corr(x, y, datasource_name, r=100, fields=None):
+    global database
+    global datasource
+    global source
+    global ball_tree
+    if datasource_name != source:
+        load_datasource(datasource_name)
+    index = ball_tree.query_radius([[x, y]], r=r)
+    neighbors = index[0]
+    try:
+        if fields and len(fields) > 0:
+            fields.append('id') if 'id' not in fields else fields
+            if len(fields) > 1:
+                neighborhood = datasource.iloc[neighbors][fields].to_dict(orient='records')
+            else:
+                neighborhood = datasource.iloc[neighbors][fields].to_dict()
+        else:
+            neighborhood = datasource.iloc[neighbors].to_dict(orient='records')
+
+        # print(datasource)
+        return neighborhood
+    except:
+        return {}
+
+#scope2screen
+def get_k_results_for_spat_corr(x, y, datasource_name, r=100, channels=[], fields=None):
+    global config
+    global database
+    global datasource
+    global source
+    global ball_tree
+    if datasource_name != source:
+        load_datasource(datasource_name)
+
+    index = ball_tree.query_radius([[x, y]], r=r)
+    neighbors = index[0]
+    try:
+
+        # Settings, configs
+        k_range = [1, 11]
+        x_coordinate = config[datasource_name]['featureData'][0]['xCoordinate']
+        y_coordinate = config[datasource_name]['featureData'][0]['yCoordinate']
+        index = config[datasource_name]['featureData'][0]['idField']
+
+        # Filter dataframe
+        neighborhood_df = datasource.iloc[neighbors][channels + ['id', x_coordinate, y_coordinate, index]]
+
+        # Iterate k
+        for k in range(k_range[0], k_range[1]):
+
+            # Spatial analysis
+            new_data = spatial_corr(adata=neighborhood_df, x_coordinate=x_coordinate, y_coordinate=y_coordinate,
+                                    index='id', channels=channels, k=k)
+            # print(new_data)
+
+            # Update dataframe
+            for name, values in new_data.iteritems():
+                new_column = f'{name}_{k}'
+                neighborhood_df[new_column] = values
+
+        # New neighborhood
+        new_neighborhood = neighborhood_df.to_dict(orient='records')
+        return new_neighborhood
+
+    except:
+        return []
 
 def get_number_of_cells_in_circle(x, y, datasource_name, r):
     global source
@@ -1579,6 +1651,32 @@ def get_saved_channel_list(datasource_name):
     channel_list = database_model.get(database_model.ChannelList, datasource=datasource_name)
     return pickle.loads(channel_list.cells)
 
+#scope2screen
+# def get_datasource_description(datasource_name):
+#     global datasource
+#     global source
+#     global ball_tree
+#
+#     # Load if not loaded
+#     if datasource_name != source:
+#         load_ball_tree(datasource_name)
+#     description = datasource.describe(percentiles=[.005, .01, .25, .5, .75, .95, .99, .995]).to_dict()
+#     for column in description:
+#         col = datasource[column]
+#         col = col[(col >= description[column]['1%']) & (col <= description[column]['99%'])]
+#         col = col.to_numpy()
+#         [hist, bin_edges] = np.histogram(col, bins=25, density=True)
+#         midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+#         description[column]['histogram'] = {}
+#         dat = []
+#         for i in range(len(hist)):
+#             obj = {}
+#             obj['x'] = midpoints[i]
+#             obj['y'] = hist[i]
+#             dat.append(obj)
+#         description[column]['histogram'] = dat
+#     return description
+
 
 def get_datasource_description(datasource_name):
     global datasource
@@ -1748,6 +1846,107 @@ def get_gating_gmm(channel_name, datasource_name):
     packet_gmm['gmm_2'] = dat_gmm2
 
     return packet_gmm
+
+#scope2screen
+def spatial_corr(adata, raw=False, log=False, threshold=None, x_coordinate='X_centroid', y_coordinate='Y_centroid',
+                 marker=None, k=500, label='spatial_corr', index='id', channels=[]):
+    global ball_tree
+
+    """
+    Parameters
+    ----------
+    adata : TYPE
+        DESCRIPTION.
+    raw : TYPE, optional
+        DESCRIPTION. The default is False.
+    log : TYPE, optional
+        DESCRIPTION. The default is False.
+    threshold : TYPE, optional
+        DESCRIPTION. The default is None.
+    x_coordinate : TYPE, optional
+        DESCRIPTION. The default is 'X_centroid'.
+    y_coordinate : TYPE, optional
+        DESCRIPTION. The default is 'Y_centroid'.
+    marker : TYPE, optional
+        DESCRIPTION. The default is None.
+    k : TYPE, optional
+        DESCRIPTION. The default is 500.
+    label : TYPE, optional
+        DESCRIPTION. The default is 'spatial_corr'.
+    Returns
+    -------
+    corrfunc : TYPE
+        DESCRIPTION.
+    Example
+    -------
+    adata = spatial_corr (adata, threshold=0.5, x_coordinate='X_position',y_coordinate='Y_position',marker=None)
+    """
+    # Reset some vars (hardcoded for now)
+    # adata = pd.DataFrame(datasource)
+    # x_coordinate = config[source]['featureData'][0]['xCoordinate']
+    # y_coordinate = config[source]['featureData'][0]['yCoordinate']
+    # index = config[source]['featureData'][0]['idField']
+    # channels = [d['fullname'] for d in config[source]['imageData']][1:]
+
+    # Start
+    bdata = adata.copy()
+    bdata_features = channels.copy()
+    print('Input shape', bdata[bdata_features].shape)
+    bdata_features.append(index)
+    # Create a DataFrame with the necessary information
+    data = pd.DataFrame({'x': bdata[x_coordinate], 'y': bdata[y_coordinate]})
+    # user defined expression matrix
+    exp = pd.DataFrame(bdata[channels], index=bdata[index])
+    # log the data if needed
+    if log is True:
+        exp = np.log1p(exp)
+    # set a threshold if needed
+    if threshold is not None:
+        exp[exp >= threshold] = 1
+        exp[exp < threshold] = 0
+    # subset markers if needed
+    if marker is not None:
+        if isinstance(marker, str):
+            marker = [marker]
+        exp = exp[marker]
+    # find the nearest neighbours
+    tree = BallTree(data, leaf_size=2)
+    dist, ind = tree.query(data, k=k, return_distance=True)
+    neighbours = pd.DataFrame(ind, index=bdata[index])
+    # find the mean dist
+    rad_approx = np.mean(dist.T, axis=0)
+    # Calculate the correlation
+    mean = np.mean(exp).values
+    std = np.std(exp).values
+    A = (exp - mean) / std
+
+    def corrfunc(marker, A, neighbours, ind):
+        print('Processing ' + str(marker))
+        # Map phenotype
+        ind_values = dict(zip(list(range(len(ind))), A[marker]))  # Used for mapping
+        # Loop through (all functionized methods were very slow)
+        neigh = neighbours.copy()
+        for i in neigh.columns:
+            neigh[i] = neigh[i].dropna().map(ind_values, na_action='ignore')
+        # multiply the matrices
+        Y = neigh.T * A[marker]
+        # corrfunc = np.mean(Y, axis=1)
+        corrfunc = np.mean(Y.T, axis=1)
+        # return
+        return corrfunc
+
+    # apply function to all markers    # Create lamda function
+    r_corrfunc = lambda x: corrfunc(marker=x, A=A, neighbours=neighbours, ind=ind)
+    all_data = list(map(r_corrfunc, exp.columns))  # Apply function
+    # Merge all the results into a single dataframe
+    df = pd.concat(all_data, axis=1)
+    df.columns = exp.columns
+    df['distance'] = rad_approx
+    # add it to anndata object
+    # adata.uns[label] = df
+    print('Output shape', df.shape)
+    # return
+    return df
 
 
 def generate_zarr_png(datasource_name, channel, level, tile):
@@ -2364,6 +2563,13 @@ def calculate_axis_order(datasource_name, mode):
             below = not below
     return order
 
+#scope2screen
+def save_dot(datasource_name, dot):
+    database_model.create_or_update(database_model.Dot, id=dot['id'], datasource=datasource_name, group=dot['group'],
+                                    name=dot['name'], description=dot['description'], shape_type=dot['shape_type'],
+                                    shape_info=dot['shape_info'], cell_ids=dot['cell_ids'],
+                                    date=dateutil.parser.parse(dot['date']), image_data=dot['image_data'],
+                                    viewer_info=dot['viewer_info'], channel_info=dot['channel_info'])
 
 # Via https://stackoverflow.com/questions/67050899/why-pandas-dataframe-to-dictrecords-performance-is-bad-compared-to-another-n
 def fast_to_dict_records(np_df_obj, columns=None):
@@ -2401,6 +2607,18 @@ def create_embedding(datasets):
         np.save(embedding_path, individual_embedding)
         config[name]['embedding'] = str(embedding_path)
     save_config()
+
+#scope2screen
+def load_dots(datasource_name):
+    dots = database_model.get_all(database_model.Dot, datasource=datasource_name)
+    print(dots)
+    return dots
+
+#scope2screen
+def delete_dot(datasource_name, id):
+    database_model.edit(database_model.Dot, id, 'is_deleted', True)
+    return True
+
 
 #visnity
 def jax_em_clustering():
