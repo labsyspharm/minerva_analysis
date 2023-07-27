@@ -59,10 +59,11 @@ log_norm_neighborhood = False
 
 
 def init(datasource_name):
-    load_ball_tree(datasource_name)
+    load_datasource(datasource_name)
 
-
+#gater
 def load_datasource(datasource_name, reload=False):
+    print("def:load_datasource")
     global datasource
     global source
     global config
@@ -70,17 +71,56 @@ def load_datasource(datasource_name, reload=False):
     global zarray
     global channels
     global metadata
+    global zarr_perm_matrix
+    global np_datasource
     if source is datasource_name and datasource is not None and reload is False:
         return
     load_config(datasource_name)
-    if reload:
-        load_ball_tree(datasource_name, reload=reload)
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
     print("Loading csv data.. (this can take some time)")
     datasource = pd.read_csv(csvPath)
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
     source = datasource_name
+    timer = time.time()
+    print('Loading', time.time() - timer)
+
+    # Cell Types
+    # if 'linkedDatasets' not in config[datasource_name]:
+    #     linked = [datasource_name]
+    # else:
+    #     linked = config[datasource_name]['linkedDatasets']
+    # for ds in linked:
+    #     if 'neighborhoods' not in config[ds]:
+    #         print('No Neighborhood')
+    #         matrix_file_name = ds + "_matrix.pk"
+    #         matrix_paths = Path(
+    #             data_path) / ds / matrix_file_name
+    #         perm_data = get_perm_data(ds, matrix_paths)
+    #         print('Creating Matrix', ds)
+    #         matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+    #                                perm_data['distances'], numba.typed.List(perm_data['lengths']))
+    #
+    #         matrix[np.isnan(matrix)] = 0
+    #
+    #         print('Created Matrix', ds)
+    #         neighborhood_path = Path(
+    #             data_path) / ds / 'neighborhood.npy'
+    #
+    #         np.save(neighborhood_path, matrix)
+    #         config[ds]['neighborhoods'] = str(neighborhood_path)
+    #         save_config()
+    #
+    # if 'embedding' not in config[datasource_name]:
+    #     if 'linkedDatasets' not in config[datasource_name]:
+    #         create_embedding([datasource_name])
+    #     else:
+    #         create_embedding(config[datasource_name]['linkedDatasets'])
+
+
+    np_datasource = load_csv(datasource_name, numpy=True)
+    if reload:
+        load_ball_tree(datasource_name, reload=reload)
     print("Loading segmentation.")
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
@@ -112,6 +152,7 @@ def load_datasource(datasource_name, reload=False):
 #visinity
 # @profile
 def load_csv(datasource_name, numpy=False):
+    print("def:load_csv")
     global config
     numpy_file_name = datasource_name + "_np.npy"
     numpy_path = Path(
@@ -133,15 +174,15 @@ def load_csv(datasource_name, numpy=False):
     if 'celltype' in config[datasource_name]['featureData'][0]:
         df = df.rename(columns={config[datasource_name]['featureData'][0]['celltype']: 'phenotype'})
 
-    if np.issubdtype(df['phenotype'].dtype, np.number) is False:
-        df['phenotype'] = df['phenotype'].apply(lambda x: x.strip())
-
-    if 'celltypeData' in config[datasource_name]['featureData'][0]:
-        cellTypePath = Path(config[datasource_name]['featureData'][0]['celltypeData'])
-        type_list = pd.read_csv(cellTypePath).to_numpy().tolist()
-        type_ids = [e[0] for e in type_list]
-        type_string = [e[1].strip() for e in type_list]
-        df['phenotype'] = df['phenotype'].replace(type_ids, type_string)
+    # if np.issubdtype(df['phenotype'].dtype, np.number) is False:
+    #     df['phenotype'] = df['phenotype'].apply(lambda x: x.strip())
+    #
+    # if 'celltypeData' in config[datasource_name]['featureData'][0]:
+    #     cellTypePath = Path(config[datasource_name]['featureData'][0]['celltypeData'])
+    #     type_list = pd.read_csv(cellTypePath).to_numpy().tolist()
+    #     type_ids = [e[0] for e in type_list]
+    #     type_string = [e[1].strip() for e in type_list]
+    #     df['phenotype'] = df['phenotype'].replace(type_ids, type_string)
 
     df = df.replace(-np.Inf, 0)
     if numpy:
@@ -154,6 +195,7 @@ def load_csv(datasource_name, numpy=False):
 
 #visinity
 def init_clusters(datasource_name):
+    print("def:init_clusters")
     global datasource
     global source
     # Select Cluster Stats
@@ -195,6 +237,7 @@ def init_clusters(datasource_name):
 
 #visinity
 def get_cluster_cells(datasource_name):
+    print("def:get_cluster_cells")
     global datasource
     global source
     clusters = datasource['Cluster'].unique().tolist()
@@ -210,6 +253,7 @@ def get_cluster_cells(datasource_name):
 
 #visinity
 def get_neighborhood_list(datasource_name):
+    print("def:get_neighborhood_list")
     filtered_neighborhoods = database_model.filter_all(database_model.Neighborhood,
                                                        or_(database_model.Neighborhood.datasource == datasource_name,
                                                            database_model.Neighborhood.datasource == "Multi"))
@@ -296,6 +340,7 @@ def get_all_neighborhood_stats(datasource_name):
 
 #visinity
 def save_lasso(polygon, datasource_name):
+    print("def:save_lasso")
     max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
     np_polygon = np.array(polygon['coordinates'])
     f = io.BytesIO()
@@ -479,6 +524,7 @@ def get_neighborhood_by_phenotype(datasource_name, phenotype, selection_ids=None
 
 #visinity
 def brush_selection(datasource_name, brush, selection_ids):
+    print("def:brush_selection")
     global datasource
     global config
     phenotype_list = get_phenotypes(datasource_name)
@@ -504,6 +550,7 @@ def brush_selection(datasource_name, brush, selection_ids):
 
 #visinity
 def create_custom_clusters(datasource_name, num_clusters, mode='single', subsample=True):
+    print("def:create_custom_clusters")
     global config
     global datasource
     phenotype_list = get_phenotypes(datasource_name)
@@ -624,7 +671,14 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
 
     return get_neighborhood_list(datasource_name)
 
+#visinity
+# def load_config():
+#     global config
+#     with open(config_json_path, "r+") as configJson:
+#         config = json.load(configJson)
+
 def load_config(datasource_name):
+    print("def:load_config")
     global config
 
     with open(config_json_path, "r+") as configJson:
@@ -657,50 +711,47 @@ def load_config(datasource_name):
 
 #visinity
 def save_config():
+    print("def:save_config")
     global config
     with open(config_json_path, "r+") as configJson:
         json.dump(config, configJson, indent=4)
 
 #visinity
-def load_ball_tree(datasource_name_name, reload=False):
+def load_ball_tree(datasource_name, reload=False):
+    print("def:load_ball_tree")
     global ball_tree
     global datasource
     global config
-    if datasource_name_name != source:
-        load_datasource(datasource_name_name)
-
-    # old with os.path
-    # pickled_kd_tree_path = str(
-    #     Path(
-    #         os.path.join(os.getcwd())) / data_path / datasource_name_name / "ball_tree.pickle")
-
-    #using pathlib now:
+    global ball_tree
+    global datasource
+    global config
     pickled_kd_tree_path = str(
-        PurePath(cwd_path, data_path, datasource_name_name, "ball_tree.pickle"))
-
-    #old os.path way:  if os.path.isfile(pickled_kd_tree_path) and reload is False:
-    if Path(pickled_kd_tree_path).is_file() and reload is False:
-
-        print("Pickled KD Tree Exists, Loading")
-        ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
-        print("Pickled KD Tree Loaded.")
-    else:
-        print("Creating KD Tree.")
-        xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
-        yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
-        csvPath = Path(config[datasource_name_name]['featureData'][0]['src'])
-        raw_data = pd.read_csv(csvPath)
-        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
-        ball_tree = BallTree(points, metric='euclidean')
-        parent_directory_path = Path(data_path) / datasource_name_name
-        # Creates Directory if it doesn't exist
-        parent_directory_path.mkdir(parents=True, exist_ok=True)
-        pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
-        print('Creating KD Tree done.')
-
+        Path(
+            data_path) / datasource_name / "ball_tree.pickle")
+    try:
+        if os.path.isfile(pickled_kd_tree_path) and reload is False:
+            print("Pickled KD Tree Exists, Loading")
+            ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
+            return
+    except:
+        pass
+    print("Creating KD Tree")
+    xCoordinate = config[datasource_name]['featureData'][0]['xCoordinate']
+    yCoordinate = config[datasource_name]['featureData'][0]['yCoordinate']
+    csvPath = Path(config[datasource_name]['featureData'][0]['src'])
+    raw_data = pd.read_csv(csvPath)
+    points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+    ball_tree = BallTree(points, metric='euclidean')
+    parent_directory_path = Path(data_path) / datasource_name
+    # Creates Directory if it doesn't exist
+    parent_directory_path.mkdir(parents=True, exist_ok=True)
+    pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
+    print('Creating KD Tree done.')
+    print("def:load_ball_tree ended")
 
 #gater, different in visinity (load_datasource insteas of ball tree)
 def query_for_closest_cell(x, y, datasource_name):
+    print("def:query_for_closest_cell")
     global datasource
     global source
     global ball_tree
@@ -723,6 +774,7 @@ def query_for_closest_cell(x, y, datasource_name):
 
 #gater
 def get_row(row, datasource_name):
+    print("def:get_row")
     global database
     global source
     global ball_tree
@@ -735,6 +787,7 @@ def get_row(row, datasource_name):
 #visinity
 # @profile
 def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False, log_normalization=False):
+    print("def:get_cells")
     global datasource
     global source
     global config
@@ -781,6 +834,7 @@ def get_cells(elem, datasource_name, mode, linked_dataset=None, is_image=False, 
 
 #visinity
 def weight_multi_image_neighborhood(neighborhood_obj, datasource_name, selection_length):
+    print("def:weight_multi_image_neighborhood")
     global config
     obj = {'weighted_contribution': None, 'selection_neighborhoods': None}
     for dataset in config[datasource_name]['linkedDatasets']:
@@ -807,6 +861,7 @@ def weight_multi_image_neighborhood(neighborhood_obj, datasource_name, selection
 
 #visinity
 def get_all_cells(datasource_name, mode, sample_size=400):
+    print("def:get_all_cells")
     global datasource
     global source
     global config
@@ -855,10 +910,11 @@ def get_all_cells(datasource_name, mode, sample_size=400):
 
 
 def get_channel_names(datasource_name, shortnames=True):
+    print("def:get_channel_names")
     global datasource
     global source
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     if shortnames:
         channel_names = [channel['name'] for channel in config[datasource_name]['imageData'][1:]]
     else:
@@ -867,6 +923,7 @@ def get_channel_names(datasource_name, shortnames=True):
 
 
 def get_channel_cells(datasource_name, channels):
+    print("def:get_channel_cells")
     global datasource
     global source
     global ball_tree
@@ -875,7 +932,7 @@ def get_channel_cells(datasource_name, channels):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
 
     origId = config[datasource_name]['featureData'][0]['idField']
 
@@ -891,6 +948,7 @@ def get_channel_cells(datasource_name, channels):
 
 
 def get_phenotype_description(datasource):
+    print("def:get_phenotype_description")
     try:
         data = ''
         csvPath = config[datasource]['featureData'][0]['celltypeData']
@@ -907,6 +965,7 @@ def get_phenotype_description(datasource):
 
 
 def get_phenotype_column_name(datasource):
+    print("def:get_phenotype_column_name")
     try:
         return config[datasource]['featureData'][0]['celltype']
     except KeyError:
@@ -916,6 +975,7 @@ def get_phenotype_column_name(datasource):
 
 
 def get_cells_phenotype(datasource_name):
+    print("def:get_cells_phenotype")
     global datasource
     global source
     global ball_tree
@@ -939,6 +999,7 @@ def get_cells_phenotype(datasource_name):
 
 
 def get_phenotypes(datasource_name):
+    print("def:get_phenotypes")
     global datasource
     global source
     global config
@@ -958,6 +1019,7 @@ def get_phenotypes(datasource_name):
 
 #visinity
 def get_phenotypes(datasource_name):
+    print("def:get_phenotypes")
     global datasource
     global source
     global config
@@ -993,12 +1055,13 @@ def get_phenotypes(datasource_name):
     return phenotype_lst
 
 def get_neighborhood(x, y, datasource_name, r=100, fields=None):
+    print("def:get_neighborhood")
     global database
     global datasource
     global source
     global ball_tree
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     index = ball_tree.query_radius([[x, y]], r=r)
     neighbors = index[0]
     try:
@@ -1017,6 +1080,7 @@ def get_neighborhood(x, y, datasource_name, r=100, fields=None):
 
 #visinity
 def get_individual_neighborhood(x, y, datasource_name, r=100, fields=None):
+    print("def:get_individual_neighborhood")
     global datasource
     global source
     global ball_tree
@@ -1117,7 +1181,7 @@ def get_number_of_cells_in_circle(x, y, datasource_name, r):
 
 
 def get_color_scheme(datasource_name, refresh, label_field='celltype'):
-
+    print("def:get_color_scheme")
     # old os.path way:
     # color_scheme_path = str(
     #     Path(os.path.join(os.getcwd())) / data_path / datasource_name / str(
@@ -1243,7 +1307,7 @@ def get_rect_cells(datasource_name, rect, channels):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
 
     # Query
     index = ball_tree.query_radius([[rect[0], rect[1]]], r=rect[2])
@@ -1254,6 +1318,7 @@ def get_rect_cells(datasource_name, rect, channels):
         for neighbor in neighbors:
             row = datasource.iloc[[neighbor]]
             obj = row.to_dict(orient='records')[0]
+            #in visinity named phenotype
             if 'celltype' not in obj:
                 obj['celltype'] = ''
             neighborhood.append(obj)
@@ -1263,6 +1328,7 @@ def get_rect_cells(datasource_name, rect, channels):
 
 #visinity
 def get_cells_in_polygon(datasource_name, points, similar_neighborhood=False, embedding=False):
+    print("def:get_cells_in_polygon")
     global config
     global datasource
     import ome_types as ometypes
@@ -1437,13 +1503,14 @@ def compute_individual_p_value(datasource_name, num_results, neighborhood_query)
 
 
 def get_gated_cells(datasource_name, gates, start_keys):
+    print("def:get_gated_cells")
     global datasource
     global source
     global ball_tree
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
 
     query_string = ''
     query_keys = start_keys
@@ -1460,13 +1527,14 @@ def get_gated_cells(datasource_name, gates, start_keys):
 
 
 def get_gated_cells_custom(datasource_name, gates, start_keys):
+    print("def:get_gated_cells_custom")
     global datasource
     global source
     global ball_tree
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
 
     # Query
     query_string = ''
@@ -1488,6 +1556,7 @@ def get_gated_cells_custom(datasource_name, gates, start_keys):
 
 
 def get_all_cells(datasource_name, start_keys, data_type=float):
+    print("def:get_all_cells")
     global datasource
     global source
 
@@ -1502,6 +1571,7 @@ def get_all_cells(datasource_name, start_keys, data_type=float):
 
 
 def download_gating_csv(datasource_name, gates, channels, encoding):
+    print("def:download_gating_csv")
     global datasource
     global source
     global ball_tree
@@ -1545,7 +1615,7 @@ def download_gates(datasource_name, gates, channels):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     arr = []
     for key, value in channels.items():
         arr.append([key, value[0], value[1]])
@@ -1560,6 +1630,7 @@ def download_gates(datasource_name, gates, channels):
 
 
 def save_gating_list(datasource_name, gates, channels):
+    print("def:save_gating_list")
     global datasource
     global source
     global ball_tree
@@ -1584,16 +1655,19 @@ def save_gating_list(datasource_name, gates, channels):
 
 #visinity
 def get_datasource_description(datasource_name):
+    print("def:get_datasource_description")
     global datasource
     global source
     global ball_tree
 
 def get_saved_gating_list(datasource_name):
+    print("def:get_saved_gating_list")
     gating_list = database_model.get(database_model.GatingList, datasource=datasource_name)
     return pickle.loads(gating_list.cells)
 
 
 def download_channels(datasource_name, map_channels, active_channels, list_colors, list_ranges, list_channels):
+    print("def:download_channels")
     global datasource
     global source
     global ball_tree
@@ -1620,6 +1694,7 @@ def download_channels(datasource_name, map_channels, active_channels, list_color
 
 
 def save_channel_list(datasource_name, map_channels, active_channels, list_colors, list_ranges, list_channels):
+    print("def:save_channel_list")
     global datasource
     global source
     global ball_tree
@@ -1679,6 +1754,7 @@ def get_saved_channel_list(datasource_name):
 
 
 def get_datasource_description(datasource_name):
+    print("def:get_datasource_description")
     global datasource
     global source
     global ball_tree
@@ -1686,7 +1762,7 @@ def get_datasource_description(datasource_name):
 
     # Load if not loaded
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     description = datasource.describe().to_dict()
     for column in description:
         column_data = datasource[column].to_numpy()
@@ -1732,6 +1808,7 @@ def get_datasource_description(datasource_name):
 
 
 def get_channel_gmm(channel_name, datasource_name):
+    print("def:get_channel_gmm")
     global datasource
     global source
     global ball_tree
@@ -1800,11 +1877,12 @@ def get_channel_gmm(channel_name, datasource_name):
     packet_gmm['image_gmm_1'] = dat_gmm1
     packet_gmm['image_gmm_2'] = dat_gmm2
     packet_gmm['image_gmm_3'] = dat_gmm3
-
+    print("def:get_channel_gmm ended")
     return packet_gmm
 
 
 def get_gating_gmm(channel_name, datasource_name):
+    print("def:get_gating_gmm")
     global datasource
     global source
     global ball_tree
@@ -1950,6 +2028,7 @@ def spatial_corr(adata, raw=False, log=False, threshold=None, x_coordinate='X_ce
 
 
 def generate_zarr_png(datasource_name, channel, level, tile):
+    print("def:generate_zarr_png")
     if config is None:
         load_datasource(datasource_name)
     global channels
@@ -2040,31 +2119,32 @@ def get_heatmap_pearson_correlation(datasource_name, selection_ids, mode='single
     # print('Heatmap', time.time() - test)
     return heatmap
 
-def get_ome_metadata(datasource_name):
-    if config is None:
-        load_datasource(datasource_name)
-    global metadata
-    return metadata
-
-#visinity
 # def get_ome_metadata(datasource_name):
-#     global config
-#     timer = time.time()
+#     print("def:get_ome_metadata")
 #     if config is None:
 #         load_datasource(datasource_name)
-#
-#     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
-#     xml = channel_io.pages[0].tags['ImageDescription'].value
-#     image_metadata = from_xml(xml).images[0].pixels
-#
-#     print('Metadata Time', time.time() - timer)
-#     return image_metadata
+#     global metadata
+#     return metadata
+
+#visinity
+def get_ome_metadata(datasource_name):
+    global config
+    timer = time.time()
+    if config is None:
+        load_datasource(datasource_name)
+
+    channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+    xml = channel_io.pages[0].tags['ImageDescription'].value
+    image_metadata = from_xml(xml).images[0].pixels
+
+    print('Metadata Time', time.time() - timer)
+    return image_metadata
 
 #gater, but slightly different in visinity. check
 def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
     channel_info = {}
     channelNames = []
-
+    print("def:convertOmeTiff")
     # image is a normal channel?
     if isLabelImg == False:
         channel_io = tf.TiffFile(str(filePath), is_ome=False)
@@ -2496,6 +2576,7 @@ def normalize_scatterplot_data(data):
 
 #visinity
 def get_cell_id_field(datasource_name):
+    print("def:get_cell_id_field")
     if 'idField' in config[datasource_name]['featureData'][0]:
         return config[datasource_name]['featureData'][0]['idField']
     else:
@@ -2526,6 +2607,7 @@ def apply_neighborhood_query(datasource_name, neighborhood_query, mode):
 
 #visinity
 def calculate_axis_order(datasource_name, mode):
+    print("def:calculate_axis_order")
     global datasource
     global config
     phenotypes = get_phenotypes(datasource_name)
@@ -2631,6 +2713,7 @@ def jax_em_clustering():
     config.update("jax_enable_x64", True)
 
 def logTransform(csvPath, skip_columns=[]):
+    print("def:logTransform")
     df = pd.read_csv(csvPath)
     for column in df.columns:
         if column not in skip_columns:

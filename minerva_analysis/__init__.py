@@ -35,7 +35,7 @@ else:
 # print('Data Path', str(data_path), str((data_path).resolve()))
 # Make the Data Path
 
-context = 'visinity'
+context = 'gater'
 
 data_path.mkdir(parents=True, exist_ok=True)
 app = Flask(__name__, template_folder=Path(context + '/templates'), static_folder='data')

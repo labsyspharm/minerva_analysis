@@ -115,8 +115,8 @@ class ImageViewer {
 
         // Define interface to shaders
         const seaGL = new viaWebGL.openSeadragonGL(that.viewer);
-        seaGL.vShader = '/client/src/shaders/vert.glsl';
-        seaGL.fShader = '/client/src/shaders/frag.glsl';
+        seaGL.vShader = '/visinity/src/shaders/vert.glsl';
+        seaGL.fShader = '/visinity/src/shaders/frag.glsl';
         //
         seaGL.addHandler('tile-drawing', async function (callback, e) {
 
