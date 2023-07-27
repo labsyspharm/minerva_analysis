@@ -44,6 +44,7 @@
     "@babel/preset-typescript": "^7.17.12",
     "@babel/runtime": "^7.17.9",
     "@babel/runtime-corejs2": "^7.17.11",
+    "@babel/plugin-proposal-class-properties": "latest",
     "@httptoolkit/proxy-agent": "^5.0.1-socks-lookup-fix.0",
     "@types/chai": "^4.3.1",
     "@types/jquery": "^3.5.14",
