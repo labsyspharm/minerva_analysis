@@ -622,12 +622,6 @@ def check_dataset_exists():
             return serialize_and_submit_json(False)
     return serialize_and_submit_json(True)
 
-@app.route('/init_datasource', methods=['GET'])
-def init_datasource():
-    datasource = request.args.get('datasource')
-    data_model.init(datasource)
-    resp = jsonify(success=True)
-    return resp
 
 
 def serialize_and_submit_json(data):

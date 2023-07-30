@@ -20,10 +20,22 @@ from flask_sqlalchemy import SQLAlchemy
 @app.route('/init_database', methods=['GET'])
 def init_database():
     datasource = request.args.get('datasource')
-    data_model.init(datasource)
+    if (request.args.get('isChannels') == False):
+        data_model.init(datasource, False)
+    else:
+        data_model.init(datasource)
     resp = jsonify(success=True)
     return resp
 
+@app.route('/init_datasource', methods=['GET'])
+def init_datasource():
+    datasource = request.args.get('datasource')
+    if (request.args.get('isChannels') == False):
+        data_model.init(datasource, False)
+    else:
+        data_model.init(datasource)
+    resp = jsonify(success=True)
+    return resp
 
 @app.route('/config')
 def serve_config():
@@ -503,14 +515,24 @@ def get_custom_clusters():
 #     )
 #     return response
 
-#visinity
+# #visinity
 @app.route('/get_ome_metadata', methods=['GET'])
 def get_ome_metadata():
     datasource = request.args.get('datasource')
     resp = data_model.get_ome_metadata(datasource)
     return serialize_and_submit_json(resp)
 
-
+#scope2screen
+# @app.route('/get_ome_metadata', methods=['GET'])
+# def get_ome_metadata():
+#     datasource = request.args.get('datasource')
+#     resp = data_model.get_ome_metadata(datasource).json()
+#     # OME-Types handles jsonify itself, so skip the orjson conversion
+#     response = app.response_class(
+#         response=resp,
+#         mimetype='application/json'
+#     )
+#     return response
 
 @app.route('/download_gating_csv', methods=['POST'])
 def download_gating_csv():

@@ -44,7 +44,7 @@ from sklearn.mixture import GaussianMixture
 from scipy.stats import norm
 from skimage.measure import block_reduce
 
-
+useChannels = True
 ball_tree = None
 database = None
 datasource = None
@@ -59,7 +59,9 @@ zarr_perm_matrix = None
 log_norm_neighborhood = False
 
 
-def init(datasource_name):
+def init(datasource_name, isChannels=True):
+    global useChannels
+    useChannels = isChannels;
     load_datasource(datasource_name)
 
 #gater
@@ -121,8 +123,8 @@ def load_datasource(datasource_name, reload=False):
 
 
     np_datasource = load_csv(datasource_name, numpy=True)
-    if reload:
-        load_ball_tree(datasource_name, reload=reload)
+    # if reload:
+    load_ball_tree(datasource_name, reload=reload)
     print("Loading segmentation.")
     if config[datasource_name]['segmentation'].endswith('.zarr'):
         seg = zarr.load(config[datasource_name]['segmentation'])
@@ -131,12 +133,20 @@ def load_datasource(datasource_name, reload=False):
         seg = zarr.open(seg_io.series[0].aszarr())
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
     print("Loading image descriptions.")
+    # metadata = get_ome_metadata(datasource_name)
     try:
         xml = channel_io.pages[0].tags['ImageDescription'].value
         metadata = from_xml(xml).images[0].pixels
     except:
         metadata = {}
     channels = zarr.open(channel_io.series[0].aszarr())
+
+    # init_clusters(datasource_name)
+    if 'linkedDatasets' not in config[datasource_name] or len(config[datasource_name]['linkedDatasets']) == 1:
+        zarr_file_name = datasource_name + "_perm.zarr"
+        zarr_path = Path(
+            data_path) / datasource_name / zarr_file_name
+        zarr_perm_matrix = zarr.load(zarr_path)
 
     level_series = next(
         level for level in reversed(channel_io.series[0].levels)
@@ -156,6 +166,7 @@ def load_datasource(datasource_name, reload=False):
 def load_csv(datasource_name, numpy=False):
     print("def:load_csv")
     global config
+    global useChannels
     numpy_file_name = datasource_name + "_np.npy"
     numpy_path = Path(
         data_path) / datasource_name / numpy_file_name
@@ -169,7 +180,8 @@ def load_csv(datasource_name, numpy=False):
     # df = dd.read_csv(csvPath, assume_missing=True).set_index('id')
     
     #Visinity drops channels but we need them...
-    # df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
+    if (not useChannels):
+        df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
     df['id'] = df.index
     # df['Cluster'] = embedding[:, -1].astype('int32').tolist()
 
@@ -760,7 +772,7 @@ def query_for_closest_cell(x, y, datasource_name):
     global source
     global ball_tree
     if datasource_name != source:
-        load_ball_tree(datasource_name)
+        load_datasource(datasource_name)
     distance, index = ball_tree.query([[x, y]], k=1)
     if distance == np.inf:
         return {}
@@ -772,6 +784,8 @@ def query_for_closest_cell(x, y, datasource_name):
             # named phenotype in visinity
             if 'celltype' not in obj:
                 obj['celltype'] = ''
+            if 'phenotype' not in obj:
+                obj['phenotype'] = ''
             return obj
         except:
             return {}
@@ -1757,12 +1771,13 @@ def get_saved_channel_list(datasource_name):
 #     return description
 
 
-def get_datasource_description(datasource_name):
+def get_datasource_description(datasource_name, isFull=False):
     print("def:get_datasource_description")
     global datasource
     global source
     global ball_tree
     global config
+    global useChannels
 
     # Load if not loaded
     if datasource_name != source:
@@ -1783,30 +1798,32 @@ def get_datasource_description(datasource_name):
 
     list_channels = config[datasource_name]['imageData']
     image_layer = 0
-    for channel in list_channels:
-        if channel['name'] != 'Area':
-            fullName = channel['fullname']
+    if (useChannels):
+        for channel in list_channels:
+            if channel['name'] != 'Area':
+                fullName = channel['fullname']
 
-            image_data = zarray[image_layer]
-            img_log = np.log(image_data[image_data > 0])
-            [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
-            midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
-            description[fullName]['image_histogram'] = {}
+                image_data = zarray[image_layer]
+                img_log = np.log(image_data[image_data > 0])
+                [hist, bin_edges] = np.histogram(img_log.flatten(), bins=50, density=True)
+                midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
+                description[fullName]['image_histogram'] = {}
 
-            dat = []
-            for i in range(len(hist)):
-                obj = {}
-                obj['x'] = midpoints[i]
-                obj['y'] = hist[i]
-                dat.append(obj)
+                dat = []
+                for i in range(len(hist)):
+                    obj = {}
+                    obj['x'] = midpoints[i]
+                    obj['y'] = hist[i]
+                    dat.append(obj)
 
-            description[fullName]['image_histogram'] = dat
-            description[fullName]['image_min'] = np.ceil(np.exp(np.min(img_log)))
-            description[fullName]['image_max'] = np.ceil(np.exp(np.max(img_log)))
+                description[fullName]['image_histogram'] = dat
+                description[fullName]['image_min'] = np.ceil(np.exp(np.min(img_log)))
+                description[fullName]['image_max'] = np.ceil(np.exp(np.max(img_log)))
 
-            image_layer += 1
-        else:
-            continue
+                image_layer += 1
+            else:
+                continue
+
 
     return description
 
