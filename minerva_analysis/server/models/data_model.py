@@ -1,7 +1,8 @@
+from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import MinMaxScaler
 import numba
 from sklearn.neighbors import BallTree
-
+from numba import prange
 import math
 import hdbscan
 import numpy_indexed as npi
@@ -78,7 +79,8 @@ def load_datasource(datasource_name, reload=False):
     load_config(datasource_name)
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
     print("Loading csv data.. (this can take some time)")
-    datasource = pd.read_csv(csvPath)
+    # datasource = pd.read_csv(csvPath)
+    datasource = load_csv(datasource_name)
     datasource['id'] = datasource.index
     datasource = datasource.replace(-np.Inf, 0)
     source = datasource_name
@@ -86,36 +88,36 @@ def load_datasource(datasource_name, reload=False):
     print('Loading', time.time() - timer)
 
     # Cell Types
-    # if 'linkedDatasets' not in config[datasource_name]:
-    #     linked = [datasource_name]
-    # else:
-    #     linked = config[datasource_name]['linkedDatasets']
-    # for ds in linked:
-    #     if 'neighborhoods' not in config[ds]:
-    #         print('No Neighborhood')
-    #         matrix_file_name = ds + "_matrix.pk"
-    #         matrix_paths = Path(
-    #             data_path) / ds / matrix_file_name
-    #         perm_data = get_perm_data(ds, matrix_paths)
-    #         print('Creating Matrix', ds)
-    #         matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
-    #                                perm_data['distances'], numba.typed.List(perm_data['lengths']))
-    #
-    #         matrix[np.isnan(matrix)] = 0
-    #
-    #         print('Created Matrix', ds)
-    #         neighborhood_path = Path(
-    #             data_path) / ds / 'neighborhood.npy'
-    #
-    #         np.save(neighborhood_path, matrix)
-    #         config[ds]['neighborhoods'] = str(neighborhood_path)
-    #         save_config()
-    #
-    # if 'embedding' not in config[datasource_name]:
-    #     if 'linkedDatasets' not in config[datasource_name]:
-    #         create_embedding([datasource_name])
-    #     else:
-    #         create_embedding(config[datasource_name]['linkedDatasets'])
+    if 'linkedDatasets' not in config[datasource_name]:
+        linked = [datasource_name]
+    else:
+        linked = config[datasource_name]['linkedDatasets']
+    for ds in linked:
+        if 'neighborhoods' not in config[ds]:
+            print('No Neighborhood')
+            matrix_file_name = ds + "_matrix.pk"
+            matrix_paths = Path(
+                data_path) / ds / matrix_file_name
+            perm_data = get_perm_data(ds, matrix_paths)
+            print('Creating Matrix', ds)
+            matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+                                   perm_data['distances'], numba.typed.List(perm_data['lengths']))
+
+            matrix[np.isnan(matrix)] = 0
+
+            print('Created Matrix', ds)
+            neighborhood_path = Path(
+                data_path) / ds / 'neighborhood.npy'
+
+            np.save(neighborhood_path, matrix)
+            config[ds]['neighborhoods'] = str(neighborhood_path)
+            save_config()
+
+    if 'embedding' not in config[datasource_name]:
+        if 'linkedDatasets' not in config[datasource_name]:
+            create_embedding([datasource_name])
+        else:
+            create_embedding(config[datasource_name]['linkedDatasets'])
 
 
     np_datasource = load_csv(datasource_name, numpy=True)
@@ -165,7 +167,9 @@ def load_csv(datasource_name, numpy=False):
 
     df = pd.read_csv(csvPath, index_col=None)
     # df = dd.read_csv(csvPath, assume_missing=True).set_index('id')
-    df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
+    
+    #Visinity drops channels but we need them...
+    # df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
     df['id'] = df.index
     # df['Cluster'] = embedding[:, -1].astype('int32').tolist()
 
@@ -174,15 +178,15 @@ def load_csv(datasource_name, numpy=False):
     if 'celltype' in config[datasource_name]['featureData'][0]:
         df = df.rename(columns={config[datasource_name]['featureData'][0]['celltype']: 'phenotype'})
 
-    # if np.issubdtype(df['phenotype'].dtype, np.number) is False:
-    #     df['phenotype'] = df['phenotype'].apply(lambda x: x.strip())
-    #
-    # if 'celltypeData' in config[datasource_name]['featureData'][0]:
-    #     cellTypePath = Path(config[datasource_name]['featureData'][0]['celltypeData'])
-    #     type_list = pd.read_csv(cellTypePath).to_numpy().tolist()
-    #     type_ids = [e[0] for e in type_list]
-    #     type_string = [e[1].strip() for e in type_list]
-    #     df['phenotype'] = df['phenotype'].replace(type_ids, type_string)
+    if np.issubdtype(df['phenotype'].dtype, np.number) is False:
+        df['phenotype'] = df['phenotype'].apply(lambda x: x.strip())
+
+    if 'celltypeData' in config[datasource_name]['featureData'][0]:
+        cellTypePath = Path(config[datasource_name]['featureData'][0]['celltypeData'])
+        type_list = pd.read_csv(cellTypePath).to_numpy().tolist()
+        type_ids = [e[0] for e in type_list]
+        type_string = [e[1].strip() for e in type_list]
+        df['phenotype'] = df['phenotype'].replace(type_ids, type_string)
 
     df = df.replace(-np.Inf, 0)
     if numpy:
@@ -912,9 +916,9 @@ def get_all_cells(datasource_name, mode, sample_size=400):
 def get_channel_names(datasource_name, shortnames=True):
     print("def:get_channel_names")
     global datasource
-    global source
-    if datasource_name != source:
-        load_datasource(datasource_name)
+    # global source
+    # if datasource_name != source:
+    #     load_datasource(datasource_name)
     if shortnames:
         channel_names = [channel['name'] for channel in config[datasource_name]['imageData'][1:]]
     else:
@@ -998,24 +1002,24 @@ def get_cells_phenotype(datasource_name):
     return query
 
 
-def get_phenotypes(datasource_name):
-    print("def:get_phenotypes")
-    global datasource
-    global source
-    global config
-    try:
-        phenotype_field = config[datasource_name]['featureData'][0]['celltype']
-    except KeyError:
-        phenotype_field = 'celltype'
-    except TypeError:
-        phenotype_field = 'celltype'
-
-    if datasource_name != source:
-        load_ball_tree(datasource_name)
-    if phenotype_field in datasource.columns:
-        return sorted(datasource[phenotype_field].unique().tolist())
-    else:
-        return ['']
+# def get_phenotypes(datasource_name):
+#     print("def:get_phenotypes")
+#     global datasource
+#     global source
+#     global config
+#     try:
+#         phenotype_field = config[datasource_name]['featureData'][0]['celltype']
+#     except KeyError:
+#         phenotype_field = 'celltype'
+#     except TypeError:
+#         phenotype_field = 'celltype'
+#
+#     if datasource_name != source:
+#         load_ball_tree(datasource_name)
+#     if phenotype_field in datasource.columns:
+#         return sorted(datasource[phenotype_field].unique().tolist())
+#     else:
+#         return ['']
 
 #visinity
 def get_phenotypes(datasource_name):
@@ -1653,12 +1657,12 @@ def save_gating_list(datasource_name, gates, channels):
     f = pickle.dumps(temp, protocol=4)
     database_model.save_list(database_model.GatingList, datasource=datasource_name, cells=f)
 
-#visinity
-def get_datasource_description(datasource_name):
-    print("def:get_datasource_description")
-    global datasource
-    global source
-    global ball_tree
+# #visinity
+# def get_datasource_description(datasource_name):
+#     print("def:get_datasource_description")
+#     global datasource
+#     global source
+#     global ball_tree
 
 def get_saved_gating_list(datasource_name):
     print("def:get_saved_gating_list")
