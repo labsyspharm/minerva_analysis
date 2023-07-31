@@ -502,25 +502,25 @@ def get_custom_clusters():
 
 
 
-# @app.route('/get_ome_metadata', methods=['GET'])
-# def get_ome_metadata():
-#     datasource = request.args.get('datasource')
-#     resp = data_model.get_ome_metadata(datasource)
-#     if resp:
-#         resp = resp.json()
-#     # OME-Types handles jsonify itself, so skip the orjson conversion
-#     response = app.response_class(
-#         response=resp,
-#         mimetype='application/json'
-#     )
-#     return response
-
-# #visinity
 @app.route('/get_ome_metadata', methods=['GET'])
 def get_ome_metadata():
     datasource = request.args.get('datasource')
     resp = data_model.get_ome_metadata(datasource)
-    return serialize_and_submit_json(resp)
+    if resp:
+        resp = resp.json()
+    # OME-Types handles jsonify itself, so skip the orjson conversion
+    response = app.response_class(
+        response=resp,
+        mimetype='application/json'
+    )
+    return response
+
+# #visinity
+# @app.route('/get_ome_metadata', methods=['GET'])
+# def get_ome_metadata():
+#     datasource = request.args.get('datasource')
+#     resp = data_model.get_ome_metadata(datasource)
+#     return serialize_and_submit_json(resp)
 
 #scope2screen
 # @app.route('/get_ome_metadata', methods=['GET'])

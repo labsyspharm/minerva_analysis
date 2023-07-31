@@ -51,6 +51,7 @@ async function init(config) {
 
     //initialize metadata
     const dataLayer = new DataLayer(config, imageChannels);
+    await dataLayer.init()
     const numericData = new NumericData(config, dataLayer);
     const columns = await dataLayer.getChannelNames(true);
     const imgMetadata = await dataLayer.getMetadata();
@@ -73,7 +74,8 @@ async function init(config) {
     channelList.init(dd);
     csv_gatingList.init(dd, seaDragonViewer);
     const imageInit = [viewerManager, channelList, csv_gatingList, centers, ids];
-    await Promise.all([dataLayer.init(), seaDragonViewer.init(...imageInit)]);
+    await seaDragonViewer.init(...imageInit);
+
 
     //EVENT HANDLING
 
