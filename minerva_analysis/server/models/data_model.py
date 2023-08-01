@@ -282,7 +282,7 @@ def edit_neighborhood(elem, datasource_name):
     return get_neighborhood_list(datasource_name)
 
 #visinity
-def get_neighborhood(elem, datasource_name, mode='single'):
+def get_saved_neighborhood_patterns(elem, datasource_name, mode='single'):
     global config
     neighborhood = database_model.get(database_model.Neighborhood, id=elem['id'])
     neighborhood_stats = database_model.get(database_model.NeighborhoodStats, neighborhood=neighborhood)

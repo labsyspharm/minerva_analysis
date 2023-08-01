@@ -261,7 +261,7 @@ def get_neighborhood_visinity():
     datasource = post_data['datasource']
     elem = post_data['elem']
     mode = post_data['mode']
-    resp = data_model.get_neighborhood(elem, datasource, mode)
+    resp = data_model.get_saved_neighborhood_patterns(elem, datasource, mode)
     return serialize_and_submit_json(resp)
 
 @app.route('/get_neighborhood', methods=['GET'])
