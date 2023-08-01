@@ -27,7 +27,8 @@ class DataLayer {
         try {
             document.getElementById('loading_spinner').style.display = "block";
             let response = await fetch('/init_datasource?' + new URLSearchParams({
-                datasource: datasource
+                datasource: datasource,
+                isChannels: false
             }))
             let response_data = await response.json();
             this.phenotypes = await this.getPhenotypes();

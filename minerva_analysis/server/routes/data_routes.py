@@ -20,17 +20,20 @@ from flask_sqlalchemy import SQLAlchemy
 @app.route('/init_database', methods=['GET'])
 def init_database():
     datasource = request.args.get('datasource')
-    if (request.args.get('isChannels') == False):
+    isChannel = request.args.get('isChannels')
+    if (isChannel == False):
         data_model.init(datasource, False)
     else:
         data_model.init(datasource)
     resp = jsonify(success=True)
     return resp
 
+#still doubled because somehow called differently in tools
 @app.route('/init_datasource', methods=['GET'])
 def init_datasource():
     datasource = request.args.get('datasource')
-    if (request.args.get('isChannels') == False):
+    isChannel = request.args.get('isChannels')
+    if (isChannel == 'false'):
         data_model.init(datasource, False)
     else:
         data_model.init(datasource)
