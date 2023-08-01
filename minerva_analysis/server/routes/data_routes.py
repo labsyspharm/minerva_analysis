@@ -114,8 +114,21 @@ def get_all_datasource_row():
     post_data = json.loads(request.data)
     datasource = post_data['datasource']
     mode = post_data['mode']
-    resp = data_model.get_all_cells(datasource, mode)
+    resp = data_model.get_all_cell_neighborhoods(datasource, mode)
     return serialize_and_submit_json(resp)
+
+@app.route('/get_all_cells/<dtype>/', methods=['GET'])
+def get_all_cells(dtype):
+    datasource = request.args.get('datasource')
+    data_type = int if 'integer' == dtype else float
+    start_keys = list(request.args.get('start_keys').split(','))
+    resp = data_model.get_all_cells(datasource, start_keys, data_type)
+    content = gzip.compress(resp.tobytes('C'))
+    response = make_response(content)
+    response.headers.set('Content-Type', 'application/octet-stream')
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+    return response
 
 @app.route('/get_channel_names', methods=['GET'])
 def get_channel_names():
@@ -138,6 +151,84 @@ def get_color_scheme():
     refresh = request.args.get('refresh') == 'true'
     resp = data_model.get_color_scheme(datasource, refresh)
     return serialize_and_submit_json(resp)
+
+def get_color_scheme(datasource_name):
+    labels = get_phenotypes(datasource_name)
+    color_scheme = {}
+    # http://godsnotwheregodsnot.blogspot.com/2013/11/kmeans-color-quantization-seeding.html
+    # colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
+    #           '#e0bf04', '#ab9a95', '#258d6b', '#934270', '#48e26f']
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#fff070", "#040ee8", "#02531d", "#fbacf6",
+    #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #           "#ead624"] FINAL DAY
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#bc3f3b", "#44ea17", "#fff070", "#040ee8", "#02531d", "#fbacf6",
+    #  "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #  "#ead624"]  #Tonsil
+    # Purlpe 563cd3 563cd3
+    # Green 44ea17 44ea17
+    #  RED bc3f3b
+    # Yellow fff070 fff070
+    # Blue 040ee8 040ee8
+
+    colors = ["#44ea17", "#FF0000", "#dc31b0", "#bc3f3b", "#563cd3", "#040ee8", "#fff070", "#02531d", "#fbacf6",
+              "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+              "#ead624", "#00FFFF"]  # Tonsil
+
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#2626ff", "#040ee8", "#02531d", "#fbacf6",
+    #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #           "#ead624"]
+    # # colors.remove('#FDB462')
+    # colors.append('#db4ba8')
+    # colors.append('#02b72e')
+    # colors.append('#2580fe')
+    # #db4ba8 #02b72e #2580fe
+    for i in range(len(labels)):
+        color_scheme[str(labels[i])] = {}
+        color_scheme[str(labels[i])]['rgb'] = list(ImageColor.getcolor(colors[i], "RGB"))
+        color_scheme[str(labels[i])]['hex'] = colors[i]
+        color_scheme[str(i)] = {}
+        color_scheme[str(i)]['rgb'] = list(ImageColor.getcolor(colors[i], "RGB"))
+        color_scheme[str(i)]['hex'] = colors[i]
+    return color_scheme
+
+def get_color_scheme(datasource_name):
+    labels = get_phenotypes(datasource_name)
+    color_scheme = {}
+    # http://godsnotwheregodsnot.blogspot.com/2013/11/kmeans-color-quantization-seeding.html
+    # colors = ['#00c0c7', '#5144d3', '#723521', '#da3490', '#9089fa', '#c41d1d', '#2780ec', '#6f38b1',
+    #           '#e0bf04', '#ab9a95', '#258d6b', '#934270', '#48e26f']
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#fff070", "#040ee8", "#02531d", "#fbacf6",
+    #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #           "#ead624"] FINAL DAY
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#bc3f3b", "#44ea17", "#fff070", "#040ee8", "#02531d", "#fbacf6",
+    #  "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #  "#ead624"]  #Tonsil
+    # Purlpe 563cd3 563cd3
+    # Green 44ea17 44ea17
+    #  RED bc3f3b
+    # Yellow fff070 fff070
+    # Blue 040ee8 040ee8
+
+    colors = ["#44ea17", "#FF0000", "#dc31b0", "#bc3f3b", "#563cd3", "#040ee8", "#fff070", "#02531d", "#fbacf6",
+              "#683c00", "#54d7eb", "#be29ff", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+              "#ead624", "#00FFFF"]  # Tonsil
+
+    # colors = ["#563cd3", "#aaec32", "#dc31b0", "#44ea17", "#be29ff", "#2626ff", "#040ee8", "#02531d", "#fbacf6",
+    #           "#683c00", "#54d7eb", "#bc3f3b", "#11e38c", "#830c6f", "#aee39a", "#2c457d", "#fea27a", "#3295e9",
+    #           "#ead624"]
+    # # colors.remove('#FDB462')
+    # colors.append('#db4ba8')
+    # colors.append('#02b72e')
+    # colors.append('#2580fe')
+    # #db4ba8 #02b72e #2580fe
+    for i in range(len(labels)):
+        color_scheme[str(labels[i])] = {}
+        color_scheme[str(labels[i])]['rgb'] = list(ImageColor.getcolor(colors[i], "RGB"))
+        color_scheme[str(labels[i])]['hex'] = colors[i]
+        color_scheme[str(i)] = {}
+        color_scheme[str(i)]['rgb'] = list(ImageColor.getcolor(colors[i], "RGB"))
+        color_scheme[str(i)]['hex'] = colors[i]
+    return color_scheme
 
 #visinity
 @app.route('/get_neighborhood_list', methods=['GET'])
@@ -320,20 +411,6 @@ def compute_p_value():
     neighborhood_query = json.loads(post_data['neighborhoodQuery'])
     resp = data_model.compute_individual_p_value(datasource, num_results, neighborhood_query)
     return serialize_and_submit_json(resp)
-
-@app.route('/get_all_cells/<dtype>/', methods=['GET'])
-def get_all_cells(dtype):
-    datasource = request.args.get('datasource')
-    data_type = int if 'integer' == dtype else float
-    start_keys = list(request.args.get('start_keys').split(','))
-    resp = data_model.get_all_cells(datasource, start_keys, data_type)
-    content = gzip.compress(resp.tobytes('C'))
-    response = make_response(content)
-    response.headers.set('Content-Type', 'application/octet-stream')
-    response.headers['Content-length'] = len(content)
-    response.headers['Content-Encoding'] = 'gzip'
-    return response
-
 
 @app.route('/get_gated_cell_ids', methods=['GET'])
 def get_gated_cell_ids():
