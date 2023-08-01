@@ -139,7 +139,7 @@ class ImageViewer {
 
         // Instantiate lensing
         const lensing_config = {};
-        this.viewer.lensing = Lensing.create(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
+        this.viewer.lensing = Lensing.construct(OpenSeadragon, this.viewer, viewer_config, lensing_config, dataLoad);
 
 
 
