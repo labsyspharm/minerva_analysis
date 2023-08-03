@@ -30,7 +30,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.REPO_PAT }}
-          repository: labsyspharm/Visinity
+          repository: labsyspharm/visinity
           event-type: merge
           client-payload: '{"ref": "${{ github.ref }}"}'
 
