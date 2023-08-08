@@ -12,6 +12,11 @@ import json
 import sys
 import multiprocessing
 
+# Initialize sklearn global threadpool controller to avoid deadlock in threaded
+# contexts.
+import sklearn.utils.fixes
+sklearn.utils.fixes.threadpool_limits()
+
 # If you're running the pyinstaller version of the code, create a
 # new directory for the data (this will be at ~/ on mac)
 
