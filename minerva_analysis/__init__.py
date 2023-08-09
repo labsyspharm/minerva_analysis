@@ -38,7 +38,7 @@ else:
 context = ''
 
 data_path.mkdir(parents=True, exist_ok=True)
-app = Flask(__name__, template_folder=Path('templates' + '/' + context), static_folder='data')
+app = Flask(__name__, template_folder=Path('templates'), static_folder='data')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(data_path) + '/db.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
