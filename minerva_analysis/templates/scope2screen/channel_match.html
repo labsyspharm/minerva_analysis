@@ -2,23 +2,23 @@
 
 
 {% block content %}
-<title>Minerva Analysis - Channel Match</title>
+<title>CyCIF Viewer - Channel Match</title>
 <div id="channel-match-root" class="container">
     <div id="channel-match-container" class="container">
         <div class="row justify-content-between">
             <div class="col-lg-auto channel-match-title">
-                <h2>{{ data.datasetName }} Config</h2>
+                <h2>{{ data.datasetName }}: Config</h2>
             </div>
             <div class="col-auto ml-auto" id="save-col">
                 <button id="save" type="button" class="btn btn-secondary save-config">Save Config</button>
             </div>
         </div>
-        <div id="normalize-row">
-            <div class="form-check normalize-form">
-                <label class="form-check-label" for="normalize-csv">Normalize CSV</label>
-                <input type="checkbox" class="form-check-input" id="normalize-csv">
-            </div>
-        </div>
+{#        <div id="normalize-row">#}
+{#            <div class="form-check normalize-form">#}
+{#                <label class="form-check-label" for="normalize-csv">Normalize CSV</label>#}
+{#                <input type="checkbox" class="form-check-input" id="normalize-csv">#}
+{#            </div>#}
+{#        </div>#}
         <div id="list-titles" class="row">
             <div id="left-list-title" class="col-3 title-div">
                 <span class="left-title title">Destination</span>
@@ -49,7 +49,7 @@
         </form>
     </div>
 </div>
-<script src="../visinity/src/js/views/channelMatch.js"></script>
+<script src="../../scope2screen/src/js/views/channelMatch.js"></script>
 <script type="text/javascript" defer>
     <!--@formatter:off-->
         channelData = passVariablesToFrontend({{data|tojson}});

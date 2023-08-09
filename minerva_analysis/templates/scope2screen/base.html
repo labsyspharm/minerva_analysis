@@ -3,32 +3,32 @@
     {% block title %}{% endblock %}
     <meta content="utf-8" http-equiv="encoding">
     <!-- Styles -->
-    <link rel="stylesheet" href="../scope2screen/src/css/main.css">
+    <link rel="stylesheet" href="../../scope2screen/src/css/main.css">
     {% block style %}{% endblock %}
 
 
     <!-- Flask variables -->
-    <script src="../scope2screen/src/js/services/passVariablesToFrontend.js" type="text/javascript"></script>
+    <script src="../../scope2screen/src/js/services/passVariablesToFrontend.js" type="text/javascript"></script>
     <script type="text/javascript">
         //<!--@formatter:off-->
         window.flaskVariables = passVariablesToFrontend({{data|tojson}});
         //<!--@formatter:on-->
     </script>
     <!-- Webpack -->
-    <script src="../scope2screen/dist/vendor_bundle.js"></script>
+    <script src="../../scope2screen/dist/vendor_bundle.js"></script>
 
     <!-- OpenSeadragon imports-->
-    <script src="../scope2screen/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>
-    <script src="../scope2screen/external/openseadragon-bin-2.4.0/openseadragon-svg-overlay.js"></script>
-    <script src="../scope2screen/external/openseadragon-bin-2.4.0/openseadragonrgb.js"></script>
-    <script src="../scope2screen/external/openseadragon-bin-2.4.0/openseadragon-filtering.js"></script>
+    <script src="../../scope2screen/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>
+    <script src="../../scope2screen/external/openseadragon-bin-2.4.0/openseadragon-svg-overlay.js"></script>
+    <script src="../../scope2screen/external/openseadragon-bin-2.4.0/openseadragonrgb.js"></script>
+    <script src="../../scope2screen/external/openseadragon-bin-2.4.0/openseadragon-filtering.js"></script>
     <!-- Scripts -->
-    <script src="../scope2screen/src/js/services/colorScheme.js"></script>
-    <script src="../scope2screen/src/js/views/rainbow.js"></script>
-    <script src="../scope2screen/src/js/services/dataLayer.js"></script>
-    <script src="../scope2screen/src/js/views/channelList.js"></script>
-    <script src="../scope2screen/src/js/views/imageViewer.js"></script>
-    <script src="../scope2screen/src/js/services/simpleEventHandler.js"></script>
+    <script src="../../scope2screen/src/js/services/colorScheme.js"></script>
+    <script src="../../scope2screen/src/js/views/rainbow.js"></script>
+    <script src="../../scope2screen/src/js/services/dataLayer.js"></script>
+    <script src="../../scope2screen/src/js/views/channelList.js"></script>
+    <script src="../../scope2screen/src/js/views/imageViewer.js"></script>
+    <script src="../../scope2screen/src/js/services/simpleEventHandler.js"></script>
 
 </head>
 

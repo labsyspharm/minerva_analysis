@@ -3,37 +3,37 @@
     {% block title %}{% endblock %}
     <meta content="utf-8" http-equiv="encoding">
     <!-- Styles -->
-    <link rel="stylesheet" href="../gater/src/css/main.css">
+    <link rel="stylesheet" href="../../gater/src/css/main.css">
     {% block style %}{% endblock %}
 
 
     <!-- Flask variables -->
-    <script src="../gater/src/js/services/passVariablesToFrontend.js" type="text/javascript"></script>
+    <script src="../../gater/src/js/services/passVariablesToFrontend.js" type="text/javascript"></script>
     <script type="text/javascript">
         //<!--@formatter:off-->
         window.flaskVariables = passVariablesToFrontend({{data|tojson}});
         //<!--@formatter:on-->
     </script>
     <!-- Webpack -->
-    <script src="../gater/dist/vendor_bundle.js"></script>
+    <script src="../../gater/dist/vendor_bundle.js"></script>
 
     <!-- Scripts -->
-    <script src="../gater/external/openseadragon-bin-2.4.0/openseadragon-scalebar.js"></script>
-    <script src="../gater/src/js/services/colorScheme.js"></script>
-    <script src="../gater/src/js/views/rainbow.js"></script>
-    <script src="../gater/src/js/services/dataLayer.js"></script>
-    <script src="../gater/src/js/services/numericData.js"></script>
-    <script src="../gater/src/js/views/channelList.js"></script>
-    <script src="../gater/src/js/views/csvGatingList.js"></script>
-    <script src="../gater/src/js/views/imageViewer.js"></script>
-    <script src="../gater/src/js/services/simpleEventHandler.js"></script>
+    <script src="../../gater/external/openseadragon-bin-2.4.0/openseadragon-scalebar.js"></script>
+    <script src="../../gater/src/js/services/colorScheme.js"></script>
+    <script src="../../gater/src/js/views/rainbow.js"></script>
+    <script src="../../gater/src/js/services/dataLayer.js"></script>
+    <script src="../../gater/src/js/services/numericData.js"></script>
+    <script src="../../gater/src/js/views/channelList.js"></script>
+    <script src="../../gater/src/js/views/csvGatingList.js"></script>
+    <script src="../../gater/src/js/views/imageViewer.js"></script>
+    <script src="../../gater/src/js/services/simpleEventHandler.js"></script>
 
 </head>
 
 
 <body>
 <nav id="topBar" class="navbar navbar-expand-sm navbar-light bg-light">
-    <img id="gater-logo" src="../gater/src/img/logo.png">
+    <img id="gater-logo" src="../../gater/src/img/logo.png">
     <span id="title" class="navbar-brand mb-0 h1">Minerva Analysis</span>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
