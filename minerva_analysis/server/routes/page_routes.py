@@ -8,7 +8,22 @@ import os
 #gater
 @app.route("/")
 def my_index():
-    return render_template("index.html", data={'datasource': '', 'datasources': get_config_names(),
+    return render_template("/index.html", data={'datasource': '', 'datasources': get_config_names(),
+                                               'is_docker': app.config['IS_DOCKER']})
+
+@app.route("/gater/")
+def my_index_gater():
+    return render_template("gater/index.html", data={'datasource': '', 'datasources': get_config_names(),
+                                               'is_docker': app.config['IS_DOCKER']})
+
+@app.route("/visinity/")
+def my_index_visinity():
+    return render_template("visinity/index.html", data={'datasource': '', 'datasources': get_config_names(),
+                                               'is_docker': app.config['IS_DOCKER']})
+
+@app.route("/scope2screen/")
+def my_index_scope2screen():
+    return render_template("scope2screen/index.html", data={'datasource': '', 'datasources': get_config_names(),
                                                'is_docker': app.config['IS_DOCKER']})
 
 #visinity
@@ -25,9 +40,24 @@ def serve_config_visinity():
 #     return render_template('index.html', data={'datasource': datasource, 'datasources': datasources,
 #                                                'is_docker': app.config['IS_DOCKER']})
 
-#visinity
+#gater templates
+@app.route('/gater/<string:datasource>', methods=['GET'])
+def image_viewer_gater(datasource):
+    return image_viewer(datasource, 'gater/')
+
+#scope2screen templates
+@app.route('/scope2screen/<string:datasource>', methods=['GET'])
+def image_viewer_scope2screen(datasource):
+    return image_viewer(datasource, 'scope2screen/')
+
+#visinity templates
+@app.route('/visinity/<string:datasource>', methods=['GET'])
+def image_viewer_visinity(datasource):
+    return image_viewer(datasource, 'visinity/')
+
+#generic
 @app.route('/<string:datasource>', methods=['GET'])
-def image_viewer(datasource):
+def image_viewer(datasource, context=''):
     datasources = get_config_names()
     config = get_config()
     if datasource in config:
@@ -39,7 +69,7 @@ def image_viewer(datasource):
     if datasource not in datasources:
         datasource = ''
 
-    return render_template('index.html',
+    return render_template(context + 'index.html',
                            data={'datasource': datasource, 'datasources': datasources,
                                  'applyPrevious': apply_previous, 'mode': mode, 'config': config,
                                  'is_docker': app.config['IS_DOCKER']})
@@ -47,22 +77,23 @@ def image_viewer(datasource):
 #gater
 @app.route("/upload_page")
 def upload_page():
-    return render_template("upload.html", data={'datasource': '', 'datasources': get_config_names(),
+    return render_template("gater/upload.html", data={'datasource': '', 'datasources': get_config_names(),
                                                 'is_docker': app.config['IS_DOCKER']})
 
 #gater
 @app.route('/gater/<path:filename>')
 def serveGater(filename):
-    return send_from_directory(app.config['CLIENT_PATH'], filename, conditional=True)
+    return send_from_directory(app.config['CLIENT_PATH'], 'gater/' + filename, conditional=True)
 
 #visinity
 @app.route('/visinity/<path:filename>')
 def serveVisinity(filename):
-    return send_from_directory(app.config['CLIENT_PATH'], filename, conditional=True)
+    return send_from_directory(app.config['CLIENT_PATH'], 'visinity/' + filename, conditional=True)
 
+#scope2screen
 @app.route('/scope2screen/<path:filename>')
-def serveClient(filename):
-    return send_from_directory(app.config['CLIENT_PATH'], filename, conditional=True)
+def serveScope2Screen(filename):
+    return send_from_directory(app.config['CLIENT_PATH'], 'scope2screen/' + filename, conditional=True)
 
 
 

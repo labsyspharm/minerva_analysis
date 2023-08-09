@@ -1,8 +1,8 @@
-{% extends 'scope2screen/base.html' %}
+{% extends 'base.html' %}
 
 
 {% block content %}
-<title>CyCIF Viewer - Channel Match</title>
+<title>Minerva Analysis - Channel Match</title>
 <div id="channel-match-root" class="container">
     <div id="channel-match-container" class="container">
         <div class="row justify-content-between">
@@ -13,12 +13,12 @@
                 <button id="save" type="button" class="btn btn-secondary save-config">Save Config</button>
             </div>
         </div>
-{#        <div id="normalize-row">#}
-{#            <div class="form-check normalize-form">#}
-{#                <label class="form-check-label" for="normalize-csv">Normalize CSV</label>#}
-{#                <input type="checkbox" class="form-check-input" id="normalize-csv">#}
-{#            </div>#}
-{#        </div>#}
+        <div id="transform-row">
+            <div class="form-check transform-form">
+                <label class="form-check-label" for="transform-data">Log1p Transform Data</label>
+                <input type="checkbox" class="form-check-input" id="transform-data">
+            </div>
+        </div>
         <div id="list-titles" class="row">
             <div id="left-list-title" class="col-3 title-div">
                 <span class="left-title title">Destination</span>
@@ -49,7 +49,7 @@
         </form>
     </div>
 </div>
-<script src="../scope2screen/src/js/views/channelMatch.js"></script>
+<script src="../client/src/js/views/channelMatch.js"></script>
 <script type="text/javascript" defer>
     <!--@formatter:off-->
         channelData = passVariablesToFrontend({{data|tojson}});
@@ -57,4 +57,3 @@
         <!--@formatter:on-->
 </script>
 {% endblock %}
-

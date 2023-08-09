@@ -1,8 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'visinity/base.html' %}
 
 {% block style %}
-    <link rel="stylesheet" href="../../visinity/src/css/viewer.css">
-    <link rel="stylesheet" href="../../visinity/src/css/neighborhood.css">
+    <link rel="stylesheet" href="../visinity/src/css/viewer.css">
+    <link rel="stylesheet" href="../visinity/src/css/neighborhood.css">
 {% endblock %}
 
 {% block content %}
@@ -161,13 +161,13 @@
                                 <div class="row align-items-center icon-rows">
                                     <span id="cell_view" data-toggle="tooltip" data-placement="right"
                                           title="Cell View Mode">
-                                        {% include 'cell_icon.html' %}
+                                        {% include 'visinity/cell_icon.html' %}
                                     </span>
                                 </div>
                                 <div class="row align-items-center icon-rows">
                                     <span id="contour_view" data-toggle="tooltip" data-placement="right"
                                           title="Contour View Mode">
-                                        {% include 'contour_icon.html' %}
+                                        {% include 'visinity/contour_icon.html' %}
                                     </span>
                                 </div>
                                 <div id="recolor_image_viewer" class="row align-items-center icon-rows" title="Recolor Image Viewer"></div>
@@ -324,6 +324,6 @@
                 </div>
             </div>
         </div>
-        <script src="../../visinity/src/js/main.js" defer></script>
+        <script src="../visinity/src/js/main.js" defer></script>
     {% endif %}
 {% endblock %}
