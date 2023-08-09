@@ -30,7 +30,7 @@ To import your imaging files in the import gui type in the mounted `/data/..`
 `git clone https://github.com/labsyspharm/minerva_analysis.git`
 #### 2. Checkout Necessary Branch
 * **For Gating, run** `git checkout gating`
-* Run `git pull` to make sure everything is up to date 
+* Run `git pull` to make sure everything is up to date. 
 
 
 
