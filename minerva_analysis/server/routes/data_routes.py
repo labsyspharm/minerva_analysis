@@ -123,12 +123,13 @@ def get_all_cells(dtype):
     data_type = int if 'integer' == dtype else float
     start_keys = list(request.args.get('start_keys').split(','))
     resp = data_model.get_all_cells(datasource, start_keys, data_type)
-    content = gzip.compress(resp.tobytes('C'))
-    response = make_response(content)
-    response.headers.set('Content-Type', 'application/octet-stream')
-    response.headers['Content-length'] = len(content)
-    response.headers['Content-Encoding'] = 'gzip'
-    return response
+    return serialize_and_submit_json(resp)
+    # content = gzip.compress(resp.tobytes('C'))
+    # response = make_response(content)
+    # response.headers.set('Content-Type', 'application/octet-stream')
+    # response.headers['Content-length'] = len(content)
+    # response.headers['Content-Encoding'] = 'gzip'
+    # return response
 
 @app.route('/get_channel_names', methods=['GET'])
 def get_channel_names():

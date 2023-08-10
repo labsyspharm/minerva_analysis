@@ -291,16 +291,20 @@ class DataLayer {
         const dtype = use_integer ? 'integer' : 'float'
         const base_url = `/get_all_cells/${dtype}/?`
         try {
-            const headers = new Headers();
-            headers.append("Content-Type","application/octet-stream");
-            headers.append("Content-Encoding","gzip");
+            // const headers = new Headers();
+            // headers.append("Content-Type","application/octet-stream");
+            // headers.append("Content-Encoding","gzip");
             const response = await fetch(base_url + new URLSearchParams({
                 start_keys: start_keys,
                 datasource: datasource
-            }), {
-                headers: headers
-            })
-            return response.arrayBuffer();
+            }))
+            let cells = await response.json();
+            //     {
+            //     headers: headers
+            // })
+            // console.log("cells", cells)
+            return cells;
+            // return response.arrayBuffer();
         } catch (e) {
             console.log("Error Getting Gated Cell Ids", e);
         }
