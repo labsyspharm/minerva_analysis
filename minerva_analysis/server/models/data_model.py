@@ -1354,6 +1354,7 @@ def get_scatterplot_data(datasource_name, mode):
         phenotypes_dict = {val: idx for idx, val in enumerate(phenotype_list)}
         phenotypes_array = np_df[:, get_column_indices(['phenotype'])]
         for i in range(phenotypes_array.shape[0]):
+            test = phenotypes_array[i, 0]
             phenotypes_array[i, 0] = phenotypes_dict[phenotypes_array[i, 0]]
         phenotypes_array = np.array(phenotypes_array, dtype='uint16')
         data = np.hstack((data, phenotypes_array))
@@ -1393,6 +1394,8 @@ def get_rect_cells(datasource_name, rect, channels):
             #in visinity named phenotype
             if 'celltype' not in obj:
                 obj['celltype'] = ''
+            if 'phenotype' not in obj:
+                obj['phenotype'] = ''
             neighborhood.append(obj)
         return neighborhood
     except:
