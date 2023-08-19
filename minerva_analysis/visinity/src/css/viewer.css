@@ -28,7 +28,7 @@ body {
     font-weight: 300;
 }
 
-#navbarDropdown, #navbarUpload {
+#navbarDropdown, #navbarUpload, #navLink {
     color: rgba(255, 255, 255, 0.95);
     font-size: 13px;
     font-weight: 300;
