@@ -44,7 +44,7 @@ from sklearn.mixture import GaussianMixture
 from scipy.stats import norm
 from skimage.measure import block_reduce
 
-useChannels = True
+neighborhoods = False
 ball_tree = None
 database = None
 datasource = None
@@ -60,8 +60,9 @@ log_norm_neighborhood = False
 
 
 def init(datasource_name, isChannels=True):
-    global useChannels
-    useChannels = isChannels;
+    global neighborhoods
+    #if we dont use channel data we work with phenotypes and neighborhoods
+    neighborhoods = not isChannels;
     load_datasource(datasource_name)
 
 #gater
@@ -76,6 +77,7 @@ def load_datasource(datasource_name, reload=False):
     global metadata
     global zarr_perm_matrix
     global np_datasource
+    global neighborhoods
     if source is datasource_name and datasource is not None and reload is False:
         return
     load_config(datasource_name)
@@ -95,31 +97,37 @@ def load_datasource(datasource_name, reload=False):
     else:
         linked = config[datasource_name]['linkedDatasets']
     for ds in linked:
-        if 'neighborhoods' not in config[ds]:
-            print('No Neighborhood')
-            matrix_file_name = ds + "_matrix.pk"
-            matrix_paths = Path(
-                data_path) / ds / matrix_file_name
-            perm_data = get_perm_data(ds, matrix_paths)
-            print('Creating Matrix', ds)
-            matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
-                                   perm_data['distances'], numba.typed.List(perm_data['lengths']))
+        if (neighborhoods):
+            if 'neighborhoods' not in config[ds]:
+                print('No Neighborhood')
+                matrix_file_name = ds + "_matrix.pk"
+                matrix_paths = Path(
+                    data_path) / ds / matrix_file_name
 
-            matrix[np.isnan(matrix)] = 0
+                #create permutation
+                # print('Create Permutations', ds)
+                perm_data = get_perm_data(ds, matrix_paths)
 
-            print('Created Matrix', ds)
-            neighborhood_path = Path(
-                data_path) / ds / 'neighborhood.npy'
+                #create pairwise interaction matrix
+                print('Creating Matrix', ds)
+                matrix = create_matrix(perm_data['phenotypes_array'], perm_data['len_phenos'], perm_data['neighbors'],
+                                       perm_data['distances'], numba.typed.List(perm_data['lengths']))
 
-            np.save(neighborhood_path, matrix)
-            config[ds]['neighborhoods'] = str(neighborhood_path)
-            save_config()
+                matrix[np.isnan(matrix)] = 0
 
-    if 'embedding' not in config[datasource_name]:
-        if 'linkedDatasets' not in config[datasource_name]:
-            create_embedding([datasource_name])
-        else:
-            create_embedding(config[datasource_name]['linkedDatasets'])
+                neighborhood_path = Path(
+                    data_path) / ds / 'neighborhood.npy'
+
+                np.save(neighborhood_path, matrix)
+                config[ds]['neighborhoods'] = str(neighborhood_path)
+
+                save_config()
+    if (neighborhoods):
+        if 'embedding' not in config[datasource_name]:
+            if 'linkedDatasets' not in config[datasource_name]:
+                create_embedding([datasource_name])
+            else:
+                create_embedding(config[datasource_name]['linkedDatasets'])
 
 
     np_datasource = load_csv(datasource_name, numpy=True)
@@ -166,21 +174,28 @@ def load_datasource(datasource_name, reload=False):
 def load_csv(datasource_name, numpy=False):
     print("def:load_csv")
     global config
-    global useChannels
-    numpy_file_name = datasource_name + "_np.npy"
+    global neighborhoods
+
+    #for visinity we store an extra file that does not contain the channels..
+    if (neighborhoods):
+        numpy_file_name = datasource_name + "visinity_np.npy"
+    else:
+        numpy_file_name = datasource_name + "_np.npy"
+
     numpy_path = Path(
         data_path) / datasource_name / numpy_file_name
     if numpy:
         if numpy_path.is_file():
-            return np.load(numpy_path, allow_pickle=True)
+            dat = np.load(numpy_path, allow_pickle=True)
+            return dat
 
     csvPath = Path(config[datasource_name]['featureData'][0]['src'])
 
     df = pd.read_csv(csvPath, index_col=None)
     # df = dd.read_csv(csvPath, assume_missing=True).set_index('id')
-    
+
     #Visinity drops channels but we need them...
-    if (not useChannels):
+    if (neighborhoods):
         df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
     df['id'] = df.index
     # df['Cluster'] = embedding[:, -1].astype('int32').tolist()
@@ -1819,7 +1834,7 @@ def get_datasource_description(datasource_name, isFull=False):
     global source
     global ball_tree
     global config
-    global useChannels
+    global neighborhoods
 
     # Load if not loaded
     if datasource_name != source:
@@ -1840,7 +1855,7 @@ def get_datasource_description(datasource_name, isFull=False):
 
     list_channels = config[datasource_name]['imageData']
     image_layer = 0
-    if (useChannels):
+    if (not neighborhoods):
         for channel in list_channels:
             if channel['name'] != 'Area':
                 fullName = channel['fullname']
