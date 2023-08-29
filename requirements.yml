@@ -23,11 +23,11 @@ dependencies:
   - waitress
   - werkzeug=2.2.2
   - zarr=2.10
-  - pydantic
 
   - pip:
       - opencv-python==4.7.0.68
       - imagecodecs[all]
       - xmlschema
-
+      - pydantic
+      - xsdata-pydantic[cli]
 
