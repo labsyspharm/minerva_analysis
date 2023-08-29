@@ -28,4 +28,5 @@ dependencies:
       - opencv-python==4.7.0.68
       - imagecodecs[all]
       - xmlschema
+      - pydantic == 1.10.10
 
