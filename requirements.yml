@@ -1,4 +1,4 @@
-name: minerva_analysis
+name: test4
 channels:
   - conda-forge
 dependencies:
@@ -8,7 +8,6 @@ dependencies:
   - itsdangerous=2.1.2
   - jinja2
   - numpy
-  - ome-types=0.3.3
   - orjson
   - pandas
   - pillow=8.1
@@ -28,5 +27,6 @@ dependencies:
       - opencv-python==4.7.0.68
       - imagecodecs[all]
       - xmlschema
-      - pydantic == 1.10.10
+      - ome-types==0.3.3
+      - pydantic==1.10.10
 
