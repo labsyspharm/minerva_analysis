@@ -90,7 +90,7 @@ class DataLayer {
         }
     }
 
-    downloadGatingCSV(channels, selections, selection_ids, fullCsv = false) {
+    downloadGatingCSV(channels, selections, lassos, selection_ids, fullCsv = false) {
         let form = document.createElement("form");
         form.action = "/download_gating_csv";
 
@@ -133,6 +133,12 @@ class DataLayer {
         channelsElement.name = "channels";
         form.appendChild(channelsElement);
 
+        let lassosElement = document.createElement("input");
+        lassosElement.type = "hidden";
+        lassosElement.value = JSON.stringify(lassos);
+        lassosElement.name = "lassos";
+        form.appendChild(lassosElement);
+
         let idsElement = document.createElement("input");
         idsElement.type = "hidden";
         idsElement.value = JSON.stringify(selection_ids);
@@ -149,7 +155,7 @@ class DataLayer {
         form.submit()
     }
 
-    async saveGatingList(channels, selections) {
+    async saveGatingList(channels, selections, lassos) {
         const self = this;
         try {
             let response = await fetch('/save_gating_list', {
@@ -162,7 +168,8 @@ class DataLayer {
                     {
                         datasource: datasource,
                         filter: selections,
-                        channels: channels
+                        channels: channels,
+                        lassos: lassos
                     }
                 )
             });
@@ -592,6 +599,28 @@ class DataLayer {
             return cells;
         } catch (e) {
             console.log("Error Getting Polygon Cells", e);
+        }
+    }
+
+    async getCellsInLassos(list_lassos) {
+        try {
+            let response = await fetch('/get_cells_in_lassos', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        list_lassos: list_lassos,
+                    }
+                )
+            });
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Cells in Lassos", e);
         }
     }
 

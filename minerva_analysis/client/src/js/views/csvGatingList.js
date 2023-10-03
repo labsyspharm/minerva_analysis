@@ -261,40 +261,55 @@ class CSVGatingList {
         }
 
         this.eventHandler.trigger(CSVGatingList.events.RESET_GATINGLIST)
-
-        _.each(gates, col => {
-            let shortName = this.dataLayer.getShortChannelName(col.channel);
-            let channelID = this.gatingIDs[shortName];
-            if (this.sliders.get(shortName)) {
-                let toggle_off
-                if (!col.gate_active && col.channel in this.selections) {
-                    toggle_off = true;
-                } else {
-                    toggle_off = false;
-                }
-                this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
-                if (col.gate_active) {
-                    // IF the channel isn't active, make it so
-                    if (!this.selections[col.channel]) {
-                        let selector = `#csv_gating-slider_${channelID}`;
-                        document.querySelector(selector).click();
+         let list_uploaded_lassos = [];
+        _.each(gates, async (col) => {
+            if (col.channel == 'Lasso') {
+                list_uploaded_lassos.push(col);
+            } else {
+                let shortName = this.dataLayer.getShortChannelName(col.channel);
+                let channelID = this.gatingIDs[shortName];
+                if (this.sliders.get(shortName)) {
+                    let toggle_off
+                    if (!col.gate_active && col.channel in this.selections) {
+                        toggle_off = true;
+                    } else {
+                        toggle_off = false;
                     }
-                    this.selections[col.channel] = [col.gate_start, col.gate_end];
+                    this.gating_channels[col.channel] = [col.gate_start, col.gate_end];
+                    if (col.gate_active) {
+                        // IF the channel isn't active, make it so
+                        if (!this.selections[col.channel]) {
+                            let selector = `#csv_gating-slider_${channelID}`;
+                            document.querySelector(selector).click();
+                        }
+                        this.selections[col.channel] = [col.gate_start, col.gate_end];
 
-                    // For records
+                        // For records
 
-                } else {
-                    // If channel is currently active, but shouldn't be, update it
-                    if (toggle_off) {
-                        let selector = `#csv_gating-slider_${channelID}`;
-                        document.querySelector(selector).click();
+                    } else {
+                        // If channel is currently active, but shouldn't be, update it
+                        if (toggle_off) {
+                            let selector = `#csv_gating-slider_${channelID}`;
+                            document.querySelector(selector).click();
+                        }
+                        delete this.selections[col.channel];
                     }
-                    delete this.selections[col.channel];
                 }
             }
         })
         // Trigger brush
         this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+
+        await this.seaDragonViewer.clear_lassos();
+        if (source === 'file'){
+            list_uploaded_lassos = list_uploaded_lassos.map(item => {
+                item['gate_start'] = JSON.parse(item['gate_start'].replace(/'/g, '"'));
+                return item;
+            });
+        }
+        for (let lasso of list_uploaded_lassos){
+            await this.seaDragonViewer.upload_lasso(lasso);
+        }
     }
 
     /**
@@ -421,7 +436,7 @@ class CSVGatingList {
         // Events ::
 
         gating_download_icon_db.addEventListener('click', () => {
-            this.dataLayer.saveGatingList(this.gating_channels, this.selections, false);
+            this.dataLayer.saveGatingList(this.gating_channels, this.selections, this.seaDragonViewer.list_lassos);
             alert("Saved Gating to Database");
         })
 
@@ -447,12 +462,12 @@ class CSVGatingList {
 
         // Download gated channel ranges
         download_gated_channel_ranges.addEventListener('click', () => {
-            this.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, false);
+            this.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, this.seaDragonViewer.list_lassos,false);
         })
 
         // Download gated channel ranges
         download_gated_cell_encodings.addEventListener('click', () => {
-            this.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, this.seaDragonViewer.selection_ids, true);
+            this.dataLayer.downloadGatingCSV(this.gating_channels, this.selections, this.seaDragonViewer.list_lassos, this.seaDragonViewer.selection_ids, true);
         })
 
         // Toggle outlined / filled cell selections

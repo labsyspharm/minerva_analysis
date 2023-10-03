@@ -515,7 +515,7 @@ def download_gating_csv(datasource_name, gates, channels, selection_ids, encodin
     return csv
 
 
-def download_gates(datasource_name, gates, channels):
+def download_gates(datasource_name, gates, channels, lassos):
     global datasource
     global source
     global ball_tree
@@ -533,10 +533,17 @@ def download_gates(datasource_name, gates, channels):
         csv.loc[csv['channel'] == channel, 'gate_active'] = True
         csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
         csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
+
+    if len(lassos) > 0:
+        csv_count = 0
+        for key, value in lassos.items():
+            csv.loc[len(csv)+csv_count] = ['Lasso', value['lasso_polygon'], np.nan, value['lasso_toggle']]
+            csv_count+=1
+
     return csv
 
 
-def save_gating_list(datasource_name, gates, channels):
+def save_gating_list(datasource_name, gates, channels, lassos):
     global datasource
     global source
     global ball_tree
@@ -554,6 +561,12 @@ def save_gating_list(datasource_name, gates, channels):
         csv.loc[csv['channel'] == channel, 'gate_active'] = True
         csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
         csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
+
+    if len(lassos) > 0:
+        csv_count = 0
+        for key, value in lassos.items():
+            csv.loc[len(csv)+csv_count] = ['Lasso', value['lasso_polygon'], np.nan, value['lasso_toggle']]
+            csv_count+=1
 
     temp = csv.to_dict(orient='records')
     f = pickle.dumps(temp, protocol=4)
@@ -923,11 +936,29 @@ def get_cells_in_polygon(datasource_name, points):
     neighbor_ids = neighbor_points[np.where(inside == True), 0].astype('int').flatten().tolist()
     neighbor_ids.sort()
 
-    neighbor_ids_subtract = list(set(datasource['CellID']) - set(neighbor_ids))
-    neighbor_ids_subtract.sort()
+    packet = neighbor_ids
+    return packet
 
-    packet = {}
-    packet['list_ids'] = neighbor_ids
-    packet['list_ids_subtract'] = neighbor_ids_subtract
+def get_cells_in_lassos(datasource_name, list_lassos):
+    global config
+    global datasource
+    global ball_tree
 
+    if datasource_name != source:
+        load_datasource(datasource_name)
+
+    list_lassos_active = {k: v for k, v in list_lassos.items() if v.get('lasso_toggle') == True}
+
+    list_ids = []
+    list_ids_subtract = []
+    for v in list_lassos_active.values():
+        list_ids.extend(v.get('lasso_ids', []))
+        list_ids_subtract.extend(v.get('lasso_ids_subtract', []))
+    list_ids = list(set(list_ids))
+    list_ids.sort()
+
+    list_ids_subtract = list(set(datasource['CellID']) - set(list_ids))
+    list_ids_subtract.sort()
+
+    packet = {'lasso_ids': list_ids, 'lasso_ids_subtract': list_ids_subtract}
     return packet

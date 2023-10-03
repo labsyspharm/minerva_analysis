@@ -33,11 +33,13 @@ class ImageViewer {
         this._cacheKeys = {};
         this._picking = [];
         this.pickedId = -1;
-        this.lasso_toggle = false;
-        this.lasso_ids = {};
-        this.lasso_ids_subtact = {};
-        this.selection_ids = [];
-        this.lasso_init = false;
+
+        this.list_lassos = {};
+        this.count_lassos = 0;
+        this.lasso_selections = {
+            lasso_ids : [],
+            lasso_ids_subtract : []
+        };
         this.toggle_bool = true;
 
         // Viewer
@@ -387,7 +389,7 @@ class ImageViewer {
             }
         });
 
-                //SELECTION POLYGON (LASSO)
+        //LASSO SELECTION POLYGON
         let that = this;
         that.svg_overlay = that.viewer.svgOverlay()
         that.overlay = d3.select(that.svg_overlay.node())
@@ -399,6 +401,7 @@ class ImageViewer {
         that.isSelectionToolActive = true;
 
         that.lasso_draw = function (event) {
+            let id_polygon = "polygon_" + this.count_lassos;
             //add points to polygon and (re)draw
             let webPoint = event.position;
             if (that.numCalls % 5 == 0) {
@@ -411,10 +414,12 @@ class ImageViewer {
                 that.polygonSelection.push({'imagePoints': imagePoint, 'viewportPoints': viewportPoint});
             }
 
-            d3.select('#selectionPolygon').remove();
-            var selPoly = that.overlay.selectAll("selectionPolygon").data([that.polygonSelection]);
+            d3.select('#'+id_polygon).remove();
+
+            let selPoly = that.overlay.selectAll(id_polygon).data([that.polygonSelection]);
             selPoly.enter().append("polygon")
-                .attr('id', 'selectionPolygon')
+                .attr('id', id_polygon)
+                .attr('class', 'lasso_polygon')
                 .attr("points", function (d) {
                     return d.map(function (d) {
                         return [d.viewportPoints.x, d.viewportPoints.y].join(",");
@@ -439,7 +444,6 @@ class ImageViewer {
                     }
                     if (!that.isSelectionToolActive) {
                         d3.select('#selectionPolygon').remove();
-
                     }
                     that.polygonSelection = [];
                     that.numCalls = 0;
@@ -452,42 +456,7 @@ class ImageViewer {
                     if (that.isSelectionToolActive) {
                         that.lasso_end(event);
                         if (_.size(that.polygonSelection) > 2) {
-                            // that.showLoader();
-                            return dataLayer.getCellsInPolygon(that.polygonSelection)
-                                .then(packet =>{
-                                    this.lasso_toggle = true;
-                                    this.selection_ids = packet['list_ids'];
-                                    this.lasso_ids = packet['list_ids'];
-                                    this.lasso_ids_subtact = packet['list_ids_subtract'];
-                                    this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids});
-                                    if(!this.lasso_init){
-                                        $('#gating_list_ul').prepend("<div id='lasso-btn' " +
-                                            "class='list-group-item container gating-list-content' " +
-                                            "style='color: orange; border-bottom: 1px solid rgba(255, 255, 255, 0.5);'>" +
-                                            "Lasso Selection" +
-                                            "<button id='lasso-toggle' >toggle</button>" +
-                                            "</div>"
-                                        );
-                                        document.getElementById('lasso-btn').addEventListener("click", e => {
-                                            return this.toggleLasso();
-                                        })
-                                        const toggle_lasso = document.querySelector("#lasso-toggle");
-                                        this.toggle_bool = true;
-                                        toggle_lasso.addEventListener("click", (e) => {
-                                            if(this.toggle_bool){
-                                                this.toggle_bool = false;
-                                                this.selection_ids = this.lasso_ids_subtact;
-                                                this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids_subtact});
-                                            } else{
-                                                this.toggle_bool = true;
-                                                this.selection_ids = this.lasso_ids;
-                                                this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids});
-                                            }
-                                        });
-                                        toggle_lasso.addEventListener("click", e => e.stopPropagation());
-                                        this.lasso_init = true;
-                                    }
-                                })
+                            return that.draw_lasso(that.polygonSelection);
                         }
                     }
                 }
@@ -576,32 +545,156 @@ class ImageViewer {
         this.idCount = ids.length;
         this.ready = true;
         await this.forceRepaint();
+
+        const toggle_lasso_plus = document.querySelector("#lasso_selection_toggle_plus");
+        toggle_lasso_plus.addEventListener("click", (e) => {
+            this.toggle_bool = false;
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids_subtract});
+
+            document.getElementById("lasso_selection_toggle_plus").style.display = "none";
+            document.getElementById("lasso_selection_toggle_minus").style.display = "";
+        });
+        toggle_lasso_plus.addEventListener("click", e => e.stopPropagation());
+
+        const toggle_lasso_minus = document.querySelector("#lasso_selection_toggle_minus");
+        toggle_lasso_minus.addEventListener("click", (e) => {
+            this.toggle_bool = true;
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids});
+
+            document.getElementById("lasso_selection_toggle_minus").style.display = "none";
+            document.getElementById("lasso_selection_toggle_plus").style.display = "";
+        });
+        toggle_lasso_minus.addEventListener("click", e => e.stopPropagation());
+    }
+
+    async draw_lasso(polygonSelection){
+        let id_polygon = "polygon_" + this.count_lassos;
+        let id_polygon_selection = id_polygon + "_selection"
+        let id_polygon_delete = id_polygon + "_delete"
+        this.count_lassos++;
+
+        this.lasso_ids = await this.dataLayer.getCellsInPolygon(polygonSelection)
+        this.list_lassos[id_polygon] = {
+            lasso_polygon: polygonSelection,
+            lasso_ids : this.lasso_ids,
+            lasso_toggle : true,
+        }
+
+        this.cells_in_lassos = await this.dataLayer.getCellsInLassos(this.list_lassos);
+        this.lasso_selections.lasso_ids = this.cells_in_lassos['lasso_ids']
+        this.lasso_selections.lasso_ids_subtract = this.cells_in_lassos['lasso_ids_subtract']
+
+        if(this.toggle_bool){
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids});
+        } else{
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids_subtract});
+        }
+
+        $('#gating_list_ul').prepend("<div id="+id_polygon_selection+" "+
+            "class='list-group-item container gating-list-content' " +
+            "style='color: orange; border-bottom: 1px solid rgba(255, 255, 255, 0.5);'>" +
+            "Lasso Selection" +
+            "<button id="+id_polygon_delete+" class='btn_lasso_delete'>x</button>" +
+            "</div>"
+        );
+
+        let btn_lasso_delete = document.getElementById(id_polygon_delete)
+        btn_lasso_delete.addEventListener("click", async () => {
+            return this.delete_lasso(id_polygon)
+        });
+        btn_lasso_delete.addEventListener("click", e => e.stopPropagation());
+
+        document.getElementById(id_polygon_selection).addEventListener("mouseover", e => {
+            if (this.list_lassos[id_polygon].lasso_toggle === true) {
+                $('#'+id_polygon).css('stroke-width', '6px');
+            } else {
+                $('#'+id_polygon).css('stroke-width', '3px');
+                $('#'+id_polygon).css('stroke', 'orange');
+            }
+        })
+
+        document.getElementById(id_polygon_selection).addEventListener("mouseout", e => {
+            if (this.list_lassos[id_polygon].lasso_toggle === true) {
+                $('#'+id_polygon).css('stroke-width', '3px');
+            } else {
+                $('#'+id_polygon).css('stroke', 'none');
+            }
+        })
+
+        document.getElementById(id_polygon_selection).addEventListener("click", async () => {
+            return this.toggle_lasso(id_polygon, id_polygon_selection);
+        })
+    }
+
+    async clear_lassos(){
+        for (let polygon in this.list_lassos) {
+            await this.delete_lasso(polygon);
+        }
+        this.count_lassos = 0;
+    }
+
+    async upload_lasso(selection){
+        let polygonSelection = selection['gate_start']
+        let id_polygon = 'polygon_' + this.count_lassos
+        let selPoly = this.overlay.selectAll(id_polygon).data([polygonSelection]);
+        selPoly.enter().append("polygon")
+            .attr('id', id_polygon)
+            .attr('class', 'lasso_polygon')
+            .attr("points", function (d) {
+                return d.map(function (d) {
+                    return [d.viewportPoints.x, d.viewportPoints.y].join(",");
+                }).join(" ");
+            })
+
+        await this.draw_lasso(polygonSelection)
+        if (!selection['gate_active']){
+            this.toggle_lasso(id_polygon, id_polygon+"_selection");
+        }
     }
 
     /**
-     * @function toggleLasso - Toggle on and off the lasso selection.
+     * @function toggle_lasso - Toggle on and off the lasso selection.
      * @returns string
      */
-     toggleLasso(){
-        if (this.lasso_toggle){
-            this.lasso_toggle = false;
-            this.eventHandler.trigger(ImageViewer.events.clearImageLasso);
+     async toggle_lasso(id_polygon, id_polygon_selection){
+        if (this.list_lassos[id_polygon].lasso_toggle){
+            this.list_lassos[id_polygon].lasso_toggle = false;
 
-            d3.select('#selectionPolygon').style('stroke', 'none')
-            d3.select('#lasso-btn').style("color", "white")
-            d3.select('#lasso-toggle').style('visibility', 'hidden')
+            d3.select('#'+id_polygon).style('stroke', 'none')
+            d3.select('#'+id_polygon_selection).style("color", "white")
 
         } else {
-            this.lasso_toggle = true;
-            if(this.toggle_bool){
-                this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids});
-            } else{
-                this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_ids_subtact});
-            }
+            this.list_lassos[id_polygon].lasso_toggle = true;
 
-            d3.select('#selectionPolygon').style('stroke', 'orange')
-            d3.select('#lasso-btn').style("color", "orange")
-            d3.select('#lasso-toggle').style('visibility', 'visible')
+            d3.select('#'+id_polygon).style('stroke', 'orange')
+            d3.select('#'+id_polygon_selection).style("color", "orange")
+        }
+
+        this.cells_in_lassos = await this.dataLayer.getCellsInLassos(this.list_lassos);
+        this.lasso_selections.lasso_ids = this.cells_in_lassos['lasso_ids']
+        this.lasso_selections.lasso_ids_subtract = this.cells_in_lassos['lasso_ids_subtract']
+
+        if(this.toggle_bool){
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids});
+        } else{
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids_subtract});
+        }
+    }
+
+    async delete_lasso(id_polygon) {
+         let id_polygon_selection = id_polygon + "_selection"
+        d3.select('#'+id_polygon).remove();
+        delete this.list_lassos[id_polygon];
+        d3.select('#'+id_polygon_selection).remove();
+
+        this.cells_in_lassos = await this.dataLayer.getCellsInLassos(this.list_lassos);
+        this.lasso_selections.lasso_ids = this.cells_in_lassos['lasso_ids']
+        this.lasso_selections.lasso_ids_subtract = this.cells_in_lassos['lasso_ids_subtract']
+
+        if(this.toggle_bool){
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids});
+        } else{
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids_subtract});
         }
     }
 

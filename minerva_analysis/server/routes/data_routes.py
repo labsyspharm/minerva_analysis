@@ -222,6 +222,7 @@ def download_gating_csv():
 
     filter = json.loads(request.form['filter'])
     channels = json.loads(request.form['channels'])
+    lassos = json.loads(request.form['lassos'])
     selection_ids = json.loads(request.form['selection_ids'])
     fullCsv = json.loads(request.form['fullCsv'])
     encoding = request.form['encoding']
@@ -233,7 +234,7 @@ def download_gating_csv():
             headers={"Content-disposition":
                          "attachment; filename=" + filename + ".csv"})
     else:
-        csv = data_model.download_gates(datasource, filter, channels)
+        csv = data_model.download_gates(datasource, filter, channels, lassos)
         return Response(
             csv.to_csv(index=False),
             mimetype="text/csv",
@@ -247,8 +248,9 @@ def save_gating_list():
     datasource = post_data['datasource']
     filter = post_data['filter']
     channels = post_data['channels']
+    lassos = post_data['lassos']
 
-    data_model.save_gating_list(datasource, filter, channels)
+    data_model.save_gating_list(datasource, filter, channels, lassos)
 
     resp = jsonify(success=True)
     return resp
@@ -343,4 +345,12 @@ def get_cells_in_polygon():
     datasource = post_data['datasource']
     points = post_data['points']
     resp = data_model.get_cells_in_polygon(datasource, points)
+    return serialize_and_submit_json(resp)
+
+@app.route('/get_cells_in_lassos', methods=['POST'])
+def get_cells_in_lassos():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    list_lassos = post_data['list_lassos']
+    resp = data_model.get_cells_in_lassos(datasource, list_lassos)
     return serialize_and_submit_json(resp)
