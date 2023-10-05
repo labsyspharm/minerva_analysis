@@ -318,7 +318,7 @@ class CSVGatingList {
      */
     async autoGate(shortName) {
         const fullName = this.dataLayer.getFullChannelName(shortName);
-        const input = (await this.getGatingGMM(fullName, this.seaDragonViewer.selection_ids)).gate.toFixed(7);
+        const input = this.hasGatingGMM[shortName]['gate'].toFixed(7);
         const transformed = this.dataLayer.isTransformed();
         const gate = transformed ? parseFloat(input) : parseInt(input);
         if (fullName in this.selections) {
