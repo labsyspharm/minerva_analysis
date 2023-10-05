@@ -90,7 +90,7 @@ class DataLayer {
         }
     }
 
-    downloadGatingCSV(channels, selections, fullCsv = false) {
+    downloadGatingCSV(channels, selections, lassos, selection_ids, fullCsv = false) {
         let form = document.createElement("form");
         form.action = "/download_gating_csv";
 
@@ -133,17 +133,29 @@ class DataLayer {
         channelsElement.name = "channels";
         form.appendChild(channelsElement);
 
+        let lassosElement = document.createElement("input");
+        lassosElement.type = "hidden";
+        lassosElement.value = JSON.stringify(lassos);
+        lassosElement.name = "lassos";
+        form.appendChild(lassosElement);
+
+        let idsElement = document.createElement("input");
+        idsElement.type = "hidden";
+        idsElement.value = JSON.stringify(selection_ids);
+        idsElement.name = "selection_ids";
+        form.appendChild(idsElement);
+
         let datasourceElement = document.createElement("input");
         datasourceElement.type = "hidden";
         datasourceElement.value = datasource;
         datasourceElement.name = "datasource";
         form.appendChild(datasourceElement);
+
         document.body.appendChild(form);
         form.submit()
-
     }
 
-    async saveGatingList(channels, selections) {
+    async saveGatingList(channels, selections, lassos) {
         const self = this;
         try {
             let response = await fetch('/save_gating_list', {
@@ -156,7 +168,8 @@ class DataLayer {
                     {
                         datasource: datasource,
                         filter: selections,
-                        channels: channels
+                        channels: channels,
+                        lassos: lassos
                     }
                 )
             });
@@ -363,12 +376,22 @@ class DataLayer {
         }
     }
 
-    async getGatingGMM(channel) {
+    async getGatingGMM(channel, selection_ids) {
         try {
-            let response = await fetch('/get_gating_gmm?' + new URLSearchParams({
-                channel: channel,
-                datasource: datasource
-            }))
+            let response = await fetch('/get_gating_gmm', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        channel: channel,
+                        datasource: datasource,
+                        selection_ids: selection_ids
+                    }
+                )
+            });
             let packet_gmm = await response.json();
             return packet_gmm;
         } catch (e) {
@@ -555,6 +578,50 @@ class DataLayer {
           return true;
       }
       return false;
+    }
+
+     async getCellsInPolygon(points) {
+        try {
+            let response = await fetch('/get_cells_in_polygon', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        points: points,
+                    }
+                )
+            });
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Polygon Cells", e);
+        }
+    }
+
+    async getCellsInLassos(list_lassos) {
+        try {
+            let response = await fetch('/get_cells_in_lassos', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        list_lassos: list_lassos,
+                    }
+                )
+            });
+            let cells = await response.json();
+            return cells;
+        } catch (e) {
+            console.log("Error Getting Cells in Lassos", e);
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-name: test4
+name: minerva_analysis
 channels:
   - conda-forge
 dependencies:
@@ -7,7 +7,9 @@ dependencies:
   - flask-sqlalchemy=3.0.2
   - itsdangerous=2.1.2
   - jinja2
+  - matplotlib
   - numpy
+  - ome-types
   - orjson
   - pandas
   - pillow=8.1
@@ -16,7 +18,7 @@ dependencies:
   - python=3.9.15
   - requests
   - scikit-image
-  - scikit-learn
+  - scikit-learn=1.2.2
   - scipy
   - tifffile=2021.4.8
   - waitress

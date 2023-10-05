@@ -1,4 +1,5 @@
 from sklearn.neighbors import BallTree
+from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import pandas as pd
 from PIL import ImageColor
@@ -11,6 +12,9 @@ from ome_types import from_xml
 from minerva_analysis import config_json_path, data_path, cwd_path
 from minerva_analysis.server.utils import pyramid_assemble, pyramid_upgrade
 from minerva_analysis.server.models import database_model
+from minerva_analysis.server.utils import smallestenclosingcircle
+import matplotlib.path as mpltPath
+from itertools import chain
 import dateutil.parser
 import time
 import pickle
@@ -468,7 +472,7 @@ def get_all_cells(datasource_name, start_keys, data_type=float):
     return query.astype(np.float32)
 
 
-def download_gating_csv(datasource_name, gates, channels, encoding):
+def download_gating_csv(datasource_name, gates, channels, selection_ids, encoding):
     global datasource
     global source
     global ball_tree
@@ -477,35 +481,41 @@ def download_gating_csv(datasource_name, gates, channels, encoding):
     if datasource_name != source:
         load_ball_tree(datasource_name)
 
-    query_string = ''
+    csv = datasource.copy()
+    datasource_filter = datasource.copy()
+
     columns = []
-    for key, value in gates.items():
-        columns.append(key)
-        if query_string != '':
-            query_string += ' and '
-        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
-    ids = datasource.query(query_string)[['id']].to_numpy().flatten()
     if 'idField' in config[datasource_name]['featureData'][0]:
         idField = config[datasource_name]['featureData'][0]['idField']
     else:
         idField = "CellID"
     columns.append(idField)
 
-    csv = datasource.copy()
+    if selection_ids:
+        datasource_filter = datasource_filter[datasource_filter[idField].isin(selection_ids)]
 
-    csv[idField] = datasource['id']
+    query_string = ''
+    for key, value in gates.items():
+        columns.append(key)
+        if query_string != '':
+            query_string += ' and '
+        query_string += str(value[0]) + ' < `' + key + '` < ' + str(value[1])
+    ids = datasource_filter.query(query_string)[['id']].to_numpy().flatten()
+
+    if 'Area' in channels:
+        del channels['Area']
     for channel in channels:
         if channel in gates:
             if encoding == 'binary':
-                csv.loc[csv[idField].isin(ids), channel] = 1
-            csv.loc[~csv[idField].isin(ids), channel] = 0
+                csv.loc[csv.index.isin(ids), channel] = 1
+            csv.loc[~csv.index.isin(ids), channel] = 0
         else:
             csv[channel] = 0
 
     return csv
 
 
-def download_gates(datasource_name, gates, channels):
+def download_gates(datasource_name, gates, channels, lassos):
     global datasource
     global source
     global ball_tree
@@ -523,10 +533,17 @@ def download_gates(datasource_name, gates, channels):
         csv.loc[csv['channel'] == channel, 'gate_active'] = True
         csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
         csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
+
+    if len(lassos) > 0:
+        csv_count = 0
+        for key, value in lassos.items():
+            csv.loc[len(csv)+csv_count] = ['Lasso', value['lasso_polygon'], np.nan, value['lasso_toggle']]
+            csv_count+=1
+
     return csv
 
 
-def save_gating_list(datasource_name, gates, channels):
+def save_gating_list(datasource_name, gates, channels, lassos):
     global datasource
     global source
     global ball_tree
@@ -544,6 +561,12 @@ def save_gating_list(datasource_name, gates, channels):
         csv.loc[csv['channel'] == channel, 'gate_active'] = True
         csv.loc[csv['channel'] == channel, 'gate_start'] = gates[channel][0]
         csv.loc[csv['channel'] == channel, 'gate_end'] = gates[channel][1]
+
+    if len(lassos) > 0:
+        csv_count = 0
+        for key, value in lassos.items():
+            csv.loc[len(csv)+csv_count] = ['Lasso', value['lasso_polygon'], np.nan, value['lasso_toggle']]
+            csv_count+=1
 
     temp = csv.to_dict(orient='records')
     f = pickle.dumps(temp, protocol=4)
@@ -740,7 +763,7 @@ def get_channel_gmm(channel_name, datasource_name):
     return packet_gmm
 
 
-def get_gating_gmm(channel_name, datasource_name):
+def get_gating_gmm(channel_name, datasource_name, selection_ids):
     global datasource
     global source
     global ball_tree
@@ -753,12 +776,21 @@ def get_gating_gmm(channel_name, datasource_name):
         load_ball_tree(datasource_name)
     description = datasource.describe().to_dict()
 
+    datasource_filter = datasource.copy()
+    if 'idField' in config[datasource_name]['featureData'][0]:
+        idField = config[datasource_name]['featureData'][0]['idField']
+    else:
+        idField = "CellID"
+    if selection_ids:
+        datasource_filter = datasource_filter[datasource_filter[idField].isin(selection_ids)]
+
     column_data = datasource[channel_name].to_numpy()
     [hist, bin_edges] = np.histogram(column_data[~np.isnan(column_data)], bins=50, density=True)
     midpoints = (bin_edges[1:] + bin_edges[:-1]) / 2
 
+    column_data_filtered = datasource_filter[channel_name].to_numpy()
     gmm = GaussianMixture(n_components=2)
-    gmm.fit(column_data.reshape((-1, 1)))
+    gmm.fit(column_data_filtered.reshape((-1, 1)))
     i0, i1 = np.argsort(gmm.means_[:, 0])
     packet_gmm['gate'] = np.mean(gmm.means_)
 
@@ -881,3 +913,52 @@ def logTransform(csvPath, skip_columns=[]):
         if column not in skip_columns:
             df[column] = np.log1p(df[column])
     df.to_csv(csvPath, index=False)
+
+# similar_neighborhood=False, embedding=False
+def get_cells_in_polygon(datasource_name, points):
+    global config
+    global datasource
+    global ball_tree
+
+    if datasource_name != source:
+        load_datasource(datasource_name)
+
+    point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
+    (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
+
+    index = ball_tree.query_radius([[x, y]], r)
+    neighbors = index[0]
+    circle_neighbors = datasource.iloc[neighbors].to_dict(orient='records')
+    neighbor_points = pd.DataFrame(circle_neighbors).values
+
+    path = mpltPath.Path(point_tuples)
+    inside = path.contains_points(neighbor_points[:, [1, 2]].astype('float'))
+    neighbor_ids = neighbor_points[np.where(inside == True), 0].astype('int').flatten().tolist()
+    neighbor_ids.sort()
+
+    packet = neighbor_ids
+    return packet
+
+def get_cells_in_lassos(datasource_name, list_lassos):
+    global config
+    global datasource
+    global ball_tree
+
+    if datasource_name != source:
+        load_datasource(datasource_name)
+
+    list_lassos_active = {k: v for k, v in list_lassos.items() if v.get('lasso_toggle') == True}
+
+    list_ids = []
+    list_ids_subtract = []
+    for v in list_lassos_active.values():
+        list_ids.extend(v.get('lasso_ids', []))
+        list_ids_subtract.extend(v.get('lasso_ids_subtract', []))
+    list_ids = list(set(list_ids))
+    list_ids.sort()
+
+    list_ids_subtract = list(set(datasource['CellID']) - set(list_ids))
+    list_ids_subtract.sort()
+
+    packet = {'lasso_ids': list_ids, 'lasso_ids_subtract': list_ids_subtract}
+    return packet

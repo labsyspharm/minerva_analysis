@@ -464,3 +464,25 @@ label {
 
 .col-svg-wrapper {
 }
+
+.lasso_selection_toggle {
+    float: right;
+    margin-left: auto;
+    margin-top: 3px;
+    margin-right: 20px;
+    color: orange;
+}
+
+.lasso_polygon {
+    fill-opacity: 0;
+    stroke: orange;
+    stroke-width: 3px;
+    vector-effect: non-scaling-stroke;
+}
+
+.btn_lasso_delete {
+    float: right;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: 1px;
+}
