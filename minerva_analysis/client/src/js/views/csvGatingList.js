@@ -322,10 +322,13 @@ class CSVGatingList {
         const transformed = this.dataLayer.isTransformed();
         const gate = transformed ? parseFloat(input) : parseInt(input);
         if (fullName in this.selections) {
+            const channelID = this.gatingIDs[shortName];
             const gate_end = this.selections[fullName][1];
             const slider = this.sliders.get(shortName);
             const values = [gate, gate_end];
             this.moveSliderHandles(slider, values, shortName, 'GATING_BRUSH_END');
+            d3.select('#gating_slider-input_' + channelID + '_0').attr('value', gate)
+            d3.select('#gating_slider-input_' + channelID + '_0').property('value', gate);
         }
     }
 
@@ -589,10 +592,10 @@ class CSVGatingList {
                 const transformed = this.dataLayer.isTransformed();
                 const v0 = transformed ? range[0] : Math.round(range[0]);
                 const v1 = transformed ? range[1] : Math.round(range[1]);
-                d3.select('#gating_slider-input' + channelID + 0).attr('value', v0)
-                d3.select('#gating_slider-input' + channelID + 0).property('value', v0);
-                d3.select('#gating_slider-input' + channelID + 1).attr('value', v1);
-                d3.select('#gating_slider-input' + channelID + 1).property('value', v1);
+                d3.select('#gating_slider-input_' + channelID + '_0').attr('value', v0)
+                d3.select('#gating_slider-input_' + channelID + '_0').property('value', v0);
+                d3.select('#gating_slider-input_' + channelID + '_1').attr('value', v1);
+                d3.select('#gating_slider-input_' + channelID + '_1').property('value', v1);
                 this.moveSliderHandles(sliderSimple, [v0, v1], name, "GATING_BRUSH_MOVE");
             });
 
@@ -653,7 +656,7 @@ class CSVGatingList {
             .style('background', 'none')
             .append('input')
             .attr( 'y', -17)
-            .attr('id', 'gating_slider-input' + channelID + i)
+            .attr('id', 'gating_slider-input_' + channelID + '_' + i)
             .attr('type', 'text')
             .attr('class', 'input')
             .attr('value', () => {
