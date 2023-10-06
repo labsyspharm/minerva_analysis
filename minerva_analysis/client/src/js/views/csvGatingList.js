@@ -143,6 +143,7 @@ class CSVGatingList {
 
             let gatingName = document.createElement("span");
             gatingName.classList.add('gating-name');
+            gatingName.classList.add('list-button');
             gatingName.textContent = column;
             nameCol.appendChild(gatingName);
             listItemParentDiv.addEventListener("click", e => {

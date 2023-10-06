@@ -593,7 +593,7 @@ class ImageViewer {
         $('#gating_list_ul').prepend("<div id="+id_polygon_selection+" "+
             "class='list-group-item container gating-list-content' " +
             "style='color: orange; border-bottom: 1px solid rgba(255, 255, 255, 0.5);'>" +
-            "Lasso Selection" +
+            "<span class='list-button'> Lasso Selection </span>" +
             "<button id="+id_polygon_delete+" class='btn_lasso_delete'>x</button>" +
             "</div>"
         );

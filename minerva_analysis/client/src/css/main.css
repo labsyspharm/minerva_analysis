@@ -170,6 +170,10 @@ body {
     margin-left: 33px;
 }
 
+.list-button {
+    cursor: pointer;
+}
+
 .auto-loading {
     opacity: 50%;
 }
@@ -471,6 +475,7 @@ label {
     margin-top: 3px;
     margin-right: 20px;
     color: orange;
+    cursor: pointer;
 }
 
 .lasso_polygon {

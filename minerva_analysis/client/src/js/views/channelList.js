@@ -219,6 +219,7 @@ class ChannelList {
 
             let channelName = document.createElement("span");
             channelName.classList.add("channel-name");
+            channelName.classList.add("list-button");
             channelName.textContent = column;
             nameCol.appendChild(channelName);
 
