@@ -27,7 +27,7 @@ dependencies:
 
   - pip:
       - opencv-python==4.7.0.68
-      - imagecodecs[all]
+      - imagecodecs[all]==2021.4.28
       - xmlschema
       - ome-types==0.3.3
       - pydantic==1.10.10
