@@ -18,6 +18,7 @@ class ChannelList {
         this.eventHandler = eventHandler;
         this.dataLayer = dataLayer;
         this.selections = [];
+        this.hasChannelGMM = {};
         this.ranges = {};
         this.sliders = new Map();
         this.image_channels = {};
@@ -25,7 +26,6 @@ class ChannelList {
         this.currentChannels = {};
         this.rangeConnector = {};
         this.colorConnector = {};
-        this.hasChannelGMM = [];
         this.channelIDs = {};
         this.createColorPicker();
         this.container = d3.select("#channel_list");
@@ -70,8 +70,6 @@ class ChannelList {
      * @param name - the channel to set and display as selected
      */
     selectChannel(name) {
-        this.getAndDrawChannelGMM(name)
-
         let fullName = this.dataLayer.getFullChannelName(name);
         let channelIdx = imageChannels[fullName];
         let channelID = this.channelIDs[name];
@@ -692,10 +690,11 @@ class ChannelList {
  * on window resize we re-initialize (this should be better handled with an update pattern)
  */
 window.addEventListener("resize", function () {
-  const { channelList } = __minervaAnalysis;
+    const { channelList } = __minervaAnalysis;
     if (typeof channelList != "undefined" && channelList) {
-      channelList.sliders.forEach((slider, name) => {
-            d3.select('div#channel-slider_' + name).select('svg').remove();
+        channelList.sliders.forEach((slider, name) => {
+            let channelID = channelList.channelIDs[name]
+            d3.select('div#channel-slider_' + channelID).select('svg').remove();
             const channelListEl = document.getElementById("channel_list");
             if (channelListEl) {
                 const swidth = channelListEl.getBoundingClientRect().width;
@@ -704,7 +703,7 @@ window.addEventListener("resize", function () {
                     channelList.drawChannelGMM(name);
                 }
             }
-        });
+      });
     }
 });
 

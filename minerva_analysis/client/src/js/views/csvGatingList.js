@@ -857,7 +857,8 @@ window.addEventListener("resize", () => {
     const { csv_gatingList } = __minervaAnalysis;
     if (typeof csv_gatingList != "undefined" && csv_gatingList) {
         csv_gatingList.sliders.forEach((slider, name) => {
-            d3.select('div#csv_gating-slider_' + name).select('svg').remove();
+            let gatingID = csv_gatingList.gatingIDs[name]
+            d3.select('div#csv_gating-slider_' + gatingID).select('svg').remove();
             let fullName = csv_gatingList.dataLayer.getFullChannelName(name);
             let sliderRange = [csv_gatingList.databaseDescription[fullName].min, csv_gatingList.databaseDescription[fullName].max];
             const gatingListEl = document.getElementById("csv_gating_list");
