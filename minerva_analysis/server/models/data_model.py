@@ -111,6 +111,9 @@ def load_datasource(datasource_name, reload=False):
     else:
         seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
+    if seg.dtype.kind in 'f':
+        seg = seg.astype('uint32')
+    print('dt',seg.dtype)
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
     metadata = get_ome_metadata(datasource_name)
     channels = zarr.open(channel_io.series[0].aszarr())
@@ -1339,7 +1342,10 @@ def generate_zarr_png(datasource_name, channel, level, tile):
     except AttributeError:
         segmentation = True
     if segmentation:
-        tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
+        if isinstance(seg, zarr.Array):
+            tile = seg[iy:iy + tile_height, ix:ix + tile_width]
+        else:
+            tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
         if tile.dtype.itemsize != 4:
             tile = tile.astype(np.uint32)
         tile = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
@@ -1545,8 +1551,12 @@ def get_neighborhood_stats(datasource_name, indices, np_df, cluster_cells=None, 
         if 'neighborhood_range' in config[datasource_name]:
             neighborhood_range = config[datasource_name]['neighborhood_range']
         else:
-            neighborhood_range = 30  # default 30um
-        r = neighborhood_range / metadata.physical_size_x
+            neighborhood_range = 30
+        # if physical_size_x is not in the metadata, we assume it is in microns
+        if metadata and 'physical_size_x' in metadata:
+            r = neighborhood_range / metadata.physical_size_x
+        else:
+            r = neighborhood_range
         neighbors = ball_tree.query_radius(points, r=r)
         unique_neighbors = np.unique(np.concatenate(neighbors).ravel())
         border_neighbors = np.setdiff1d(unique_neighbors, cluster_cells[:, 0].astype(int))
@@ -1821,7 +1831,11 @@ def get_perm_data(datasource_name, matrix_paths):
         neighborhood_range = int(config[datasource_name]['neighborhood_radius'])
     else:
         neighborhood_range = 30  # Default 30 microns
-    r = neighborhood_range / image_metadata.physical_size_x
+
+    if metadata and 'physical_size_x' in metadata:
+            r = neighborhood_range / metadata.physical_size_x
+    else:
+        r = neighborhood_range
     neighbors, distances = image_ball_tree.query_radius(points, r=r, return_distance=True)
     print('P Query,', time.time() - test)
     test = time.time()
