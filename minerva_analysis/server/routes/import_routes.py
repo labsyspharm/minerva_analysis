@@ -559,7 +559,7 @@ def check_mc_channel_file_existence():
                 mcmicroDirName = pathsSplit[len(pathsSplit) - 1]
 
                 # check if channel file exists
-                channelFile = Path(directory, 'registration', mcmicroDirName + '.ome.tif')
+                channelFile = Path(directory, 'registration', mcmicroDirName + '.ome.tif') or Path(directory, 'registration', mcmicroDirName + '.ome.tiff')
 
                 if channelFile.is_file():
                     return serialize_and_submit_json(True)
