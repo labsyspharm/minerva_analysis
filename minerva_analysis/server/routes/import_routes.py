@@ -211,26 +211,50 @@ def upload_file_page():
                     if request.form.get('mcmicro_name') != '':
                         datasetName = request.form['mcmicro_name']
 
-                    # get label file from user specified path
-                    labelName = request.form['masks']
-                    labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.ome.tif'))
-                    labelFile = PurePath(directory, 'segmentation', labelFolder)
+                    # Given directory, look for all files ending in ome.tif, ome.tiff, .tif, or .tiff
+                    imageFileNames = []
+                    imageFilePaths = []
+                    for path in Path(directory).rglob('*.ome.tif|*ome.tiff|*.tif|*.tiff'):
+                        imageFileNames.append(path.name)
+                        imageFilePaths.append(path)
 
-                    # also check for older seg file format (.tif)
-                    if not Path(directory, 'segmentation', labelFolder).is_file():
-                        labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.tif'))
-                        labelFile = PurePath(directory, 'segmentation', labelFolder)
+                    # This is just to test if the new logic is working; need to go back 
+                        # and connect this to a dropdown menu later
+                    labelFile = imageFilePaths[0]
+                    channelFile = imageFilePaths[1]
 
-                    # get csv file from user specified path
-                    csvName = mcmicroDirName + '--unmicst_' + labelName + '.csv' # could use labelName to have dynamic csv but usually only cell available.
-                    csvPath = str(PurePath(directory, 'quantification', csvName))
+                    csvFileNames= []
+                    csvFilePaths = []
+                    # Given directory, look for all files ending in .csv
+                    for path in Path(directory).rglob('*.csv'):
+                        csvFileNames.append(path.name)
+                        csvFilePaths.append(path)
+                    
+                    # This is just to test if the new logic is working; need to go back 
+                        # and connect this to a dropdown menu later
+                    csvName = csvFileNames[0]
+                    csvPath = csvFilePaths[0]
 
-                    # get channel file from user specified path
-                    channelFile = PurePath(directory, 'registration', mcmicroDirName + '.ome.tif')
+                    # # get label file from user specified path
+                    # labelName = request.form['masks']
+                    # labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.ome.tif'))
+                    # labelFile = PurePath(directory, 'segmentation', labelFolder)
 
-                #further processing
+                    # # also check for older seg file format (.tif)
+                    # if not Path(directory, 'segmentation', labelFolder).is_file():
+                    #     labelFolder = str(PurePath('unmicst-' + mcmicroDirName, labelName + '.tif'))
+                    #     labelFile = PurePath(directory, 'segmentation', labelFolder)
+
+                    # # get csv file from user specified path
+                    # csvName = mcmicroDirName + '--unmicst_' + labelName + '.csv' # could use labelName to have dynamic csv but usually only cell available.
+                    # csvPath = str(PurePath(directory, 'quantification', csvName))
+
+                    # # get channel file from user specified path
+                    # channelFile = PurePath(directory, 'registration', mcmicroDirName + '.ome.tif')
+
+                # Creates file path using name input; should change this so that it just takes directory name?
                 file_path = str(PurePath(Path.cwd(), data_path, datasetName))
-                if not Path(file_path).exists():
+                if not Path(file_path).exists(): # If no directory for existing name for dataset input will create one
                     Path(file_path).mkdir()
                 total_tasks = 2
 
