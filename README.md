@@ -13,7 +13,7 @@ These are executables for Windows and MacOS that can be run locally without any 
 
 
 ## Running as a Docker container
-
+**Note:** When running on an ARM machine (e.g. M1 Macbook), build the image with `docker build --platform linux/amd64 -t gating .`
 * Build image: `docker build -t gating .` 
 * Run image with mounted path: `docker run --rm -dp 8000:8000 -v [source path]:/[target path] gating`
 

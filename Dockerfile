@@ -1,29 +1,31 @@
-FROM python:3.7
+FROM python:3.9.15
 
 RUN apt-get update && \
     apt-get install -y python3-opencv && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install \
-    Flask==1.1.2 \
-    jinja2==3.0.3 \
-    werkzeug==2.0.3 \
-    itsdangerous==2.0.1 \
-    flask-sqlalchemy \
-    numpy \
+    Flask==2.2.2 \
+    jinja2 \
+    werkzeug==2.2.2 \
+    itsdangerous==2.1.2 \
+    flask-sqlalchemy==3.0.2 \
+    numpy==1.26.4 \
     opencv-python \
     orjson \
     pandas \
-    pillow==8.1.1 \
+    pillow==8.1 \
     requests \
-    scikit-learn \
+    scikit-learn==1.2.2 \
     scikit-image \
     scipy \
     tifffile==2021.4.8 \
     waitress \
-    zarr==2.10.3 \
+    zarr==2.10 \
     ome-types \
-    opencv-python==4.5.3.56
+    matplotlib \
+    appdirs \
+    xmlschema
 
 COPY . /app
 
