@@ -29,20 +29,20 @@ jobs:
         if: startsWith(matrix.os,'mac')
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.GATING_PAT }}
+          token: ${{ secrets.GATER_PAT }}
           repository: labsyspharm/gater
           event-type: merge
           client-payload: '{"ref": "${{ github.ref }}"}'
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
         with:
-          bun-version: latest
-      - name: Bun and Webpack
+          node-version: ${{ matrix.node-version }}
+      - name: NPM and Webpack
         run: |
           cd minerva_analysis
           cd client
-          bun install
-          bun run start
+          npm install
+          npm run start
           rm -r node_modules/
           cd ..
           cd ..
