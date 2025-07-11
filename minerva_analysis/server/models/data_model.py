@@ -882,7 +882,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         channel_info['width'] = shape[2]
         channel_info['num_channels'] = shape[0]
         for i in range(shape[0]):
-            channelName = re.sub(r'\.ome|\.tiff|\.tif|\.png', '', filePath.name) + "_" + str(i)
+            channelName = re.sub(r'\.ome\.tiff|\.ome\.tif|\.tiff|\.tif|\.png', '', filePath.name) + "_" + str(i)
             channelNames.append(channelName)
         channel_info['channel_names'] = channelNames
         return channel_info

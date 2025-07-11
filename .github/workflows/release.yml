@@ -33,16 +33,16 @@ jobs:
           repository: labsyspharm/gater
           event-type: merge
           client-payload: '{"ref": "${{ github.ref }}"}'
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: ${{ matrix.node-version }}
-      - name: Node and Webpack
+          bun-version: latest
+      - name: Bun and Webpack
         run: |
           cd minerva_analysis
           cd client
-          npm install
-          npm run start
+          bun install
+          bun run start
           rm -r node_modules/
           cd ..
           cd ..
@@ -52,6 +52,7 @@ jobs:
           environment-file: requirements.yml
           activate-environment: minerva_analysis
           auto-activate-base: false
+          use-mamba: true
 
       - name: Package Windows
         if: startsWith(matrix.os,'windows')
