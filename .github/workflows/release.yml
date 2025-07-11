@@ -25,8 +25,9 @@ jobs:
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v3
+      - name: Create Repository Dispatch
+        if: startsWith(matrix.os,'mac')
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.GATING_PAT }}
           repository: labsyspharm/gater
