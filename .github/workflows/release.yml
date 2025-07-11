@@ -25,11 +25,10 @@ jobs:
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Create Repository Dispatch
-        if: startsWith(matrix.os,'mac')
-        uses: peter-evans/repository-dispatch@v2
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.GATER_PAT }}
+          token: ${{ secrets.GATING_PAT }}
           repository: labsyspharm/gater
           event-type: merge
           client-payload: '{"ref": "${{ github.ref }}"}'
