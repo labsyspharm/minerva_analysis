@@ -29,7 +29,7 @@ jobs:
         if: startsWith(matrix.os,'mac')
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.GATING_PAT }}
+          token: ${{ secrets.GATER_PAT }}
           repository: labsyspharm/gater
           event-type: merge
           client-payload: '{"ref": "${{ github.ref }}"}'
