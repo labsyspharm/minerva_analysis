@@ -20,6 +20,7 @@ dependencies:
   - scikit-image
   - scikit-learn=1.2.2
   - scipy
+  - setuptools>=65.0.0,<81.0.0
   - tifffile=2021.4.8
   - waitress
   - werkzeug=2.2.2

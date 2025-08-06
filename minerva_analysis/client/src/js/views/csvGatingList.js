@@ -284,8 +284,22 @@ class CSVGatingList {
                             document.querySelector(selector).click();
                         }
                         this.selections[col.channel] = [col.gate_start, col.gate_end];
-
-                        // For records
+                        
+                        // Update the slider values to reflect the new gate
+                        const slider = this.sliders.get(shortName);
+                        if (slider) {
+                            // Apply the same data type conversion as in addSlider
+                            const transformed = this.dataLayer.isTransformed();
+                            const v0 = transformed ? col.gate_start : Math.round(col.gate_start);
+                            const v1 = transformed ? col.gate_end : Math.round(col.gate_end);
+                            
+                            slider.silentValue([v0, v1]);
+                            // Update the input fields
+                            d3.select('#gating_slider-input_' + channelID + '_0').attr('value', v0);
+                            d3.select('#gating_slider-input_' + channelID + '_0').property('value', v0);
+                            d3.select('#gating_slider-input_' + channelID + '_1').attr('value', v1);
+                            d3.select('#gating_slider-input_' + channelID + '_1').property('value', v1);
+                        }
 
                     } else {
                         // If channel is currently active, but shouldn't be, update it
