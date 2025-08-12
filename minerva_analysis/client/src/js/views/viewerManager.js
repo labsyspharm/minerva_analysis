@@ -230,6 +230,7 @@ export class ViewerManager {
             opacity: 1,
             preload: true,
         });
+
     }
 
     /**
@@ -252,6 +253,7 @@ export class ViewerManager {
             }
         }
     }
+
 
     /**
      * @function evaluateTF - finds color for value in transfer function

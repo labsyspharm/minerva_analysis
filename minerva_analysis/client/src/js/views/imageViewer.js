@@ -212,7 +212,9 @@ class ImageViewer {
                 };
             } else {
                 if (!e.tile._array) {
-                    console.log("Missing Array", e.tile.url);
+                    console.warn("Missing Array for tile:", e.tile.url, "- skipping rendering");
+                    // Skip rendering this tile by returning early
+                    return;
                 }
                 // Use new parameters for this tile
                 via.gl_arguments = {
@@ -320,7 +322,8 @@ class ImageViewer {
                         e.tile._format = tile._format;
                         e.tile._array = tile._array;
                     }
-                } else {
+                } 
+                else {
                     return callback(e);
                 }
             } catch (err) {
@@ -348,6 +351,25 @@ class ImageViewer {
         });
 
         seaGL.init();
+
+        // Add automatic tile cache monitoring and clearing
+        setInterval(() => {
+            if (this.viewer && this.viewer.world) {
+                let totalTiles = 0;
+                // Use the correct OpenSeadragon API method
+                for (let i = 0; i < this.viewer.world.getItemCount(); i++) {
+                    const item = this.viewer.world.getItemAt(i);
+                    if (item && item._tileCache && item._tileCache._tilesLoaded) {
+                        totalTiles += item._tileCache._tilesLoaded.length || 0;
+                    }
+                }
+                
+                if (totalTiles > 200) {
+                    console.warn(`Large tile cache detected: ${totalTiles} tiles. Automatically clearing cache...`);
+                    this.clearTileCache();
+                }
+            }
+        }, 30000); // Check every 30 seconds
 
         this.viewer.scalebar({
             location: 3,
@@ -565,6 +587,7 @@ class ImageViewer {
             document.getElementById("lasso_selection_toggle_plus").style.display = "";
         });
         toggle_lasso_minus.addEventListener("click", e => e.stopPropagation());
+        this.clearTileCache();
     }
 
     async draw_lasso(polygonSelection){
@@ -1394,6 +1417,32 @@ class ImageViewer {
             this.viewer.scalebar({
                 pixelsPerMeter: pixelsPerMeter,
             });
+        }
+    }
+
+    /**
+     * @function clearTileCache - Clears the tile cache to free memory
+     */
+    clearTileCache() {
+        if (this.viewer && this.viewer.world) {
+            console.log("Clearing tile cache...");
+            // Use the correct OpenSeadragon API method
+            for (let i = 0; i < this.viewer.world.getItemCount(); i++) {
+                const item = this.viewer.world.getItemAt(i);
+                if (item && item._tileCache && item._tileCache._tilesLoaded) {
+                    // Clear loaded tiles
+                    item._tileCache._tilesLoaded.forEach(tileRecord => {
+                        if (tileRecord.tile && tileRecord.tile.unload) {
+                            tileRecord.tile.unload();
+                        }
+                    });
+                    item._tileCache._tilesLoaded = [];
+                }
+            }
+            
+            // Force a redraw to reload visible tiles
+            this.viewer.forceRedraw();
+            console.log("Tile cache cleared");
         }
     }
 }

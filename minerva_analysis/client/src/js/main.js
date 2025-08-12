@@ -53,7 +53,12 @@ async function init(config) {
     const dataLayer = new DataLayer(config, imageChannels);
     const numericData = new NumericData(config, dataLayer);
     const columns = await dataLayer.getChannelNames(true);
-    const imgMetadata = await dataLayer.getMetadata();
+    let imgMetadata = null;
+    try {
+        imgMetadata = await dataLayer.getMetadata();
+    } catch (error) {
+        console.error("Error getting metadata:", error);
+    }
 
     //Create channel panels
     channelList = new ChannelList(config, columns, dataLayer, eventHandler);
