@@ -37,8 +37,8 @@ class ImageViewer {
         this.list_lassos = {};
         this.count_lassos = 0;
         this.lasso_selections = {
-            lasso_ids : [],
-            lasso_ids_subtract : []
+            lasso_ids: [],
+            lasso_ids_subtract: []
         };
         this.toggle_bool = true;
 
@@ -322,8 +322,8 @@ class ImageViewer {
                         e.tile._format = tile._format;
                         e.tile._array = tile._array;
                     }
-                } 
-                else {
+                }
+                else if (e?.image) {
                     return callback(e);
                 }
             } catch (err) {
@@ -363,7 +363,7 @@ class ImageViewer {
                         totalTiles += item._tileCache._tilesLoaded.length || 0;
                     }
                 }
-                
+
                 if (totalTiles > 200) {
                     console.warn(`Large tile cache detected: ${totalTiles} tiles. Automatically clearing cache...`);
                     this.clearTileCache();
@@ -431,12 +431,12 @@ class ImageViewer {
                 let viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
                 // Convert from viewport coordinates to image coordinates.
                 let imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-                const zoomScale = 2**config.extraZoomLevels;
-                imagePoint = {x:imagePoint.x/zoomScale, y:imagePoint.y/zoomScale}
-                that.polygonSelection.push({'imagePoints': imagePoint, 'viewportPoints': viewportPoint});
+                const zoomScale = 2 ** config.extraZoomLevels;
+                imagePoint = { x: imagePoint.x / zoomScale, y: imagePoint.y / zoomScale }
+                that.polygonSelection.push({ 'imagePoints': imagePoint, 'viewportPoints': viewportPoint });
             }
 
-            d3.select('#'+id_polygon).remove();
+            d3.select('#' + id_polygon).remove();
 
             let selPoly = that.overlay.selectAll(id_polygon).data([that.polygonSelection]);
             selPoly.enter().append("polygon")
@@ -489,8 +489,8 @@ class ImageViewer {
                     const viewportPoint = that.viewer.viewport.pointFromPixel(webPoint);
                     // Convert from viewport coordinates to image coordinates.
                     let imagePoint = that.viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint);
-                    const zoomScale = 2**config.extraZoomLevels;
-                    imagePoint = {x:imagePoint.x/zoomScale, y:imagePoint.y/zoomScale}
+                    const zoomScale = 2 ** config.extraZoomLevels;
+                    imagePoint = { x: imagePoint.x / zoomScale, y: imagePoint.y / zoomScale }
                     return that.dataLayer.getNearestCell(imagePoint.x, imagePoint.y)
                         .then(selectedItem => {
                             if (selectedItem !== null && selectedItem !== undefined) {
@@ -571,7 +571,7 @@ class ImageViewer {
         const toggle_lasso_plus = document.querySelector("#lasso_selection_toggle_plus");
         toggle_lasso_plus.addEventListener("click", (e) => {
             this.toggle_bool = false;
-            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids_subtract});
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, { 'picked': this.lasso_selections.lasso_ids_subtract });
 
             document.getElementById("lasso_selection_toggle_plus").style.display = "none";
             document.getElementById("lasso_selection_toggle_minus").style.display = "";
@@ -581,7 +581,7 @@ class ImageViewer {
         const toggle_lasso_minus = document.querySelector("#lasso_selection_toggle_minus");
         toggle_lasso_minus.addEventListener("click", (e) => {
             this.toggle_bool = true;
-            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids});
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, { 'picked': this.lasso_selections.lasso_ids });
 
             document.getElementById("lasso_selection_toggle_minus").style.display = "none";
             document.getElementById("lasso_selection_toggle_plus").style.display = "";
@@ -590,7 +590,7 @@ class ImageViewer {
         this.clearTileCache();
     }
 
-    async draw_lasso(polygonSelection){
+    async draw_lasso(polygonSelection) {
         let id_polygon = "polygon_" + this.count_lassos;
         let id_polygon_selection = id_polygon + "_selection"
         let id_polygon_delete = id_polygon + "_delete"
@@ -599,25 +599,25 @@ class ImageViewer {
         this.lasso_ids = await this.dataLayer.getCellsInPolygon(polygonSelection)
         this.list_lassos[id_polygon] = {
             lasso_polygon: polygonSelection,
-            lasso_ids : this.lasso_ids,
-            lasso_toggle : true,
+            lasso_ids: this.lasso_ids,
+            lasso_toggle: true,
         }
 
         this.cells_in_lassos = await this.dataLayer.getCellsInLassos(this.list_lassos);
         this.lasso_selections.lasso_ids = this.cells_in_lassos['lasso_ids']
         this.lasso_selections.lasso_ids_subtract = this.cells_in_lassos['lasso_ids_subtract']
 
-        if(this.toggle_bool){
-            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids});
-        } else{
-            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids_subtract});
+        if (this.toggle_bool) {
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, { 'picked': this.lasso_selections.lasso_ids });
+        } else {
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, { 'picked': this.lasso_selections.lasso_ids_subtract });
         }
 
-        $('#gating_list_ul').prepend("<div id="+id_polygon_selection+" "+
+        $('#gating_list_ul').prepend("<div id=" + id_polygon_selection + " " +
             "class='list-group-item container gating-list-content' " +
             "style='color: orange; border-bottom: 1px solid rgba(255, 255, 255, 0.5);'>" +
             "<span class='list-button'> Lasso Selection </span>" +
-            "<button id="+id_polygon_delete+" class='btn_lasso_delete'>x</button>" +
+            "<button id=" + id_polygon_delete + " class='btn_lasso_delete'>x</button>" +
             "</div>"
         );
 
@@ -629,18 +629,18 @@ class ImageViewer {
 
         document.getElementById(id_polygon_selection).addEventListener("mouseover", e => {
             if (this.list_lassos[id_polygon].lasso_toggle === true) {
-                $('#'+id_polygon).css('stroke-width', '6px');
+                $('#' + id_polygon).css('stroke-width', '6px');
             } else {
-                $('#'+id_polygon).css('stroke-width', '3px');
-                $('#'+id_polygon).css('stroke', 'orange');
+                $('#' + id_polygon).css('stroke-width', '3px');
+                $('#' + id_polygon).css('stroke', 'orange');
             }
         })
 
         document.getElementById(id_polygon_selection).addEventListener("mouseout", e => {
             if (this.list_lassos[id_polygon].lasso_toggle === true) {
-                $('#'+id_polygon).css('stroke-width', '3px');
+                $('#' + id_polygon).css('stroke-width', '3px');
             } else {
-                $('#'+id_polygon).css('stroke', 'none');
+                $('#' + id_polygon).css('stroke', 'none');
             }
         })
 
@@ -649,14 +649,14 @@ class ImageViewer {
         })
     }
 
-    async clear_lassos(){
+    async clear_lassos() {
         for (let polygon in this.list_lassos) {
             await this.delete_lasso(polygon);
         }
         this.count_lassos = 0;
     }
 
-    async upload_lasso(selection){
+    async upload_lasso(selection) {
         let polygonSelection = selection['gate_start']
         let id_polygon = 'polygon_' + this.count_lassos
         let selPoly = this.overlay.selectAll(id_polygon).data([polygonSelection]);
@@ -670,8 +670,8 @@ class ImageViewer {
             })
 
         await this.draw_lasso(polygonSelection)
-        if (!selection['gate_active']){
-            this.toggle_lasso(id_polygon, id_polygon+"_selection");
+        if (!selection['gate_active']) {
+            this.toggle_lasso(id_polygon, id_polygon + "_selection");
         }
     }
 
@@ -679,45 +679,45 @@ class ImageViewer {
      * @function toggle_lasso - Toggle on and off the lasso selection.
      * @returns string
      */
-     async toggle_lasso(id_polygon, id_polygon_selection){
-        if (this.list_lassos[id_polygon].lasso_toggle){
+    async toggle_lasso(id_polygon, id_polygon_selection) {
+        if (this.list_lassos[id_polygon].lasso_toggle) {
             this.list_lassos[id_polygon].lasso_toggle = false;
 
-            d3.select('#'+id_polygon).style('stroke', 'none')
-            d3.select('#'+id_polygon_selection).style("color", "white")
+            d3.select('#' + id_polygon).style('stroke', 'none')
+            d3.select('#' + id_polygon_selection).style("color", "white")
 
         } else {
             this.list_lassos[id_polygon].lasso_toggle = true;
 
-            d3.select('#'+id_polygon).style('stroke', 'orange')
-            d3.select('#'+id_polygon_selection).style("color", "orange")
+            d3.select('#' + id_polygon).style('stroke', 'orange')
+            d3.select('#' + id_polygon_selection).style("color", "orange")
         }
 
         this.cells_in_lassos = await this.dataLayer.getCellsInLassos(this.list_lassos);
         this.lasso_selections.lasso_ids = this.cells_in_lassos['lasso_ids']
         this.lasso_selections.lasso_ids_subtract = this.cells_in_lassos['lasso_ids_subtract']
 
-        if(this.toggle_bool){
-            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids});
-        } else{
-            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids_subtract});
+        if (this.toggle_bool) {
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, { 'picked': this.lasso_selections.lasso_ids });
+        } else {
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, { 'picked': this.lasso_selections.lasso_ids_subtract });
         }
     }
 
     async delete_lasso(id_polygon) {
-         let id_polygon_selection = id_polygon + "_selection"
-        d3.select('#'+id_polygon).remove();
+        let id_polygon_selection = id_polygon + "_selection"
+        d3.select('#' + id_polygon).remove();
         delete this.list_lassos[id_polygon];
-        d3.select('#'+id_polygon_selection).remove();
+        d3.select('#' + id_polygon_selection).remove();
 
         this.cells_in_lassos = await this.dataLayer.getCellsInLassos(this.list_lassos);
         this.lasso_selections.lasso_ids = this.cells_in_lassos['lasso_ids']
         this.lasso_selections.lasso_ids_subtract = this.cells_in_lassos['lasso_ids_subtract']
 
-        if(this.toggle_bool){
-            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids});
-        } else{
-            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, {'picked': this.lasso_selections.lasso_ids_subtract});
+        if (this.toggle_bool) {
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, { 'picked': this.lasso_selections.lasso_ids });
+        } else {
+            this.eventHandler.trigger(ImageViewer.events.imageLassoSel, { 'picked': this.lasso_selections.lasso_ids_subtract });
         }
     }
 
@@ -923,7 +923,7 @@ class ImageViewer {
         const { markersChanged, gatingChanged } = changes;
 
         // Bind picked ids 
-        if (this.pickingChanged || gatingChanged ) {
+        if (this.pickingChanged || gatingChanged) {
             this.bindPickings(this.viaGL, this.pickedIds);
             this.pickingChanged = false;
         }
@@ -1395,7 +1395,7 @@ class ImageViewer {
 
     addScaleBar() {
         let pixelsPerMeter;
-        if(this.imgMetadata) {
+        if (this.imgMetadata) {
             if (this.show_scalebar) {
                 let unitConvert;
                 if (this.imgMetadata.physical_size_x_unit === "µm" || this.imgMetadata.physical_size_x_unit === "um") {
@@ -1439,7 +1439,7 @@ class ImageViewer {
                     item._tileCache._tilesLoaded = [];
                 }
             }
-            
+
             // Force a redraw to reload visible tiles
             this.viewer.forceRedraw();
             console.log("Tile cache cleared");
