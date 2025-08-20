@@ -20,7 +20,9 @@ jobs:
           raw=$(git branch -r --contains ${{ github.ref }})
           branch=${raw##*/}
           echo "BRANCH=$branch" >> $GITHUB_ENV
-      - run: echo ${{ env.BRANCH }}
+      - name: Print Branch
+        shell: bash -l {0}
+        run: echo "Branch is ${{ env.BRANCH }}"
       - name: Creating Private Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
