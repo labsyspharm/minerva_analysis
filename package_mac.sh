@@ -1,1 +1,22 @@
-pyinstaller -F --paths $CONDA_PREFIX --add-data "minerva_analysis/client:minerva_analysis/client" --add-data "minerva_analysis/__init__.py:minerva_analysis/" --add-data "minerva_analysis/server:minerva_analysis/server" --add-data "$CONDA_PREFIX/lib/python3.9/site-packages/xmlschema/schemas:xmlschema/schemas" --hidden-import "imagecodecs.delta_decode" --hidden-import "scipy.spatial.transform._rotation_groups"  --hidden-import "sqlalchemy.sql.default_comparator"  --hidden-import "sklearn.metrics._pairwise_distances_reduction._datasets_pair" --hidden-import "sklearn.neighbors._partition_nodes" --hidden-import "sklearn.metrics._pairwise_distances_reduction._datasets_pair" --hidden-import cmath --collect-submodules "sklearn.utils" --name $1 run.py
+pyinstaller -F --paths $CONDA_PREFIX \
+--add-data "minerva_analysis/client:minerva_analysis/client" \
+--add-data "minerva_analysis/__init__.py:minerva_analysis/" \
+--add-data "minerva_analysis/server:minerva_analysis/server" \
+--add-data "$CONDA_PREFIX/lib/python3.9/site-packages/xmlschema/schemas:xmlschema/schemas" \
+--add-data "$CONDA_PREFIX/lib/python3.9/site-packages/ome_types:ome_types" \
+--hidden-import "imagecodecs.delta_decode" \
+--hidden-import "imagecodecs._shared" \
+--hidden-import "imagecodecs._imcd" \
+--hidden-import "scipy.spatial.transform._rotation_groups" \
+--hidden-import "scipy.special._cdflib" \
+--hidden-import "sqlalchemy.sql.default_comparator" \
+--hidden-import "sklearn.metrics._pairwise_distances_reduction._datasets_pair" \
+--hidden-import "sklearn.neighbors._partition_nodes" \
+--hidden-import "sklearn.neighbors.ball_tree" \
+--hidden-import "sklearn.utils._typedefs" \
+--hidden-import "cmath" \
+--exclude-module "pkg_resources.extern" \
+--exclude-module "pkg_resources.py2_warn" \
+--exclude-module "pkg_resources._vendor" \
+--collect-submodules "sklearn.utils" \
+--name $1 run.py
