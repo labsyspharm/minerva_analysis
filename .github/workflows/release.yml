@@ -2,13 +2,13 @@ name: Release
 on:
   push:
     tags:
-      - '*'
+      - "*"
 jobs:
   build:
     strategy:
       matrix:
-        os: [ macos-latest, windows-latest ]
-        node-version: [ 16.x ]
+        os: [macos-latest, windows-latest]
+        node-version: [16.x]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -20,9 +20,7 @@ jobs:
           raw=$(git branch -r --contains ${{ github.ref }})
           branch=${raw##*/}
           echo "BRANCH=$branch" >> $GITHUB_ENV
-      - name: Print Branch
-        shell: bash -l {0}
-        run: echo "Branch: ${{ env.BRANCH }}"
+      - run: echo ${{ env.BRANCH }}
       - name: Creating Private Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
@@ -31,11 +29,10 @@ jobs:
         if: startsWith(matrix.os,'mac')
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.VISINITY_PAT }}
-          repository: labsyspharm/visinity
+          token: ${{ secrets.GATING_PAT }}
+          repository: labsyspharm/gater
           event-type: merge
           client-payload: '{"ref": "${{ github.ref }}"}'
-
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
@@ -53,8 +50,9 @@ jobs:
         with:
           python-version: 3.9
           environment-file: requirements.yml
-          activate-environment: visinity
+          activate-environment: minerva_analysis
           auto-activate-base: false
+          use-mamba: true
 
       - name: Package Windows
         if: startsWith(matrix.os,'windows')
