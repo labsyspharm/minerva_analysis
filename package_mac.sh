@@ -15,6 +15,7 @@ pyinstaller -F --paths $CONDA_PREFIX \
 --hidden-import "sklearn.neighbors.ball_tree" \
 --hidden-import "sklearn.utils._typedefs" \
 --hidden-import "cmath" \
+--hidden-import "palom" \
 --exclude-module "pkg_resources.extern" \
 --exclude-module "pkg_resources.py2_warn" \
 --exclude-module "pkg_resources._vendor" \
