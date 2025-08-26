@@ -5,6 +5,8 @@ pyinstaller -F --paths %CONDA_PREFIX% ^
 --add-binary "%CONDA_PREFIX%/Lib/site-packages/llvmlite/binding/llvmlite.dll;Library/bin/." ^
 --add-data "%CONDA_PREFIX%/Lib/site-packages/xmlschema/schemas;xmlschema/schemas" ^
 --add-data "%CONDA_PREFIX%/Lib/site-packages/ome_types;ome_types" ^
+--add-data "%CONDA_PREFIX%/Lib/site-packages/palom-2024.4.1.dist-info;palom-2024.4.1.dist-info" ^
+--copy-metadata "palom" ^
 --hidden-import "imagecodecs.delta_decode" ^
 --hidden-import "imagecodecs._shared" ^
 --hidden-import "imagecodecs._imcd" ^

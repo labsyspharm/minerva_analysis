@@ -4,6 +4,7 @@ pyinstaller -F --paths $CONDA_PREFIX \
 --add-data "minerva_analysis/server:minerva_analysis/server" \
 --add-data "$CONDA_PREFIX/lib/python3.9/site-packages/xmlschema/schemas:xmlschema/schemas" \
 --add-data "$CONDA_PREFIX/lib/python3.9/site-packages/ome_types:ome_types" \
+--copy-metadata "palom" \
 --hidden-import "imagecodecs.delta_decode" \
 --hidden-import "imagecodecs._shared" \
 --hidden-import "imagecodecs._imcd" \
