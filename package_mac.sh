@@ -5,6 +5,10 @@ pyinstaller -F --paths $CONDA_PREFIX \
 --add-data "$CONDA_PREFIX/lib/python3.9/site-packages/xmlschema/schemas:xmlschema/schemas" \
 --add-data "$CONDA_PREFIX/lib/python3.9/site-packages/ome_types:ome_types" \
 --copy-metadata "palom" \
+--copy-metadata "torch" \
+--copy-metadata "pycave" \
+--copy-metadata "lightkit" \
+--copy-metadata "pytorch_lightning" \
 --hidden-import "imagecodecs.delta_decode" \
 --hidden-import "imagecodecs._shared" \
 --hidden-import "imagecodecs._imcd" \
@@ -18,6 +22,16 @@ pyinstaller -F --paths $CONDA_PREFIX \
 --hidden-import "cmath" \
 --hidden-import "palom" \
 --hidden-import "importlib_metadata" \
+--hidden-import "torch" \
+--hidden-import "torch._C" \
+--hidden-import "torch._C._fft" \
+--hidden-import "torch._C._linalg" \
+--hidden-import "torch._C._nn" \
+--hidden-import "torch._C._sparse" \
+--hidden-import "torch._C._special" \
+--hidden-import "pytorch_lightning" \
+--hidden-import "pycave" \
+--hidden-import "lightkit" \
 --exclude-module "pkg_resources.extern" \
 --exclude-module "pkg_resources.py2_warn" \
 --exclude-module "pkg_resources._vendor" \
