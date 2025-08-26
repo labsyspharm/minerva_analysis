@@ -17,6 +17,7 @@ pyinstaller -F --paths %CONDA_PREFIX% ^
 --hidden-import "cmath" ^
 --hidden-import "llvmlite" ^
 --hidden-import "palom" ^
+--hidden-import "importlib_metadata" ^
 --hidden-import "sqlalchemy.sql.default_comparator" ^
 --exclude-module "pkg_resources.extern" ^
 --exclude-module "pkg_resources.py2_warn" ^
