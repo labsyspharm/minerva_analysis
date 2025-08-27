@@ -14,31 +14,16 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Get Branch
+      - name: Get Tag Name
         shell: bash -l {0}
         run: |
-          # Get the tag name from github.ref_name (e.g., "v1.27_visinity")
+          # Get the full tag name from github.ref_name (e.g., "v1.28_visinity")
           tag_name="${{ github.ref_name }}"
           echo "Tag name: $tag_name"
-          
-          # Extract branch name from tag (everything after the last underscore)
-          if [[ "$tag_name" == *_* ]]; then
-            branch="${tag_name##*_}"
-          else
-            # Fallback: try to detect from git
-            raw=$(git branch -r --contains ${{ github.ref }} 2>/dev/null || echo "origin/main")
-            branch=${raw##*/}
-            # If still empty, use default
-            if [ -z "$branch" ]; then
-              branch="main"
-            fi
-          fi
-          
-          echo "Detected branch: $branch"
-          echo "BRANCH=$branch" >> $GITHUB_ENV
-      - name: Print Branch
+          echo "TAG_NAME=$tag_name" >> $GITHUB_ENV
+      - name: Print Tag Name
         shell: bash -l {0}
-        run: echo "Branch is ${{ env.BRANCH }}"
+        run: echo "Tag name is ${{ env.TAG_NAME }}"
       - name: Creating Private Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
@@ -82,20 +67,20 @@ jobs:
         shell: bash -l {0}
         run: |
           ls dist/
-          mv dist/minerva_analysis_windows.exe "dist/minerva_analysis_windows_${{ env.BRANCH }}.exe"
+          mv dist/minerva_analysis_windows.exe "dist/${{ env.TAG_NAME }}_windows.exe"
           ls dist/
       - name: Package Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
-          ./package_mac.sh minerva_analysis_mac_${{ env.BRANCH }}
+          ./package_mac.sh "${{ env.TAG_NAME }}_mac"
       - name: Rename Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
           cd dist
-          zip "minerva_analysis_mac_${{ env.BRANCH }}.zip" "minerva_analysis_mac_${{ env.BRANCH }}"
-          rm "minerva_analysis_mac_${{ env.BRANCH }}"
+          zip "${{ env.TAG_NAME }}_mac.zip" "${{ env.TAG_NAME }}_mac"
+          rm "${{ env.TAG_NAME }}_mac"
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
