@@ -2,8 +2,13 @@ pyinstaller -F --paths $CONDA_PREFIX \
 --add-data "minerva_analysis/client:minerva_analysis/client" \
 --add-data "minerva_analysis/__init__.py:minerva_analysis/" \
 --add-data "minerva_analysis/server:minerva_analysis/server" \
+--collect-all torch \
+--collect-all pytorch_lightning \
+--collect-all pycave \
+--collect-all lightkit \
 --add-data "$CONDA_PREFIX/lib/python3.9/site-packages/xmlschema/schemas:xmlschema/schemas" \
 --add-data "$CONDA_PREFIX/lib/python3.9/site-packages/ome_types:ome_types" \
+--add-data "$CONDA_PREFIX/lib/python3.9/site-packages/palom-2024.4.1.dist-info:palom-2024.4.1.dist-info" \
 --copy-metadata "palom" \
 --copy-metadata "torch" \
 --copy-metadata "pycave" \
@@ -35,5 +40,7 @@ pyinstaller -F --paths $CONDA_PREFIX \
 --exclude-module "pkg_resources.extern" \
 --exclude-module "pkg_resources.py2_warn" \
 --exclude-module "pkg_resources._vendor" \
+--exclude-module "setuptools" \
 --collect-submodules "sklearn.utils" \
+--no-prefer-redirects \
 --name $1 run.py

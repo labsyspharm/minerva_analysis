@@ -3,7 +3,10 @@ pyinstaller -F --paths %CONDA_PREFIX% ^
 --add-data "minerva_analysis/__init__.py;minerva_analysis/" ^
 --add-data "minerva_analysis/server;minerva_analysis/server" ^
 --add-binary "%CONDA_PREFIX%/Lib/site-packages/llvmlite/binding/llvmlite.dll;Library/bin/." ^
---add-binary "%CONDA_PREFIX%/Lib/site-packages/torch/lib/*.dll;torch/lib/." ^
+--collect-all torch ^
+--collect-all pytorch_lightning ^
+--collect-all pycave ^
+--collect-all lightkit ^
 --add-data "%CONDA_PREFIX%/Lib/site-packages/xmlschema/schemas;xmlschema/schemas" ^
 --add-data "%CONDA_PREFIX%/Lib/site-packages/ome_types;ome_types" ^
 --add-data "%CONDA_PREFIX%/Lib/site-packages/palom-2024.4.1.dist-info;palom-2024.4.1.dist-info" ^
@@ -39,7 +42,9 @@ pyinstaller -F --paths %CONDA_PREFIX% ^
 --exclude-module "pkg_resources.extern" ^
 --exclude-module "pkg_resources.py2_warn" ^
 --exclude-module "pkg_resources._vendor" ^
+--exclude-module "setuptools" ^
 --collect-submodules "sklearn.utils" ^
+--no-prefer-redirects ^
 --log-level DEBUG ^
 --icon icon.ico ^
 --name minerva_analysis_windows run.py
