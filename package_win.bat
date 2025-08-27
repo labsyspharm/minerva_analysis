@@ -44,7 +44,6 @@ pyinstaller -F --paths %CONDA_PREFIX% ^
 --exclude-module "pkg_resources._vendor" ^
 --exclude-module "setuptools" ^
 --collect-submodules "sklearn.utils" ^
---no-prefer-redirects ^
 --log-level DEBUG ^
 --icon icon.ico ^
 --name minerva_analysis_windows run.py
