@@ -19,8 +19,11 @@ jobs:
         run: |
           # Get the full tag name from github.ref_name (e.g., "v1.28_visinity")
           tag_name="${{ github.ref_name }}"
-          echo "Tag name: $tag_name"
-          echo "TAG_NAME=$tag_name" >> $GITHUB_ENV
+          # Replace all periods with underscores
+          tag_name_clean="${tag_name//\./_}"
+          echo "Original tag name: $tag_name"
+          echo "Cleaned tag name: $tag_name_clean"
+          echo "TAG_NAME=$tag_name_clean" >> $GITHUB_ENV
       - name: Print Tag Name
         shell: bash -l {0}
         run: echo "Tag name is ${{ env.TAG_NAME }}"

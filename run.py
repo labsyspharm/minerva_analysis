@@ -1,4 +1,9 @@
 import sys
+import warnings
+
+# Suppress pkg_resources deprecation warnings
+warnings.filterwarnings("ignore", message=".*pkg_resources.*", category=UserWarning)
+warnings.filterwarnings("ignore", message=".*pkg_resources.*", category=DeprecationWarning)
 
 from waitress import serve
 
