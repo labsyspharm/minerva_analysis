@@ -42,5 +42,4 @@ pyinstaller -F --paths $CONDA_PREFIX \
 --exclude-module "pkg_resources._vendor" \
 --exclude-module "setuptools" \
 --collect-submodules "sklearn.utils" \
---no-prefer-redirects \
 --name $1 run.py
