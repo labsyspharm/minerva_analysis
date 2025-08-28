@@ -37,7 +37,7 @@ import re
 import zarr
 from numcodecs import Blosc
 from scipy import spatial
-from pycave.bayes import gmm
+from sklearn.mixture import GaussianMixture
 
 # from line_profiler_pycharm import profile
 
@@ -539,10 +539,10 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
         # neighborhoods = load_neighborhood_matrix(datasource_name)
         # pcaed = PCA(n_components=2).fit_transform(neighborhoods)
         # data = np.hstack((data, pcaed))
-        if subsample:
-            g_mixtures = GaussianMixture(n_components=num_clusters)
-        else:
-            g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
+        # if subsample:
+        g_mixtures = GaussianMixture(n_components=num_clusters)
+        # else:
+        #     g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
         g_mixtures.fit(data)
         clusters = np.array(g_mixtures.predict(data))
         for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
@@ -586,10 +586,8 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
         max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
         if max_cluster_id is None:
             max_cluster_id = 0
-        if subsample:
-            g_mixtures = GaussianMixture(n_components=num_clusters)
-        else:
-            g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
+        g_mixtures = GaussianMixture(n_components=num_clusters)
+       
 
         pca = PCA(n_components=2).fit(combined_neighborhoods['full_neighborhoods'])
         pcaed = pca.transform(combined_neighborhoods['full_neighborhoods'])
