@@ -4,7 +4,6 @@ pyinstaller -F --paths %CONDA_PREFIX% ^
 --add-data "minerva_analysis/server;minerva_analysis/server" ^
 --add-binary "%CONDA_PREFIX%/Lib/site-packages/llvmlite/binding/llvmlite.dll;Library/bin/." ^
 --collect-all torch ^
---collect-all pytorch ^
 --collect-all pytorch_lightning ^
 --collect-all pycave ^
 --collect-all lightkit ^
@@ -13,7 +12,6 @@ pyinstaller -F --paths %CONDA_PREFIX% ^
 --add-data "%CONDA_PREFIX%/Lib/site-packages/palom-2024.4.1.dist-info;palom-2024.4.1.dist-info" ^
 --copy-metadata "palom" ^
 --copy-metadata "torch" ^
---copy-metadata "pytorch" ^
 --copy-metadata "pycave" ^
 --copy-metadata "lightkit" ^
 --copy-metadata "pytorch_lightning" ^
