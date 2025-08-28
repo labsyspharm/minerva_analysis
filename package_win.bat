@@ -3,6 +3,7 @@ pyinstaller -F --paths %CONDA_PREFIX% ^
 --add-data "minerva_analysis/__init__.py;minerva_analysis/" ^
 --add-data "minerva_analysis/server;minerva_analysis/server" ^
 --add-binary "%CONDA_PREFIX%/Lib/site-packages/llvmlite/binding/llvmlite.dll;Library/bin/." ^
+--add-binary "%CONDA_PREFIX%/Lib/site-packages/site-packages/torch/lib/shm.dll;Library/bin/." ^
 --collect-all torch ^
 --collect-all pytorch_lightning ^
 --collect-all pycave ^
