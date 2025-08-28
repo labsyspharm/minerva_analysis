@@ -1,6 +1,7 @@
 name: visinity
 channels:
   - conda-forge
+  - pytorch
 dependencies:
   - python=3.9
   - appdirs=1.4.4
