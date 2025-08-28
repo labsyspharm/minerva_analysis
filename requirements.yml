@@ -15,6 +15,7 @@ dependencies:
   - orjson=3.9.10
   - pandas=2.2.0
   - pillow=8.1.1
+  - pytorch=1.13.1
   - requests=2.31.0
   - scikit-learn=1.1.2
   - scikit-image=0.19.3
