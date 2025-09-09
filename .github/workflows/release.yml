@@ -14,12 +14,11 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Get Branch
-        shell: bash -l {0}
-        run: |
-          raw=$(git branch -r --contains ${{ github.ref }})
-          branch=${raw##*/}
-          echo "BRANCH=$branch" >> $GITHUB_ENV
+      - name: Branch Names
+        id: branch-names
+        uses: tj-actions/branch-names@v9.0.2
+        with:
+          strip_tag_prefix: 'v'
       - name: Creating Private Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
@@ -63,20 +62,20 @@ jobs:
         shell: bash -l {0}
         run: |
           ls dist/
-          mv dist/minerva_analysis_windows.exe "dist/minerva_analysis_windows_${{ env.BRANCH }}.exe"
+          mv dist/minerva_analysis_windows.exe "dist/minerva_analysis_windows_${{ steps.branch-names.outputs.current_branch }}.exe"
           ls dist/
       - name: Package Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
-          ./package_mac.sh minerva_analysis_mac_${{ env.BRANCH }}
+          ./package_mac.sh minerva_analysis_mac_${{ steps.branch-names.outputs.current_branch }}
       - name: Rename Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
           cd dist
-          zip "minerva_analysis_mac_${{ env.BRANCH }}.zip" "minerva_analysis_mac_${{ env.BRANCH }}"
-          rm "minerva_analysis_mac_${{ env.BRANCH }}"
+          zip "minerva_analysis_mac_${{ steps.branch-names.outputs.current_branch }}.zip" "minerva_analysis_mac_${{ steps.branch-names.outputs.current_branch }}
+          rm -rf "minerva_analysis_mac_${{ steps.branch-names.outputs.current_branch }}"
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
