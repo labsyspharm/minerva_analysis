@@ -1,3 +1,7 @@
+import multiprocessing
+
+multiprocessing.freeze_support()
+
 from flask import Flask
 from pathlib import Path
 from flask_sqlalchemy import SQLAlchemy
@@ -10,25 +14,27 @@ import xmlschema  # Needed for pyinstaller
 import os
 import json
 import sys
-import multiprocessing
 
 # Initialize sklearn global threadpool controller to avoid deadlock in threaded
 # contexts.
 import sklearn.utils.fixes
+
 sklearn.utils.fixes.threadpool_limits()
 
 # If you're running the pyinstaller version of the code, create a
 # new directory for the data (this will be at ~/ on mac)
 
-#centralizing path across app
+# centralizing path across app
 cwd_path = Path.cwd()
 
+# Only call freeze_support if we're in a frozen environment
+
 ## uncomment block if not on O2
-if getattr(sys, 'frozen', False):
-    data_path = Path(Path(sys.executable).parent / 'data')
-    multiprocessing.freeze_support()
+if getattr(sys, "frozen", False):
+    data_path = Path(Path(sys.executable).parent / "data")
 else:
     data_path = Path("minerva_analysis/data").resolve()
+
 
 ## uncomment block if on O2
 # appname = "minerva_analysis"
@@ -40,11 +46,11 @@ else:
 # print('Data Path', str(data_path), str((data_path).resolve()))
 # Make the Data Path
 data_path.mkdir(parents=True, exist_ok=True)
-app = Flask(__name__, template_folder=Path('client/templates'), static_folder='data')
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(data_path) + '/db.sqlite3'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['CLIENT_PATH'] = app.root_path + '/client/'
+app = Flask(__name__, template_folder=Path("client/templates"), static_folder="data")
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(data_path) + "/db.sqlite3"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["CLIENT_PATH"] = app.root_path + "/client/"
 config_json_path = data_path / "config.json"
 db = SQLAlchemy(app)
 
@@ -54,11 +60,11 @@ def get_config():
         Path.mkdir(data_path)
 
     if not Path.is_file(config_json_path):
-        with open(config_json_path, 'w') as f:
+        with open(config_json_path, "w") as f:
             json.dump({}, f)
             return []
     else:
-        with open(config_json_path, 'r+') as f:
+        with open(config_json_path, "r+") as f:
             data = json.load(f)
     return data
 

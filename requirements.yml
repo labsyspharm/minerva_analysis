@@ -3,13 +3,14 @@ channels:
   - conda-forge
 dependencies:
   - appdirs
+  - setuptools<81.0.0
   - flask=2.2.2
   - flask-sqlalchemy=3.0.2
   - itsdangerous=2.1.2
   - jinja2
   - matplotlib
   - numpy
-  - ome-types
+  - ome-types=0.3.3
   - orjson
   - pandas
   - pillow=8.1
@@ -20,15 +21,13 @@ dependencies:
   - scikit-image
   - scikit-learn=1.2.2
   - scipy
-  - setuptools>=65.0.0,<81.0.0
+  - setuptools=65.1.1
   - tifffile=2021.4.8
   - waitress
   - werkzeug=2.2.2
   - zarr=2.10
-
   - pip:
       - opencv-python==4.9.0.80
       - xmlschema
-      - ome-types==0.3.3
       - pydantic==1.10.10
       - imagecodecs[all]

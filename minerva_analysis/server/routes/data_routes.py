@@ -11,6 +11,7 @@ import gzip
 import json
 import orjson
 import os
+import sys
 from os import walk
 from flask_sqlalchemy import SQLAlchemy
 
@@ -81,6 +82,10 @@ def get_neighborhood():
 @app.route('/get_naive_states', methods=['GET'])
 def get_naive_states():
     # test of triggering docker module
+    # Note: This route is disabled in PyInstaller builds to prevent process spawning issues
+    if getattr(sys, 'frozen', False):
+        return {"error": "Docker functionality disabled in executable build"}, 400
+    
     dirname = os.path.dirname(__file__)
     os.system('docker run --rm -v' + dirname + '/data:/data labsyspharm/naivestates:1.7.0 /app/main.R -i /data/unmicst-163.csv')
     os.path.join(os.getcwd() / data_path / "data"  / "umicst-162-models.csv")

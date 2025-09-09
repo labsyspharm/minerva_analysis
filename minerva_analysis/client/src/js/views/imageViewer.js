@@ -364,7 +364,7 @@ class ImageViewer {
                     }
                 }
 
-                if (totalTiles > 200) {
+                if (totalTiles > 1000) {
                     console.warn(`Large tile cache detected: ${totalTiles} tiles. Automatically clearing cache...`);
                     this.clearTileCache();
                 }
@@ -1435,6 +1435,9 @@ class ImageViewer {
                         if (tileRecord.tile && tileRecord.tile.unload) {
                             tileRecord.tile.unload();
                         }
+                        tileRecord.tile = null;
+                        // delete tile record
+                        tileRecord = null;
                     });
                     item._tileCache._tilesLoaded = [];
                 }
