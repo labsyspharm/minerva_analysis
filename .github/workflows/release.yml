@@ -20,6 +20,7 @@ jobs:
         with:
           strip_tag_prefix: 'v'
       - name: Version String
+        shell: bash -l {0}
         run: |
           CLEAN_VERSION="${{ steps.branch-names.outputs.tag }}"
           CLEAN_VERSION="${CLEAN_VERSION//./_}"
