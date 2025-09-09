@@ -19,6 +19,11 @@ jobs:
         uses: tj-actions/branch-names@v9.0.2
         with:
           strip_tag_prefix: 'v'
+      - name: Version String
+        run: |
+          CLEAN_VERSION="${{ steps.branch-names.outputs.tag }}"
+          CLEAN_VERSION="${CLEAN_VERSION//./_}"
+          echo "VERSION_STRING=$CLEAN_VERSION" >> $GITHUB_ENV
       - name: Creating Private Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
@@ -59,21 +64,20 @@ jobs:
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
-          ./package_mac.sh "Gater_Mac_${{ steps.branch-names.outputs.tag }}"
+          ./package_mac.sh "Gater_Mac_${{ env.VERSION_STRING }}"
       - name: Rename Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
           cd dist
-          chmod +x "Gater_Mac_${{ steps.branch-names.outputs.tag }}/Gater_Mac_${{ steps.branch-names.outputs.tag }}"
-          tar -czf "Gater_Mac_${{ steps.branch-names.outputs.tag }}.tar.gz" "Gater_Mac_${{ steps.branch-names.outputs.tag }}"
-          rm -rf "Gater_Mac_${{ steps.branch-names.outputs.tag }}"
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          zip "Gater_Mac_${{ env.VERSION_STRING }}.zip" "Gater_Mac_${{ env.VERSION_STRING }}"
+          rm -rf "Gater_Mac_${{ env.VERSION_STRING }}"
+      # - name: Release
+      # uses: softprops/action-gh-release@v1
+      # if: startsWith(github.ref, 'refs/tags/')
+      # with:
+      #   files: |
+      #     dist/*
+      # env:
+      #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
