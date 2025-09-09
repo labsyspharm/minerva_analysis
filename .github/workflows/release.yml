@@ -61,16 +61,15 @@ jobs:
         if: startsWith(matrix.os,'windows')
         shell: bash -l {0}
         run: |
-          ls dist/
-          mv dist/minerva_analysis_windows.exe "dist/minerva_analysis_windows_${{ steps.branch-names.outputs.current_branch }}.exe"
-          ls dist/
+          cd dist
+          zip "minerva_analysis_windows_${{ steps.branch-names.outputs.current_branch }}.zip" "minerva_analysis_windows_${{ steps.branch-names.outputs.current_branch }}
+          rm -rf "minerva_analysis_windows_${{ steps.branch-names.outputs.current_branch }}"
       - name: Package Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
           ./package_mac.sh minerva_analysis_mac_${{ steps.branch-names.outputs.current_branch }}
       - name: Rename Mac
-        if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
           cd dist
