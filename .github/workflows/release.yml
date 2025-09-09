@@ -71,7 +71,7 @@ jobs:
         shell: bash -l {0}
         run: |
           cd dist
-          zip -r "Gater_Mac_${{ env.VERSION_STRING }}.zip" "Gater_Mac_${{ env.VERSION_STRING }}"
+          zip "Gater_Mac_${{ env.VERSION_STRING }}.zip" "Gater_Mac_${{ env.VERSION_STRING }}"
           rm -rf "Gater_Mac_${{ env.VERSION_STRING }}"
       - name: Release
         uses: softprops/action-gh-release@v1
