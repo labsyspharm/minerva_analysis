@@ -73,12 +73,12 @@ jobs:
           cd dist
           zip -r "Gater_Mac_${{ env.VERSION_STRING }}.zip" "Gater_Mac_${{ env.VERSION_STRING }}"
           rm -rf "Gater_Mac_${{ env.VERSION_STRING }}"
-      # - name: Release
-      # uses: softprops/action-gh-release@v1
-      # if: startsWith(github.ref, 'refs/tags/')
-      # with:
-      #   files: |
-      #     dist/*
-      # env:
-      #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
