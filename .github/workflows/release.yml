@@ -65,7 +65,7 @@ jobs:
         shell: bash -l {0}
         run: |
           cd dist
-          zip "Gater_Mac_${{ steps.branch-names.outputs.tag }}.zip" "Gater_Mac_${{ steps.branch-names.outputs.tag }}"
+          zip -r "Gater_Mac_${{ steps.branch-names.outputs.tag }}.zip" "Gater_Mac_${{ steps.branch-names.outputs.tag }}"
           rm -rf "Gater_Mac_${{ steps.branch-names.outputs.tag }}"
       - name: Release
         uses: softprops/action-gh-release@v1
