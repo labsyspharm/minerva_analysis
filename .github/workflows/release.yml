@@ -49,18 +49,11 @@ jobs:
           activate-environment: minerva_analysis
           auto-activate-base: false
           use-mamba: true
-      # - name: Package Windows
-      #   if: startsWith(matrix.os,'windows')
-      #   shell: cmd /C CALL {0}
-      #   run: |
-      #     package_win.bat
-      # - name: Rename Windows
-      #   if: startsWith(matrix.os,'windows')
-      #   shell: bash -l {0}
-      #   run: |
-      #     ls dist/
-      #     mv dist/minerva_analysis_windows.exe "dist/Gater_Windows_${{github.event.client_payload.version}}.exe"
-      #     ls dist/
+      - name: Package Windows
+        if: startsWith(matrix.os,'windows')
+        shell: bash -l {0}
+        run: |
+          ./package_win.bat "Gater_Windows_${{ env.VERSION_STRING }}"
       - name: Package Mac
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
