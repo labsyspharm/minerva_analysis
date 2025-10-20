@@ -187,20 +187,20 @@ def upload_file_page():
 
                     #label file
                     labelFile = request.form.get('label_file')
-                    labelFile = labelFile.replace('"', '') # remove " characters
+                    labelFile = trim_filepath_quotes(labelFile)
                     labelFile = Path(labelFile)
                     labelName = os.path.splitext(labelFile.name)[0]
 
                     #csv file
                     csvPath = request.form.get('csv_file');
-                    csvPath = csvPath.replace('"', '') # remove " characters
+                    csvPath = trim_filepath_quotes(csvPath)
                     csvPath = Path(csvPath)
                     pathsSplit = PurePath(csvPath).parts
                     csvName = pathsSplit[len(pathsSplit) - 1]
 
                     #channel file
                     channelFile = request.form.get('channel_file')
-                    channelFile = channelFile.replace('"', '') # remove " characters
+                    channelFile = trim_filepath_quotes(channelFile)
                     channelFile = Path(channelFile)
 
                 # if a mcmicro output structure is used
@@ -594,12 +594,21 @@ def check_mc_channel_file_existence():
 
     return serialize_and_submit_json(False)
 
+def trim_filepath_quotes(path):
+    if path.startswith('"') and path.endswith('"'):
+        return path[1:-1]
+    if path.startswith("'") and path.endswith("'"):
+        return path[1:-1]
+    return path
+
 @app.route('/check_file_existence', methods=['POST'])
 def check_file_existence():
     # path and type information from upload
     post_data = json.loads(request.data)
+    # Handle path that begins and ends
     if 'path' in post_data:
         path = Path(post_data['path'])
+        path = trim_filepath_quotes(path)
         if path.is_file():
             return serialize_and_submit_json(True)
         return serialize_and_submit_json(False)
@@ -610,6 +619,7 @@ def check_path_existence():
     post_data = json.loads(request.data)
     if 'path' in post_data:
         path = Path(post_data['path'])
+        path = trim_filepath_quotes(path)
         # if full path exists
         if path.is_dir():
             return serialize_and_submit_json(True)

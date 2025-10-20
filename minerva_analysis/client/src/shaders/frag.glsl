@@ -62,7 +62,7 @@ uint unpack(uvec4 id) {
 
 // Check if value between min and max
 bool check_range(float value, vec2 range) {
-  return value >= range.x && value < range.y;
+  return value >= range.x && value <= range.y;
 }
 
 // Interpolate between domain and range
@@ -292,7 +292,7 @@ int to_and_gate(int cell_index) {
     }
     float scale = sample_magnitude(cell_index, key);
     vec2 range = sample_gating_range(float(key));
-    if (scale >= 0. && !check_range(scale, range)) {
+    if (!check_range(scale, range)) {
       return -1;
     }
   }
