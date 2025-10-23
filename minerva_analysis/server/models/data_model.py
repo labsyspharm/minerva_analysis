@@ -923,21 +923,28 @@ def get_cells_in_polygon(datasource_name, points):
     if datasource_name != source:
         load_datasource(datasource_name)
 
+    x_col = config[datasource_name]['featureData'][0].get('xCoordinate', 'x')
+    y_col = config[datasource_name]['featureData'][0].get('yCoordinate', 'y')
+    id_col = config[datasource_name]['featureData'][0].get('idField', 'id')
+
+
     point_tuples = [(e['imagePoints']['x'], e['imagePoints']['y']) for e in points]
     (x, y, r) = smallestenclosingcircle.make_circle(point_tuples)
 
     index = ball_tree.query_radius([[x, y]], r)
     neighbors = index[0]
+
+
     circle_neighbors = datasource.iloc[neighbors].to_dict(orient='records')
-    neighbor_points = pd.DataFrame(circle_neighbors).values
+    df = datasource.iloc[neighbors][[id_col, x_col, y_col]]
 
     path = mpltPath.Path(point_tuples)
-    inside = path.contains_points(neighbor_points[:, [1, 2]].astype('float'))
-    neighbor_ids = neighbor_points[np.where(inside == True), 0].astype('int').flatten().tolist()
-    neighbor_ids.sort()
+    pts = df[[x_col, y_col]].to_numpy(dtype=float)
+    inside = path.contains_points(pts)
 
-    packet = neighbor_ids
-    return packet
+    neighbor_ids = df.loc[inside, id_col].astype(int, errors='ignore').tolist()
+    neighbor_ids.sort()
+    return neighbor_ids
 
 def get_cells_in_lassos(datasource_name, list_lassos):
     global config
