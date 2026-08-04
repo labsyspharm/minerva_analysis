@@ -38,6 +38,12 @@ metadata = None
 load_lock = threading.RLock()
 
 
+def _zarr_level(group, level):
+    if isinstance(group, zarr.Array):
+        return group
+    return group[str(level)]
+
+
 def init(datasource_name):
     load_ball_tree(datasource_name)
 
@@ -60,7 +66,7 @@ def load_datasource(datasource_name, reload=False):
         print("Loading csv data.. (this can take some time)")
         loaded_datasource = pd.read_csv(csvPath)
         loaded_datasource['id'] = loaded_datasource.index
-        loaded_datasource = loaded_datasource.replace(-np.Inf, 0)
+        loaded_datasource = loaded_datasource.replace(-np.inf, 0)
         print("Loading segmentation.")
         if config[datasource_name]['segmentation'].endswith('.zarr'):
             loaded_seg = zarr.load(config[datasource_name]['segmentation'])
@@ -148,18 +154,24 @@ def load_ball_tree(datasource_name_name, reload=False):
     if Path(pickled_kd_tree_path).is_file() and reload is False:
 
         print("Pickled KD Tree Exists, Loading")
-        ball_tree = pickle.load(open(pickled_kd_tree_path, "rb"))
-        print("Pickled KD Tree Loaded.")
-    else:
-        print("Creating KD Tree.")
-        xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
-        yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
-        csvPath = Path(config[datasource_name_name]['featureData'][0]['src'])
-        raw_data = pd.read_csv(csvPath)
-        points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
-        ball_tree = BallTree(points, metric='euclidean')
-        pickle.dump(ball_tree, open(pickled_kd_tree_path, 'wb'))
-        print('Creating KD Tree done.')
+        try:
+            with open(pickled_kd_tree_path, "rb") as tree_file:
+                ball_tree = pickle.load(tree_file)
+            print("Pickled KD Tree Loaded.")
+            return
+        except Exception as exc:
+            print(f"Could not load pickled KD Tree, rebuilding: {exc}")
+
+    print("Creating KD Tree.")
+    xCoordinate = config[datasource_name_name]['featureData'][0]['xCoordinate']
+    yCoordinate = config[datasource_name_name]['featureData'][0]['yCoordinate']
+    csvPath = Path(config[datasource_name_name]['featureData'][0]['src'])
+    raw_data = pd.read_csv(csvPath)
+    points = pd.DataFrame({'x': raw_data[xCoordinate], 'y': raw_data[yCoordinate]})
+    ball_tree = BallTree(points, metric='euclidean')
+    with open(pickled_kd_tree_path, 'wb') as tree_file:
+        pickle.dump(ball_tree, tree_file)
+    print('Creating KD Tree done.')
 
 
 def query_for_closest_cell(x, y, datasource_name):
@@ -843,7 +855,7 @@ def generate_zarr_png(datasource_name, channel, level, tile):
     except AttributeError:
         segmentation = True
     if segmentation:
-        tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
+        tile = _zarr_level(seg, level)[iy:iy + tile_height, ix:ix + tile_width]
         if tile.dtype.itemsize != 4:
             tile = tile.astype(np.uint32)
         tile = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
@@ -852,7 +864,7 @@ def generate_zarr_png(datasource_name, channel, level, tile):
         if isinstance(channels, zarr.Array):
             tile = channels[channel_num, iy:iy + tile_height, ix:ix + tile_width]
         else:
-            tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
+            tile = _zarr_level(channels, level)[channel_num, iy:iy + tile_height, ix:ix + tile_width]
             tile = tile.astype('uint16')
 
     # tile = np.ascontiguousarray(tile, dtype='uint32')
@@ -881,7 +893,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
             shape = channels.shape
         else:
             channel_info['maxLevel'] = len(channels)
-            shape = channels[0].shape
+            shape = _zarr_level(channels, 0).shape
             chunks = (1, 1024, 1024)
         chunks = (chunks[-2], chunks[-1])
         channel_info['tileHeight'] = chunks[0]

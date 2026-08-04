@@ -15,7 +15,6 @@ import '@fortawesome/fontawesome-free/js/all'
 import Sortable from 'sortablejs';
 import Mark from 'mark.js'
 import $ from 'jquery'
-import 'node-fetch'
 import convert from 'color-convert'
 import 'viawebgl'
 import * as viaWebGL from 'viawebgl';

@@ -17,9 +17,9 @@ import sys
 
 # Initialize sklearn global threadpool controller to avoid deadlock in threaded
 # contexts.
-import sklearn.utils.fixes
+from threadpoolctl import threadpool_limits
 
-sklearn.utils.fixes.threadpool_limits()
+threadpool_limits()
 
 # If you're running the pyinstaller version of the code, create a
 # new directory for the data (this will be at ~/ on mac)

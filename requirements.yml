@@ -3,31 +3,30 @@ channels:
   - conda-forge
 dependencies:
   - appdirs
-  - setuptools<81.0.0
-  - flask=2.2.2
-  - flask-sqlalchemy=3.0.2
-  - itsdangerous=2.1.2
+  - flask
+  - flask-sqlalchemy
+  - itsdangerous
   - jinja2
   - matplotlib
   - numpy
-  - ome-types=0.3.3
+  - ome-types
   - orjson
   - pandas
-  - pillow=8.1
+  - pillow
   - pip
   - pyinstaller
-  - python=3.9.15
+  - python=3.13
   - requests
   - scikit-image
-  - scikit-learn=1.2.2
+  - scikit-learn
   - scipy
-  - setuptools=65.1.1
-  - tifffile=2021.4.8
+  - setuptools
+  - tifffile
   - waitress
-  - werkzeug=2.2.2
-  - zarr=2.10
+  - uv
+  - werkzeug
+  - zarr
   - pip:
-      - opencv-python==4.9.0.80
+      - -e .[jupyter,dev]
+      - opencv-python>=4.12
       - xmlschema
-      - pydantic==1.10.10
-      - imagecodecs[all]

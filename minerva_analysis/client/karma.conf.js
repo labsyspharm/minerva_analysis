@@ -13,7 +13,7 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://www.npmjs.com/search?q=keywords:karma-adapter
-    frameworks: ['mocha', 'chai', 'sinon-chai', 'webpack', 'fixture', 'jquery-3.4.0'],
+    frameworks: ['mocha', 'webpack', 'fixture', 'jquery-3.4.0'],
     
     chai: {
       includeStack: true
@@ -118,6 +118,9 @@ module.exports = function(config) {
 
     // web server port
     port: 9876,
+    browserNoActivityTimeout: 120000,
+    browserDisconnectTimeout: 120000,
+    captureTimeout: 120000,
 
 
     // enable / disable colors in the output (reporters and logs)

@@ -4,7 +4,7 @@ import numpy as np
 def preNormalize(input_csvPath, output_csvPath, skip_columns=[]):
     RAW_DATA = np.genfromtxt(input_csvPath, names=True, dtype=float, delimiter=',')
     marker_list = RAW_DATA.dtype.names
-    norm_data = RAW_DATA.view((np.float, len(marker_list)))
+    norm_data = RAW_DATA.view((np.float64, len(marker_list)))
 
     # A list of markers to skip normalization
     # markers_notToNorm = ['Field_Row', 'Field_Col', 'CellID', 'X_position','Y_position','Percent_Touching','Number_Neighbors','Neighbor_1','Neighbor_2','Neighbor_3','Neighbor_4','Neighbor_5', 'Eccentricity',	'Solidity',	'Extent',	'EulerNumber',	'Perimeter',	'MajorAxisLength',	'MinorAxisLength',	'Orientation',	'X_position',	'Y_position']

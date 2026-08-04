@@ -210,9 +210,11 @@ def get_rect_cells():
 def get_ome_metadata():
     datasource = request.args.get('datasource')
     resp = data_model.get_ome_metadata(datasource)
-    if resp:
-        resp = resp.json()
-    else:
+    if hasattr(resp, "model_dump"):
+        resp = resp.model_dump(mode="json")
+    elif hasattr(resp, "dict"):
+        resp = resp.dict()
+    elif not resp:
         resp = {}
     # OME-Types handles jsonify itself, so skip the orjson conversion
     response = app.response_class(

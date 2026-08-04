@@ -7,7 +7,7 @@ const eventHandler = new SimpleEventHandler(d3.select("body").node());
 const datasource = flaskVariables.datasource;
 
 //VIEWS
-const __minervaAnalysis = {
+const __minervaAnalysis = window.__minervaAnalysis = {
   dataLayer: null,
   channelList: null,
   csv_gatingList: null
@@ -25,7 +25,7 @@ document.getElementById("openseadragon").addEventListener("contextmenu", (event)
 
 //LOAD DATA
 // Data prevent caching on the config file, as it may have been modified
-d3.json(`${minervaUrl("config")}?t=${Date.now()}`).then(function (config) {
+window.__minervaAnalysisReady = d3.json(`${minervaUrl("config")}?t=${Date.now()}`).then(function (config) {
     return init(config[datasource]);
 });
 

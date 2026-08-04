@@ -1,4 +1,6 @@
 const d3 = require('d3');
+const {sliderBottom} = require('d3-simple-slider');
+const chai = require('chai');
 const sinon = require('sinon');
 const Stream = require('stream');
 const mockttp = require("mockttp");
@@ -15,6 +17,7 @@ var shortData = require('../data/get_channel_names/short.json');
 // These are set in test/fixtures/context.html
 declare var __GLOBAL__RESET__FUNCTION__: () => void;
 declare var __GLOBAL__INITIALIZATION__FUNCTION__: () => void;
+declare var minervaUrl: (path: string) => string;
 // Types
 type StreamBuffer = (stream: ReadableStream<any>) => Promise<Uint8Array>
 type LoadBuffer = (url: string) => Promise<Uint8Array>
@@ -27,6 +30,14 @@ type TopColors = {
 
 // Types defined by application
 const OpenSeadragon = require("openseadragon");
+(window as any).d3 = d3;
+(window as any).d3.sliderBottom = sliderBottom;
+(window as any).Buffer = Buffer;
+(window as any).MINERVA_BASE_URL = "";
+(window as any).minervaUrl = (path: string) => {
+  const normalized = path.replace(/^\/+/, "");
+  return normalized ? `/${normalized}` : "/";
+};
 type Viewer = typeof OpenSeadragon.Viewer;
 type World = typeof OpenSeadragon.World;
 interface ViewerManager {
@@ -231,8 +242,9 @@ beforeEach(async () => {
     gatingMock.thenCallback(() => '')
 ])
   // Run the main entrypoint
-  this.result = fixture.load('main.html');
+  fixture.load('main.html');
   __GLOBAL__RESET__FUNCTION__();
+  await waitForViewer();
 });
 
 afterEach(function(){
@@ -243,13 +255,22 @@ afterEach(function(){
   for (const el of els) {
     el.remove();
   }
-  return mockServer.stop();
-  // Restore spies
   sinon.restore();
+  return mockServer.stop();
 });
 
 const sleeper = async (sec: number) => {
   return await new Promise(r => setTimeout(r, sec * 1024));
+}
+
+const waitForViewer = async () => {
+  for (let i = 0; i < 100; i++) {
+    if (__minervaAnalysis?.csv_gatingList?.seaDragonViewer) {
+      return;
+    }
+    await sleeper(0.1);
+  }
+  throw new Error("Timed out waiting for viewer initialization");
 }
 
 const setChannelColorZero = async (color: string) => {
@@ -351,7 +372,7 @@ describe('Load', function () {
       // Ensure expected white/black ratio
       (({ colors, counts }: TopColors) => {
         const white_ratio = counts[0] / (counts[0] + counts[1]);
-        white_ratio.should.be.approximately(0.5058, 0.01);
+        expect(white_ratio).to.be.approximately(0.5058, 0.01);
         expect(colors[0]).to.equal('ffffff');
         expect(colors[1]).to.equal('000000');
       })(toTopColors());
@@ -363,7 +384,7 @@ describe('Load', function () {
       // Ensure expected black/blue ratio
       (({ colors, counts }: TopColors) => {
         const blue_ratio = counts[0] / (counts[0] + counts[1]);
-        blue_ratio.should.be.approximately(0.5932, 0.01);
+        expect(blue_ratio).to.be.approximately(0.5932, 0.01);
         expect(colors[0]).to.equal('000000');
         expect(colors[1]).to.equal('000093');
       })(toTopColors());

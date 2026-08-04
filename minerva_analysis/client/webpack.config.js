@@ -8,8 +8,20 @@ module.exports = {
     output: {
         filename: '[name]_bundle.js'
     },
-    node: {
-        fs: 'empty'
+    resolve: {
+        alias: {
+            'process/browser': require.resolve('process/browser.js')
+        },
+        fallback: {
+            assert: require.resolve('assert/'),
+            fs: false,
+            process: require.resolve('process/browser.js'),
+            querystring: require.resolve('querystring-es3'),
+            stream: require.resolve('stream-browserify'),
+            url: require.resolve('url/'),
+            util: require.resolve('util/'),
+            zlib: require.resolve('browserify-zlib')
+        }
     },
     module: {
         rules: [
@@ -22,9 +34,7 @@ module.exports = {
             },
             {
                 test: /\.(png|svg|jpg|gif|dzi)$/,
-                use: [
-                    'file-loader',
-                ],
+                type: 'asset/resource'
             },
             {
                 test: /\.ts$/,
@@ -34,9 +44,6 @@ module.exports = {
                     options: {
                       "presets": [
                           "@babel/typescript"
-                      ],
-                      "plugins": [
-                          "dynamic-import-node"
                       ],
                     }
                 }
@@ -48,13 +55,19 @@ module.exports = {
                     loader: 'babel-loader',
                     options: {
                         plugins: [
-                          ["@babel/plugin-transform-runtime", { "corejs": 2 }],
-                          '@babel/plugin-proposal-class-properties'
+                          "@babel/plugin-transform-runtime",
+                          '@babel/plugin-transform-class-properties'
                         ],
                         presets: ['@babel/preset-env']
                     }
                 }
             },
         ],
-    }
+    },
+    plugins: [
+        new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+            process: ['process/browser.js']
+        })
+    ]
 };

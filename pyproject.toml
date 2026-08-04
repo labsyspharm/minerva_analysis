@@ -7,37 +7,42 @@ name = "minerva-analysis"
 version = "1.0.2"
 description = "OpenSeadragon-based cellular image viewing and analysis tool."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12,<3.14"
 license = { text = "MIT" }
 dependencies = [
     "appdirs",
-    "Flask==2.2.2",
-    "Flask-SQLAlchemy==3.0.2",
-    "imagecodecs[all]",
-    "itsdangerous==2.1.2",
-    "Jinja2",
-    "matplotlib",
-    "numpy",
-    "ome-types==0.3.3",
-    "opencv-python==4.9.0.80",
-    "orjson",
-    "pandas",
-    "Pillow==8.1",
+    "Flask>=3.1",
+    "Flask-SQLAlchemy>=3.1",
+    "imagecodecs",
+    "itsdangerous>=2.2",
+    "Jinja2>=3.1",
+    "matplotlib>=3.11",
+    "numpy>=2.0",
+    "ome-types>=0.6.3",
+    "opencv-python>=4.12",
+    "orjson>=3.11",
+    "pandas>=3.0",
+    "Pillow>=10.4",
+    "pydantic>=2.13,<2.14",
     "requests",
     "scikit-image",
-    "scikit-learn==1.2.2",
+    "scikit-learn>=1.9",
     "scipy",
-    "tifffile==2021.4.8",
+    "tifffile>=2026.7.31",
     "waitress",
-    "Werkzeug==2.2.2",
+    "Werkzeug>=3.1",
     "xmlschema",
-    "zarr==2.10",
+    "zarr>=3",
 ]
 
 [project.optional-dependencies]
 jupyter = [
     "ipython",
     "jupyter-server-proxy",
+]
+dev = [
+    "pyinstaller",
+    "pytest",
 ]
 
 [project.scripts]
