@@ -90,6 +90,16 @@ viewer = MinervaViewer.from_files(
 viewer
 ```
 
+## Baseline smoke test
+
+Before upgrading dependencies or changing the viewer/server boundary, run the local `orion2` baseline:
+
+```bash
+python -m tests.baseline_orion2
+```
+
+The test checks Flask app import, `/config`, the viewer page, metadata JSON, channel metadata, and one image tile plus one segmentation tile. It skips with a clear message if the local `orion2` datasource or exemplar files are not available.
+
 
 #### (4. Node.js installation and packages)
   This step is only needed when you plan to edit js code. The codebase already included bundled js files.
