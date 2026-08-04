@@ -14,7 +14,7 @@
                             <input type="checkbox" id="import_type" name="is_mc_micro" value="mcmicro">
                         </div>
                     </div>
-                <form action="/upload" id="custom_form" method="POST" class="needs-validation" enctype="multipart/form-data"  novalidate>
+                <form action="{{ data.base_url }}/upload" id="custom_form" method="POST" class="needs-validation" enctype="multipart/form-data"  novalidate>
                     <div class="row">
                         <div class="col-3">
                             <label for="name" >Dataset Name:</label>
@@ -76,7 +76,7 @@
                         </div>
                     </div>
                 </form>
-                <form action="/upload" id="mcmicro_form" method="POST" a href="javascript:;" class="needs-validation" enctype="multipart/form-data" style="display:none" novalidate>
+                <form action="{{ data.base_url }}/upload" id="mcmicro_form" method="POST" a href="javascript:;" class="needs-validation" enctype="multipart/form-data" style="display:none" novalidate>
                     <div class="row">
                         <div class="col-3">
                             <label for="name" >Dataset Name:</label>

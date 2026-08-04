@@ -20,6 +20,7 @@ import time
 import pickle
 import tifffile as tf
 import re
+import threading
 import zarr
 import cv2
 from sklearn.mixture import GaussianMixture
@@ -34,6 +35,7 @@ seg = None
 zarray = None
 channels = None
 metadata = None
+load_lock = threading.RLock()
 
 
 def init(datasource_name):
@@ -48,44 +50,50 @@ def load_datasource(datasource_name, reload=False):
     global zarray
     global channels
     global metadata
-    if source is datasource_name and datasource is not None and reload is False:
-        return
-    load_config(datasource_name)
-    if reload:
-        load_ball_tree(datasource_name, reload=reload)
-    csvPath = Path(config[datasource_name]['featureData'][0]['src'])
-    print("Loading csv data.. (this can take some time)")
-    datasource = pd.read_csv(csvPath)
-    datasource['id'] = datasource.index
-    datasource = datasource.replace(-np.Inf, 0)
-    source = datasource_name
-    print("Loading segmentation.")
-    if config[datasource_name]['segmentation'].endswith('.zarr'):
-        seg = zarr.load(config[datasource_name]['segmentation'])
-    else:
-        seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
-        seg = zarr.open(seg_io.series[0].aszarr())
-    channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
-    print("Loading image descriptions.")
-    try:
-        xml = channel_io.pages[0].tags['ImageDescription'].value
-        metadata = from_xml(xml).images[0].pixels
-    except:
-        metadata = {}
-    channels = zarr.open(channel_io.series[0].aszarr())
+    with load_lock:
+        if source == datasource_name and datasource is not None and seg is not None and channels is not None and reload is False:
+            return
+        load_config(datasource_name)
+        if reload:
+            load_ball_tree(datasource_name, reload=reload)
+        csvPath = Path(config[datasource_name]['featureData'][0]['src'])
+        print("Loading csv data.. (this can take some time)")
+        loaded_datasource = pd.read_csv(csvPath)
+        loaded_datasource['id'] = loaded_datasource.index
+        loaded_datasource = loaded_datasource.replace(-np.Inf, 0)
+        print("Loading segmentation.")
+        if config[datasource_name]['segmentation'].endswith('.zarr'):
+            loaded_seg = zarr.load(config[datasource_name]['segmentation'])
+        else:
+            seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
+            loaded_seg = zarr.open(seg_io.series[0].aszarr())
+        channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+        print("Loading image descriptions.")
+        try:
+            xml = channel_io.pages[0].tags['ImageDescription'].value
+            loaded_metadata = from_xml(xml).images[0].pixels
+        except:
+            loaded_metadata = {}
+        loaded_channels = zarr.open(channel_io.series[0].aszarr())
 
-    level_series = next(
-        level for level in reversed(channel_io.series[0].levels)
-        if all(d >= 200 for d in level.shape[1:])
-    )
-    zarray = zarr.open(level_series.aszarr())
-    if zarray.shape[1] > 400 or zarray.shape[2] > 400:
-        x_reduce = zarray.shape[1] // 200
-        y_reduce = zarray.shape[2] // 200
-        reduce = np.min([x_reduce, y_reduce])
-        zarray = block_reduce(zarray, (1, reduce, reduce), np.mean)
+        level_series = next(
+            level for level in reversed(channel_io.series[0].levels)
+            if all(d >= 200 for d in level.shape[1:])
+        )
+        loaded_zarray = zarr.open(level_series.aszarr())
+        if loaded_zarray.shape[1] > 400 or loaded_zarray.shape[2] > 400:
+            x_reduce = loaded_zarray.shape[1] // 200
+            y_reduce = loaded_zarray.shape[2] // 200
+            reduce = np.min([x_reduce, y_reduce])
+            loaded_zarray = block_reduce(loaded_zarray, (1, reduce, reduce), np.mean)
 
-    print("Data loading done.")
+        datasource = loaded_datasource
+        seg = loaded_seg
+        channels = loaded_channels
+        zarray = loaded_zarray
+        metadata = loaded_metadata
+        source = datasource_name
+        print("Data loading done.")
 
 
 def load_config(datasource_name):
@@ -817,10 +825,10 @@ def get_gating_gmm(channel_name, datasource_name, selection_ids):
 
 
 def generate_zarr_png(datasource_name, channel, level, tile):
-    if config is None:
-        load_datasource(datasource_name)
     global channels
     global seg
+    if source != datasource_name or config is None or channels is None or seg is None:
+        load_datasource(datasource_name)
     [tx, ty] = tile.replace('.png', '').split('_')
     tx = int(tx)
     ty = int(ty)
@@ -853,9 +861,9 @@ def generate_zarr_png(datasource_name, channel, level, tile):
 
 
 def get_ome_metadata(datasource_name):
-    if config is None:
-        load_datasource(datasource_name)
     global metadata
+    if source != datasource_name or config is None or metadata is None:
+        load_datasource(datasource_name)
     return metadata
 
 

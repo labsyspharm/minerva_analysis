@@ -74,7 +74,7 @@ class ImageViewer {
         // Config viewer
         const viewer_config = {
             id: "openseadragon",
-            prefixUrl: "/client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/",
+            prefixUrl: minervaUrl("client/external/openseadragon-bin-2.4.0/openseadragon-flat-toolbar-icons-master/images/"),
             minZoomImageRatio: 0.1,
             maxZoomPixelRatio: 15,
             compositeOperation: "lighter",
@@ -166,8 +166,8 @@ class ImageViewer {
             return gl.canvas;
         };
 
-        seaGL.vShader = "/client/src/shaders/vert.glsl";
-        seaGL.fShader = "/client/src/shaders/frag.glsl";
+        seaGL.vShader = minervaUrl("client/src/shaders/vert.glsl");
+        seaGL.fShader = minervaUrl("client/src/shaders/frag.glsl");
 
         // Overwrite tile-drawing method
         seaGL.io["tile-drawing"] = function (e) {
@@ -298,6 +298,20 @@ class ImageViewer {
             return ((grid || {})[x] || {})[y] || {};
         };
 
+        const decodeLabelTile = (responseArray) => {
+            const upng = window.UPNG;
+            if (upng) {
+                const img = upng.decode(responseArray);
+                if (img.ctype == 6 && img.depth == 8) {
+                    return img.data.slice(0, 4 * img.width * img.height);
+                }
+            }
+
+            const pngBuffer = new Buffer(responseArray);
+            const pngArray = PNG.sync.read(pngBuffer);
+            return pngArray.data.slice(0, 4 * pngArray.width * pngArray.height);
+        };
+
         const forceRepaint = this.forceRepaint.bind(this);
         seaGL.addHandler("tile-loaded", (callback, e) => {
             const { source } = e.tiledImage;
@@ -306,11 +320,10 @@ class ImageViewer {
                 e.tile._blobUrl = e.image?.src;
                 if (tileFormat == 32) {
                     e.tile._isLabel = true;
-                    if (!e.tile?._array && e.image?._array) {
-                        const responseArray = e.tileRequest?.response || e.image._array;
-                        const pngBuffer = new Buffer(responseArray);
-                        const pngArray = PNG.sync.read(pngBuffer, { colortype: 0 });
-                        e.tile._array = new Int32Array(pngArray.data.buffer);
+                    const responseArray = e.tileRequest?.response || e.image?._array;
+                    if (!e.tile?._array && responseArray) {
+                        e.tile._array = decodeLabelTile(responseArray);
+                        e.tile._format = "u32";
                     }
                 }
                 // Trigger loading of image
@@ -322,6 +335,12 @@ class ImageViewer {
                         e.tile._format = tile._format;
                         e.tile._array = tile._array;
                     }
+                    if (e.tile?._array) {
+                        return callback(e);
+                    }
+                }
+                else if (tileFormat == 32) {
+                    return;
                 }
                 else if (e?.image) {
                     return callback(e);

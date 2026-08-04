@@ -27,10 +27,22 @@ sklearn.utils.fixes.threadpool_limits()
 # centralizing path across app
 cwd_path = Path.cwd()
 
+
+def _clean_base_url(base_url):
+    if not base_url:
+        return ""
+    base_url = str(base_url).strip()
+    if base_url == "/":
+        return ""
+    return "/" + base_url.strip("/")
+
 # Only call freeze_support if we're in a frozen environment
 
 ## uncomment block if not on O2
-if getattr(sys, "frozen", False):
+env_data_path = os.environ.get("MINERVA_DATA_PATH")
+if env_data_path:
+    data_path = Path(env_data_path).expanduser().resolve()
+elif getattr(sys, "frozen", False):
     data_path = Path(Path(sys.executable).parent / "data")
 else:
     data_path = Path("minerva_analysis/data").resolve()
@@ -51,8 +63,18 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(data_path) + "/db.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["CLIENT_PATH"] = app.root_path + "/client/"
+app.config["IS_DOCKER"] = False
+app.config["MINERVA_BASE_URL"] = _clean_base_url(os.environ.get("MINERVA_BASE_URL", ""))
+app.config["MINERVA_NOTEBOOK_MODE"] = os.environ.get("MINERVA_NOTEBOOK_MODE", "").lower() in ("1", "true", "yes")
 config_json_path = data_path / "config.json"
 db = SQLAlchemy(app)
+
+
+@app.after_request
+def add_notebook_headers(response):
+    if app.config.get("MINERVA_NOTEBOOK_MODE"):
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    return response
 
 
 def get_config():

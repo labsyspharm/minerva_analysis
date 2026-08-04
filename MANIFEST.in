@@ -1,0 +1,7 @@
+recursive-include minerva_analysis/client/templates *.html
+recursive-include minerva_analysis/client/dist *
+recursive-include minerva_analysis/client/src/css *.css
+recursive-include minerva_analysis/client/src/img *
+recursive-include minerva_analysis/client/src/js *.js
+recursive-include minerva_analysis/client/src/shaders *.glsl
+recursive-include minerva_analysis/client/external *

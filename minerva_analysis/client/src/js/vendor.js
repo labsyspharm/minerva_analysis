@@ -1,5 +1,6 @@
 import {Buffer} from 'buffer/';
 import {PNG} from 'pngjs'
+import UPNG from 'upng-js'
 import 'popper.js'
 import 'jquery'
 import 'bootstrap'
@@ -26,6 +27,7 @@ window.$ = $;
 window.d3 = d3;
 window.d3.sliderBottom = sliderBottom;
 window.PNG = PNG;
+window.UPNG = UPNG;
 window.Buffer = Buffer;
 window.Sortable = Sortable;
 window.Mark = Mark;
@@ -33,4 +35,3 @@ window.OpenSeadragon = viaWebGL.OpenSeadragon;
 window.Dropzone = Dropzone;
 window.viaWebGL = viaWebGL;
 window.ViewerManager = ViewerManager;
-

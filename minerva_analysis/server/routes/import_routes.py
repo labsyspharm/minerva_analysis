@@ -5,6 +5,7 @@
 from minerva_analysis import app, get_config_names, config_json_path, data_path, cwd_path
 from minerva_analysis.server.utils import mostFrequentLongestSubstring, pre_normalization
 from minerva_analysis.server.models import data_model
+from minerva_analysis.server.routes.page_routes import template_data
 
 from flask import render_template, request, Response, jsonify
 from pathlib import Path
@@ -51,7 +52,7 @@ def delete_with_datasource_name(config_name):
         configJson.seek(0)  # <--- should reset file position to the beginning.
         json.dump(config_data, configJson, indent=4)
         configJson.truncate()
-    return render_template("index.html", data={'datasource': '', 'datasources': get_config_names()})
+    return render_template("index.html", data=template_data())
 
 
 def edit_config_with_config_name(config_name):
@@ -160,6 +161,8 @@ def edit_config_with_config_name(config_name):
         data['substring'] = mostFrequentLongestSubstring.find_substring(header_full_names)
         data['channelFileNames'] = channelFileNames
         data['datasources'] = [key for key in config_csv.keys()]
+        data['is_docker'] = app.config.get('IS_DOCKER', False)
+        data['base_url'] = app.config.get('MINERVA_BASE_URL', '')
         return render_template('channel_match.html', data=data)
 
 
@@ -306,14 +309,16 @@ def upload_file_page():
                 else:
                     config_data["isTransformed"] = False
 
+                config_data['is_docker'] = app.config.get('IS_DOCKER', False)
+                config_data['base_url'] = app.config.get('MINERVA_BASE_URL', '')
                 return render_template('channel_match.html', data=config_data)
         except Exception as e:
             completed_task = -1
             current_task = str(e)
-            return render_template('index.html')
+            return render_template('index.html', data=template_data())
             # Now Edit Config.Json With my my Data
     print("Finished Updating Config.json")
-    return render_template('index.html')
+    return render_template('index.html', data=template_data())
 
 
 @app.route('/progress')
@@ -364,6 +369,8 @@ def channel():
     test_data['labelName'] = 'nucleiLabelRF'
     test_data['new'] = True
     test_data['datasources'] = get_config_names()
+    test_data['is_docker'] = app.config.get('IS_DOCKER', False)
+    test_data['base_url'] = app.config.get('MINERVA_BASE_URL', '')
 
     return render_template('channel_match.html', data=test_data)
 
@@ -652,4 +659,3 @@ def serialize_and_submit_json(data):
         mimetype='application/json'
     )
     return response
-

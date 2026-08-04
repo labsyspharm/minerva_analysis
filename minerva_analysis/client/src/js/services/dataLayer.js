@@ -20,7 +20,7 @@ class DataLayer {
 
     async init() {
         try {
-            await fetch('/init_database?' + new URLSearchParams({
+            await fetch(minervaUrl('init_database') + '?' + new URLSearchParams({
                 datasource: datasource
             }))
 
@@ -31,7 +31,7 @@ class DataLayer {
 
     async getRow(row) {
         try {
-            let response = await fetch('/get_database_row?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_database_row') + '?' + new URLSearchParams({
                 row: row,
                 datasource: datasource
             }))
@@ -44,7 +44,7 @@ class DataLayer {
 
     async getUploadedGatingCsvValues() {
         try {
-            let response = await fetch('/get_uploaded_gating_csv_values?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_uploaded_gating_csv_values') + '?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
@@ -56,7 +56,7 @@ class DataLayer {
 
     async getSavedGatingList() {
         try {
-            let response = await fetch('/get_saved_gating_list?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_saved_gating_list') + '?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
@@ -68,7 +68,7 @@ class DataLayer {
 
     async getUploadedChannelCsvValues() {
         try {
-            let response = await fetch('/get_uploaded_channel_csv_values?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_uploaded_channel_csv_values') + '?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
@@ -80,7 +80,7 @@ class DataLayer {
 
     async getSavedChannelList() {
         try {
-            let response = await fetch('/get_saved_channel_list?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_saved_channel_list') + '?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
@@ -92,7 +92,7 @@ class DataLayer {
 
     downloadGatingCSV(channels, selections, lassos, selection_ids, fullCsv = false) {
         let form = document.createElement("form");
-        form.action = "/download_gating_csv";
+        form.action = minervaUrl("download_gating_csv");
 
         form.method = "post";
 
@@ -158,7 +158,7 @@ class DataLayer {
     async saveGatingList(channels, selections, lassos) {
         const self = this;
         try {
-            let response = await fetch('/save_gating_list', {
+            let response = await fetch(minervaUrl('save_gating_list'), {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -182,7 +182,7 @@ class DataLayer {
 
     downloadChannelsCSV(map_channels, active_channels, list_colors, list_ranges, list_channels) {
         let form = document.createElement("form");
-        form.action = "/download_channels_csv";
+        form.action = minervaUrl("download_channels_csv");
 
         form.method = "post";
 
@@ -235,7 +235,7 @@ class DataLayer {
     async saveChannelList(map_channels, active_channels, list_colors, list_ranges, list_channels) {
         const self = this;
         try {
-            let response = await fetch('/save_channel_list', {
+            let response = await fetch(minervaUrl('save_channel_list'), {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -261,7 +261,7 @@ class DataLayer {
 
     async getColumnDistributions(columns) {
         try {
-            let response = await fetch('/get_column_distributions?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_column_distributions') + '?' + new URLSearchParams({
                 columns: columns,
                 datasource: datasource
             }))
@@ -275,7 +275,7 @@ class DataLayer {
     async submitGatingUpload(formData) {
         try {
             formData.append('datasource', datasource);
-            let response = await fetch('/upload_gates', {
+            let response = await fetch(minervaUrl('upload_gates'), {
                 method: "POST",
                 body: formData
             })
@@ -289,7 +289,7 @@ class DataLayer {
     async submitChannelUpload(formData) {
         try {
             formData.append('datasource', datasource);
-            let response = await fetch('/upload_channels', {
+            let response = await fetch(minervaUrl('upload_channels'), {
                 method: "POST",
                 body: formData
             })
@@ -302,7 +302,7 @@ class DataLayer {
 
     async getAllCells(start_keys, use_integer) {
         const dtype = use_integer ? 'integer' : 'float'
-        const base_url = `/get_all_cells/${dtype}/?`
+        const base_url = minervaUrl(`get_all_cells/${dtype}/`) + '?'
         try {
             const headers = new Headers();
             headers.append("Content-Type","application/octet-stream");
@@ -321,7 +321,7 @@ class DataLayer {
 
     async getGatedCellIds(filter, start_keys) {
         try {
-            let response = await fetch('/get_gated_cell_ids?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_gated_cell_ids') + '?' + new URLSearchParams({
                 filter: JSON.stringify(filter),
                 start_keys: start_keys,
                 datasource: datasource
@@ -336,7 +336,7 @@ class DataLayer {
     async getGatedCellIdsCustom(filter, start_keys) {
         try {
             // const start = performance.now()
-            let response = await fetch('/get_gated_cell_ids_custom?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_gated_cell_ids_custom') + '?' + new URLSearchParams({
                 filter: JSON.stringify(filter),
                 start_keys: start_keys,
                 datasource: datasource
@@ -353,7 +353,7 @@ class DataLayer {
 
     async getDatabaseDescription() {
         try {
-            let response = await fetch('/get_database_description?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_database_description') + '?' + new URLSearchParams({
                 datasource: datasource
             }))
             let description = await response.json();
@@ -365,7 +365,7 @@ class DataLayer {
 
     async getChannelGMM(channel) {
         try {
-            let response = await fetch('/get_channel_gmm?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_channel_gmm') + '?' + new URLSearchParams({
                 channel: channel,
                 datasource: datasource
             }))
@@ -378,7 +378,7 @@ class DataLayer {
 
     async getGatingGMM(channel, selection_ids) {
         try {
-            let response = await fetch('/get_gating_gmm', {
+            let response = await fetch(minervaUrl('get_gating_gmm'), {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -401,7 +401,7 @@ class DataLayer {
 
     async getChannelCellIds(sels) {
         try {
-            let response = await fetch('/get_channel_cell_ids?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_channel_cell_ids') + '?' + new URLSearchParams({
                 filter: JSON.stringify(sels),
                 datasource: datasource
             }))
@@ -414,7 +414,7 @@ class DataLayer {
 
     async getChannelNames(shortNames = true) {
         try {
-            let response = await fetch('/get_channel_names?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_channel_names') + '?' + new URLSearchParams({
                 datasource: datasource,
                 shortNames: shortNames
             }))
@@ -427,7 +427,7 @@ class DataLayer {
 
     async getColorScheme(refresh = false) {
         try {
-            let response = await fetch('/get_color_scheme?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_color_scheme') + '?' + new URLSearchParams({
                 datasource: datasource,
                 refresh: refresh
             }))
@@ -440,7 +440,7 @@ class DataLayer {
 
     async getNearestCell(point_x, point_y) {
         try {
-            let response = await fetch('/get_nearest_cell?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_nearest_cell') + '?' + new URLSearchParams({
                 point_x: point_x,
                 point_y: point_y,
                 datasource: datasource
@@ -454,7 +454,7 @@ class DataLayer {
 
     async getNeighborhood(maxDistance, x, y) {
         try {
-            let response = await fetch('/get_neighborhood?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_neighborhood') + '?' + new URLSearchParams({
                 point_x: x,
                 point_y: y,
                 max_distance: maxDistance,
@@ -558,7 +558,7 @@ class DataLayer {
 
     async getMetadata() {
         try {
-            let response = await fetch('/get_ome_metadata?' + new URLSearchParams({
+            let response = await fetch(minervaUrl('get_ome_metadata') + '?' + new URLSearchParams({
                 datasource: datasource
             }))
             let response_data = await response.json();
@@ -582,7 +582,7 @@ class DataLayer {
 
      async getCellsInPolygon(points) {
         try {
-            let response = await fetch('/get_cells_in_polygon', {
+            let response = await fetch(minervaUrl('get_cells_in_polygon'), {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -604,7 +604,7 @@ class DataLayer {
 
     async getCellsInLassos(list_lassos) {
         try {
-            let response = await fetch('/get_cells_in_lassos', {
+            let response = await fetch(minervaUrl('get_cells_in_lassos'), {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',

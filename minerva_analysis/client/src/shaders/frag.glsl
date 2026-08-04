@@ -372,6 +372,9 @@ int sample_cell_gate(vec2 off, bvec2 mode, float radius) {
 
 // Sample gated cell index at given offset
 int gate_cell_index(vec2 off, bvec2 mode, float radius) {
+  if (u_gating_shape.y < 1 && mode.x) {
+    return sample_cell_index(off);
+  }
   int cell_gate = sample_cell_gate(off, mode, radius);
   if (cell_gate == -1) {
     return -1;

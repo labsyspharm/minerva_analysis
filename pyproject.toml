@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minerva-analysis"
+version = "1.0.2"
+description = "OpenSeadragon-based cellular image viewing and analysis tool."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "appdirs",
+    "Flask==2.2.2",
+    "Flask-SQLAlchemy==3.0.2",
+    "imagecodecs[all]",
+    "itsdangerous==2.1.2",
+    "Jinja2",
+    "matplotlib",
+    "numpy",
+    "ome-types==0.3.3",
+    "opencv-python==4.9.0.80",
+    "orjson",
+    "pandas",
+    "Pillow==8.1",
+    "requests",
+    "scikit-image",
+    "scikit-learn==1.2.2",
+    "scipy",
+    "tifffile==2021.4.8",
+    "waitress",
+    "Werkzeug==2.2.2",
+    "xmlschema",
+    "zarr==2.10",
+]
+
+[project.optional-dependencies]
+jupyter = [
+    "ipython",
+    "jupyter-server-proxy",
+]
+
+[project.scripts]
+minerva-analysis-server = "minerva_analysis.server_cli:main"
+
+[project.entry-points.jupyter_serverproxy_servers]
+minerva-analysis = "minerva_analysis.proxy:setup_minerva_analysis"
+
+[tool.setuptools.packages.find]
+include = ["minerva_analysis*"]
+
+[tool.setuptools.package-data]
+minerva_analysis = [
+    "client/templates/*.html",
+    "client/dist/*",
+    "client/src/css/*.css",
+    "client/src/img/*",
+    "client/src/js/**/*.js",
+    "client/src/shaders/*.glsl",
+    "client/external/**/*",
+]

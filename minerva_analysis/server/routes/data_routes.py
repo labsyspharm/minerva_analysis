@@ -212,9 +212,11 @@ def get_ome_metadata():
     resp = data_model.get_ome_metadata(datasource)
     if resp:
         resp = resp.json()
+    else:
+        resp = {}
     # OME-Types handles jsonify itself, so skip the orjson conversion
     response = app.response_class(
-        response=resp,
+        response=json.dumps(resp),
         mimetype='application/json'
     )
     return response

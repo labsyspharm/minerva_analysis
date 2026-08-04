@@ -185,7 +185,7 @@ class CSVGatingList {
         });
 
         var dropzone = new Dropzone("#csv_gating_list", {
-            url: "/upload_gates",
+            url: minervaUrl("upload_gates"),
             clickable: false,
             disablePreview: true,
             createImageThumbnails: false

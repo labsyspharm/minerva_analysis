@@ -25,7 +25,7 @@ document.getElementById("openseadragon").addEventListener("contextmenu", (event)
 
 //LOAD DATA
 // Data prevent caching on the config file, as it may have been modified
-d3.json(`/config?t=${Date.now()}`).then(function (config) {
+d3.json(`${minervaUrl("config")}?t=${Date.now()}`).then(function (config) {
     return init(config[datasource]);
 });
 
@@ -40,6 +40,13 @@ async function init(config) {
     //maximum selections
     config.maxSelections = 4;
     config.extraZoomLevels = 3;
+    if (Array.isArray(config.imageData)) {
+        config.imageData.forEach(function (channel) {
+            if (channel.src && channel.src.startsWith("/")) {
+                channel.src = minervaUrl(channel.src);
+            }
+        });
+    }
     //channel information
     for (let idx = 0; idx < config["imageData"].length; idx++) {
         imageChannels[config["imageData"][idx].fullname] = idx;

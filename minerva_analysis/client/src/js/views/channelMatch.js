@@ -271,12 +271,12 @@ function submitForm() {
             channelData.channelFileNames = _.tail(channelData.channelFileNames);
         }
     }
-    $.ajax("/save_config", {
+    $.ajax(minervaUrl("save_config"), {
         data: JSON.stringify(postData),
         contentType: "application/json",
         type: "POST",
         success: function (result) {
-            window.location = '/' //Redirect to main after successful upload
+            window.location = minervaUrl("") //Redirect to main after successful upload
         }
     });
 }

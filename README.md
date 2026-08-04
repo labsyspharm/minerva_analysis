@@ -51,6 +51,45 @@ To import your imaging files in the import gui type in the mounted `/data/..`
 
 * Access the tool via `http://localhost:8000/`
 
+## Running in Jupyter notebooks
+
+Install the package into the same environment as Jupyter:
+
+```bash
+pip install -e ".[jupyter]"
+```
+
+For local notebooks, use:
+
+```python
+from minerva_analysis.jupyter import MinervaViewer
+
+MinervaViewer(datasource="my_dataset", data_dir="path/to/minerva_data")
+```
+
+For JupyterHub or remote notebooks with `jupyter-server-proxy` enabled, use:
+
+```python
+MinervaViewer(datasource="my_dataset", data_dir="path/to/minerva_data", proxy=True)
+```
+
+Datasets can also be registered directly from notebook-visible files:
+
+```python
+viewer = MinervaViewer.from_files(
+    name="my_dataset",
+    image="/path/to/image.ome.tif",
+    segmentation="/path/to/segmentation.ome.tif",
+    features="/path/to/cells.csv",
+    x="X_centroid",
+    y="Y_centroid",
+    id_column="CellID",
+    data_dir="path/to/minerva_data",
+    proxy=True,
+)
+viewer
+```
+
 
 #### (4. Node.js installation and packages)
   This step is only needed when you plan to edit js code. The codebase already included bundled js files.

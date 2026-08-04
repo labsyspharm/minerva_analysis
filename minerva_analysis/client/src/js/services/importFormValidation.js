@@ -62,7 +62,7 @@ async function checkCSVFileExistence(caller) {
 
     try {
         //check if corresponsindg csv file exists
-        let response = await fetch('/check_mc_csv_file_existence', {
+        let response = await fetch(minervaUrl('check_mc_csv_file_existence'), {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -103,7 +103,7 @@ async function checkChannelExistence(caller) {
 
     try {
         //check if corresponsindg csv file exists
-        let response = await fetch('/check_mc_channel_file_existence', {
+        let response = await fetch(minervaUrl('check_mc_channel_file_existence'), {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -142,7 +142,7 @@ async function checkFileExistence(caller) {
 
     try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/check_file_existence', {
+        let response = await fetch(minervaUrl('check_file_existence'), {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -179,7 +179,7 @@ async function checkDatasetExistence(caller) {
 
     try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/dataset_existence', {
+        let response = await fetch(minervaUrl('dataset_existence'), {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -215,7 +215,7 @@ async function checkPathExistence(caller) {
 
     try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/check_path_existence', {
+        let response = await fetch(minervaUrl('check_path_existence'), {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -254,7 +254,7 @@ async function fillCSVFileList() {
 
     try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/get_mc_csv_file_list', {
+        let response = await fetch(minervaUrl('get_mc_csv_file_list'), {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -296,7 +296,7 @@ async function fillImgFileList() {
 
     try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/get_mc_segmentation_file_list', {
+        let response = await fetch(minervaUrl('get_mc_segmentation_file_list'), {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -339,7 +339,7 @@ async function fillSegFileList() {
 
     try {
         //get available segmentation masks in mcmicro directory from server
-        let response = await fetch('/get_mc_segmentation_file_list', {
+        let response = await fetch(minervaUrl('get_mc_segmentation_file_list'), {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -399,7 +399,7 @@ function onupload() {
     uploadPercentage = 0;
     // Hide whatever header exists
     displayHeader('', false, true);
-    var source = new EventSource("/progress");
+    var source = new EventSource(minervaUrl("progress"));
     source.onmessage = function (event) {
         let data = JSON.parse(event.data);
         consecutiveErrors = 0;
