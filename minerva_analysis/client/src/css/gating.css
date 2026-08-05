@@ -82,3 +82,52 @@ line.track {
 #arrow-upload-form, #arrow-upload-form * {
     display: none
 }
+
+.viewer-sidebar #gating_controls_panel {
+    background: transparent;
+    border: 0;
+    bottom: auto;
+    color: #d8e1ed;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 8px 0 0;
+    position: static;
+    width: 100%;
+    z-index: auto;
+}
+
+.viewer-sidebar #gating_controls_panel label {
+    align-items: center;
+    display: inline-flex;
+    font-size: 12px;
+    gap: 6px;
+    margin: 0;
+}
+
+.viewer-sidebar #gating_controls_panel input {
+    height: 14px;
+    margin: 0;
+    width: 14px;
+}
+
+.viewer-sidebar #gating_download_panel {
+    background: #101721;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    color: #eef3f8;
+    left: 0;
+    margin: 0;
+    padding: 28px 10px 12px;
+    position: absolute;
+    right: 0;
+    top: auto;
+    visibility: hidden;
+    width: auto;
+    z-index: 105;
+}
+
+.viewer-sidebar #gate_marker_section #gating_download_panel {
+    top: 42px;
+}

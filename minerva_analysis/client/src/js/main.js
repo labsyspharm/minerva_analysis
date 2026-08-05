@@ -10,7 +10,8 @@ const datasource = flaskVariables.datasource;
 const __minervaAnalysis = window.__minervaAnalysis = {
   dataLayer: null,
   channelList: null,
-  csv_gatingList: null
+  csv_gatingList: null,
+  viewerSidebar: null
 }
 
 //DATA MANAGEMENT
@@ -226,4 +227,10 @@ async function init(config) {
         seaDragonViewer.forceRepaint();
     };
     eventHandler.bind(ImageViewer.events.addScaleBar, add_scalebar);
+
+    if (typeof ViewerSidebar !== "undefined" && document.getElementById("viewer_sidebar")) {
+        const viewerSidebar = new ViewerSidebar(config, columns, dataLayer, eventHandler, channelList, csv_gatingList);
+        __minervaAnalysis.viewerSidebar = viewerSidebar;
+        viewerSidebar.init(dd);
+    }
 }
