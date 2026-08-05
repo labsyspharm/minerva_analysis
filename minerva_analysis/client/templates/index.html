@@ -118,6 +118,10 @@
                     <label for="controls_scalebar">Scalebar</label>
                     <input id="controls_scalebar" type="checkbox" checked>
                 </div>
+                <button id="download_view_button" class="sidebar-action secondary" type="button">
+                    <span class="fas fa-image"></span>
+                    Download Image
+                </button>
                 <div id="gating_controls_panel">
                     <label>Outlines
                         <input id="gating_controls_outlines" type="checkbox" checked>
@@ -134,14 +138,12 @@
                 <span class="fas fa-chevron-right"></span>
             </button>
             <div id="openseadragon">
-                <div class="row">
-                    <div class="col-auto">
-                        <div class="lds-ellipsis" id="openseadragon_loader">
-                            <div></div>
-                            <div></div>
-                            <div></div>
-                            <div></div>
-                        </div>
+                <div id="openseadragon_loader" class="viewer-loader">
+                    <div class="lds-ellipsis">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
                     </div>
                 </div>
             </div>

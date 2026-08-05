@@ -44,12 +44,15 @@ class ImageViewer {
             lasso_ids_subtract: []
         };
         this.toggle_bool = true;
+        this.centers = [];
+        this.ids = [];
 
         // Viewer
         this.viewer = {};
 
         // OSD plugins
         this.show_scalebar = true;
+        this.show_centroids = false;
 
         // Transfer function constant
         this.numTFBins = 1024;
@@ -107,6 +110,7 @@ class ImageViewer {
         controlsAnchor.style.top = 'unset';
         controlsAnchor.style.left = '40vh';
         controlsAnchor.style.bottom = '2vh';
+        this.addDownloadControl(controlsAnchor);
 
         // Flexible use of textures
         const constantTextures = ["ids", "centers", "gatings", "pickings"];
@@ -396,14 +400,17 @@ class ImageViewer {
         }, 30000); // Check every 30 seconds
 
         this.viewer.scalebar({
-            location: 3,
+            location: OpenSeadragon.ScalebarLocation.BOTTOM_RIGHT,
             minWidth: "100px",
-            type: "Microscopy",
+            type: OpenSeadragon.ScalebarType.MICROSCOPY,
             stayInsideImage: true,
-            pixelsPerMeter: 0,
+            pixelsPerMeter: this.getPixelsPerMeter(),
             fontColor: "rgb(255, 255, 255)",
             color: "rgb(255, 255, 255)",
+            backgroundColor: "rgba(0, 0, 0, 0.45)",
+            barThickness: 3,
         });
+        this.styleScaleBar();
 
         // Add listener for scalebar
         const controls_scalebar = document.querySelector("#controls_scalebar");
@@ -560,6 +567,9 @@ class ImageViewer {
                     context.stroke();
                     // context.globalAlpha = 1.0;
                 }
+                if (that.show_centroids) {
+                    that.drawCentroids(context);
+                }
             },
         });
     }
@@ -575,6 +585,8 @@ class ImageViewer {
     async init(viewerManager, channelList, gatingList, centers, ids) {
         this.channelList = channelList;
         this.gatingList = gatingList;
+        this.centers = centers || [];
+        this.ids = ids || [];
         // Instantiate viewer managers
         this.viewerManagerVMain = viewerManager;
         this.viewerManagers.push(this.viewerManagerVMain);
@@ -1425,6 +1437,31 @@ class ImageViewer {
         this.forceRepaint();
     }
 
+    updateCentroidVisibility(isVisible) {
+        this.show_centroids = isVisible;
+        if (this.canvasOverlay) {
+            this.canvasOverlay.resize();
+            this.canvasOverlay.clear();
+            this.canvasOverlay._updateCanvas();
+        }
+    }
+
+    addDownloadControl(controlsAnchor) {
+        if (!controlsAnchor || document.getElementById("osd_download_view_button")) return;
+        const button = document.createElement("button");
+        button.id = "osd_download_view_button";
+        button.className = "osd-download-view-button";
+        button.type = "button";
+        button.title = "Download current view";
+        button.innerHTML = '<span class="fas fa-image"></span>';
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.downloadCurrentView();
+        });
+        controlsAnchor.appendChild(button);
+    }
+
     addScaleBar() {
         let pixelsPerMeter;
         if (this.imgMetadata) {
@@ -1445,17 +1482,95 @@ class ImageViewer {
             } else {
                 pixelsPerMeter = 0;
             }
+            pixelsPerMeter = this.show_scalebar ? this.getPixelsPerMeter() : null;
 
             this.viewer.scalebar({
+                location: OpenSeadragon.ScalebarLocation.BOTTOM_RIGHT,
+                minWidth: "100px",
+                type: OpenSeadragon.ScalebarType.MICROSCOPY,
+                stayInsideImage: false,
                 pixelsPerMeter: pixelsPerMeter,
+                fontColor: "rgb(255, 255, 255)",
+                color: "rgb(255, 255, 255)",
+                backgroundColor: "rgba(0, 0, 0, 0.45)",
+                barThickness: 3,
             });
+            this.styleScaleBar();
         }
+    }
+
+    getPixelsPerMeter() {
+        const physicalSizeX = Number(this.imgMetadata?.physical_size_x);
+        if (!physicalSizeX) return null;
+        const unitsPerMeter = {
+            "\u00b5m": 1000000,
+            "um": 1000000,
+            "nm": 1000000000,
+            "cm": 100,
+            "m": 1,
+        }[this.imgMetadata?.physical_size_x_unit];
+        if (!unitsPerMeter) return null;
+        return unitsPerMeter / physicalSizeX;
+    }
+
+    styleScaleBar() {
+        const element = this.viewer?.scalebarInstance?.divElt;
+        if (!element) return;
+        element.style.zIndex = "220";
+        element.style.position = "absolute";
+        element.style.padding = "2px 4px";
+        element.style.borderRadius = "3px";
+    }
+
+    drawCentroids(context) {
+        const centers = this.centers || [];
+        if (!centers.length || !this.viewer?.viewport) return;
+        const zoomScale = 2 ** this.config.extraZoomLevels;
+        const item = this.viewer.world.getItemAt(0);
+        if (!item) return;
+        const bounds = this.viewer.viewport.getBounds(true);
+        const imageBounds = item.viewportToImageRectangle(bounds);
+        const minX = imageBounds.x / zoomScale;
+        const minY = imageBounds.y / zoomScale;
+        const maxX = (imageBounds.x + imageBounds.width) / zoomScale;
+        const maxY = (imageBounds.y + imageBounds.height) / zoomScale;
+        const radius = 3.5 / Math.max(this.viewer.viewport.getZoom(true), 1);
+        context.save();
+        context.globalAlpha = 0.9;
+        context.fillStyle = "#ffdd55";
+        context.strokeStyle = "rgba(0, 0, 0, 0.8)";
+        context.lineWidth = 1;
+        for (let i = 0; i < centers.length; i += 2) {
+            const x = centers[i];
+            const y = centers[i + 1];
+            if (x < minX || x > maxX || y < minY || y > maxY) {
+                continue;
+            }
+            context.beginPath();
+            context.arc(x, y, radius, 0, Math.PI * 2);
+            context.fill();
+            context.stroke();
+        }
+        context.restore();
+    }
+
+    downloadCurrentView() {
+        const canvas = this.viewer?.scalebarInstance && this.show_scalebar
+            ? this.viewer.scalebarInstance.getImageWithScalebarAsCanvas()
+            : this.viewer?.drawer?.canvas;
+        if (!canvas) return;
+        const link = document.createElement("a");
+        link.download = `${datasource || "minerva"}_current_view.png`;
+        link.href = canvas.toDataURL("image/png");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     setLoading(isLoading) {
         const loader = document.getElementById("openseadragon_loader");
         if (loader) {
-            loader.style.display = isLoading ? "inline-block" : "none";
+            loader.style.display = isLoading ? "flex" : "none";
         }
     }
 

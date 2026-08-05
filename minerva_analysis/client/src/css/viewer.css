@@ -380,6 +380,10 @@
 }
 
 #openseadragon_loader {
+    align-items: center;
+    display: none;
+    inset: 0;
+    justify-content: center;
     left: 50%;
     position: absolute;
     top: 50%;
@@ -387,8 +391,39 @@
     z-index: 200;
 }
 
-#openseadragon_loader div {
+#openseadragon_loader.viewer-loader {
+    left: 0;
+    top: 0;
+    transform: none;
+}
+
+#openseadragon_loader .lds-ellipsis div {
     background: rgba(255, 255, 255, 1);
+}
+
+.osd-download-view-button {
+    align-items: center;
+    background: rgba(17, 24, 39, 0.86);
+    border: 1px solid rgba(148, 163, 184, 0.34);
+    border-radius: 5px;
+    color: rgba(241, 245, 249, 0.95);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 16px;
+    height: 40px;
+    justify-content: center;
+    margin-left: 6px;
+    pointer-events: auto;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+    width: 40px;
+}
+
+.osd-download-view-button:hover,
+.osd-download-view-button:focus {
+    background: rgba(31, 41, 55, 0.96);
+    border-color: rgba(248, 113, 113, 0.7);
+    color: #ffffff;
+    outline: none;
 }
 
 #legacy_controls_mount {

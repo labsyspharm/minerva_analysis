@@ -496,15 +496,7 @@ class CSVGatingList {
 
         // Toggle outlined / filled cell selections
         gating_controls_centroids.addEventListener('change', e => {
-
-            // Update logic mode for selection query
-            if (e.target.checked) {
-                this.eval_mode = 'or';
-            } else {
-                this.eval_mode = 'and';
-            }
-
-            this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+            this.seaDragonViewer.updateCentroidVisibility(e.target.checked);
         })
 
     }

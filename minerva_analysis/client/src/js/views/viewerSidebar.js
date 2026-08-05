@@ -28,7 +28,7 @@ class ViewerSidebar {
         this.populateGateSelect();
         this.initChannelSlots();
         this.bindActions();
-        this.setGateMarker(this.columns[1] || this.columns[0]);
+        this.setGateMarker(this.columns[1] || this.columns[0], { enableSlot: false });
         this.applyInitialChannels();
     }
 
@@ -62,6 +62,15 @@ class ViewerSidebar {
 
         const addButton = document.getElementById("add_channel_button");
         addButton.addEventListener("click", () => this.addFirstAvailableChannel());
+
+        const downloadViewButton = document.getElementById("download_view_button");
+        if (downloadViewButton) {
+            downloadViewButton.addEventListener("click", () => {
+                if (this.gatingList?.seaDragonViewer) {
+                    this.gatingList.seaDragonViewer.downloadCurrentView();
+                }
+            });
+        }
 
         window.addEventListener("resize", () => {
             this.redrawGateSlider();
@@ -98,7 +107,7 @@ class ViewerSidebar {
                 name,
                 color: color.rgb,
                 colorHex: color.hex,
-                enabled: Boolean(name),
+                enabled: slotIndex === 0 && Boolean(name),
                 range: this.getImageRange(name),
                 userColorChanged: false,
             };
@@ -180,15 +189,16 @@ class ViewerSidebar {
         this.updateSelectedCount();
     }
 
-    setGateMarker(name) {
+    setGateMarker(name, options = {}) {
         if (!name) return;
+        const enableSlot = options.enableSlot !== false;
         this.gateMarker = name;
         const select = document.getElementById("gate_marker_select");
         select.value = name;
         this.ensureGateSelection(name);
         this.redrawGateSlider();
         this.drawGateDistribution();
-        this.setSlotMarker(1, name, { keepColor: true, enable: true });
+        this.setSlotMarker(1, name, { keepColor: true, enable: enableSlot });
     }
 
     ensureGateSelection(name) {
@@ -480,9 +490,12 @@ class ViewerSidebar {
         const emptySlot = this.channelSlots.find((slot) => !slot.enabled);
         if (!emptySlot) return;
         const activeNames = this.channelSlots.filter((slot) => slot.enabled).map((slot) => slot.name);
-        const next = this.columns.find((name) => !activeNames.includes(name));
-        if (!next) return;
-        this.setSlotMarker(emptySlot.index, next, { keepColor: true, enable: true });
+        const next = emptySlot.name && !activeNames.includes(emptySlot.name)
+            ? emptySlot.name
+            : this.columns.find((name) => !activeNames.includes(name));
+        if (next) {
+            this.setSlotMarker(emptySlot.index, next, { keepColor: true, enable: true });
+        }
     }
 
     syncSlotDom(slot) {
