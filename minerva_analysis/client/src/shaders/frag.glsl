@@ -426,28 +426,32 @@ bool near_cell_edge(float one, bvec2 mode) {
 
 // Colorize discrete u32 signal
 vec4 u32_rgba_map(bvec2 mode) {
-  int key = sample_cell_gate(vec2(0, 0), mode, u_pie_radius);
   vec4 empty_pixel = vec4(0., 0., 0., 0.);
   vec4 white_pixel = vec4(1., 1., 1., 1.);
   bool edge_mode = mode.x;
   bool or_mode = mode.y;
+  if (!edge_mode) {
+    return empty_pixel;
+  }
+
+  int cell_index = sample_cell_index(vec2(0., 0.));
+  if (cell_index < 0) {
+    return empty_pixel;
+  }
+
+  if (u_gating_shape.y < 1) {
+    return white_pixel;
+  }
+
+  int key = to_gate(cell_index, mode, -1.0);
   if (key > -1) {
     if (or_mode) {
       return vec4(sample_gating_color(float(key)), 1.0);
     }
-    else if (!edge_mode) {
+    else {
       return white_pixel;
     }
   }
-
-  // Borders (bottom layer)
-  if (edge_mode) {
-    float one = 1.0 / u_tile_fraction;
-    if (near_cell_edge(one, mode)) {
-      return white_pixel;
-    }
-  }
-  // Background
   return empty_pixel;
 }
 

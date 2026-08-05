@@ -26,6 +26,7 @@ import cv2
 from sklearn.mixture import GaussianMixture
 from scipy.stats import norm
 from skimage.measure import block_reduce
+from skimage.transform import resize
 
 ball_tree = None
 database = None
@@ -42,6 +43,142 @@ def _zarr_level(group, level):
     if isinstance(group, zarr.Array):
         return group
     return group[str(level)]
+
+
+def _zarr_levels(group):
+    if isinstance(group, zarr.Array):
+        return [group]
+    return [group[str(i)] for i in range(len(group))]
+
+
+def _sample_segmentation_array(level):
+    shape = level.shape[-2:]
+    max_sample_dim = 1536
+    step = max(1, int(np.ceil(max(shape) / max_sample_dim)))
+    sample = level[::step, ::step]
+    return np.asarray(sample)
+
+
+def _looks_like_outline_mask(segmentation_path):
+    if str(segmentation_path).endswith('.zarr'):
+        group = zarr.open(segmentation_path)
+        sample = _sample_segmentation_array(_zarr_levels(group)[0])
+    else:
+        with tf.TiffFile(str(segmentation_path), is_ome=False) as seg_io:
+            group = zarr.open(seg_io.series[0].aszarr())
+            sample = _sample_segmentation_array(_zarr_levels(group)[0])
+    if sample.ndim != 2 or sample.size == 0:
+        return False
+
+    nonzero = sample != 0
+    nonzero_count = int(np.count_nonzero(nonzero))
+    if nonzero_count == 0:
+        return False
+
+    density = nonzero_count / sample.size
+    center = nonzero[1:-1, 1:-1]
+    if center.size == 0:
+        return density < 0.25
+
+    same_id_interior = (
+        center
+        & (sample[1:-1, 1:-1] == sample[:-2, 1:-1])
+        & (sample[1:-1, 1:-1] == sample[2:, 1:-1])
+        & (sample[1:-1, 1:-1] == sample[1:-1, :-2])
+        & (sample[1:-1, 1:-1] == sample[1:-1, 2:])
+    )
+    interior_fraction = int(np.count_nonzero(same_id_interior)) / max(1, int(np.count_nonzero(center)))
+    return density <= 0.20 and interior_fraction <= 0.05
+
+
+def _outline_level(labels):
+    labels = np.asarray(labels)
+    outline = np.zeros(labels.shape, dtype=labels.dtype)
+    nonzero = labels != 0
+    edge = np.zeros(labels.shape, dtype=bool)
+    edge[0, :] = nonzero[0, :]
+    edge[-1, :] = nonzero[-1, :]
+    edge[:, 0] = edge[:, 0] | nonzero[:, 0]
+    edge[:, -1] = edge[:, -1] | nonzero[:, -1]
+    edge[1:, :] = edge[1:, :] | (nonzero[1:, :] & (labels[1:, :] != labels[:-1, :]))
+    edge[:-1, :] = edge[:-1, :] | (nonzero[:-1, :] & (labels[:-1, :] != labels[1:, :]))
+    edge[:, 1:] = edge[:, 1:] | (nonzero[:, 1:] & (labels[:, 1:] != labels[:, :-1]))
+    edge[:, :-1] = edge[:, :-1] | (nonzero[:, :-1] & (labels[:, :-1] != labels[:, 1:]))
+    outline[edge] = labels[edge]
+    return outline
+
+
+def _downsample_labels_nearest(labels):
+    output_shape = tuple(max(1, int(np.ceil(dim / 2))) for dim in labels.shape)
+    return resize(
+        labels,
+        output_shape,
+        order=0,
+        preserve_range=True,
+        anti_aliasing=False,
+    ).astype(labels.dtype, copy=False)
+
+
+def _outline_output_path(segmentation_path, dataDirectory=None):
+    source_path = Path(segmentation_path)
+    target_dir = Path(dataDirectory) if dataDirectory else source_path.parent
+    suffix = ".fast-outlines.pyramid.ome.tiff"
+    stem = re.sub(r'\.ome\.tiff|\.ome\.tif|\.tiff|\.tif|\.png|\.zarr', '', source_path.name)
+    return target_dir / f"{stem}{suffix}"
+
+
+def ensure_outline_segmentation(segmentation_path, dataDirectory=None):
+    output_path = _outline_output_path(segmentation_path, dataDirectory)
+    if _looks_like_outline_mask(segmentation_path):
+        return str(segmentation_path)
+    if output_path.exists() and _looks_like_outline_mask(output_path):
+        return str(output_path)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    arrays = []
+    if str(segmentation_path).endswith('.zarr'):
+        group = zarr.open(segmentation_path)
+        levels = _zarr_levels(group)
+        if len(levels) > 1:
+            arrays = [_outline_level(np.asarray(level)) for level in levels]
+        else:
+            labels = np.asarray(levels[0])
+            while True:
+                arrays.append(_outline_level(labels))
+                if min(labels.shape) <= 256:
+                    break
+                labels = _downsample_labels_nearest(labels)
+    else:
+        with tf.TiffFile(str(segmentation_path), is_ome=False) as seg_io:
+            group = zarr.open(seg_io.series[0].aszarr())
+            levels = _zarr_levels(group)
+            if len(levels) > 1:
+                arrays = [_outline_level(np.asarray(level)) for level in levels]
+            else:
+                labels = np.asarray(levels[0])
+                while True:
+                    arrays.append(_outline_level(labels))
+                    if min(labels.shape) <= 256:
+                        break
+                    labels = _downsample_labels_nearest(labels)
+
+    with tf.TiffWriter(str(output_path), bigtiff=True) as writer:
+        writer.write(
+            arrays[0],
+            subifds=max(0, len(arrays) - 1),
+            photometric='minisblack',
+            metadata={'axes': 'YX'},
+            compression='zlib',
+        )
+        for array in arrays[1:]:
+            writer.write(
+                array,
+                subfiletype=1,
+                photometric='minisblack',
+                compression='zlib',
+            )
+
+    return str(output_path)
 
 
 def init(datasource_name):
@@ -69,7 +206,7 @@ def load_datasource(datasource_name, reload=False):
         loaded_datasource = loaded_datasource.replace(-np.inf, 0)
         print("Loading segmentation.")
         if config[datasource_name]['segmentation'].endswith('.zarr'):
-            loaded_seg = zarr.load(config[datasource_name]['segmentation'])
+            loaded_seg = zarr.open(config[datasource_name]['segmentation'])
         else:
             seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
             loaded_seg = zarr.open(seg_io.series[0].aszarr())
@@ -122,6 +259,10 @@ def load_config(datasource_name):
         try:
             original = config[datasource_name]['segmentation']
             config[datasource_name]['segmentation'] = original.replace('static/data', 'minerva_analysis/data')
+            config[datasource_name]['segmentation'] = ensure_outline_segmentation(
+                config[datasource_name]['segmentation'],
+                data_path / datasource_name,
+            )
             if original != config[datasource_name]['segmentation']:
                 updated = True
 
@@ -924,6 +1065,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
             write_path = str(directory)
         else:
             write_path = str(filePath)
+        write_path = ensure_outline_segmentation(write_path, dataDirectory)
         return {'segmentation': write_path}
 
 
