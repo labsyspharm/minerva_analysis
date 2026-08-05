@@ -1,0 +1,5 @@
+[console_scripts]
+minerva-analysis-server = minerva_analysis.server_cli:main
+
+[jupyter_serverproxy_servers]
+minerva-analysis = minerva_analysis.proxy:setup_minerva_analysis
