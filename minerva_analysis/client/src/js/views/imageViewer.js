@@ -33,6 +33,9 @@ class ImageViewer {
         this._cacheKeys = {};
         this._picking = [];
         this.pickedId = -1;
+        this.glReady = new Promise((resolve) => {
+            this.resolveGLReady = resolve;
+        });
 
         this.list_lassos = {};
         this.count_lassos = 0;
@@ -128,6 +131,7 @@ class ImageViewer {
         const getTileTexture = this.getTileTexture.bind(this);
         const indexOfTexture = this.indexOfTexture.bind(this);
         const selectTexture = this.selectTexture.bind(this);
+        const resolveGLReady = this.resolveGLReady;
 
         seaGL.viaGL.loadArray = function (e, w, h) {
             // Allow for custom drawing in webGL
@@ -291,6 +295,7 @@ class ImageViewer {
                 const u_mag_i = this.gl.getUniformLocation(program, `u_mag_${i}`);
                 this.gl.uniform1i(u_mag_i, i + this._markerOffset);
             }
+            setTimeout(() => resolveGLReady(), 0);
         });
 
         const matchTile = (e, { x, y, level }) => {
@@ -573,6 +578,9 @@ class ImageViewer {
         // Instantiate viewer managers
         this.viewerManagerVMain = viewerManager;
         this.viewerManagers.push(this.viewerManagerVMain);
+        if (!this.noLabel) {
+            await this.glReady;
+        }
         const via = this.viaGL;
         via.texture_mag = [via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture()];
         via.texture_ids = via.gl.createTexture();
@@ -585,6 +593,7 @@ class ImageViewer {
         this.bindLabels(via, ids);
         this.idCount = ids.length;
         this.ready = true;
+        this.clearTileCache();
         await this.forceRepaint();
 
         const toggle_lasso_plus = document.querySelector("#lasso_selection_toggle_plus");
@@ -606,7 +615,6 @@ class ImageViewer {
             document.getElementById("lasso_selection_toggle_plus").style.display = "";
         });
         toggle_lasso_minus.addEventListener("click", e => e.stopPropagation());
-        this.clearTileCache();
     }
 
     async draw_lasso(polygonSelection) {

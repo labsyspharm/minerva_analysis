@@ -41,7 +41,7 @@ To import your imaging files in the import gui type in the mounted `/data/..`
 * Create env:  `conda env create -f requirements.yml`
 
 ##### Activate Environment
-* Active environment: `conda activate minerva_analysis`
+* Active environment: `conda activate minerva`
 
 
 ##### Start the Server
