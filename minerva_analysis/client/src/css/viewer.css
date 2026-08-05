@@ -123,6 +123,18 @@
     will-change: width;
 }
 
+#openseadragon_loader {
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+}
+
+#openseadragon_loader div {
+    background: rgba(255, 255, 255, 1);
+}
+
 .list {
     border: 1px solid rgba(255, 255, 255, 1);
     overflow-y: scroll;

@@ -72,7 +72,7 @@ class ImageViewer {
         this.show_selection = true;
 
         // Hide Loader
-        document.getElementById("openseadragon_loader").style.display = "none";
+        this.setLoading(false);
 
         // Config viewer
         const viewer_config = {
@@ -578,23 +578,28 @@ class ImageViewer {
         // Instantiate viewer managers
         this.viewerManagerVMain = viewerManager;
         this.viewerManagers.push(this.viewerManagerVMain);
-        if (!this.noLabel) {
-            await this.glReady;
+        this.setLoading(true);
+        try {
+            if (!this.noLabel) {
+                await this.glReady;
+            }
+            const via = this.viaGL;
+            via.texture_mag = [via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture()];
+            via.texture_ids = via.gl.createTexture();
+            via.texture_mask = via.gl.createTexture();
+            via.texture_gatings = via.gl.createTexture();
+            via.texture_centers = via.gl.createTexture();
+            via.texture_pickings = via.gl.createTexture();
+            this.bindCenters(via, centers);
+            this.bindPickings(via, []);
+            this.bindLabels(via, ids);
+            this.idCount = ids.length;
+            this.ready = true;
+            this.clearTileCache();
+            await this.forceRepaint();
+        } finally {
+            this.setLoading(false);
         }
-        const via = this.viaGL;
-        via.texture_mag = [via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture()];
-        via.texture_ids = via.gl.createTexture();
-        via.texture_mask = via.gl.createTexture();
-        via.texture_gatings = via.gl.createTexture();
-        via.texture_centers = via.gl.createTexture();
-        via.texture_pickings = via.gl.createTexture();
-        this.bindCenters(via, centers);
-        this.bindPickings(via, []);
-        this.bindLabels(via, ids);
-        this.idCount = ids.length;
-        this.ready = true;
-        this.clearTileCache();
-        await this.forceRepaint();
 
         const toggle_lasso_plus = document.querySelector("#lasso_selection_toggle_plus");
         toggle_lasso_plus.addEventListener("click", (e) => {
@@ -1444,6 +1449,13 @@ class ImageViewer {
             this.viewer.scalebar({
                 pixelsPerMeter: pixelsPerMeter,
             });
+        }
+    }
+
+    setLoading(isLoading) {
+        const loader = document.getElementById("openseadragon_loader");
+        if (loader) {
+            loader.style.display = isLoading ? "inline-block" : "none";
         }
     }
 
