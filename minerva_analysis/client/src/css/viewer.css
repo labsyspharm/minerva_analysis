@@ -72,12 +72,25 @@
 }
 
 .sidebar-section {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
     padding-top: 14px;
 }
 
 #gate_marker_section {
+    border-color: rgba(243, 111, 69, 0.34);
     position: relative;
+}
+
+#image_channel_section {
+    border-color: rgba(56, 189, 248, 0.36);
+}
+
+#image_channel_section .section-heading h2 {
+    color: #d9f3ff;
+}
+
+#gate_marker_section .section-heading h2 {
+    color: #ffe5da;
 }
 
 .sidebar-section.compact {
@@ -143,7 +156,7 @@
     border-radius: 6px;
     color: #f8fafc;
     font-size: 13px;
-    height: 34px;
+    height: 32px;
     max-width: 100%;
     min-width: 0;
     overflow: hidden;
@@ -162,7 +175,7 @@
 }
 
 .sidebar-slider {
-    min-height: 46px;
+    min-height: 38px;
     overflow: visible;
     width: 100%;
 }
@@ -239,14 +252,18 @@
 .channel-slot-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 7px;
 }
 
 .channel-slot {
-    background: rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 10px;
+    background: rgba(8, 21, 30, 0.76);
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    border-radius: 7px;
+    padding: 7px 9px 4px;
+}
+
+.channel-slot.is-hidden {
+    display: none;
 }
 
 .channel-slot.is-disabled {
@@ -256,8 +273,8 @@
 .channel-slot-top {
     align-items: center;
     display: grid;
-    gap: 8px;
-    grid-template-columns: 16px 28px minmax(0, 1fr) 48px;
+    gap: 7px;
+    grid-template-columns: 16px 24px minmax(0, 1fr) 42px;
     min-width: 0;
 }
 
@@ -271,9 +288,9 @@
     background: transparent;
     border: 0;
     cursor: pointer;
-    height: 28px;
+    height: 24px;
     padding: 0;
-    width: 28px;
+    width: 24px;
 }
 
 .slot-auto-button {
@@ -284,7 +301,7 @@
     cursor: pointer;
     font-size: 11px;
     font-weight: 700;
-    height: 28px;
+    height: 26px;
     padding: 0;
 }
 
@@ -293,7 +310,8 @@
 }
 
 .slot-range-readout {
-    margin-top: 8px;
+    color: #b7e7f7;
+    margin-top: 4px;
 }
 
 .toggle-row,
