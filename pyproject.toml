@@ -8,7 +8,7 @@ version = "1.0.2"
 description = "OpenSeadragon-based cellular image viewing and analysis tool."
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
-license = { text = "MIT" }
+license = "MIT"
 dependencies = [
     "appdirs",
     "Flask>=3.1",
