@@ -3,12 +3,12 @@
     {% block title %}{% endblock %}
     <meta content="utf-8" http-equiv="encoding">
     <!-- Styles -->
-    <link rel="stylesheet" href="../client/src/css/main.css">
+    <link rel="stylesheet" href="../client/src/css/main.css?v=20260806_centroid_tiles">
     {% block style %}{% endblock %}
 
 
     <!-- Flask variables -->
-    <script src="../client/src/js/services/passVariablesToFrontend.js" type="text/javascript"></script>
+    <script src="../client/src/js/services/passVariablesToFrontend.js?v=20260806_centroid_tiles" type="text/javascript"></script>
     <script type="text/javascript">
         //<!--@formatter:off-->
         window.flaskVariables = passVariablesToFrontend({{data|tojson}});
@@ -16,7 +16,7 @@
         //<!--@formatter:on-->
     </script>
     <!-- Webpack -->
-    <script src="../client/dist/vendor_bundle.js"></script>
+    <script src="../client/dist/vendor_bundle.js?v=20260806_centroid_tiles"></script>
 
     <!-- OpenSeadragon imports-->
     <script src="../client/external/openseadragon-bin-2.4.0/canvas-overlay-hd.js"></script>
@@ -28,15 +28,15 @@
 
     <!-- Scripts -->
     <script src="../client/external/openseadragon-bin-2.4.0/openseadragon-scalebar.js"></script>
-    <script src="../client/src/js/services/colorScheme.js"></script>
-    <script src="../client/src/js/views/rainbow.js"></script>
-    <script src="../client/src/js/services/dataLayer.js"></script>
-    <script src="../client/src/js/services/numericData.js"></script>
-    <script src="../client/src/js/views/channelList.js"></script>
-    <script src="../client/src/js/views/csvGatingList.js"></script>
-    <script src="../client/src/js/views/imageViewer.js"></script>
-    <script src="../client/src/js/views/viewerSidebar.js"></script>
-    <script src="../client/src/js/services/simpleEventHandler.js"></script>
+    <script src="../client/src/js/services/colorScheme.js?v=20260806_centroid_tiles"></script>
+    <script src="../client/src/js/views/rainbow.js?v=20260806_centroid_tiles"></script>
+    <script src="../client/src/js/services/dataLayer.js?v=20260806_centroid_tiles"></script>
+    <script src="../client/src/js/services/numericData.js?v=20260806_centroid_tiles"></script>
+    <script src="../client/src/js/views/channelList.js?v=20260806_centroid_tiles"></script>
+    <script src="../client/src/js/views/csvGatingList.js?v=20260806_centroid_tiles"></script>
+    <script src="../client/src/js/views/imageViewer.js?v=20260806_centroid_tiles"></script>
+    <script src="../client/src/js/views/viewerSidebar.js?v=20260806_centroid_tiles"></script>
+    <script src="../client/src/js/services/simpleEventHandler.js?v=20260806_centroid_tiles"></script>
 
 </head>
 

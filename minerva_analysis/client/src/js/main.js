@@ -11,6 +11,7 @@ const __minervaAnalysis = window.__minervaAnalysis = {
   dataLayer: null,
   channelList: null,
   csv_gatingList: null,
+  seaDragonViewer: null,
   viewerSidebar: null
 }
 
@@ -40,7 +41,7 @@ window.__minervaAnalysisReady = d3.json(`${minervaUrl("config")}?t=${Date.now()}
 async function init(config) {
     //maximum selections
     config.maxSelections = 4;
-    config.extraZoomLevels = 3;
+    config.extraZoomLevels = 0;
     if (Array.isArray(config.imageData)) {
         config.imageData.forEach(function (channel) {
             if (channel.src && channel.src.startsWith("/")) {
@@ -79,13 +80,14 @@ async function init(config) {
     //Create image viewer
     const imageArgs = [imgMetadata, numericData, eventHandler];
     const seaDragonViewer = new ImageViewer(config, dataLayer, ...imageArgs);
+    __minervaAnalysis.seaDragonViewer = seaDragonViewer;
     const viewerManager = new ViewerManager(seaDragonViewer, channelList);
 
     //Initialize with database description
-    const [dd, { ids, centers }] = await Promise.all([dataLayer.getDatabaseDescription(), numericData.loadCells()]);
+    const dd = await dataLayer.getDatabaseDescription();
     channelList.init(dd);
     csv_gatingList.init(dd, seaDragonViewer);
-    const imageInit = [viewerManager, channelList, csv_gatingList, centers, ids];
+    const imageInit = [viewerManager, channelList, csv_gatingList, [], []];
     await Promise.all([dataLayer.init(), seaDragonViewer.init(...imageInit)]);
 
     //EVENT HANDLING
@@ -197,9 +199,53 @@ async function init(config) {
     }
     eventHandler.bind(ImageViewer.events.clearImageLasso, clearSeaDragonSelection);
 
+    let centroidGateRequest = 0;
+    const updateCentroidsForGate = async () => {
+        if (!seaDragonViewer.shouldDrawCentroids()) return;
+        const requestId = ++centroidGateRequest;
+        seaDragonViewer.setLoading(true);
+        try {
+            await seaDragonViewer.ensureCentroidsReady(false);
+            if (requestId === centroidGateRequest) {
+                seaDragonViewer.updateCentroidFilter(csv_gatingList.selections, true);
+            }
+        } finally {
+            seaDragonViewer.setLoading(false);
+        }
+    };
+    let segmentationGateRequest = 0;
+    let segmentationGateTimer = null;
+    const updateSegmentationForGate = async (showSpinner = true) => {
+        if (!seaDragonViewer.viewerManagerVMain?.sel_outlines) return;
+        const requestId = ++segmentationGateRequest;
+        await seaDragonViewer.updateSegmentationFilter(csv_gatingList.selections, showSpinner);
+        if (requestId !== segmentationGateRequest) {
+            seaDragonViewer.forceRepaint();
+        }
+    };
+    const scheduleSegmentationForGate = () => {
+        if (!seaDragonViewer.viewerManagerVMain?.sel_outlines) return;
+        if (segmentationGateTimer) {
+            window.clearTimeout(segmentationGateTimer);
+        }
+        segmentationGateTimer = window.setTimeout(() => {
+            updateSegmentationForGate(false);
+        }, 120);
+    };
     const handler = () => updateSeaDragonSelection();
-    eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, handler);
-    eventHandler.bind(CSVGatingList.events.GATING_BRUSH_MOVE, handler);
+    eventHandler.bind(CSVGatingList.events.GATING_BRUSH_END, () => {
+        if (segmentationGateTimer) {
+            window.clearTimeout(segmentationGateTimer);
+            segmentationGateTimer = null;
+        }
+        handler();
+        updateCentroidsForGate();
+        updateSegmentationForGate();
+    });
+    eventHandler.bind(CSVGatingList.events.GATING_BRUSH_MOVE, () => {
+        handler();
+        scheduleSegmentationForGate();
+    });
 
     eventHandler.bind(ChannelList.events.BRUSH_MOVE, (d) => {
         const fullName = dataLayer.getFullChannelName(d.name);

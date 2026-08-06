@@ -11,7 +11,7 @@ from pathlib import PurePath
 from ome_types import from_xml
 from minerva_analysis import config_json_path, data_path, cwd_path
 from minerva_analysis.server.utils import pyramid_assemble, pyramid_upgrade
-from minerva_analysis.server.models import database_model
+from minerva_analysis.server.models import database_model, centroid_tiles
 from minerva_analysis.server.utils import smallestenclosingcircle
 import matplotlib.path as mpltPath
 from itertools import chain
@@ -631,6 +631,20 @@ def get_all_cells(datasource_name, start_keys, data_type=float):
     if np.issubdtype(data_type, int):
         return query.astype(np.uint32)
     return query.astype(np.float32)
+
+
+def get_centroid_manifest(datasource_name):
+    global config
+    if config is None or datasource_name not in config:
+        load_config(datasource_name)
+    return centroid_tiles.get_manifest(config, datasource_name, build=True)
+
+
+def get_centroid_tiles(datasource_name, level, tiles, gates=None, max_points=None):
+    global config
+    if config is None or datasource_name not in config:
+        load_config(datasource_name)
+    return centroid_tiles.get_tiles(config, datasource_name, level, tiles, gates or {}, max_points)
 
 
 def download_gating_csv(datasource_name, gates, channels, selection_ids, encoding):

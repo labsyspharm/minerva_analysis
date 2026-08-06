@@ -347,6 +347,7 @@ int to_or_gate(int cell_index, float radius) {
       }
     }
   }
+  return -1;
 }
 
 // Match channel to cell index
@@ -439,18 +440,17 @@ vec4 u32_rgba_map(bvec2 mode) {
     return empty_pixel;
   }
 
+  if (!or_mode) {
+    return white_pixel;
+  }
+
   if (u_gating_shape.y < 1) {
     return white_pixel;
   }
 
   int key = to_gate(cell_index, mode, -1.0);
   if (key > -1) {
-    if (or_mode) {
-      return vec4(sample_gating_color(float(key)), 1.0);
-    }
-    else {
-      return white_pixel;
-    }
+    return vec4(sample_gating_color(float(key)), 1.0);
   }
   return empty_pixel;
 }

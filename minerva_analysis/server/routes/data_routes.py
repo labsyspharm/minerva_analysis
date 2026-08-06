@@ -115,6 +115,31 @@ def get_all_cells(dtype):
     return response
 
 
+@app.route('/get_centroid_manifest', methods=['GET'])
+def get_centroid_manifest():
+    datasource = request.args.get('datasource')
+    resp = data_model.get_centroid_manifest(datasource)
+    return serialize_and_submit_json(resp)
+
+
+@app.route('/get_centroid_tiles', methods=['POST'])
+def get_centroid_tiles():
+    post_data = json.loads(request.data)
+    datasource = post_data['datasource']
+    level = int(post_data.get('level', 0))
+    tiles = post_data.get('tiles', [])
+    filter = post_data.get('filter', {})
+    max_points = post_data.get('max_points')
+    resp = data_model.get_centroid_tiles(datasource, level, tiles, filter, max_points)
+    content = gzip.compress(resp.tobytes('C'))
+    response = make_response(content)
+    response.headers.set('Content-Type', 'application/octet-stream')
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+    response.headers['X-Centroid-Record-Count'] = len(resp)
+    return response
+
+
 @app.route('/get_gated_cell_ids', methods=['GET'])
 def get_gated_cell_ids():
     datasource = request.args.get('datasource')

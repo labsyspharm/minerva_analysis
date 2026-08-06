@@ -489,14 +489,53 @@ class CSVGatingList {
         })
 
         // Toggle outlined / filled cell selections
-        gating_controls_outlines.addEventListener('change', e => {
+        gating_controls_outlines.addEventListener('change', async e => {
             this.seaDragonViewer.viewerManagerVMain.sel_outlines = e.target.checked;
+            if (e.target.checked) {
+                try {
+                    await this.seaDragonViewer.ensureSegmentationReady(true);
+                    await this.seaDragonViewer.updateSegmentationFilter(this.selections, true);
+                } catch (error) {
+                    console.warn("Unable to load segmentation outlines.", error);
+                    e.target.checked = false;
+                    this.seaDragonViewer.viewerManagerVMain.sel_outlines = false;
+                    await this.seaDragonViewer.updateCentroidFallback(true);
+                }
+            } else {
+                this.seaDragonViewer.viewer.forceRedraw();
+            }
             this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
         })
 
+        const hasSegmentation = Boolean(this.config?.segmentation || this.config?.imageData?.[0]?.src);
+        if (hasSegmentation && !this.seaDragonViewer.noLabel) {
+            gating_controls_outlines.checked = true;
+            window.setTimeout(async () => {
+                try {
+                    await this.seaDragonViewer.ensureSegmentationReady(true);
+                    this.seaDragonViewer.viewerManagerVMain.sel_outlines = true;
+                    await this.seaDragonViewer.updateSegmentationFilter(this.selections, true);
+                    this.eventHandler.trigger(CSVGatingList.events.GATING_BRUSH_END, this.selections);
+                } catch (error) {
+                    console.warn("Unable to load default segmentation outlines.", error);
+                    gating_controls_outlines.checked = false;
+                    this.seaDragonViewer.viewerManagerVMain.sel_outlines = false;
+                    await this.seaDragonViewer.updateCentroidFallback(true);
+                }
+            }, 0);
+        }
+
         // Toggle outlined / filled cell selections
-        gating_controls_centroids.addEventListener('change', e => {
-            this.seaDragonViewer.updateCentroidVisibility(e.target.checked);
+        gating_controls_centroids.addEventListener('change', async e => {
+            await this.seaDragonViewer.updateCentroidVisibility(e.target.checked);
+            if (e.target.checked) {
+                this.seaDragonViewer.setLoading(true);
+                try {
+                    this.seaDragonViewer.updateCentroidFilter(this.selections, true);
+                } finally {
+                    this.seaDragonViewer.setLoading(false);
+                }
+            }
         })
 
     }

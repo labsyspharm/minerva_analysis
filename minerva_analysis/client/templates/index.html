@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 
 {% block style %}
-<link rel="stylesheet" href="../client/src/css/viewer.css">
-<link rel="stylesheet" href="../client/src/css/gating.css">
+<link rel="stylesheet" href="../client/src/css/viewer.css?v=20260806_centroid_tiles">
+<link rel="stylesheet" href="../client/src/css/gating.css?v=20260806_centroid_tiles">
 {% endblock %}
 
 {% block content %}
@@ -120,7 +120,7 @@
                 </div>
                 <div id="gating_controls_panel">
                     <label>Outlines
-                        <input id="gating_controls_outlines" type="checkbox" checked>
+                        <input id="gating_controls_outlines" type="checkbox">
                     </label>
                     <label>Centroids
                         <input id="gating_controls_centroids" type="checkbox">
@@ -194,6 +194,6 @@
         </div>
     </div>
 </div>
-<script src="../client/src/js/main.js" defer></script>
+<script src="../client/src/js/main.js?v=20260806_centroid_tiles" defer></script>
 {% endif %}
 {% endblock %}

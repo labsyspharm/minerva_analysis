@@ -46,6 +46,23 @@ class ImageViewer {
         this.toggle_bool = true;
         this.centers = [];
         this.ids = [];
+        this.centroidManifest = null;
+        this.centroidTiles = new Map();
+        this.centroidFilter = {};
+        this.centroidFilterSignature = "{}";
+        this.centroidTileTimer = null;
+        this.centroidTileRequest = 0;
+        this.centroidFirstLoad = true;
+        this.centroidMode = "tiled";
+        this.fullResolutionCenters = [];
+        this.idToCenterOffset = new Map();
+        this.centroidIdSet = null;
+        this.centroidsReady = false;
+        this.centroidsLoading = null;
+        this.segmentationReady = false;
+        this.segmentationLoading = null;
+        this.segmentationFilterIds = null;
+        this.segmentationFilterRequest = 0;
 
         // Viewer
         this.viewer = {};
@@ -53,6 +70,7 @@ class ImageViewer {
         // OSD plugins
         this.show_scalebar = true;
         this.show_centroids = false;
+        this.force_centroids = false;
 
         // Transfer function constant
         this.numTFBins = 1024;
@@ -192,6 +210,7 @@ class ImageViewer {
         const { floatRange } = this.numericData;
         const findCurrentChannel = this.findCurrentChannel.bind(this);
         const selectCenterProps = this.selectCenterProps.bind(this);
+        const labelOutlinesEnabled = () => !!this.viewerManagerVMain?.sel_outlines;
         // Draw handler for viaWebGL
         seaGL.addHandler("tile-drawing", async function (callback, e) {
             // Read parameters from each tile
@@ -202,6 +221,16 @@ class ImageViewer {
             const centerProps = selectCenterProps(e.tile, source);
 
             const via = this.viaGL;
+
+            if (tileFormat == 32 && e.tile._renderedContext) {
+                const w = e.rendered.canvas.width;
+                const h = e.rendered.canvas.height;
+                e.rendered.clearRect(0, 0, w, h);
+                if (labelOutlinesEnabled()) {
+                    e.rendered.drawImage(e.tile._renderedContext.canvas, 0, 0, w, h);
+                }
+                return;
+            }
 
             if (tileFormat != 32) {
                 const channel = findCurrentChannel(sub_url);
@@ -233,11 +262,16 @@ class ImageViewer {
                 };
             }
 
-            // Clear the rendered tile
+            // Clear the rendered tile. Label/segmentation tiles must stay
+            // transparent outside outlines so the image channels remain visible.
             var w = e.rendered.canvas.width;
             var h = e.rendered.canvas.height;
-            e.rendered.fillStyle = "black";
-            e.rendered.fillRect(0, 0, w, h);
+            if (tileFormat == 32) {
+                e.rendered.clearRect(0, 0, w, h);
+            } else {
+                e.rendered.fillStyle = "black";
+                e.rendered.fillRect(0, 0, w, h);
+            }
 
             // Start webGL rendering
             callback(e);
@@ -312,14 +346,47 @@ class ImageViewer {
             if (upng) {
                 const img = upng.decode(responseArray);
                 if (img.ctype == 6 && img.depth == 8) {
-                    return img.data.slice(0, 4 * img.width * img.height);
+                    return {
+                        data: img.data.slice(0, 4 * img.width * img.height),
+                        width: img.width,
+                        height: img.height,
+                    };
                 }
             }
 
             const pngBuffer = new Buffer(responseArray);
             const pngArray = PNG.sync.read(pngBuffer);
-            return pngArray.data.slice(0, 4 * pngArray.width * pngArray.height);
+            return {
+                data: pngArray.data.slice(0, 4 * pngArray.width * pngArray.height),
+                width: pngArray.width,
+                height: pngArray.height,
+            };
         };
+
+        const renderLabelTile = (tileArray, width, height) => {
+            const allowedIds = this.segmentationFilterIds;
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext("2d");
+            const imageData = context.createImageData(width, height);
+            const output = imageData.data;
+            for (let i = 0; i < tileArray.length; i += 4) {
+                const cellId = tileArray[i]
+                    + tileArray[i + 1] * 256
+                    + tileArray[i + 2] * 65536
+                    + tileArray[i + 3] * 16777216;
+                if (cellId && (!allowedIds || allowedIds.has(cellId))) {
+                    output[i] = 255;
+                    output[i + 1] = 255;
+                    output[i + 2] = 255;
+                    output[i + 3] = 220;
+                }
+            }
+            context.putImageData(imageData, 0, 0);
+            return context;
+        };
+        this.renderLabelTile = renderLabelTile;
 
         const forceRepaint = this.forceRepaint.bind(this);
         seaGL.addHandler("tile-loaded", (callback, e) => {
@@ -331,8 +398,17 @@ class ImageViewer {
                     e.tile._isLabel = true;
                     const responseArray = e.tileRequest?.response || e.image?._array;
                     if (!e.tile?._array && responseArray) {
-                        e.tile._array = decodeLabelTile(responseArray);
+                        const decoded = decodeLabelTile(responseArray);
+                        e.tile._array = decoded.data;
                         e.tile._format = "u32";
+                        e.tile._renderedContext = renderLabelTile(decoded.data, decoded.width, decoded.height);
+                    }
+                    if (e.tile?._renderedContext) {
+                        const completion = e.getCompletionCallback?.();
+                        if (completion) {
+                            completion();
+                        }
+                        return;
                     }
                 }
                 // Trigger loading of image
@@ -349,6 +425,9 @@ class ImageViewer {
                     }
                 }
                 else if (tileFormat == 32) {
+                    if (e.tile?._array) {
+                        return callback(e);
+                    }
                     return;
                 }
                 else if (e?.image) {
@@ -567,11 +646,15 @@ class ImageViewer {
                     context.stroke();
                     // context.globalAlpha = 1.0;
                 }
-                if (that.show_centroids) {
-                    that.drawCentroids(context);
+                if (that.shouldDrawCentroids()) {
+                    that.drawCentroids(context, opts.zoom);
                 }
             },
         });
+        this.viewer.addHandler("animation", () => this.scheduleCentroidTileUpdate());
+        this.viewer.addHandler("animation-finish", () => this.scheduleCentroidTileUpdate(0));
+        this.viewer.addHandler("resize", () => this.scheduleCentroidTileUpdate(0));
+        this.viewer.addHandler("open", () => this.scheduleCentroidTileUpdate(0));
     }
 
     /**
@@ -593,7 +676,7 @@ class ImageViewer {
         this.setLoading(true);
         try {
             if (!this.noLabel) {
-                await this.glReady;
+                await this.waitForGLReady();
             }
             const via = this.viaGL;
             via.texture_mag = [via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture()];
@@ -602,13 +685,13 @@ class ImageViewer {
             via.texture_gatings = via.gl.createTexture();
             via.texture_centers = via.gl.createTexture();
             via.texture_pickings = via.gl.createTexture();
-            this.bindCenters(via, centers);
             this.bindPickings(via, []);
-            this.bindLabels(via, ids);
-            this.idCount = ids.length;
             this.ready = true;
-            this.clearTileCache();
-            await this.forceRepaint();
+            if (ids.length && centers.length) {
+                this.bindSegmentationBuffers(ids, centers);
+                this.clearTileCache();
+                await this.forceRepaint();
+            }
         } finally {
             this.setLoading(false);
         }
@@ -632,6 +715,13 @@ class ImageViewer {
             document.getElementById("lasso_selection_toggle_plus").style.display = "";
         });
         toggle_lasso_minus.addEventListener("click", e => e.stopPropagation());
+    }
+
+    waitForGLReady(timeoutMs = 5000) {
+        return Promise.race([
+            this.glReady,
+            new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+        ]);
     }
 
     async draw_lasso(polygonSelection) {
@@ -1166,7 +1256,7 @@ class ImageViewer {
      */
     toTextureShape(gl, length) {
         const width = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-        const height = Math.ceil(length / width);
+        const height = Math.max(1, Math.ceil(length / width));
         return [width, height];
     }
 
@@ -1358,15 +1448,18 @@ class ImageViewer {
      * @function forceRepaint - for all active viewers repaint the canvas
      */
     async forceRepaint() {
-        if (this.ready && this.idCount) {
-            this.ready = false;
-            await this.loadBuffers();
-            this.ready = true;
-            // Trigger change of full cache
-            this.viewerManagers.forEach(({ viewer }) => {
-                viewer.forceRedraw();
-            });
+        if (!this.ready) {
+            return;
         }
+        this.ready = false;
+        if (this.idCount) {
+            await this.loadBuffers();
+        }
+        this.ready = true;
+        // Trigger change of full cache
+        this.viewerManagers.forEach(({ viewer }) => {
+            viewer.forceRedraw();
+        });
     }
 
     /**
@@ -1437,13 +1530,341 @@ class ImageViewer {
         this.forceRepaint();
     }
 
-    updateCentroidVisibility(isVisible) {
+    async updateCentroidVisibility(isVisible) {
         this.show_centroids = isVisible;
+        if (isVisible) {
+            await this.ensureCentroidsReady(true);
+            this.scheduleCentroidTileUpdate(0, true);
+        }
+        this.refreshCentroidOverlay();
+    }
+
+    async updateCentroidFallback(isFallback) {
+        this.force_centroids = isFallback;
+        const checkbox = document.querySelector("#gating_controls_centroids");
+        if (checkbox && isFallback) {
+            checkbox.checked = true;
+        }
+        if (isFallback) {
+            await this.ensureCentroidsReady(true);
+            this.scheduleCentroidTileUpdate(0, true);
+        }
+        this.refreshCentroidOverlay();
+    }
+
+    shouldDrawCentroids() {
+        return this.show_centroids || this.force_centroids || this.noLabel;
+    }
+
+    updateCentroidIds() {
+        this.scheduleCentroidTileUpdate(0, true);
+    }
+
+    updateCentroidFilter(filter = {}, showSpinner = false) {
+        this.centroidFilter = filter || {};
+        const signature = JSON.stringify(this.centroidFilter);
+        if (signature !== this.centroidFilterSignature) {
+            this.centroidFilterSignature = signature;
+            this.centroidTiles.clear();
+            this.centroidTileRequest += 1;
+        }
+        if (this.centroidMode === "legacy") {
+            const { idField } = this.config.featureData[0];
+            this.dataLayer.getGatedCellIds(this.centroidFilter, [idField]).then((items) => {
+                if (!items || !items.length) {
+                    this.centroidIdSet = this.centroidFilter && Object.keys(this.centroidFilter).length ? new Set() : null;
+                } else {
+                    this.centroidIdSet = new Set(items.map((item) => Number(item[idField] ?? item.id ?? item.CellID)));
+                }
+                this.refreshCentroidOverlay();
+            });
+            return;
+        }
+        this.scheduleCentroidTileUpdate(0, showSpinner);
+        this.refreshCentroidOverlay();
+    }
+
+    refreshCentroidOverlay() {
         if (this.canvasOverlay) {
             this.canvasOverlay.resize();
             this.canvasOverlay.clear();
             this.canvasOverlay._updateCanvas();
         }
+    }
+
+    async ensureCentroidsReady(showSpinner = false) {
+        if (this.centroidsReady) return;
+        if (this.centroidsLoading) {
+            await this.centroidsLoading;
+            return;
+        }
+        this.centroidsLoading = (async () => {
+            if (showSpinner) {
+                this.setLoading(true);
+            }
+            try {
+                this.centroidManifest = await this.dataLayer.getCentroidManifest();
+                if (!this.centroidManifest) {
+                    const { ids, centers } = await this.numericData.loadCells();
+                    this.ids = ids || [];
+                    this.centers = centers || [];
+                    this.prepareLegacyCentroidCache();
+                    this.centroidMode = "legacy";
+                } else {
+                    this.centroidMode = "tiled";
+                }
+                this.centroidsReady = true;
+            } finally {
+                if (showSpinner) {
+                    this.setLoading(false);
+                }
+                this.centroidsLoading = null;
+            }
+        })();
+        await this.centroidsLoading;
+    }
+
+    scheduleCentroidTileUpdate(delay = 100, showSpinner = false) {
+        if (!this.shouldDrawCentroids() || !this.centroidsReady) return;
+        if (this.centroidMode === "legacy") {
+            this.refreshCentroidOverlay();
+            return;
+        }
+        if (this.centroidTileTimer) {
+            clearTimeout(this.centroidTileTimer);
+        }
+        this.centroidTileTimer = setTimeout(() => {
+            this.updateVisibleCentroidTiles(showSpinner);
+        }, delay);
+    }
+
+    async updateVisibleCentroidTiles(showSpinner = false) {
+        if (!this.shouldDrawCentroids() || !this.centroidManifest || !this.viewer?.viewport) return;
+        const tileState = this.getVisibleCentroidTileState();
+        if (!tileState) return;
+        const { level, tiles, keepKeys } = tileState;
+        for (const key of this.centroidTiles.keys()) {
+            if (!keepKeys.has(key)) {
+                this.centroidTiles.delete(key);
+            }
+        }
+        const missing = tiles.filter((tile) => !this.centroidTiles.has(tile.key));
+        if (!missing.length) {
+            this.refreshCentroidOverlay();
+            return;
+        }
+        const requestId = ++this.centroidTileRequest;
+        const shouldSpin = showSpinner || this.centroidFirstLoad;
+        if (shouldSpin) {
+            this.setLoading(true);
+        }
+        try {
+            const payload = missing.map(({ x, y }) => ({ x, y }));
+            const buffer = await this.dataLayer.getCentroidTiles(level, payload, this.centroidFilter, 50000);
+            if (requestId !== this.centroidTileRequest || !buffer) return;
+            const grouped = this.decodeCentroidTileBuffer(buffer, level);
+            for (const tile of missing) {
+                this.centroidTiles.set(tile.key, grouped.get(tile.key) || {
+                    ids: new Uint32Array(0),
+                    centers: new Float32Array(0),
+                });
+            }
+            this.centroidFirstLoad = false;
+            this.refreshCentroidOverlay();
+        } finally {
+            if (shouldSpin) {
+                this.setLoading(false);
+            }
+        }
+    }
+
+    prepareLegacyCentroidCache() {
+        const centers = this.centers || [];
+        const ids = this.ids || [];
+        const zoomScale = 2 ** (this.config.extraZoomLevels || 0);
+        this.fullResolutionCenters = new Float32Array(centers.length);
+        this.idToCenterOffset = new Map();
+        for (let i = 0; i < centers.length; i += 2) {
+            this.fullResolutionCenters[i] = centers[i] * zoomScale;
+            this.fullResolutionCenters[i + 1] = centers[i + 1] * zoomScale;
+            if (ids[i / 2] !== undefined) {
+                this.idToCenterOffset.set(Number(ids[i / 2]), i);
+            }
+        }
+    }
+
+    getVisibleCentroidTileState() {
+        const item = this.viewer.world.getItemAt(0);
+        if (!item) return null;
+        const bounds = this.viewer.viewport.getBounds(true);
+        const imageBounds = item.viewportToImageRectangle(bounds);
+        const coordinateScale = 2 ** (this.config.extraZoomLevels || 0);
+        const sourceBounds = {
+            x: imageBounds.x / coordinateScale,
+            y: imageBounds.y / coordinateScale,
+            width: imageBounds.width / coordinateScale,
+            height: imageBounds.height / coordinateScale,
+        };
+        const level = this.getCentroidLevel();
+        const tileSpan = this.centroidManifest.tile_size * (2 ** level);
+        const maxTx = Math.max(0, Math.ceil(this.centroidManifest.width / tileSpan) - 1);
+        const maxTy = Math.max(0, Math.ceil(this.centroidManifest.height / tileSpan) - 1);
+        const minX = Math.max(0, Math.floor(sourceBounds.x / tileSpan) - 1);
+        const minY = Math.max(0, Math.floor(sourceBounds.y / tileSpan) - 1);
+        const maxX = Math.min(maxTx, Math.floor((sourceBounds.x + sourceBounds.width) / tileSpan) + 1);
+        const maxY = Math.min(maxTy, Math.floor((sourceBounds.y + sourceBounds.height) / tileSpan) + 1);
+        const tiles = [];
+        const keepKeys = new Set();
+        for (let y = minY; y <= maxY; y += 1) {
+            for (let x = minX; x <= maxX; x += 1) {
+                const key = this.centroidTileKey(level, x, y);
+                tiles.push({ level, x, y, key });
+                keepKeys.add(key);
+            }
+        }
+        return { level, tiles, keepKeys };
+    }
+
+    getCentroidLevel() {
+        const item = this.viewer.world.getItemAt(0);
+        let imageZoom = 1;
+        try {
+            imageZoom = item.viewportToImageZoom(this.viewer.viewport.getZoom(true));
+        } catch (e) {
+            imageZoom = 1;
+        }
+        const level = Math.floor(Math.max(0, Math.log2(1 / Math.max(imageZoom, 0.0001))));
+        return Math.min(Math.max(0, level), Math.max(0, (this.centroidManifest?.level_count || 1) - 1));
+    }
+
+    centroidTileKey(level, x, y) {
+        return `${level}/${x}/${y}`;
+    }
+
+    decodeCentroidTileBuffer(buffer, level) {
+        const view = new DataView(buffer);
+        const groups = new Map();
+        const tileSpan = this.centroidManifest.tile_size * (2 ** level);
+        const coordinateScale = 2 ** (this.config.extraZoomLevels || 0);
+        for (let offset = 0; offset + 12 <= view.byteLength; offset += 12) {
+            const id = view.getUint32(offset, true);
+            const x = view.getFloat32(offset + 4, true);
+            const y = view.getFloat32(offset + 8, true);
+            const tx = Math.max(0, Math.floor(x / tileSpan));
+            const ty = Math.max(0, Math.floor(y / tileSpan));
+            const key = this.centroidTileKey(level, tx, ty);
+            if (!groups.has(key)) {
+                groups.set(key, { ids: [], centers: [] });
+            }
+            const group = groups.get(key);
+            group.ids.push(id);
+            group.centers.push(x * coordinateScale, y * coordinateScale);
+        }
+        const typedGroups = new Map();
+        groups.forEach((group, key) => {
+            typedGroups.set(key, {
+                ids: new Uint32Array(group.ids),
+                centers: new Float32Array(group.centers),
+            });
+        });
+        return typedGroups;
+    }
+
+    async ensureSegmentationReady(showSpinner = false) {
+        if (this.segmentationReady || this.noLabel) return;
+        if (this.segmentationLoading) {
+            await this.segmentationLoading;
+            return;
+        }
+        this.segmentationLoading = (async () => {
+            if (showSpinner) {
+                this.setLoading(true);
+            }
+            try {
+                if (!this.centers.length || !this.ids.length) {
+                    const { ids, centers } = await this.numericData.loadCells();
+                    this.ids = ids || [];
+                    this.centers = centers || [];
+                }
+                this.bindSegmentationBuffers(this.ids, this.centers);
+                this.viewerManagerVMain.load_label_image();
+                this.segmentationReady = true;
+                this.clearTileCache();
+                await this.forceRepaint();
+            } finally {
+                if (showSpinner) {
+                    this.setLoading(false);
+                }
+                this.segmentationLoading = null;
+            }
+        })();
+        await this.segmentationLoading;
+    }
+
+    async updateSegmentationFilter(filter = {}, showSpinner = false) {
+        if (this.noLabel || !this.viewerManagerVMain?.sel_outlines) return;
+        const requestId = ++this.segmentationFilterRequest;
+        const gates = filter || {};
+        const hasGates = Object.keys(gates).length > 0;
+        if (showSpinner) {
+            this.setLoading(true);
+        }
+        try {
+            await this.ensureSegmentationReady(false);
+            if (!hasGates) {
+                this.segmentationFilterIds = null;
+            } else {
+                const { idField } = this.config.featureData[0];
+                const rows = await this.dataLayer.getGatedCellIds(gates, [idField]);
+                if (requestId !== this.segmentationFilterRequest) return;
+                if (!Array.isArray(rows)) {
+                    this.segmentationFilterIds = null;
+                } else {
+                    this.segmentationFilterIds = new Set(rows.map((row) => {
+                    return Number(row[idField] ?? row.id ?? row.CellID);
+                    }));
+                }
+            }
+            this.rerenderSegmentationTiles();
+            this.viewer.forceRedraw();
+        } finally {
+            if (showSpinner) {
+                this.setLoading(false);
+            }
+        }
+    }
+
+    rerenderSegmentationTiles() {
+        if (!this.renderLabelTile || !this.viewer?.world) return;
+        for (let i = 0; i < this.viewer.world.getItemCount(); i += 1) {
+            const item = this.viewer.world.getItemAt(i);
+            if (item?.source?.tileFormat != 32) continue;
+            const matrix = item.tilesMatrix || {};
+            Object.keys(matrix).forEach((level) => {
+                Object.keys(matrix[level] || {}).forEach((x) => {
+                    Object.keys(matrix[level][x] || {}).forEach((y) => {
+                        const tile = matrix[level][x][y];
+                        if (!tile?._array || !tile._renderedContext) return;
+                        const { width, height } = tile._renderedContext.canvas;
+                        tile._renderedContext = this.renderLabelTile(tile._array, width, height);
+                    });
+                });
+            });
+        }
+    }
+
+    bindSegmentationBuffers(ids, centers) {
+        if (!ids?.length || !centers?.length) return;
+        const via = this.viaGL;
+        via.texture_mag = via.texture_mag || [via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture(), via.gl.createTexture()];
+        via.texture_ids = via.texture_ids || via.gl.createTexture();
+        via.texture_centers = via.texture_centers || via.gl.createTexture();
+        via.texture_pickings = via.texture_pickings || via.gl.createTexture();
+        via.texture_gatings = via.texture_gatings || via.gl.createTexture();
+        this.bindCenters(via, centers);
+        this.bindPickings(via, this.pickedIds || []);
+        this.bindLabels(via, ids);
+        this.idCount = ids.length;
     }
 
     addDownloadControl(controlsAnchor) {
@@ -1522,36 +1943,92 @@ class ImageViewer {
         element.style.borderRadius = "3px";
     }
 
-    drawCentroids(context) {
-        const centers = this.centers || [];
-        if (!centers.length || !this.viewer?.viewport) return;
-        const zoomScale = 2 ** this.config.extraZoomLevels;
+    drawCentroids(context, imageZoom = 1) {
+        if (this.centroidMode === "legacy") {
+            this.drawLegacyCentroids(context, imageZoom);
+            return;
+        }
+        if (!this.centroidTiles.size || !this.viewer?.viewport) return;
         const item = this.viewer.world.getItemAt(0);
         if (!item) return;
         const bounds = this.viewer.viewport.getBounds(true);
         const imageBounds = item.viewportToImageRectangle(bounds);
-        const minX = imageBounds.x / zoomScale;
-        const minY = imageBounds.y / zoomScale;
-        const maxX = (imageBounds.x + imageBounds.width) / zoomScale;
-        const maxY = (imageBounds.y + imageBounds.height) / zoomScale;
-        const radius = 3.5 / Math.max(this.viewer.viewport.getZoom(true), 1);
+        const minX = imageBounds.x;
+        const minY = imageBounds.y;
+        const maxX = imageBounds.x + imageBounds.width;
+        const maxY = imageBounds.y + imageBounds.height;
+        const safeImageZoom = Math.max(imageZoom, 0.0001);
+        const radius = this.getCentroidScreenRadius(safeImageZoom) / safeImageZoom;
         context.save();
         context.globalAlpha = 0.9;
         context.fillStyle = "#ffdd55";
         context.strokeStyle = "rgba(0, 0, 0, 0.8)";
-        context.lineWidth = 1;
-        for (let i = 0; i < centers.length; i += 2) {
-            const x = centers[i];
-            const y = centers[i + 1];
+        context.lineWidth = 1.6 / safeImageZoom;
+        const drawPoint = (x, y) => {
             if (x < minX || x > maxX || y < minY || y > maxY) {
-                continue;
+                return;
             }
             context.beginPath();
             context.arc(x, y, radius, 0, Math.PI * 2);
             context.fill();
             context.stroke();
+        };
+        this.centroidTiles.forEach((tile) => {
+            const centers = tile.centers || [];
+            for (let i = 0; i < centers.length; i += 2) {
+                drawPoint(centers[i], centers[i + 1]);
+            }
+        });
+        context.restore();
+    }
+
+    drawLegacyCentroids(context, imageZoom = 1) {
+        const centers = this.fullResolutionCenters || [];
+        if (!centers.length || !this.viewer?.viewport) return;
+        const item = this.viewer.world.getItemAt(0);
+        if (!item) return;
+        const bounds = this.viewer.viewport.getBounds(true);
+        const imageBounds = item.viewportToImageRectangle(bounds);
+        const minX = imageBounds.x;
+        const minY = imageBounds.y;
+        const maxX = imageBounds.x + imageBounds.width;
+        const maxY = imageBounds.y + imageBounds.height;
+        const safeImageZoom = Math.max(imageZoom, 0.0001);
+        const radius = this.getCentroidScreenRadius(safeImageZoom) / safeImageZoom;
+        context.save();
+        context.globalAlpha = 0.9;
+        context.fillStyle = "#ffdd55";
+        context.strokeStyle = "rgba(0, 0, 0, 0.8)";
+        context.lineWidth = 1.6 / safeImageZoom;
+        const drawAtOffset = (i) => {
+            const x = centers[i];
+            const y = centers[i + 1];
+            if (x < minX || x > maxX || y < minY || y > maxY) {
+                return;
+            }
+            context.beginPath();
+            context.arc(x, y, radius, 0, Math.PI * 2);
+            context.fill();
+            context.stroke();
+        };
+        if (this.centroidIdSet instanceof Set) {
+            this.centroidIdSet.forEach((id) => {
+                const offset = this.idToCenterOffset.get(Number(id));
+                if (offset !== undefined) {
+                    drawAtOffset(offset);
+                }
+            });
+        } else {
+            for (let i = 0; i < centers.length; i += 2) {
+                drawAtOffset(i);
+            }
         }
         context.restore();
+    }
+
+    getCentroidScreenRadius(imageZoom) {
+        const overviewLevel = Math.max(0, Math.log2(1 / imageZoom));
+        return Math.max(2.5, Math.min(7, 3.5 + overviewLevel * 0.8));
     }
 
     downloadCurrentView() {

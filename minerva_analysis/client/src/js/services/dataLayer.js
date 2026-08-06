@@ -319,6 +319,57 @@ class DataLayer {
         }
     }
 
+    async getCentroidManifest() {
+        try {
+            let response = await fetch(minervaUrl('get_centroid_manifest') + '?' + new URLSearchParams({
+                datasource: datasource
+            }))
+            if (!response.ok) {
+                throw new Error(`Centroid manifest request failed: ${response.status}`);
+            }
+            const text = await response.text();
+            if (!text.trim().startsWith("{")) {
+                throw new Error("Centroid manifest response was not JSON");
+            }
+            return JSON.parse(text);
+        } catch (e) {
+            console.log("Error Getting Centroid Manifest", e);
+            return null;
+        }
+    }
+
+    async getCentroidTiles(level, tiles, filter = {}, maxPoints = 50000) {
+        try {
+            let response = await fetch(minervaUrl('get_centroid_tiles'), {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/octet-stream',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        datasource: datasource,
+                        level: level,
+                        tiles: tiles,
+                        filter: filter || {},
+                        max_points: maxPoints
+                    }
+                )
+            });
+            if (!response.ok) {
+                throw new Error(`Centroid tile request failed: ${response.status}`);
+            }
+            const contentType = response.headers.get("Content-Type") || "";
+            if (!contentType.includes("application/octet-stream")) {
+                throw new Error("Centroid tile response was not binary");
+            }
+            return response.arrayBuffer();
+        } catch (e) {
+            console.log("Error Getting Centroid Tiles", e);
+            return null;
+        }
+    }
+
     async getGatedCellIds(filter, start_keys) {
         try {
             let response = await fetch(minervaUrl('get_gated_cell_ids') + '?' + new URLSearchParams({

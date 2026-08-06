@@ -8,12 +8,21 @@ class NumericData {
   constructor(config, dataLayer) {
       this.features = config.featureData[0];
       this.dataLayer = dataLayer;
+      this.cellsPromise = null;
   }
 
   /*
    * Load cell segmentation data
    */
   async loadCells() {
+      if (this.cellsPromise) {
+          return this.cellsPromise;
+      }
+      this.cellsPromise = this.fetchCells();
+      return this.cellsPromise;
+  }
+
+  async fetchCells() {
       const { idField, xCoordinate, yCoordinate } = this.features;
       const fields = [ idField, xCoordinate, yCoordinate ];
       const idsCenters = await this.getAllUInt32Entries(fields);

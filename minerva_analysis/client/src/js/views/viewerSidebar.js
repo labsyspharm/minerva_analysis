@@ -109,6 +109,9 @@ class ViewerSidebar {
                 visible: Boolean(name),
                 range: this.getImageRange(name),
                 userColorChanged: false,
+                userRangeChanged: false,
+                autoLeveled: false,
+                autoLeveling: false,
             };
             slotList.appendChild(this.createChannelSlot(slot));
             return slot;
@@ -165,7 +168,7 @@ class ViewerSidebar {
         auto.type = "button";
         auto.classList.add("slot-auto-button");
         auto.textContent = "Auto";
-        auto.addEventListener("click", () => this.autoChannel(slot.index));
+        auto.addEventListener("click", () => this.autoChannel(slot.index, { force: true }));
         top.appendChild(auto);
 
         const remove = document.createElement("button");
@@ -334,12 +337,18 @@ class ViewerSidebar {
     setSlotMarker(slotIndex, name, options = {}) {
         const slot = this.channelSlots[slotIndex];
         if (!slot || !name) return;
-        if (slot.name && slot.enabled && slot.name !== name) {
+        const markerChanged = slot.name !== name;
+        if (slot.name && slot.enabled && markerChanged) {
             this.deactivateChannel(slot);
         }
         this.disableDuplicateChannels(name, slotIndex);
         slot.name = name;
         slot.range = this.getImageRange(name);
+        if (markerChanged) {
+            slot.userRangeChanged = false;
+            slot.autoLeveled = false;
+            slot.autoLeveling = false;
+        }
         if (!options.keepColor) {
             this.setSlotColor(slotIndex, this.getDefaultColor(slotIndex).hex, false);
         }
@@ -353,6 +362,7 @@ class ViewerSidebar {
         this.redrawChannelSlider(slot);
         if (slot.enabled) {
             this.activateChannel(slot);
+            this.autoLevelChannelIfNeeded(slot);
         }
         this.updateSelectedCount();
     }
@@ -360,11 +370,15 @@ class ViewerSidebar {
     setSlotEnabled(slotIndex, enabled) {
         const slot = this.channelSlots[slotIndex];
         if (!slot || !slot.name) return;
+        const wasEnabled = slot.enabled;
         slot.enabled = enabled;
         slot.visible = true;
         if (enabled) {
             this.disableDuplicateChannels(slot.name, slotIndex);
             this.activateChannel(slot);
+            if (!wasEnabled) {
+                this.autoLevelChannelIfNeeded(slot);
+            }
         } else {
             this.deactivateChannel(slot);
         }
@@ -455,7 +469,7 @@ class ViewerSidebar {
             .default([Math.max(slot.range[0], 1), Math.max(slot.range[1], 2)])
             .fill("#38bdf8")
             .handle(d3.symbol().type(d3.symbolCircle).size(120))
-            .on("onchange", (value) => this.setSlotRange(slot.index, value));
+            .on("onchange", (value) => this.setSlotRange(slot.index, value, true));
 
         this.channelSlotSliders.set(slot.index, slider);
         d3.select(target)
@@ -468,10 +482,13 @@ class ViewerSidebar {
         this.updateSlotReadout(slot);
     }
 
-    setSlotRange(slotIndex, values) {
+    setSlotRange(slotIndex, values, userChanged = false) {
         const slot = this.channelSlots[slotIndex];
         if (!slot) return;
         slot.range = this.normalizeRange(values, true);
+        if (userChanged) {
+            slot.userRangeChanged = true;
+        }
         this.channelList.image_channels[slot.name] = slot.range;
         this.updateSlotReadout(slot);
         if (slot.enabled && slot.name) {
@@ -482,20 +499,37 @@ class ViewerSidebar {
         }
     }
 
-    async autoChannel(slotIndex) {
+    autoLevelChannelIfNeeded(slot) {
+        if (!slot || slot.autoLeveled || slot.autoLeveling || slot.userRangeChanged) {
+            return;
+        }
+        window.setTimeout(() => this.autoChannel(slot.index), 0);
+    }
+
+    async autoChannel(slotIndex, options = {}) {
         const slot = this.channelSlots[slotIndex];
         if (!slot || !slot.name) return;
+        if (!options.force && (slot.userRangeChanged || slot.autoLeveled || slot.autoLeveling)) {
+            return;
+        }
+        const markerName = slot.name;
+        slot.autoLeveling = true;
         if (!(slot.name in this.channelList.hasChannelGMM)) {
             await this.channelList.getAndDrawChannelGMM(slot.name);
         }
+        slot.autoLeveling = false;
+        if (slot.name !== markerName) {
+            return;
+        }
         const packet = this.channelList.hasChannelGMM[slot.name];
-        if (!packet) return;
+        if (!packet || (!options.force && slot.userRangeChanged)) return;
         slot.range = [packet.vmin, packet.vmax];
+        slot.autoLeveled = true;
         const slider = this.channelSlotSliders.get(slotIndex);
         if (slider) {
             slider.silentValue(slot.range);
         }
-        this.setSlotRange(slotIndex, slot.range);
+        this.setSlotRange(slotIndex, slot.range, false);
         this.redrawChannelSlider(slot);
     }
 
@@ -527,6 +561,9 @@ class ViewerSidebar {
             visible: true,
             range: this.getImageRange(name),
             userColorChanged: false,
+            userRangeChanged: false,
+            autoLeveled: false,
+            autoLeveling: false,
         };
         this.channelSlots.push(slot);
         document.getElementById("channel_slot_list").appendChild(this.createChannelSlot(slot));
@@ -547,6 +584,9 @@ class ViewerSidebar {
         slot.color = color.rgb;
         slot.colorHex = color.hex;
         slot.userColorChanged = false;
+        slot.userRangeChanged = false;
+        slot.autoLeveled = false;
+        slot.autoLeveling = false;
         this.channelSlotSliders.delete(slotIndex);
         this.syncSlotDom(slot);
         this.updateSelectedCount();

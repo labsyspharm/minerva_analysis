@@ -153,7 +153,8 @@ export class ViewerManager {
     rangeConnector = {};
 
     show_sel = true;
-    sel_outlines = true;
+    sel_outlines = false;
+    labelLayerRequested = false;
 
     /**
      * Constructs a ColorManager instance before delegating initialization.
@@ -165,7 +166,6 @@ export class ViewerManager {
         this.viewer = imageViewer.viewer;
         this.imageViewer = imageViewer;
         this.channelList = channelList;
-        this.init();
     }
 
     /**
@@ -229,6 +229,7 @@ export class ViewerManager {
             // index: 0,
             opacity: 1,
             preload: true,
+            success: () => this.raiseLabelLayer(),
         });
 
     }
@@ -285,9 +286,28 @@ export class ViewerManager {
     }
 
     /**
+     * Keep the transparent segmentation layer above image channels.
+     */
+    raiseLabelLayer() {
+        const world = this.viewer?.world;
+        if (!world) return;
+        for (let i = 0; i < world.getItemCount(); i += 1) {
+            const item = world.getItemAt(i);
+            if (item?.source?.tileFormat == 32) {
+                world.setItemIndex(item, world.getItemCount() - 1);
+                return;
+            }
+        }
+    }
+
+    /**
      * @function load_label_image
      */
     load_label_image() {
+        if (this.labelLayerRequested) {
+            return;
+        }
+        this.labelLayerRequested = true;
         const self = this;
 
         // Load label image in background if it exists
@@ -317,15 +337,20 @@ export class ViewerManager {
                     srcIdx: 0,
                     src: url,
                 },
-                index: 0,
                 opacity: 1,
                 success: (e) => {
                     // Open Event is Necessary for ViaWebGl to init
                     self.viewer.raiseEvent("open", e.item);
+                    self.raiseLabelLayer();
+                },
+                error: () => {
+                    this.imageViewer.noLabel = true;
+                    this.imageViewer.updateCentroidFallback(true);
                 },
             });
         } else {
             this.imageViewer.noLabel = true;
+            this.imageViewer.updateCentroidFallback(true);
         }
     }
 }
