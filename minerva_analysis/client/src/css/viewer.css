@@ -274,7 +274,7 @@
     align-items: center;
     display: grid;
     gap: 7px;
-    grid-template-columns: 16px 24px minmax(0, 1fr) 42px;
+    grid-template-columns: 16px 24px minmax(0, 1fr) 42px 24px;
     min-width: 0;
 }
 
@@ -307,6 +307,29 @@
 
 .slot-auto-button:hover {
     background: rgba(255, 255, 255, 0.14);
+}
+
+.slot-remove-button {
+    align-items: center;
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 5px;
+    color: #93a4b8;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 11px;
+    height: 26px;
+    justify-content: center;
+    padding: 0;
+    width: 24px;
+}
+
+.slot-remove-button:hover,
+.slot-remove-button:focus {
+    background: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.45);
+    color: #fecaca;
+    outline: none;
 }
 
 .slot-range-readout {

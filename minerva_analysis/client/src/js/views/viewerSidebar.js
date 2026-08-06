@@ -168,6 +168,14 @@ class ViewerSidebar {
         auto.addEventListener("click", () => this.autoChannel(slot.index));
         top.appendChild(auto);
 
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.classList.add("slot-remove-button");
+        remove.title = "Remove channel slot";
+        remove.innerHTML = '<span class="fas fa-times"></span>';
+        remove.addEventListener("click", () => this.removeChannelSlot(slot.index));
+        top.appendChild(remove);
+
         const values = document.createElement("div");
         values.classList.add("range-readout", "slot-range-readout");
         values.innerHTML = `<span id="channel_slot_min_${slot.index}">0.00</span><span id="channel_slot_max_${slot.index}">0.00</span>`;
@@ -501,7 +509,7 @@ class ViewerSidebar {
             ? slot.name
             : this.columns.find((name) => !usedNames.includes(name)) || this.columns.find((name) => !activeNames.includes(name));
         if (next) {
-            this.setSlotMarker(slot.index, next, { keepColor: true, enable: true, reveal: true });
+            this.setSlotMarker(slot.index, next, { keepColor: true, enable: false, reveal: true });
         }
     }
 
@@ -523,6 +531,25 @@ class ViewerSidebar {
         this.channelSlots.push(slot);
         document.getElementById("channel_slot_list").appendChild(this.createChannelSlot(slot));
         return slot;
+    }
+
+    removeChannelSlot(slotIndex) {
+        const slot = this.channelSlots[slotIndex];
+        if (!slot) return;
+        if (slot.enabled && slot.name) {
+            this.deactivateChannel(slot);
+        }
+        const color = this.getDefaultColor(slotIndex);
+        slot.name = "";
+        slot.range = this.getImageRange("");
+        slot.enabled = false;
+        slot.visible = false;
+        slot.color = color.rgb;
+        slot.colorHex = color.hex;
+        slot.userColorChanged = false;
+        this.channelSlotSliders.delete(slotIndex);
+        this.syncSlotDom(slot);
+        this.updateSelectedCount();
     }
 
     syncSlotDom(slot) {
