@@ -22,7 +22,7 @@ jobs:
           echo "BRANCH=$branch" >> $GITHUB_ENV
       - name: Print Branch
         shell: bash -l {0}
-        run: echo "Branch: ${{ env.BRANCH }}"
+        run: 'echo "Branch: ${{ env.BRANCH }}"'
       - name: Creating Private Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
