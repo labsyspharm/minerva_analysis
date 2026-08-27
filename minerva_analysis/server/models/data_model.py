@@ -37,7 +37,11 @@ import re
 import zarr
 from numcodecs import Blosc
 from scipy import spatial
-from pycave.bayes import gmm
+
+try:
+    from pycave.bayes import gmm
+except ImportError:
+    gmm = None
 
 # from line_profiler_pycharm import profile
 
@@ -143,7 +147,8 @@ def load_csv(datasource_name, numpy=False):
 
     df = pd.read_csv(csvPath, index_col=None)
     # df = dd.read_csv(csvPath, assume_missing=True).set_index('id')
-    df = df.drop(get_channel_names(datasource_name, shortnames=False), axis=1)
+    channel_cols = get_channel_names(datasource_name, shortnames=False)
+    df = df.drop(columns=[c for c in channel_cols if c in df.columns])
     df['id'] = df.index
     # df['Cluster'] = embedding[:, -1].astype('int32').tolist()
 
@@ -542,6 +547,10 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
         if subsample:
             g_mixtures = GaussianMixture(n_components=num_clusters)
         else:
+            if gmm is None:
+                raise ImportError(
+                    "pycave is required for subsample=False clustering; install with: uv pip install pycave"
+                )
             g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
         g_mixtures.fit(data)
         clusters = np.array(g_mixtures.predict(data))
@@ -589,6 +598,10 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
         if subsample:
             g_mixtures = GaussianMixture(n_components=num_clusters)
         else:
+            if gmm is None:
+                raise ImportError(
+                    "pycave is required for subsample=False clustering; install with: uv pip install pycave"
+                )
             g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
 
         pca = PCA(n_components=2).fit(combined_neighborhoods['full_neighborhoods'])
@@ -647,12 +660,84 @@ def load_config():
     global config
     with open(config_json_path, "r+") as configJson:
         config = json.load(configJson)
+    for name, entry in config.items():
+        if isinstance(entry, dict):
+            apply_channel_names(name, entry)
 
 
 def save_config():
     global config
     with open(config_json_path, "r+") as configJson:
         json.dump(config, configJson, indent=4)
+
+
+def read_channel_names_file(path):
+    """Load channel labels from a text/CSV file (one name per line, or first CSV column)."""
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"channelNames file not found: {path}")
+
+    # Prefer pandas for CSV with a header; fall back to line-oriented text.
+    try:
+        df = pd.read_csv(path, header=None)
+        if df.shape[1] == 1:
+            names = df.iloc[:, 0].astype(str).str.strip().tolist()
+        else:
+            # Headered CSV: use a name-like column if present, else first column.
+            df_h = pd.read_csv(path)
+            cols_lower = {c.lower(): c for c in df_h.columns}
+            for key in ('name', 'channel', 'channel_name', 'marker', 'fullname'):
+                if key in cols_lower:
+                    names = df_h[cols_lower[key]].astype(str).str.strip().tolist()
+                    break
+            else:
+                names = df_h.iloc[:, 0].astype(str).str.strip().tolist()
+    except Exception:
+        names = [line.strip() for line in path.read_text().splitlines() if line.strip()]
+
+    # Drop a one-line header if it looks like a column title (single-column text files).
+    if names and names[0].lower() in {'name', 'channel', 'channel_name', 'marker', 'fullname'}:
+        names = names[1:]
+    return names
+
+
+def apply_channel_names(dataset_name, entry):
+    """
+    If config includes channelNames (path to CSV/text), use it to label image channels
+    when the quantification CSV has no channel intensity columns.
+    Tile src paths keep {dataset}_{i} so generate_zarr_png can resolve plane index.
+    """
+    if not isinstance(entry, dict) or 'channelNames' not in entry:
+        return entry
+
+    names = read_channel_names_file(entry['channelNames'])
+    n_channels = int(entry.get('num_channels') or len(names))
+    if len(names) < n_channels:
+        names = names + [f'{dataset_name}_{i}' for i in range(len(names), n_channels)]
+    names = names[:n_channels]
+
+    image_data = entry.get('imageData') or []
+    if not image_data:
+        label = Path(str(entry.get('segmentation', 'Segmentation'))).stem
+        image_data = [{
+            'name': 'Segmentation',
+            'fullname': 'Segmentation',
+            'src': f'/generated/data/{dataset_name}/{label}/',
+        }]
+
+    seg = image_data[0]
+    channels_out = []
+    for i, ch_name in enumerate(names):
+        existing = image_data[i + 1] if len(image_data) > i + 1 else {}
+        src = existing.get('src') or f'/generated/data/{dataset_name}/{dataset_name}_{i}/'
+        channels_out.append({
+            'name': ch_name,
+            'fullname': ch_name,
+            'src': src,
+        })
+    entry['imageData'] = [seg] + channels_out
+    entry['num_channels'] = n_channels
+    return entry
 
 
 def load_ball_tree(datasource_name, reload=False):
@@ -1328,10 +1413,11 @@ def get_datasource_description(datasource_name):
 
 
 def generate_zarr_png(datasource_name, channel, level, tile):
-    if config is None:
-        load_datasource(datasource_name)
     global channels
     global seg
+    global config
+    if config is None or channels is None or seg is None:
+        load_datasource(datasource_name)
     [tx, ty] = tile.replace('.png', '').split('_')
     tx = int(tx)
     ty = int(ty)
@@ -1342,14 +1428,14 @@ def generate_zarr_png(datasource_name, channel, level, tile):
     iy = ty * tile_height
     segmentation = False
     try:
-        channel_num = int(re.match(r".*_(\d*)$", channel).groups()[0])
-    except AttributeError:
+        channel_num = int(re.match(r".*_(\d+)$", channel).groups()[0])
+    except (AttributeError, ValueError, TypeError):
         segmentation = True
     if segmentation:
         if isinstance(seg, zarr.Array):
             tile = seg[iy:iy + tile_height, ix:ix + tile_width]
         else:
-            tile = seg[level][iy:iy + tile_height, ix:ix + tile_width]
+            tile = seg[str(level)][iy:iy + tile_height, ix:ix + tile_width]
         if tile.dtype.itemsize != 4:
             tile = tile.astype(np.uint32)
         tile = tile.view('uint8').reshape(tile.shape + (-1,))[..., [0, 1, 2]]
@@ -1358,7 +1444,7 @@ def generate_zarr_png(datasource_name, channel, level, tile):
         if isinstance(channels, zarr.Array):
             tile = channels[channel_num, iy:iy + tile_height, ix:ix + tile_width]
         else:
-            tile = channels[level][channel_num, iy:iy + tile_height, ix:ix + tile_width]
+            tile = channels[str(level)][channel_num, iy:iy + tile_height, ix:ix + tile_width]
             tile = tile.astype('uint16')
 
     # tile = np.ascontiguousarray(tile, dtype='uint32')
@@ -1403,8 +1489,8 @@ def get_heatmap_pearson_correlation(datasource_name, selection_ids, mode='single
     obj = {}
     # Selection Data
     selected_neighborhoods = neighborhoods[sorted(selection_ids), :]
-    coeffecients = pd.DataFrame(neighborhoods).corr('pearson').to_numpy()
-    selected_coeffecients = pd.DataFrame(selected_neighborhoods).corr('pearson').to_numpy()
+    coeffecients = pd.DataFrame(neighborhoods).corr('pearson').to_numpy().copy()
+    selected_coeffecients = pd.DataFrame(selected_neighborhoods).corr('pearson').to_numpy().copy()
 
     coeffecients[np.isnan(coeffecients)] = 0
     selected_coeffecients[np.isnan(selected_coeffecients)] = 0

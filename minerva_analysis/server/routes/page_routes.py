@@ -1,6 +1,6 @@
-from flask import render_template, send_from_directory, request, send_file
+from flask import render_template, send_from_directory, request, jsonify
 
-from minerva_analysis import app, get_config_names, get_config, config_json_path
+from minerva_analysis import app, get_config_names, get_config
 
 
 @app.route("/")
@@ -11,7 +11,9 @@ def my_index():
 
 @app.route("/data/config.json", methods=['GET'])
 def serve_config():
-    return send_file(config_json_path.resolve(), download_name='config.json')
+    # Return resolved config (expands optional channelNames into imageData) rather than
+    # the raw on-disk file, so the viewer channel index map matches the channel list.
+    return jsonify(get_config())
 
 
 @app.route('/<string:datasource>', methods=['GET'])

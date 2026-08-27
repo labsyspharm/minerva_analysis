@@ -14,8 +14,11 @@ import multiprocessing
 
 # Initialize sklearn global threadpool controller to avoid deadlock in threaded
 # contexts.
-import sklearn.utils.fixes
-sklearn.utils.fixes.threadpool_limits()
+try:
+    from sklearn.utils.fixes import threadpool_limits
+except ImportError:
+    from threadpoolctl import threadpool_limits
+threadpool_limits()
 
 # If you're running the pyinstaller version of the code, create a
 # new directory for the data (this will be at ~/ on mac)
@@ -60,6 +63,13 @@ def get_config():
     else:
         with open(config_json_path, 'r+') as f:
             data = json.load(f)
+
+    # Resolve optional channelNames CSV into imageData labels for the UI / tile map.
+    from minerva_analysis.server.models import data_model
+    if isinstance(data, dict):
+        for name, entry in data.items():
+            if isinstance(entry, dict):
+                data_model.apply_channel_names(name, entry)
     return data
 
 
